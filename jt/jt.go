@@ -1,9 +1,9 @@
 package jt
 
 import (
-	. "js/base"
-	"js/files"
-	. "js/json"
+	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/files"
+	. "github.com/jpsember/golang-base/json"
 	"os"
 	"path/filepath"
 	"strings"

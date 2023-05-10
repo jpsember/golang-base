@@ -1,8 +1,8 @@
 package jsdata
 
 import (
-	. "js/base"
-	. "js/json"
+	. "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/json"
 )
 
 // Implementation of fmt.stringer for DataClass

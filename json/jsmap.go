@@ -1,7 +1,7 @@
 package json
 
 import (
-	. "js/base"
+	. "github.com/jpsember/golang-base/base"
 	"sort"
 )
 

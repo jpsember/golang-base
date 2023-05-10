@@ -3,9 +3,9 @@ package json_test
 
 import (
 	"fmt"
-	. "js/base"
-	. "js/json"
-	"js/jt"
+	. "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/json"
+	"github.com/jpsember/golang-base/jt"
 	"testing" // We still need to import the standard testing package
 )
 

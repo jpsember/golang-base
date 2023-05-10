@@ -2,7 +2,7 @@ package files
 
 import (
 	"errors"
-	. "js/base"
+	. "github.com/jpsember/golang-base/base"
 	"os"
 	"path/filepath"
 	"strings"

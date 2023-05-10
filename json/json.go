@@ -2,7 +2,7 @@ package json
 
 import (
 	"fmt"
-	. "js/base"
+	. "github.com/jpsember/golang-base/base"
 	"strconv"
 )
 
