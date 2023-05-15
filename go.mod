@@ -1,3 +1,3 @@
-module github.com/jpsember/golang-base/v2 v1.0.0
+module github.com/jpsember/golang-base
 
 go 1.20
