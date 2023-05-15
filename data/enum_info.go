@@ -2,8 +2,6 @@ package data
 
 import (
 	"strings"
-
-	//. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/json"
 )
 
@@ -37,7 +35,7 @@ func (info *EnumInfo) String() string {
 }
 
 func (info *EnumInfo) ValueOf(s string) (uint32, error) {
-	if v, found := info.EnumIds[s], found {
+	if v, found := info.EnumIds[s]; found {
 		return v, nil
 	}
 	return 0, fmt.Errorf("can't find enum with label %q", s)
