@@ -2,8 +2,9 @@ package json
 
 import (
 	"fmt"
-	. "github.com/jpsember/golang-base/base"
 	"strconv"
+
+	. "github.com/jpsember/golang-base/base"
 )
 
 // ---------------------------------------------------------------------------------------
@@ -247,6 +248,8 @@ func ToJSEntity(value any) JSEntity {
 	case int:
 		val = MakeJInteger(int64(v))
 	case int32:
+		val = MakeJInteger(int64(v))
+	case uint32:
 		val = MakeJInteger(int64(v))
 	case int64:
 		val = MakeJInteger(v)

@@ -1,12 +1,31 @@
 package json
 
 import (
-	. "github.com/jpsember/golang-base/base"
 	_ "strings"
+
+	. "github.com/jpsember/golang-base/base"
 )
 
 type JSList struct {
 	wrappedList []JSEntity
+}
+
+// Construct a JSList from a slice of any, converting to JSEntities
+func JSListWith(values []any) *JSList {
+	var out = NewJSList()
+	for _, x := range values {
+		out.Add(x)
+	}
+	return out
+}
+
+// Construct a JSList from a slice of strings
+func JSListWithStrings(values []string) *JSList {
+	var out = NewJSList()
+	for _, x := range values {
+		out.Add(x)
+	}
+	return out
 }
 
 // ---------------------------------------------------------------------------------------

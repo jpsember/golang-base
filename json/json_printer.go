@@ -51,13 +51,3 @@ func PrintJSEntity(jsEntity JSEntity, pretty bool) string {
 	jsEntity.PrintTo(printer)
 	return printer.GetPrintResult()
 }
-
-// func prettyPrintJSEntity(arg any) string {
-// 	var jsEntity = arg.(JSEntity)
-// 	return PrintJSEntity(jsEntity, true)
-// }
-
-// func init() {
-// 	RegisterBasePrinterType(&JSMap{}, prettyPrintJSEntity)
-// 	RegisterBasePrinterType(&JSList{}, prettyPrintJSEntity)
-// }
