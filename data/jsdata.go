@@ -1,4 +1,4 @@
-package jsdata
+package data
 
 import (
 	_ "strings"
