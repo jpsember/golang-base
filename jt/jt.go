@@ -1,16 +1,18 @@
 package jt
 
 import (
-	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/files"
-	. "github.com/jpsember/golang-base/json"
+	"hash/fnv"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/files"
+	. "github.com/jpsember/golang-base/json"
 )
 
-var pr = Pr
+var _ = Pr
 
 func determineUnittestFilename(location string) string {
 	var result string
@@ -43,12 +45,13 @@ func New(t testing.TB) *J {
 
 type J struct {
 	testing.TB
-	Filename       string
-	verbose        bool
-	testResultsDir string
-	unitTestDir    string
-	moduleDir      string
-	baseNameCached string
+	Filename          string
+	verbose           bool
+	testResultsDir    string
+	unitTestDir       string
+	moduleDir         string
+	baseNameCached    string
+	InvalidateOldHash bool
 }
 
 func (j *J) Verbose() bool {
@@ -151,14 +154,19 @@ func (j *J) AssertMessage(message ...any) {
 	j.AssertGenerated()
 }
 
+var hasher = fnv.New32a()
+
+func hashCode(jsonMap *JSMap) uint32 {
+	hasher.Reset()
+	hasher.Write([]byte(PrintJSEntity(jsonMap, false)))
+	return hasher.Sum32()
+}
+
 // Construct hash of generated directory, and verify it has the expected value.
 func (j *J) AssertGenerated() {
-	if j.Verbose() {
-		j.createInspectionDir()
-	}
 
 	var jsonMap = dirSummary(j.GetTestResultsDir())
-
+	var currentHash = (hashCode(jsonMap)&0xffff)%9000 + 1000
 	// /**
 	//   - Construct hash of generated directory, and verify it has the expected value
 	//     */
@@ -169,18 +177,16 @@ func (j *J) AssertGenerated() {
 	//     JSMap jsonMap = MyTestUtils.dirSummary(generatedDir());
 	//     // Convert hash code to one using exactly four digits
 	//     int currentHash = (jsonMap.hashCode() & 0xffff) % 9000 + 1000;
-	//     HashCodeRegistry registry = HashCodeRegistry.registryFor(mUnitTest);
-	//     if (!registry.verifyHash(mUnitTest.name(), currentHash, mInvalidateOldHash)) {
-	//     fail(BasePrinter.toString("\nUnexpected hash value for directory contents:", CR, DASHES, CR, //
-	//     jsonMap, CR, DASHES, CR));
-	//     }
-	//     } catch (Throwable t) {
-	//     showDiffs();
-	//     throw t;
-	//     }
-	//     saveTestResults();
-	//     }
-	Halt("not finished", jsonMap)
+	var registry = RegistryFor(j)
+
+	if !registry.VerifyHash(j.Name(), currentHash, j.InvalidateOldHash) {
+		var summary = ToString("\nUnexpected hash value for directory contents:", CR, DASHES, CR)
+		Pr(summary)
+		Todo("showDiffs")
+		//showDiffs()
+		j.Fail()
+	}
+	registry.SaveTestResults()
 }
 
 func dirSummary(dir string) *JSMap {
@@ -247,8 +253,4 @@ func auxDirSummary(dir string, calculateFileHashes bool) *JSMap {
 	//     return m;
 	//   }
 
-}
-
-func (j *J) createInspectionDir() {
-	Todo("unimplemented: createInspectionDir")
 }

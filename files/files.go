@@ -27,24 +27,86 @@ func WriteString(path string, content string) {
 func AscendToDirectoryContainingFile(startDir string, seekFile string) (string, error) {
 	CheckArg(NonEmpty(seekFile))
 	if Empty(startDir) {
-		var dir, err = os.Getwd()
-		CheckOk(err)
-		startDir = dir
+		startDir = CurrentDirectory()
 	}
 	var path = startDir
-
-	var prevPath = path
 	for {
 		var cand = filepath.Join(path, seekFile)
-		_, e := os.Stat(cand)
-		if e == nil {
+		if Exists(cand) {
+			path = filepath.Dir(path)
 			return path, nil
 		}
-		path = filepath.Dir(path)
-		if path == prevPath {
+
+		path = Parent(path)
+		if path == "" {
 			return "", errors.New(ToString("Cannot find", seekFile, "in tree containing", startDir))
 		}
-		prevPath = path
 	}
+}
 
+func ReadStringIfExists(file string, defaultContent string) (content string, err error) {
+	Todo("have a special type for File, to avoid confusion with strings, and to support paths etc")
+	if Exists(file) {
+		if data, err := os.ReadFile(file); err == nil {
+			content = string(data)
+		}
+	} else {
+		content = defaultContent
+	}
+	return content, err
+}
+
+func MkDirs(file string) (string, error) {
+	//Pr("attempt to MkDirs:", file)
+	err := os.MkdirAll(file, os.ModePerm)
+	CheckOk(err, "failed MkDirs:", file)
+	return file, err
+}
+
+func Exists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func DirExists(path string) bool {
+	fileInfo, err := os.Stat(path)
+	return err == nil && fileInfo.IsDir()
+}
+
+func PathJoin(parent, child string) string {
+	if strings.HasSuffix(parent, "/") || len(parent) == 0 || strings.HasPrefix(child, "/") || len(child) == 0 {
+		Die("illegal args for PathJoin:", parent, child)
+	}
+	return parent + "/" + child
+}
+
+func Parent(path string) string {
+	CheckArg(!strings.HasSuffix(path, "/"))
+	i := strings.LastIndex(path, "/")
+	if i < 0 {
+		return ""
+	}
+	return path[0:i]
+}
+
+func ValidatePath(path string) string {
+	if path == "" || strings.HasSuffix(path, "/") {
+		BadArgWithSkip(1, "invalid path:", path)
+	}
+	return path
+}
+
+func GetName(path string) string {
+	ValidatePath(path)
+	i := strings.LastIndex(path, "/")
+	if i < 0 {
+		return path
+	}
+	return path[i+1:]
+}
+
+func CurrentDirectory() string {
+	path, err := os.Getwd()
+	CheckOk(err)
+	return path
 }

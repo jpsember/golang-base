@@ -86,9 +86,17 @@ func CheckNotNil(value any, message ...any) any {
 
 func CheckArg(valid bool, message ...any) bool {
 	if !valid {
-		panic("*** Bad argument!  (" + CallerLocation(3) + ") " + ToString(message...))
+		BadArgWithSkip(3, message...)
 	}
 	return valid
+}
+
+func BadArgWithSkip(skipCount int, message ...any) {
+	panic("*** Bad argument!  (" + CallerLocation(skipCount+1) + ") " + ToString(message...))
+}
+
+func BadArg(message ...any) {
+	BadArgWithSkip(4, message)
 }
 
 func CheckState(valid bool, message ...any) {
@@ -172,12 +180,14 @@ func Quoted(x string) string {
 	return "\"" + x + "\""
 }
 
+var DASHES = "\n----------------------------------------------------------------------------------\n"
+
 var SPACES = "                                                                " +
 	"                                                                " +
 	"                                                                " +
 	"                                                                "
 
-	// Get string of zero or more spaces; if count < 0, returns empty string.
+// Get string of zero or more spaces; if count < 0, returns empty string.
 func Spaces(count int) string {
 	if count < 0 {
 		count = 0

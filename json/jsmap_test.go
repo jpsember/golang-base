@@ -3,10 +3,11 @@ package json_test
 
 import (
 	"fmt"
+	"testing" // We still need to import the standard testing package
+
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/json"
 	"github.com/jpsember/golang-base/jt"
-	"testing" // We still need to import the standard testing package
 )
 
 // This gets rid of the 'unused import' compile error, and
@@ -31,9 +32,7 @@ func TestJSMapPrettyPrint(t *testing.T) {
 	j := jt.New(t)
 	j.SetVerbose()
 
-	var p JSONParser
-	p.WithText(text1)
-	var jsmap = p.ParseMap()
+	var jsmap = JSMapFromString(text1)
 
 	Todo("can we create a utility method for this?")
 	var printer = NewJSONPrinter(true)
