@@ -29,14 +29,13 @@ func AscendToDirectoryContainingFile(startDir string, seekFile string) (string, 
 	if Empty(startDir) {
 		startDir = CurrentDirectory()
 	}
+	ValidatePath(startDir)
 	var path = startDir
 	for {
 		var cand = filepath.Join(path, seekFile)
 		if Exists(cand) {
-			path = filepath.Dir(path)
 			return path, nil
 		}
-
 		path = Parent(path)
 		if path == "" {
 			return "", errors.New(ToString("Cannot find", seekFile, "in tree containing", startDir))

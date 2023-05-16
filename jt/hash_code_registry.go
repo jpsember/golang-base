@@ -28,15 +28,11 @@ func RegistryFor(j *J) *HashCodeRegistry {
 	var registry = sClassesMap[key]
 	if registry == nil {
 		registry = new(HashCodeRegistry)
+		registry.UnitTest = j
 		registry.Key = key
 		sClassesMap[key] = registry
-		Pr("created new registry for key:", key)
-
 		// See if there is a file it was saved to
-		//	var mFile = "unit_test/" + strings.ReplaceAll(key, ".", "_") + ".json"
 		registry.Map = JSMapFromFileIfExists(registry.file())
-
-		registry.UnitTest = j
 	}
 	return registry
 }
@@ -50,7 +46,7 @@ func (r *HashCodeRegistry) file() string {
 
 func (r *HashCodeRegistry) unitTestDirectory() string {
 	if r._dir == "" {
-		d, err := files.MkDirs("unit_test")
+		d, err := files.MkDirs(files.PathJoin(r.UnitTest.GetModuleDir(), "unit_test"))
 		CheckOk(err, "failed to make directory")
 		r._dir = d
 	}
