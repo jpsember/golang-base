@@ -1,8 +1,9 @@
 package json
 
 import (
-	. "github.com/jpsember/golang-base/base"
 	"sort"
+
+	. "github.com/jpsember/golang-base/base"
 )
 
 type JSMap struct {
@@ -127,10 +128,6 @@ func (m *JSMap) String() string {
 }
 
 func (m *JSMap) Put(key string, value any) {
-	if ty, ok := value.(DataClass); ok {
-		m.wrappedMap[key] = ty.ToJson().(*JSMap)
-		return
-	}
 	m.wrappedMap[key] = ToJSEntity(value)
 }
 

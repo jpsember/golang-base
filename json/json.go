@@ -265,6 +265,8 @@ func ToJSEntity(value any) JSEntity {
 		val = MakeJBool(v)
 	case JSEntity: // Already a JSEntity, i.e., a JSMap or JSList?
 		val = v
+	case DataClass:
+		val = v.ToJson().(JSEntity)
 	default:
 		Die("Unsupported:", Info(value))
 	}
