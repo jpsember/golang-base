@@ -1,5 +1,7 @@
 package data
 
+// Is fmt import appearing as expected?
+
 import (
 	"fmt"
 	"strings"
