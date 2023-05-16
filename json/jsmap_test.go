@@ -14,7 +14,7 @@ import (
 // as a bonus, lets us type 'pr' without capitalization.
 // I *think* it doesn't modify the code at all (i.e., there's
 // no difference between calling Pr(...) and pr(...).
-var pr = Pr
+var _ = Pr
 
 var text1 = `
   {"name" : "John", 
@@ -29,15 +29,14 @@ var text1 = `
 
 func TestJSMapPrettyPrint(t *testing.T) {
 	// Get our tester that wraps the standard one
-	j := jt.New(t)
+	j := jt.Newz(t)
+
+	Todo("Can we determine if there is only a single test being run?")
+
 	j.SetVerbose()
 
 	var jsmap = JSMapFromString(text1)
-
-	Todo("can we create a utility method for this?")
-	var printer = NewJSONPrinter(true)
-	jsmap.PrintTo(printer)
-	var s = printer.GetPrintResult()
+	var s = jsmap.String()
 
 	j.GenerateMessage(s)
 	j.AssertGenerated()

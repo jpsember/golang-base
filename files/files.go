@@ -46,13 +46,19 @@ func AscendToDirectoryContainingFile(startDir string, seekFile string) (string, 
 func ReadStringIfExists(file string, defaultContent string) (content string, err error) {
 	Todo("have a special type for File, to avoid confusion with strings, and to support paths etc")
 	if Exists(file) {
-		if data, err := os.ReadFile(file); err == nil {
-			content = string(data)
+		var bytes []byte
+		bytes, err = ReadBytes(file)
+		if err == nil {
+			content = string(bytes)
 		}
 	} else {
 		content = defaultContent
 	}
 	return content, err
+}
+
+func ReadBytes(path string) (content []byte, err error) {
+	return os.ReadFile(path)
 }
 
 func MkDirs(file string) (string, error) {

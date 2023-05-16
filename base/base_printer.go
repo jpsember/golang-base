@@ -27,14 +27,14 @@ type BasePrinter struct {
 }
 
 // Get contents as a string.
-func (this *BasePrinter) String() string {
-	return this.contentBuffer.String()
+func (b *BasePrinter) String() string {
+	return b.contentBuffer.String()
 }
 
 // Clear any existing contents.
-func (this *BasePrinter) Clear() *BasePrinter {
-	this.contentBuffer.Reset()
-	return this
+func (b *BasePrinter) Clear() *BasePrinter {
+	b.contentBuffer.Reset()
+	return b
 }
 
 // ------------------------------------------------------------------
@@ -48,18 +48,18 @@ const (
 )
 
 // Request a linefeed before any subsequent non-whitespace is printed.
-func (this *BasePrinter) Cr() *BasePrinter {
-	this.pendingBreak = MaxInt(this.pendingBreak, brkLine)
-	return this
+func (b *BasePrinter) Cr() *BasePrinter {
+	b.pendingBreak = MaxInt(b.pendingBreak, brkLine)
+	return b
 }
 
 // Append a number of spaces.
-func (this *BasePrinter) appendSpaces(count int) {
+func (b *BasePrinter) appendSpaces(count int) {
 	var cursor = 0
 	for cursor < count {
 		var maxSpacesPerRow = 42
 		var netSpaces = MinInt(count-cursor, maxSpacesPerRow)
-		this.appendCharacters(Spaces(netSpaces))
+		b.appendCharacters(Spaces(netSpaces))
 		cursor += netSpaces
 	}
 }
@@ -67,17 +67,17 @@ func (this *BasePrinter) appendSpaces(count int) {
 // Insert a paragraph break between current content and subsequent content.
 //
 // A paragraph is marked by two consecutive linefeeds.
-func (this *BasePrinter) Br() *BasePrinter {
-	this.pendingBreak = brkParagraph
-	return this
+func (b *BasePrinter) Br() *BasePrinter {
+	b.pendingBreak = brkParagraph
+	return b
 }
 
 // Request a space before any subsequent non-whitespace.
-func (this *BasePrinter) Sp() *BasePrinter {
-	if this.column != 0 {
-		this.pendingBreak = MaxInt(this.pendingBreak, brkColumn)
+func (b *BasePrinter) Sp() *BasePrinter {
+	if b.column != 0 {
+		b.pendingBreak = MaxInt(b.pendingBreak, brkColumn)
 	}
-	return this
+	return b
 }
 
 // ------------------------------------------------------------------
@@ -89,24 +89,24 @@ const (
 )
 
 // Increase the indent amount to the next tab stop (4 spaces), and generate a linefeed
-func (this *BasePrinter) Indent() *BasePrinter {
-	this.indentColumn += defaultIndentationColumn
-	return this.Cr()
+func (b *BasePrinter) Indent() *BasePrinter {
+	b.indentColumn += defaultIndentationColumn
+	return b.Cr()
 }
 
 // Move the indent amount to the previous tab stop, and generate a linefeed
-func (this *BasePrinter) Outdent() *BasePrinter {
-	CheckState(this.indentColumn != 0)
-	this.indentColumn -= defaultIndentationColumn
-	return this.Cr()
+func (b *BasePrinter) Outdent() *BasePrinter {
+	CheckState(b.indentColumn != 0)
+	b.indentColumn -= defaultIndentationColumn
+	return b.Cr()
 }
 
 // Clear variables concerning indentation, pending line breaks
-func (this *BasePrinter) ResetIndentation() *BasePrinter {
-	this.pendingBreak = 0
-	this.indentColumn = 0
-	this.column = 0
-	return this
+func (b *BasePrinter) ResetIndentation() *BasePrinter {
+	b.pendingBreak = 0
+	b.indentColumn = 0
+	b.column = 0
+	return b
 }
 
 // ------------------------------------------------------------------
@@ -114,97 +114,70 @@ func (this *BasePrinter) ResetIndentation() *BasePrinter {
 // ------------------------------------------------------------------
 
 // Append string representations of objects, separated by spaces
-func (this *BasePrinter) Pr(messages ...any) *BasePrinter {
+func (b *BasePrinter) Pr(messages ...any) *BasePrinter {
 	for _, obj := range messages {
-		this.Sp()
-		this.append(obj)
+		b.Sp()
+		b.append(obj)
 	}
-	return this
+	return b
 }
 
 // Append an object's string representation
 // (todo: by looking up its converter)
-func (this *BasePrinter) append(value any) {
+func (b *BasePrinter) append(value any) {
 	switch v := value.(type) {
 	case nil:
-		this.AppendString("<nil>")
+		b.AppendString("<nil>")
 	case string:
-		this.AppendString(v)
+		b.AppendString(v)
 	case int: // We aren't sure if it's 32 or 64, so choose 64
-		this.AppendLong(int64(v))
+		b.AppendLong(int64(v))
 	case int32:
-		this.AppendInt(v)
+		b.AppendInt(v)
 	case uint32:
-		this.AppendInt(int32(v))
+		b.AppendInt(int32(v))
 	case int64:
-		this.AppendLong(v)
+		b.AppendLong(v)
 	case uint64:
-		this.AppendLong(int64(v))
+		b.AppendLong(int64(v))
 	case uint8:
-		this.AppendInt(int32(v))
+		b.AppendInt(int32(v))
 	case int8:
-		this.AppendInt(int32(v))
+		b.AppendInt(int32(v))
 	case uint16:
-		this.AppendInt(int32(v))
+		b.AppendInt(int32(v))
 	case int16:
-		this.AppendInt(int32(v))
+		b.AppendInt(int32(v))
 	case float32:
-		this.AppendFloat(float64(v))
+		b.AppendFloat(float64(v))
 	case float64:
-		this.AppendFloat(v)
+		b.AppendFloat(v)
 	case bool:
-		this.AppendBool(v)
+		b.AppendBool(v)
+	case strings.Builder:
+		b.AppendString(v.String())
 	default:
-		{
-			// // See if handler exists for this type of value
-			// var argType = reflect.TypeOf(value)
-
-			// var handler, exists = handlerMap[argType]
-			// if exists {
-			// 	var str = handler(value)
-			// 	this.AppendString(str)
-			// 	return
-			// }
-
-			// this should be handled by the fmt.sprintf() call below...
-			//
-			// // If value implements the HasStringMethod interface, call its String()
-			// // method to determine what to append.
-			// //
-			// stackoverflow.com/questions/27803654/explanation-of-checking-if-value-implements-interface
-			// hasStringMethod, ok := value.(fmt.Stringer)
-			// if ok {
-			// 	this.AppendString(hasStringMethod.String())
-			// 	return
-			// }
-		}
-
 		// Todo("What is it doing here to test the equality?  Is it comparing pointers, or something more elaborate?")
 		if value == INDENT {
-			this.Indent()
+			b.Indent()
 			return
 		}
 		if value == OUTDENT {
-			this.Outdent()
+			b.Outdent()
 			return
 		}
 		if value == CR {
-			this.Cr()
+			b.Cr()
 			return
 		}
-
-		if true {
-			// Fall back on using fmt.Sprint()
-			this.AppendString(fmt.Sprint(v))
-		} else {
-			this.AppendString("<??? " + Info(v) + " ???>")
-		}
+		// Fall back on using fmt.Sprint()
+		b.AppendString(fmt.Sprint(v))
 	}
 }
 
 // Append string; split into separate strings where linefeeds exist, and request linefeeds
 // to continue the next string with the appropriate indenting.
-func (this *BasePrinter) AppendString(str string) *BasePrinter {
+func (b *BasePrinter) AppendString(str string) *BasePrinter {
 
 	// Scan forward through the string, processing maximal prefixes that don't include linefeeds,
 	// requesting linefeeds as we find them, and stopping when we run out of such prefixes.
@@ -225,108 +198,108 @@ func (this *BasePrinter) AppendString(str string) *BasePrinter {
 		}
 
 		if len(prefix) > 0 {
-			this.flushLineBreak()
-			if this.pendingBreak == brkColumn {
-				if this.column > 0 {
-					if this.contentBuffer.Len() > 0 && !strings.HasSuffix(this.contentBuffer.String(), " ") {
-						this.appendCharacters(" ")
+			b.flushLineBreak()
+			if b.pendingBreak == brkColumn {
+				if b.column > 0 {
+					if b.contentBuffer.Len() > 0 && !strings.HasSuffix(b.contentBuffer.String(), " ") {
+						b.appendCharacters(" ")
 					}
 				}
-				this.pendingBreak = 0
+				b.pendingBreak = 0
 			}
-			if this.column == 0 {
-				this.appendSpaces(this.indentColumn)
+			if b.column == 0 {
+				b.appendSpaces(b.indentColumn)
 			}
-			this.appendCharacters(prefix)
+			b.appendCharacters(prefix)
 		}
 
 		if nextCrLocation == remainingLength {
 			break
 		}
 
-		this.Cr()
+		b.Cr()
 		str = str[1+nextCrLocation:]
 	}
-	return this
+	return b
 }
 
 // Append string representation of a bool; T or F.
-func (this *BasePrinter) AppendBool(b bool) *BasePrinter {
+func (b *BasePrinter) AppendBool(v bool) *BasePrinter {
 	var t string
-	if b {
+	if v {
 		t = "T"
 	} else {
 		t = "F"
 	}
-	return this.AppendString(t)
+	return b.AppendString(t)
 }
 
 // Append a floating point value, fixed width, without scientific notation.
-func (this *BasePrinter) AppendFloat(dblVal float64) *BasePrinter {
+func (b *BasePrinter) AppendFloat(dblVal float64) *BasePrinter {
 	var formattedValue = fmt.Sprintf("%v ", dblVal)
 	var allZerosSuffix = ".0000 "
 	var newVal = strings.TrimSuffix(formattedValue, allZerosSuffix)
 	if newVal != formattedValue {
 		formattedValue = newVal + "      "
 	}
-	return this.AppendString(formattedValue)
+	return b.AppendString(formattedValue)
 }
 
-func (this *BasePrinter) AppendInt(intVal int32) *BasePrinter {
-	this.formatLong(int64(intVal), 6)
-	return this
+func (b *BasePrinter) AppendInt(intVal int32) *BasePrinter {
+	b.formatLong(int64(intVal), 6)
+	return b
 }
 
-func (this *BasePrinter) AppendLong(longVal int64) *BasePrinter {
-	this.formatLong(longVal, 8)
-	return this
+func (b *BasePrinter) AppendLong(longVal int64) *BasePrinter {
+	b.formatLong(longVal, 8)
+	return b
 }
 
 // Adjust tab stop to a particular column.
-func (this *BasePrinter) tab(column int) *BasePrinter {
-	this.flushLineBreak()
-	var spacesToNextTabStop = column - this.column
+func (b *BasePrinter) tab(column int) *BasePrinter {
+	b.flushLineBreak()
+	var spacesToNextTabStop = column - b.column
 	if spacesToNextTabStop > 0 {
-		this.appendSpaces(spacesToNextTabStop)
+		b.appendSpaces(spacesToNextTabStop)
 	}
-	return this
+	return b
 }
 
-func (this *BasePrinter) AppendList(value []any) {
+func (b *BasePrinter) AppendList(value []any) {
 	if value == nil {
-		this.AppendString("<nil>")
+		b.AppendString("<nil>")
 		return
 	}
-	this.AppendString("[")
+	b.AppendString("[")
 	for i, item := range value {
 		if i != 0 {
-			this.AppendString(",")
+			b.AppendString(",")
 		}
-		this.append(item)
+		b.append(item)
 	}
-	this.AppendString("]")
+	b.AppendString("]")
 }
 
-func (this *BasePrinter) appendCharacters(characters string) {
-	this.contentBuffer.WriteString(characters)
-	this.column += len(characters)
-	this.maxColumn = MaxInt(this.maxColumn, this.column)
+func (b *BasePrinter) appendCharacters(characters string) {
+	b.contentBuffer.WriteString(characters)
+	b.column += len(characters)
+	b.maxColumn = MaxInt(b.maxColumn, b.column)
 }
 
-func (this *BasePrinter) flushLineBreak() {
-	if this.pendingBreak < brkLine {
+func (b *BasePrinter) flushLineBreak() {
+	if b.pendingBreak < brkLine {
 		return
 	}
-	this.contentBuffer.WriteByte('\n')
-	if this.pendingBreak >= brkParagraph {
-		this.contentBuffer.WriteByte('\n')
+	b.contentBuffer.WriteByte('\n')
+	if b.pendingBreak >= brkParagraph {
+		b.contentBuffer.WriteByte('\n')
 	}
-	this.pendingBreak = 0
-	this.column = 0
+	b.pendingBreak = 0
+	b.column = 0
 }
 
 // Append long integer, padding to particular fixed width
-func (this *BasePrinter) formatLong(longVal int64, fixedWidth int) {
+func (b *BasePrinter) formatLong(longVal int64, fixedWidth int) {
 	var digits = fmt.Sprintf("%d", AbsLong(longVal))
 	var paddingChars = fixedWidth - len(digits)
 	var spaces = Spaces(MaxInt(1, paddingChars))
@@ -336,7 +309,7 @@ func (this *BasePrinter) formatLong(longVal int64, fixedWidth int) {
 	} else {
 		signChar = " "
 	}
-	this.AppendString(spaces + signChar + digits)
+	b.AppendString(spaces + signChar + digits)
 }
 
 // // ---------------------------------------------------------------------------------------

@@ -43,6 +43,15 @@ func New(t testing.TB) *J {
 	}
 }
 
+// Deprecated: this constructor will cause the old hash code to be thrown out
+func Newz(t testing.TB) *J {
+	return &J{
+		TB:                t,
+		Filename:          determineUnittestFilename(CallerLocation(3)),
+		InvalidateOldHash: true,
+	}
+}
+
 type J struct {
 	testing.TB
 	Filename          string
@@ -121,13 +130,6 @@ func (j *J) Log(message ...any) {
 }
 
 func (j *J) GenerateMessage(message ...any) {
-	var content = ToString(message...)
-
-	if j.Verbose() {
-		Pr(content)
-	}
-
-	Todo("If it is JSON, we want to pretty print it; I guess ToString should handle that")
 	var text = ToString(message)
 	if j.Verbose() {
 		var q strings.Builder
@@ -136,10 +138,7 @@ func (j *J) GenerateMessage(message ...any) {
 			q.WriteString(s)
 			q.WriteString("\u21e6\n")
 		}
-		Todo("Add CR, INDENT support to Pr, etc")
-		//j.Log(CR, "Content:", INDENT, q);
-		j.Log("Content:")
-		j.Log(q.String())
+		j.Log("Content:", INDENT, q)
 	}
 	j.generateMessageTo("message.txt", text)
 }
@@ -156,17 +155,25 @@ func (j *J) AssertMessage(message ...any) {
 
 var hasher = fnv.New32a()
 
-func hashCode(jsonMap *JSMap) uint32 {
+func HashOfJSMap(jsonMap *JSMap) int32 {
+	return HashOfString(PrintJSEntity(jsonMap, false))
+}
+
+func HashOfString(str string) int32 {
+	return HashOfBytes([]byte(str))
+}
+
+func HashOfBytes(b []byte) int32 {
 	hasher.Reset()
-	hasher.Write([]byte(PrintJSEntity(jsonMap, false)))
-	return hasher.Sum32()
+	hasher.Write(b)
+	return int32((hasher.Sum32()&0xffff)%9000 + 1000)
 }
 
 // Construct hash of generated directory, and verify it has the expected value.
 func (j *J) AssertGenerated() {
 
 	var jsonMap = dirSummary(j.GetTestResultsDir())
-	var currentHash = (hashCode(jsonMap)&0xffff)%9000 + 1000
+	var currentHash = HashOfJSMap(jsonMap)
 	// /**
 	//   - Construct hash of generated directory, and verify it has the expected value
 	//     */
@@ -176,7 +183,7 @@ func (j *J) AssertGenerated() {
 	//     try {
 	//     JSMap jsonMap = MyTestUtils.dirSummary(generatedDir());
 	//     // Convert hash code to one using exactly four digits
-	//     int currentHash = (jsonMap.hashCode() & 0xffff) % 9000 + 1000;
+	//     int currentHash = (jsonMap.HashOfJSMap() & 0xffff) % 9000 + 1000;
 	var registry = RegistryFor(j)
 
 	if !registry.VerifyHash(j.Name(), currentHash, j.InvalidateOldHash) {
@@ -210,47 +217,13 @@ func auxDirSummary(dir string, calculateFileHashes bool) *JSMap {
 			Todo("have JSMap.size or empty method")
 			value = subdirSummary
 		} else if calculateFileHashes {
-			//         value = Files.tryHash(f);
-			//         if (value == null)
-			//           value = DataUtil.checksum(f);
-			Todo("calculate hash of file")
-			value = 123
+			var bytes []byte
+			bytes, err = files.ReadBytes(filepath.Join(dir, filename))
+			CheckOk(err)
+			value = HashOfBytes(bytes)
 		}
 		jsMap.Put(filename, value)
 	}
-	//if Empty(subdirSummary)
-	//       Object value = "?";
-	//       if (f.isDirectory()) {
-	//         JSMap subdirSummary = auxDirSummary(f, ignored, calculateFileHashes);
-	//         if (subdirSummary.isEmpty())
-	//           continue;
-	//         value = subdirSummary;
-	//       } else if (calculateFileHashes) {
-	//       }
 
 	return jsMap
-	// private static JSMap auxDirSummary(File dir, Set<String> ignored, boolean calculateFileHashes) {
-	//     List<File> files = files(dir);
-	//     JSMap m = map();
-	//     for (File f : files) {
-	//       String s = f.getName();
-	//       if (ignored.contains(s)) {
-	//         continue;
-	//       }
-	//       Object value = "?";
-	//       if (f.isDirectory()) {
-	//         JSMap subdirSummary = auxDirSummary(f, ignored, calculateFileHashes);
-	//         if (subdirSummary.isEmpty())
-	//           continue;
-	//         value = subdirSummary;
-	//       } else if (calculateFileHashes) {
-	//         value = Files.tryHash(f);
-	//         if (value == null)
-	//           value = DataUtil.checksum(f);
-	//       }
-	//       m.putUnsafe(s, value);
-	//     }
-	//     return m;
-	//   }
-
 }

@@ -53,10 +53,8 @@ func (r *HashCodeRegistry) unitTestDirectory() string {
 	return r._dir
 }
 
-func (r *HashCodeRegistry) VerifyHash(testName string, currentHash uint32, invalidateOldHash bool) bool {
-	var expectedHash = uint32(r.Map.OptInt32(testName, 0))
-	Pr("verifyHash", testName, "expected:", expectedHash, "got:", currentHash)
-
+func (r *HashCodeRegistry) VerifyHash(testName string, currentHash int32, invalidateOldHash bool) bool {
+	var expectedHash = r.Map.OptInt32(testName, 0)
 	if expectedHash == 0 || invalidateOldHash {
 		Todo("synchronize access to map?")
 		r.Map.Put(testName, currentHash)
