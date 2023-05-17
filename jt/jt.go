@@ -131,19 +131,20 @@ func (j *J) Log(message ...any) {
 
 func (j *J) GenerateMessage(message ...any) {
 	var text = ToString(message)
+
+	j.generateMessageTo("message.txt", text)
+}
+
+func (j *J) generateMessageTo(filename string, content string) {
 	if j.Verbose() {
 		var q strings.Builder
-		for _, s := range strings.Split(text, "\n") {
+		for _, s := range strings.Split(content, "\n") {
 			q.WriteString("\u21e8")
 			q.WriteString(s)
 			q.WriteString("\u21e6\n")
 		}
 		j.Log("Content:", INDENT, q)
 	}
-	j.generateMessageTo("message.txt", text)
-}
-
-func (j *J) generateMessageTo(filename string, content string) {
 	var path = filepath.Join(j.GetTestResultsDir(), filename)
 	files.WriteString(path, content)
 }

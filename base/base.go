@@ -1,6 +1,7 @@
 package base
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"reflect"
@@ -223,6 +224,12 @@ func AbsLong(a int64) int64 {
 		return -a
 	}
 	return a
+}
+
+// Construct an error with printed arguments
+func Error(message ...any) error {
+	var s = ToString(message)
+	return errors.New(s)
 }
 
 // ---------------------------------------------------------------------------------------
