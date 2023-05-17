@@ -29,7 +29,7 @@ var text1 = `
 
 func TestJSMapPrettyPrint(t *testing.T) {
 	// Get our tester that wraps the standard one
-	j := jt.Newz(t)
+	j := jt.New(t) // Use Newz to regenerate hash
 
 	Todo("Can we determine if there is only a single test being run?")
 
