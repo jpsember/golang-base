@@ -20,15 +20,8 @@ func NewArray[T any]() *Array[T] {
 func (array *Array[T]) Size() int { return array.size }
 
 func (array *Array[T]) Add(value T) {
-	var i = array.size
-	var sl = array.wrappedArray
-	if cap(sl) <= i {
-		sl = append(sl, value)
-		array.wrappedArray = sl
-	} else {
-		sl[i] = value
-	}
-	array.size = i + 1
+	array.wrappedArray = append(array.wrappedArray, value)
+	array.size++
 }
 
 func (array *Array[T]) Array() []T {
