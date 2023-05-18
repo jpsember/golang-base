@@ -21,7 +21,7 @@ func (set *Set[KEY]) Add(value KEY) bool {
 	if !found {
 		set.wrappedMap[value] = true
 	}
-	return found
+	return !found
 }
 
 func (set *Set[KEY]) Contains(value KEY) bool {

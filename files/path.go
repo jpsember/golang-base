@@ -52,14 +52,15 @@ func (path Path) String() string {
 }
 
 // Panic if path is empty
-func (path Path) CheckNonEmpty() {
-	path.CheckNonEmptyWithSkip(1)
+func (path Path) CheckNonEmpty() Path {
+	return path.CheckNonEmptyWithSkip(1)
 }
 
-func (path Path) CheckNonEmptyWithSkip(skip int) {
+func (path Path) CheckNonEmptyWithSkip(skip int) Path {
 	if path.Empty() {
 		BadArgWithSkip(1+skip, "Path is empty")
 	}
+	return path
 }
 
 // Get parent of (nonempty) path; returns empty path if it has no parent

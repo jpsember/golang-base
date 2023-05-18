@@ -228,8 +228,9 @@ func (j *J) showDiffs() {
 	Pr(relFiles)
 
 	Todo("what does the pattern parser do with '.DS_Store'?")
-	var dirWalk = NewDirWalk().WithRecurse(true).OmitNames(".DS_Store")
+	var dirWalk = NewDirWalk(refDir).WithRecurse(true).OmitNames(".DS_Store")
 	Pr("dirwalk:", dirWalk)
+	dirWalk.Files()
 	Halt("not finished")
 	//     DirWalk dirWalk = new DirWalk(refDir).withRecurse(true).omitNames(".DS_Store");
 	//     relFiles.addAll(dirWalk.filesRelative());
