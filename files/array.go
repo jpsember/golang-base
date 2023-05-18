@@ -58,3 +58,7 @@ func (array *Array[T]) ToJson() *JSMap {
 	m.Put("[]", lst)
 	return m
 }
+
+func (array *Array[T]) Slice() []T {
+	return array.wrappedArray
+}

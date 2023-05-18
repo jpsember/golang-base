@@ -13,6 +13,7 @@ type DirWalk struct {
 	patternsSet    *Set[string]
 	patternsToOmit *Array[*regexp.Regexp]
 	absFilesList   []Path
+	relFilesList   []Path
 	logger         Logger
 }
 
@@ -105,4 +106,21 @@ func (w *DirWalk) Files() []Path {
 		pr("constructed list:", lst)
 	}
 	return w.absFilesList
+}
+
+func (w *DirWalk) FilesRelative() []Path {
+	if w.relFilesList == nil {
+		var prefixLength = len(w.startDirectory.String()) + 1 // include the separator
+		var x = NewArray[Path]()
+
+		for _, path := range w.Files() {
+			var str = path.String()
+			if len(str) <= prefixLength {
+				continue
+			}
+			x.Add(NewPathM(str[prefixLength:]))
+		}
+		w.relFilesList = x.Slice()
+	}
+	return w.relFilesList
 }

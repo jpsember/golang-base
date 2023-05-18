@@ -20,7 +20,7 @@ func TestDirWalk(t *testing.T) {
 
 	var w = NewDirWalk(dir)
 	w.Logger().SetVerbose(true)
-	w.WithRecurse(true).OmitNames(`\.DS_Store`, `\.git`)
-	Pr(w.Files())
+	w.WithRecurse(true).OmitNames(`\.*`)
+	Pr(w.FilesRelative())
 
 }
