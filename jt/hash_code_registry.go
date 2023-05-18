@@ -2,7 +2,7 @@ package jt
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/files"
+	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/json"
 	"strings"
 )
@@ -12,12 +12,12 @@ var _ = Pr
 type HashCodeRegistry struct {
 	Key               string
 	Map               *JSMap
-	_file             string
-	_dir              string
+	_file             Path
+	_dir              Path
 	InvalidateOldHash bool
-	_generatedDir     string
+	_generatedDir     Path
 	UnitTest          *J
-	_referenceDir     string
+	_referenceDir     Path
 }
 
 // Get registry for a test case, constructing one if necessary
@@ -37,17 +37,22 @@ func RegistryFor(j *J) *HashCodeRegistry {
 	return registry
 }
 
-func (r *HashCodeRegistry) file() string {
-	if r._file == "" {
-		r._file = r.unitTestDirectory() + "/" + strings.ReplaceAll(r.Key, ".", "_") + ".json"
+func (r *HashCodeRegistry) file() Path {
+	if r._file.Empty() {
+		r._file = r.unitTestDirectory().JoinM(strings.ReplaceAll(r.Key, ".", "_") + ".json")
 	}
 	return r._file
 }
 
-func (r *HashCodeRegistry) unitTestDirectory() string {
-	if r._dir == "" {
-		d, err := files.MkDirs(files.PathJoin(r.UnitTest.GetModuleDir(), "unit_test"))
-		CheckOk(err, "failed to make directory")
+func (r *HashCodeRegistry) unitTestDirectory() Path {
+	if r._dir.Empty() {
+		d, err := NewPath(r.UnitTest.GetModuleDir())
+		CheckOk(err)
+		d, err = d.Join("unit_test")
+		Todo("Have M suffix for 'Must' variant?")
+		CheckOk(err)
+		_, err = d.MkDirs()
+		CheckOk(err)
 		r._dir = d
 	}
 	return r._dir
@@ -65,9 +70,9 @@ func (r *HashCodeRegistry) VerifyHash(testName string, currentHash int32, invali
 }
 
 func (r *HashCodeRegistry) write() {
-	var file = r.file()
+	var path = r.file()
 	var content = PrintJSEntity(r.Map, true)
-	files.WriteString(file, content)
+	path.WriteString(content)
 }
 
 var sClassesMap = make(map[string]*HashCodeRegistry)
@@ -90,7 +95,7 @@ func (r *HashCodeRegistry) SaveTestResults() {
 		//Files.S.deleteDirectory(referenceDir());
 	}
 
-	if !files.DirExists(r.referenceDir()) {
+	if !r.referenceDir().Exists() {
 		Todo("files.MoveDirectory")
 		//files.MoveDirectory(r.GeneratedDir(), r.referenceDir())
 	} else {
@@ -100,33 +105,33 @@ func (r *HashCodeRegistry) SaveTestResults() {
 
 }
 
-func (r *HashCodeRegistry) GeneratedDir() string {
+func (r *HashCodeRegistry) GeneratedDir() Path {
 
-	if r._generatedDir == "" {
+	if r._generatedDir.Empty() {
 		var unitTestDir = r.unitTestDirectory()
 
 		// If no .gitignore file exists, create one (creating the directory as well if necessary);
 		// it will have the entry GENERATED_DIR_NAME
 
 		var GENERATED_DIR_NAME = "generated"
-		var gitIgnoreFile = unitTestDir + "/.gitignore"
-		if !files.Exists(gitIgnoreFile) {
-			files.WriteString(gitIgnoreFile, GENERATED_DIR_NAME+"\n")
+		var gitIgnoreFile = unitTestDir.JoinM(".gitignore")
+		if !gitIgnoreFile.Exists() {
+			gitIgnoreFile.WriteStringM(GENERATED_DIR_NAME + "\n")
 		}
 
-		var projectDir = files.PathJoin(unitTestDir, GENERATED_DIR_NAME)
+		var projectDir = unitTestDir.JoinM(GENERATED_DIR_NAME)
 		var className = strings.TrimSuffix(r.UnitTest.Filename, "_test.go")
 		var testName = strings.TrimSuffix(r.Key, "Test")
-		r._generatedDir = files.PathJoin(projectDir, className+"/"+testName)
+		r._generatedDir = projectDir.JoinM(className + "/" + testName)
 		Todo("remake dirs")
 		//files.RemakeDirs(r._generatedDir)
 	}
 	return r._generatedDir
 }
 
-func (r *HashCodeRegistry) referenceDir() string {
-	if r._referenceDir == "" {
-		r._referenceDir = files.PathJoin(files.Parent(r.GeneratedDir()), files.GetName(r.GeneratedDir())+"_REF")
+func (r *HashCodeRegistry) referenceDir() Path {
+	if r._referenceDir.Empty() {
+		r._referenceDir = r.GeneratedDir().Parent().JoinM(r.GeneratedDir().Base() + "_REF")
 	}
 	return r._referenceDir
 }

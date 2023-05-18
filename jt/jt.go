@@ -118,7 +118,7 @@ func (j *J) GetModuleDir() string {
 	if Empty(j.moduleDir) {
 		var path, err = files.AscendToDirectoryContainingFile("", "go.mod")
 		CheckOk(err)
-		j.moduleDir = path
+		j.moduleDir = path.String()
 	}
 	return j.moduleDir
 }

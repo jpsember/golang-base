@@ -1,7 +1,7 @@
 package json
 
 import (
-	"github.com/jpsember/golang-base/files"
+	. "github.com/jpsember/golang-base/files"
 	"sort"
 
 	. "github.com/jpsember/golang-base/base"
@@ -266,8 +266,8 @@ func (this *JSMap) OptBool(key string, defaultValue bool) bool {
 	return (val.(JSEntity)).ToBool()
 }
 
-func JSMapFromFileIfExists(file string) *JSMap {
-	var content, _ = files.ReadStringIfExists(file, "{}")
+func JSMapFromFileIfExists(file Path) *JSMap {
+	var content, _ = file.ReadStringIfExists("{}")
 	return JSMapFromString(content)
 }
 

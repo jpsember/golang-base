@@ -108,8 +108,13 @@ func CheckState(valid bool, message ...any) {
 
 // Panic if an error code is nonzero.
 func CheckOk(err error, message ...any) {
+	CheckOkWithSkip(2, err, message)
+}
+
+// Panic if an error code is nonzero.
+func CheckOkWithSkip(skipCount int, err error, message ...any) {
 	if err != nil {
-		panic("*** Error returned: (" + CallerLocation(3) + ") " + err.Error() + "; " + ToString(message...))
+		panic("*** Error returned: (" + CallerLocation(3+skipCount) + ") " + err.Error() + "; " + ToString(message...))
 	}
 }
 

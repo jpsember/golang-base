@@ -1,15 +1,14 @@
 package files
 
 import (
-	"errors"
 	. "github.com/jpsember/golang-base/base"
 	"os"
-	"path/filepath"
 	"strings"
 )
 
 // var pr = Pr
 
+// Deprecated: use Path type
 // Delete a directory.  For safety, the path must contain a particular substring.
 func DeleteDir(path string, substring string) error {
 	CheckArg(len(substring) >= 5, "substring is too short:", Quoted(substring))
@@ -17,6 +16,7 @@ func DeleteDir(path string, substring string) error {
 	return os.RemoveAll(path)
 }
 
+// Deprecated: use Path type
 // Write string to file
 // Panics if error occurs
 func WriteString(path string, content string) {
@@ -24,30 +24,33 @@ func WriteString(path string, content string) {
 	CheckOk(err, "Failed to write string to path:", path)
 }
 
-func AscendToDirectoryContainingFile(startDir string, seekFile string) (string, error) {
+func AscendToDirectoryContainingFile(startDir Path, seekFile string) (Path, error) {
 	CheckArg(NonEmpty(seekFile))
-	if Empty(startDir) {
+
+	if startDir.Empty() {
 		startDir = CurrentDirectory()
 	}
-	ValidatePath(startDir)
+
 	var path = startDir
 	for {
-		var cand = filepath.Join(path, seekFile)
-		if Exists(cand) {
+		var cand, _ = path.Join(seekFile)
+		if cand.Exists() {
 			return path, nil
 		}
-		path = Parent(path)
-		if path == "" {
-			return "", errors.New(ToString("Cannot find", seekFile, "in tree containing", startDir))
+		if path.Empty() {
+			return path, Error("Cannot find", seekFile, "in tree containing", startDir)
+		}
+		path = path.Parent()
+		if path.Empty() {
+			return path, Error("Cannot find", seekFile, "in tree containing", startDir)
 		}
 	}
 }
 
-func ReadStringIfExists(file string, defaultContent string) (content string, err error) {
-	Todo("have a special type for File, to avoid confusion with strings, and to support paths etc")
-	if Exists(file) {
+func (path Path) ReadStringIfExists(defaultContent string) (content string, err error) {
+	if path.Exists() {
 		var bytes []byte
-		bytes, err = ReadBytes(file)
+		bytes, err = path.ReadBytes()
 		if err == nil {
 			content = string(bytes)
 		}
@@ -57,10 +60,38 @@ func ReadStringIfExists(file string, defaultContent string) (content string, err
 	return content, err
 }
 
+//// Deprecated: use Path type
+//func ReadStringIfExists(file string, defaultContent string) (content string, err error) {
+//	Todo("have a special type for File, to avoid confusion with strings, and to support paths etc")
+//	if Exists(file) {
+//		var bytes []byte
+//		bytes, err = ReadBytes(file)
+//		if err == nil {
+//			content = string(bytes)
+//		}
+//	} else {
+//		content = defaultContent
+//	}
+//	return content, err
+//}
+
+// Deprecated: use Path type
 func ReadBytes(path string) (content []byte, err error) {
 	return os.ReadFile(path)
 }
 
+func (path Path) ReadBytes() (content []byte, err error) {
+	return os.ReadFile(string(path))
+}
+
+func (path Path) MkDirs() (Path, error) {
+	err := os.MkdirAll(string(path), os.ModePerm)
+	return path, err
+	//CheckOk(err, "failed MkDirs:", file)
+	//return path, err
+}
+
+// Deprecated: use Path type
 func MkDirs(file string) (string, error) {
 	//Pr("attempt to MkDirs:", file)
 	err := os.MkdirAll(file, os.ModePerm)
@@ -68,16 +99,13 @@ func MkDirs(file string) (string, error) {
 	return file, err
 }
 
-func Exists(path string) bool {
-	_, err := os.Stat(path)
-	return err == nil
-}
-
+// Deprecated: use Path type
 func DirExists(path string) bool {
 	fileInfo, err := os.Stat(path)
 	return err == nil && fileInfo.IsDir()
 }
 
+// Deprecated: use Path type
 func PathJoin(parent, child string) string {
 	if strings.HasSuffix(parent, "/") || len(parent) == 0 || strings.HasPrefix(child, "/") || len(child) == 0 {
 		Die("illegal args for PathJoin:", parent, child)
@@ -85,15 +113,7 @@ func PathJoin(parent, child string) string {
 	return parent + "/" + child
 }
 
-func Parent(path string) string {
-	CheckArg(!strings.HasSuffix(path, "/"))
-	i := strings.LastIndex(path, "/")
-	if i < 0 {
-		return ""
-	}
-	return path[0:i]
-}
-
+// Deprecated: use Path type
 func ValidatePath(path string) string {
 	if path == "" || strings.HasSuffix(path, "/") {
 		BadArgWithSkip(1, "invalid path:", path)
@@ -101,6 +121,7 @@ func ValidatePath(path string) string {
 	return path
 }
 
+// Deprecated: use Path type
 func GetName(path string) string {
 	ValidatePath(path)
 	i := strings.LastIndex(path, "/")
@@ -110,8 +131,9 @@ func GetName(path string) string {
 	return path[i+1:]
 }
 
-func CurrentDirectory() string {
+// Deprecated: return Path type
+func CurrentDirectory() Path {
 	path, err := os.Getwd()
 	CheckOk(err)
-	return path
+	return NewPathM(path)
 }

@@ -45,9 +45,9 @@ func TestJoin(t *testing.T) {
 	}
 	for i := 0; i < len(samples); i += 2 {
 		p := samples[i]
-		parent := Must(NewPath(p))
+		parent, _ := NewPath(p)
 		child := samples[i+1]
-		r := Must(parent.Join(child))
+		r, _ := parent.Join(child)
 		result.Put(p+" + "+child, string(r))
 	}
 
