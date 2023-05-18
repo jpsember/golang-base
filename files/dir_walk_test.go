@@ -18,8 +18,9 @@ func TestDirWalk(t *testing.T) {
 	var dir = j.GetModuleDir()
 	Pr("module dir:", dir)
 
-	var w = NewDirWalk(dir).WithRecurse(true).OmitNames(`\.DS_Store`, `\.git`)
-
+	var w = NewDirWalk(dir)
+	w.Logger().SetVerbose(true)
+	w.WithRecurse(true).OmitNames(`\.DS_Store`, `\.git`)
 	Pr(w.Files())
 
 }

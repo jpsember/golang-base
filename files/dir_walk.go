@@ -13,10 +13,16 @@ type DirWalk struct {
 	patternsSet    *Set[string]
 	patternsToOmit *Array[*regexp.Regexp]
 	absFilesList   []Path
+	logger         Logger
+}
+
+func (w *DirWalk) Logger() Logger {
+	return w.logger
 }
 
 func NewDirWalk(directory Path) *DirWalk {
 	var w = new(DirWalk)
+	w.logger = NewLogger(w)
 	w.startDirectory = directory.CheckNonEmptyWithSkip(1)
 	w.patternsToOmit = NewArray[*regexp.Regexp]()
 	w.patternsSet = NewSet[string]()
@@ -48,18 +54,18 @@ func (w *DirWalk) OmitNames(nameExprs ...string) *DirWalk {
 }
 
 func (w *DirWalk) Files() []Path {
-	var inf = 300
 
-	Pr("walk")
+	var pr = Printer(w)
+	pr("Files()")
+
 	if w.absFilesList == nil {
 		var lst []Path
 		var stack = NewArray[Path]()
 		stack.Add(w.startDirectory)
-		Pr("start dir:", w.startDirectory)
+
+		pr("start dir:", w.startDirectory)
 		var firstDir = true
 		for !stack.IsEmpty() {
-			inf--
-			CheckState(inf != 0)
 
 			var dir = stack.Pop()
 			if !firstDir && !w.withRecurse {
@@ -70,7 +76,6 @@ func (w *DirWalk) Files() []Path {
 			files, err := os.ReadDir(dir.String())
 			CheckOk(err, "failed to read dir:", dir)
 
-			Todo("patterns should have start, stop limits")
 			for _, file := range files {
 				var nm = file.Name()
 				var omit = false
@@ -81,7 +86,7 @@ func (w *DirWalk) Files() []Path {
 					}
 				}
 				if omit {
-					Pr("...omitting:", nm)
+					pr("...omitting:", nm)
 					continue
 				}
 				var child = dir.JoinM(nm)
@@ -89,15 +94,15 @@ func (w *DirWalk) Files() []Path {
 				if child.DirExists() {
 					Todo("Have option to include directories in returned list")
 					stack.Add(child)
-					Pr("stacking dir", child)
+					pr("stacking dir", child)
 				} else {
-					Pr("adding  file", child)
+					pr("adding  file", child)
 					lst = append(lst, child)
 				}
 			}
 		}
 		w.absFilesList = lst
-		Pr("constructed list:", lst)
+		pr("constructed list:", lst)
 	}
 	return w.absFilesList
 }
