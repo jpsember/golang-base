@@ -34,38 +34,38 @@ func NewPathM(s string) Path {
 }
 
 // Join path to a relative path (string)
-func (p Path) Join(s string) (Path, error) {
-	j := filepath.Join(string(p), s)
+func (path Path) Join(s string) (Path, error) {
+	j := filepath.Join(string(path), s)
 	return NewPath(j)
 }
 
 // Join path to a relative path (string); panic if error
-func (p Path) JoinM(s string) Path {
-	j, e := p.Join(s)
+func (path Path) JoinM(s string) Path {
+	j, e := path.Join(s)
 	CheckOkWithSkip(1, e)
 	return j
 }
 
 // Get string representation of path
-func (p Path) String() string {
-	return string(p)
+func (path Path) String() string {
+	return string(path)
 }
 
 // Panic if path is empty
-func (p Path) CheckNonEmpty() {
-	p.CheckNonEmptyWithSkip(1)
+func (path Path) CheckNonEmpty() {
+	path.CheckNonEmptyWithSkip(1)
 }
 
-func (p Path) CheckNonEmptyWithSkip(skip int) {
-	if p.Empty() {
+func (path Path) CheckNonEmptyWithSkip(skip int) {
+	if path.Empty() {
 		BadArgWithSkip(1+skip, "Path is empty")
 	}
 }
 
 // Get parent of (nonempty) path; returns empty path if it has no parent
-func (p Path) Parent() Path {
-	p.CheckNonEmptyWithSkip(1)
-	var s = filepath.Dir(string(p))
+func (path Path) Parent() Path {
+	path.CheckNonEmptyWithSkip(1)
+	var s = filepath.Dir(string(path))
 	if s == "." {
 		return EmptyPath
 	}
@@ -73,36 +73,36 @@ func (p Path) Parent() Path {
 }
 
 // Determine if path refers to a file (or directory)
-func (p Path) Exists() bool {
-	p.CheckNonEmptyWithSkip(1)
-	_, err := os.Stat(string(p))
+func (path Path) Exists() bool {
+	path.CheckNonEmptyWithSkip(1)
+	_, err := os.Stat(string(path))
 	return err == nil
 }
 
 // Determine if path refers to directory
-func (p Path) DirExists() bool {
-	fileInfo, err := os.Stat(string(p))
+func (path Path) DirExists() bool {
+	fileInfo, err := os.Stat(string(path))
 	return err == nil && fileInfo.IsDir()
 }
 
 // Determine if path is empty
-func (p Path) Empty() bool {
-	return string(p) == ""
+func (path Path) Empty() bool {
+	return string(path) == ""
 }
 
 // Write string to file
-func (p Path) WriteString(content string) error {
-	p.CheckNonEmptyWithSkip(1)
-	return os.WriteFile(string(p), []byte(content), 0644)
+func (path Path) WriteString(content string) error {
+	path.CheckNonEmptyWithSkip(1)
+	return os.WriteFile(string(path), []byte(content), 0644)
 }
 
 // Write string to file; panic if error
-func (p Path) WriteStringM(content string) {
-	CheckOkWithSkip(1, p.WriteString(content))
+func (path Path) WriteStringM(content string) {
+	CheckOkWithSkip(1, path.WriteString(content))
 }
 
 // Get the filename denoted by (nonempty) path
-func (p Path) Base() string {
-	p.CheckNonEmptyWithSkip(1)
-	return filepath.Base(string(p))
+func (path Path) Base() string {
+	path.CheckNonEmptyWithSkip(1)
+	return filepath.Base(string(path))
 }
