@@ -3,12 +3,11 @@ package jt
 import (
 	"hash/fnv"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/files"
+	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/json"
 )
 
@@ -56,9 +55,9 @@ type J struct {
 	testing.TB
 	Filename          string
 	verbose           bool
-	testResultsDir    string
-	unitTestDir       string
-	moduleDir         string
+	testResultsDir    Path
+	unitTestDir       Path
+	moduleDir         Path
 	baseNameCached    string
 	InvalidateOldHash bool
 }
@@ -78,33 +77,31 @@ func (j *J) BaseName() string {
 	return j.baseNameCached
 }
 
-func (j *J) GetUnitTestDir() string {
-	if Empty(j.unitTestDir) {
-		var dir = filepath.Join(j.GetModuleDir(), "unit_test")
-		var err = os.MkdirAll(dir, os.ModePerm)
-		CheckOk(err)
+func (j *J) GetUnitTestDir() Path {
+	if j.unitTestDir.Empty() {
+
+		var dir = j.GetModuleDir().JoinM("unit_test")
+		dir.MkDirsM()
 		j.unitTestDir = dir
 	}
 	return j.unitTestDir
 }
 
-func (j *J) GetTestResultsDir() string {
-	if Empty(j.testResultsDir) {
-		var genDir = filepath.Join(j.GetUnitTestDir(), "generated")
-		{
-			var err = os.MkdirAll(genDir, os.ModePerm)
-			CheckOk(err)
-		}
+func (j *J) GetTestResultsDir() Path {
+	if j.testResultsDir.Empty() {
+		var genDir = j.GetUnitTestDir().JoinM("generated")
+		genDir.MkDirsM()
 
-		var testResultsDir = filepath.Join(genDir, j.Filename, j.BaseName())
+		var testResultsDir = genDir.JoinM(j.Filename + "/" + j.BaseName())
+		Pr("j.Filename:", j.Filename)
+		Pr("j.BaseName:", j.BaseName())
+		Pr("j:", INDENT, j)
+		Pr("testResultsDir:", testResultsDir)
+
 		// Delete any existing contents of this directory
 		// Make sure it contains '/generated/' (pretty sure it does) to avoid crazy deletion
-		files.DeleteDir(testResultsDir, "/generated/")
-		{
-			var err = os.MkdirAll(testResultsDir, os.ModePerm)
-			CheckOk(err)
-		}
-
+		Pr(DASHES, CR, "Remaking testResultsDir dir")
+		testResultsDir.RemakeDir("/generated/")
 		j.testResultsDir = testResultsDir
 	}
 	return j.testResultsDir
@@ -114,11 +111,11 @@ func (j *J) SetVerbose() {
 	j.verbose = true
 }
 
-func (j *J) GetModuleDir() string {
-	if Empty(j.moduleDir) {
-		var path, err = files.AscendToDirectoryContainingFile("", "go.mod")
+func (j *J) GetModuleDir() Path {
+	if j.moduleDir.Empty() {
+		var path, err = AscendToDirectoryContainingFile("", "go.mod")
 		CheckOk(err)
-		j.moduleDir = path.String()
+		j.moduleDir = path
 	}
 	return j.moduleDir
 }
@@ -145,8 +142,9 @@ func (j *J) generateMessageTo(filename string, content string) {
 		}
 		j.Log("Content:", INDENT, q)
 	}
-	var path = filepath.Join(j.GetTestResultsDir(), filename)
-	files.WriteString(path, content)
+	var path = j.GetTestResultsDir().JoinM(filename)
+	Pr("writing content:", INDENT, content, CR, "to:", path)
+	path.WriteStringM(content)
 }
 
 func (j *J) AssertMessage(message ...any) {
@@ -194,17 +192,18 @@ func (j *J) AssertGenerated() {
 		//showDiffs()
 		j.Fail()
 	}
+
 	registry.SaveTestResults()
 }
 
-func dirSummary(dir string) *JSMap {
+func dirSummary(dir Path) *JSMap {
 	return auxDirSummary(dir, true)
 }
 
-func auxDirSummary(dir string, calculateFileHashes bool) *JSMap {
+func auxDirSummary(dir Path, calculateFileHashes bool) *JSMap {
 	var jsMap = NewJSMap()
 
-	var entries, err = os.ReadDir(dir)
+	var entries, err = os.ReadDir(dir.String())
 	CheckOk(err)
 
 	for _, ent := range entries {
@@ -214,12 +213,12 @@ func auxDirSummary(dir string, calculateFileHashes bool) *JSMap {
 
 		value = "?"
 		if ent.IsDir() {
-			var subdirSummary = auxDirSummary(filepath.Join(dir, filename), calculateFileHashes)
+			var subdirSummary = auxDirSummary(dir.JoinM(filename), calculateFileHashes)
 			Todo("have JSMap.size or empty method")
 			value = subdirSummary
 		} else if calculateFileHashes {
 			var bytes []byte
-			bytes, err = files.ReadBytes(filepath.Join(dir, filename))
+			bytes, err = dir.JoinM(filename).ReadBytes()
 			CheckOk(err)
 			value = HashOfBytes(bytes)
 		}

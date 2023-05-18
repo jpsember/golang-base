@@ -155,7 +155,7 @@ func auxAlert(key string, prompt string, additionalMessage ...any) {
 		output.WriteString(prompt)
 		output.WriteString(": ")
 		if len(additionalMessage) != 0 {
-			output.WriteString(ToString(additionalMessage...))
+			output.WriteString(key + " " + ToString(additionalMessage...))
 		} else {
 			output.WriteString(key)
 		}

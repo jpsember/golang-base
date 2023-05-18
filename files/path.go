@@ -128,16 +128,17 @@ func (path Path) DeleteDirectory(substring string) error {
 	if len(substring) < 5 || !strings.Contains(string(path), substring) {
 		BadArg("DeleteDirectory, path doesn't contain suitably long substring:", path, Quoted(substring))
 	}
-	Todo("not really removing directory:", string(path))
-	//os.RemoveAll(string(path))
-	return nil
+	return os.RemoveAll(string(path))
 }
 
 func (path Path) MoveTo(target Path) error {
+
 	CheckArg(!path.Empty())
 	CheckArg(!target.Empty())
 	if target.Exists() && !target.DirExists() {
 		return Error("Can't move to existing file:", target)
 	}
+	Halt("renaming:", path, "to:", target)
+
 	return os.Rename(string(path), string(target))
 }

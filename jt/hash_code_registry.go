@@ -18,6 +18,7 @@ type HashCodeRegistry struct {
 	_generatedDir     Path
 	UnitTest          *J
 	_referenceDir     Path
+	UnitTestName      string
 }
 
 // Get registry for a test case, constructing one if necessary
@@ -33,6 +34,9 @@ func RegistryFor(j *J) *HashCodeRegistry {
 		sClassesMap[key] = registry
 		// See if there is a file it was saved to
 		registry.Map = JSMapFromFileIfExists(registry.file())
+
+		registry.UnitTestName = strings.TrimPrefix(j.TB.Name(), "Test")
+
 	}
 	return registry
 }
@@ -46,8 +50,7 @@ func (r *HashCodeRegistry) file() Path {
 
 func (r *HashCodeRegistry) unitTestDirectory() Path {
 	if r._dir.Empty() {
-		path := NewPathM(r.UnitTest.GetModuleDir())
-		path = path.JoinM("unit_test")
+		path := r.UnitTest.GetModuleDir().JoinM("unit_test")
 		path.MkDirsM()
 		r._dir = path
 	}
@@ -84,17 +87,23 @@ var sClassesMap = make(map[string]*HashCodeRegistry)
  * value (or no previous value exists).
  */
 func (r *HashCodeRegistry) SaveTestResults() {
+
 	// If we're going to replace the hash in any case, delete any existing reference directory,
 	// since its old contents may correspond to an older hash code
 	if r.InvalidateOldHash {
-		Todo("Delete old reference directory.........  CAREFULLY")
-		//Files.S.deleteDirectory(referenceDir());
+		Halt("about to delete directory:", r.referenceDir())
+		r.referenceDir().DeleteDirectory("/generated/")
 	}
 
 	if !r.referenceDir().Exists() {
-		r.GeneratedDir().MoveTo(r._referenceDir)
+		Halt("about to move:", r.GeneratedDir(), "to:", r.referenceDir())
+		err := r.GeneratedDir().MoveTo(r.referenceDir())
+		CheckOk(err)
 	} else {
-		r.GeneratedDir().DeleteDirectory("unit_test")
+		Halt("claims reference dir doesn't exist:", r.referenceDir())
+
+		err := r.GeneratedDir().DeleteDirectory("unit_test")
+		CheckOk(err)
 	}
 
 }
@@ -115,8 +124,10 @@ func (r *HashCodeRegistry) GeneratedDir() Path {
 
 		var projectDir = unitTestDir.JoinM(GENERATED_DIR_NAME)
 		var className = strings.TrimSuffix(r.UnitTest.Filename, "_test.go")
-		var testName = strings.TrimSuffix(r.Key, "Test")
+		var testName = r.UnitTestName
+		//	strings.TrimSuffix(r.Key, "Test")
 		r._generatedDir = projectDir.JoinM(className + "/" + testName)
+		Pr(DASHES, CR, "Remaking generated dir")
 		CheckOk(r._generatedDir.RemakeDir("unit_test"))
 	}
 	return r._generatedDir
@@ -124,7 +135,9 @@ func (r *HashCodeRegistry) GeneratedDir() Path {
 
 func (r *HashCodeRegistry) referenceDir() Path {
 	if r._referenceDir.Empty() {
+		//Halt("about to construct ref dir:")
 		r._referenceDir = r.GeneratedDir().Parent().JoinM(r.GeneratedDir().Base() + "_REF")
+		Halt("built ref dir:", r._referenceDir)
 	}
 	return r._referenceDir
 }
