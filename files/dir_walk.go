@@ -4,6 +4,7 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	"os"
 	"regexp"
+	"strings"
 )
 
 type DirWalk struct {
@@ -27,12 +28,19 @@ func (w *DirWalk) WithRecurse(flag bool) *DirWalk {
 	return w
 }
 
+// Add a list of regular expressions describing filenames that should be omitted.
+// Wraps each expression in '^' ... '$' so that the expression must match the entire string.
+// See: https://pkg.go.dev/regexp/syntax
 func (w *DirWalk) OmitNames(nameExprs ...string) *DirWalk {
 	for _, expr := range nameExprs {
 		if !w.patternsSet.Add(expr) {
 			continue
 		}
-		r, err := regexp.Compile(expr)
+		if strings.HasPrefix(expr, "^") {
+			BadArgWithSkip(1, "Unexpected regex expression:", Quoted(expr))
+		}
+		var expr2 = "^" + expr + "$"
+		r, err := regexp.Compile(expr2)
 		CheckOk(err, "failed to compile omit expr:", expr)
 		w.patternsToOmit.Add(r)
 	}
@@ -40,22 +48,27 @@ func (w *DirWalk) OmitNames(nameExprs ...string) *DirWalk {
 }
 
 func (w *DirWalk) Files() []Path {
+	var inf = 300
+
 	Pr("walk")
 	if w.absFilesList == nil {
 		var lst []Path
 		var stack = NewArray[Path]()
 		stack.Add(w.startDirectory)
+		Pr("start dir:", w.startDirectory)
 		var firstDir = true
 		for !stack.IsEmpty() {
+			inf--
+			CheckState(inf != 0)
+
 			var dir = stack.Pop()
-			Pr("--------- popped dir:", dir)
 			if !firstDir && !w.withRecurse {
 				continue
 			}
 			firstDir = false
 
 			files, err := os.ReadDir(dir.String())
-			CheckOk(err)
+			CheckOk(err, "failed to read dir:", dir)
 
 			Todo("patterns should have start, stop limits")
 			for _, file := range files {
@@ -65,7 +78,6 @@ func (w *DirWalk) Files() []Path {
 					if pat.MatchString(nm) {
 						omit = true
 						break
-
 					}
 				}
 				if omit {

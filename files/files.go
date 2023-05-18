@@ -2,6 +2,7 @@ package files
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/json"
 	"os"
 	"strings"
 )
@@ -88,4 +89,9 @@ func CurrentDirectory() Path {
 	path, err := os.Getwd()
 	CheckOk(err)
 	return NewPathM(path)
+}
+
+func JSMapFromFileIfExists(file Path) *JSMap {
+	var content, _ = file.ReadStringIfExists("{}")
+	return JSMapFromString(content)
 }
