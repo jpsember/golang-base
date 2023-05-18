@@ -15,15 +15,15 @@ type HashCodeRegistry struct {
 	_file             Path
 	_dir              Path
 	InvalidateOldHash bool
-	UnitTest      *J
-	_referenceDir Path
-	UnitTestName  string
+	UnitTest          *J
+	_referenceDir     Path
+	UnitTestName      string
 }
 
 // Get registry for a test case, constructing one if necessary
 //
 // (must be thread safe?)
-func RegistryFor(j *J) *HashCodeRegistry {
+func (j *J) registry() *HashCodeRegistry {
 	var key = j.Filename
 	var registry = sClassesMap[key]
 	if registry == nil {
@@ -103,7 +103,7 @@ func (r *HashCodeRegistry) SaveTestResults() {
 }
 
 func (r *HashCodeRegistry) referenceDir() Path {
-  Todo("get rid of underscores")
+	Todo("get rid of underscores")
 	if r._referenceDir.Empty() {
 		var g = r.UnitTest.GetTestResultsDir()
 		r._referenceDir = g.Parent().JoinM(g.Base() + "_REF")

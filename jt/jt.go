@@ -173,7 +173,7 @@ func (j *J) AssertGenerated() {
 	//     JSMap jsonMap = MyTestUtils.dirSummary(generatedDir());
 	//     // Convert hash code to one using exactly four digits
 	//     int currentHash = (jsonMap.HashOfJSMap() & 0xffff) % 9000 + 1000;
-	var registry = RegistryFor(j)
+	var registry = j.registry()
 
 	if !registry.VerifyHash(j.Name(), currentHash, j.InvalidateOldHash) {
 		var summary = ToString("\nUnexpected hash value for directory contents:", CR, DASHES, CR)
@@ -219,14 +219,18 @@ func auxDirSummary(dir Path, calculateFileHashes bool) *JSMap {
 // Display diff of generated directory and its reference version
 func (j *J) showDiffs() {
 
-	//    private void showDiffs() {
+	var refDir = j.registry().referenceDir()
+	if !refDir.DirExists() {
+		return
+	}
 
-	//     File refDir = referenceDir();
-	//     if (!refDir.exists())
-	//       return;
+	var relFiles = make(map[Path]bool)
+	Pr(relFiles)
 
-	//     Set<File> relFiles = hashSet();
-
+	Todo("what does the pattern parser do with '.DS_Store'?")
+	var dirWalk = NewDirWalk().WithRecurse(true).OmitNames(".DS_Store")
+	Pr("dirwalk:", dirWalk)
+	Halt("not finished")
 	//     DirWalk dirWalk = new DirWalk(refDir).withRecurse(true).omitNames(".DS_Store");
 	//     relFiles.addAll(dirWalk.filesRelative());
 	//     dirWalk = new DirWalk(generatedDir()).withRecurse(true).omitNames(".DS_Store");
