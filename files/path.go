@@ -106,3 +106,38 @@ func (path Path) Base() string {
 	path.CheckNonEmptyWithSkip(1)
 	return filepath.Base(string(path))
 }
+
+func (path Path) MkDirs() error {
+	return os.MkdirAll(string(path), os.ModePerm)
+}
+
+func (path Path) MkDirsM() {
+	CheckOkWithSkip(1, path.MkDirs())
+}
+
+func (path Path) RemakeDir(substring string) error {
+	err := path.DeleteDirectory(substring)
+	if err == nil {
+		err = path.MkDirs()
+	}
+	return err
+}
+
+func (path Path) DeleteDirectory(substring string) error {
+	CheckArg(!path.Empty())
+	if len(substring) < 5 || !strings.Contains(string(path), substring) {
+		BadArg("DeleteDirectory, path doesn't contain suitably long substring:", path, Quoted(substring))
+	}
+	Todo("not really removing directory:", string(path))
+	//os.RemoveAll(string(path))
+	return nil
+}
+
+func (path Path) MoveTo(target Path) error {
+	CheckArg(!path.Empty())
+	CheckArg(!target.Empty())
+	if target.Exists() && !target.DirExists() {
+		return Error("Can't move to existing file:", target)
+	}
+	return os.Rename(string(path), string(target))
+}

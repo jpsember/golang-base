@@ -46,14 +46,10 @@ func (r *HashCodeRegistry) file() Path {
 
 func (r *HashCodeRegistry) unitTestDirectory() Path {
 	if r._dir.Empty() {
-		d, err := NewPath(r.UnitTest.GetModuleDir())
-		CheckOk(err)
-		d, err = d.Join("unit_test")
-		Todo("Have M suffix for 'Must' variant?")
-		CheckOk(err)
-		_, err = d.MkDirs()
-		CheckOk(err)
-		r._dir = d
+		path := NewPathM(r.UnitTest.GetModuleDir())
+		path = path.JoinM("unit_test")
+		path.MkDirsM()
+		r._dir = path
 	}
 	return r._dir
 }
@@ -96,11 +92,9 @@ func (r *HashCodeRegistry) SaveTestResults() {
 	}
 
 	if !r.referenceDir().Exists() {
-		Todo("files.MoveDirectory")
-		//files.MoveDirectory(r.GeneratedDir(), r.referenceDir())
+		r.GeneratedDir().MoveTo(r._referenceDir)
 	} else {
-		Todo("Delete generated dir, same as reference")
-		//files.DeleteDirectory(r.generatedDir())
+		r.GeneratedDir().DeleteDirectory("unit_test")
 	}
 
 }
@@ -123,8 +117,7 @@ func (r *HashCodeRegistry) GeneratedDir() Path {
 		var className = strings.TrimSuffix(r.UnitTest.Filename, "_test.go")
 		var testName = strings.TrimSuffix(r.Key, "Test")
 		r._generatedDir = projectDir.JoinM(className + "/" + testName)
-		Todo("remake dirs")
-		//files.RemakeDirs(r._generatedDir)
+		CheckOk(r._generatedDir.RemakeDir("unit_test"))
 	}
 	return r._generatedDir
 }

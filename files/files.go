@@ -84,21 +84,6 @@ func (path Path) ReadBytes() (content []byte, err error) {
 	return os.ReadFile(string(path))
 }
 
-func (path Path) MkDirs() (Path, error) {
-	err := os.MkdirAll(string(path), os.ModePerm)
-	return path, err
-	//CheckOk(err, "failed MkDirs:", file)
-	//return path, err
-}
-
-// Deprecated: use Path type
-func MkDirs(file string) (string, error) {
-	//Pr("attempt to MkDirs:", file)
-	err := os.MkdirAll(file, os.ModePerm)
-	CheckOk(err, "failed MkDirs:", file)
-	return file, err
-}
-
 func CurrentDirectory() Path {
 	path, err := os.Getwd()
 	CheckOk(err)
