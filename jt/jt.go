@@ -178,8 +178,7 @@ func (j *J) AssertGenerated() {
 	if !registry.VerifyHash(j.Name(), currentHash, j.InvalidateOldHash) {
 		var summary = ToString("\nUnexpected hash value for directory contents:", CR, DASHES, CR)
 		Pr(summary)
-		Todo("showDiffs")
-		//showDiffs()
+		j.showDiffs()
 		j.Fail()
 	}
 	registry.SaveTestResults()
@@ -215,4 +214,71 @@ func auxDirSummary(dir Path, calculateFileHashes bool) *JSMap {
 	}
 
 	return jsMap
+}
+
+// Display diff of generated directory and its reference version
+func (j *J) showDiffs() {
+
+	//    private void showDiffs() {
+
+	//     File refDir = referenceDir();
+	//     if (!refDir.exists())
+	//       return;
+
+	//     Set<File> relFiles = hashSet();
+
+	//     DirWalk dirWalk = new DirWalk(refDir).withRecurse(true).omitNames(".DS_Store");
+	//     relFiles.addAll(dirWalk.filesRelative());
+	//     dirWalk = new DirWalk(generatedDir()).withRecurse(true).omitNames(".DS_Store");
+	//     relFiles.addAll(dirWalk.filesRelative());
+
+	//     for (File fileReceived : relFiles) {
+	//       File fileRecAbs = dirWalk.abs(fileReceived);
+	//       File fileRefAbs = new File(refDir, fileReceived.getPath());
+
+	//       if (fileRefAbs.exists() && fileRecAbs.exists()
+	//           && Arrays.equals(Files.toByteArray(fileRecAbs, null), Files.toByteArray(fileRefAbs, null)))
+	//         continue;
+
+	//       if (!mUnitTest.verbose())
+	//         continue;
+
+	//       pr(CR,
+	//           "------------------------------------------------------------------------------------------------");
+	//       pr(fileReceived);
+
+	//       if (!fileRefAbs.exists()) {
+	//         pr("...unexpected file");
+	//         continue;
+	//       }
+	//       if (!fileRecAbs.exists()) {
+	//         pr("...file has disappeared");
+	//         continue;
+	//       }
+
+	//       // If it looks like a text file, call the 'diff' utility to display differences.
+	//       // Otherwise, only do this (using binary mode) if in verbose mode
+	//       //
+	//       String ext = Files.getExtension(fileReceived);
+
+	//       boolean isTextFile = sTextFileExtensions.contains(ext);
+
+	//       SystemCall sc = new SystemCall().arg("diff");
+	//       if (isTextFile)
+	//         sc.arg("--text"); // "Treat all files as text."
+
+	//       if (true) {
+	//         sc.arg("-C", "2");
+	//       } else {
+	//         sc.arg("--side-by-side"); //  "Output in two columns."
+	//       }
+	//       sc.arg(fileRefAbs, fileRecAbs);
+	//       pr();
+	//       pr(sc.systemOut());
+	//       // It is returning 2 if it encounters binary files (e.g. xxx.zip), which is problematic
+	//       if (sc.exitCode() > 2)
+	//         badState("System call failed:", INDENT, sc);
+	//     }
+	//   }
+
 }

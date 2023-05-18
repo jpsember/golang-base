@@ -41,7 +41,7 @@ func TestJoin(t *testing.T) {
 	var result = NewJSMap()
 	var samples = []string{
 		"a", "b", //
-		"a/b", "c/d", //
+		"a/b", "c/z", //
 	}
 	for i := 0; i < len(samples); i += 2 {
 		p := samples[i]
