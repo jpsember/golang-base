@@ -100,6 +100,14 @@ func BadArg(message ...any) {
 	BadArgWithSkip(4, message)
 }
 
+func BadStateWithSkip(skipCount int, message ...any) {
+	panic("*** Bad state!  (" + CallerLocation(skipCount+1) + ") " + ToString(message...))
+}
+
+func BadState(message ...any) {
+	BadStateWithSkip(4, message)
+}
+
 func CheckState(valid bool, message ...any) {
 	if !valid {
 		panic("*** Invalid state! (" + CallerLocation(3) + ") " + ToString(message...))

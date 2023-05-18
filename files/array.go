@@ -32,3 +32,18 @@ func (array *Array[T]) Add(value T) {
 func (array *Array[T]) Array() []T {
 	return array.wrappedArray[:array.size]
 }
+
+func (array *Array[T]) IsEmpty() bool {
+	return array.size == 0
+}
+
+func (array *Array[T]) Pop() T {
+	if array.IsEmpty() {
+		BadStateWithSkip(1, "Pop of empty array")
+	}
+	var w = array.wrappedArray
+	i := array.size - 1
+	var result = w[i]
+	array.size--
+	return result
+}

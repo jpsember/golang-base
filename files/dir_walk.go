@@ -41,20 +41,40 @@ func (w *DirWalk) OmitNames(nameExprs ...string) *DirWalk {
 
 func (w *DirWalk) Files() []Path {
 	if w.absFilesList == nil {
-		files, err := os.ReadDir(w.startDirectory.String())
-		CheckOk(err)
 
-		var lst []Path
+		var stack = NewArray[Path]()
+		stack.Add(w.startDirectory)
+		var firstDir = true
+		for !stack.IsEmpty() {
+			var dir = stack.Pop()
 
-		for _, file := range files {
-			var nm = file.Name()
-			for _, pat := range w.patternsToOmit.Array() {
-				if pat.MatchString(nm) {
-					continue
+			if !firstDir && !w.withRecurse {
+				continue
+			}
+			firstDir = false
+
+			files, err := os.ReadDir(w.startDirectory.String())
+			CheckOk(err)
+
+			var lst []Path
+
+			for _, file := range files {
+				var nm = file.Name()
+				for _, pat := range w.patternsToOmit.Array() {
+					if pat.MatchString(nm) {
+						continue
+					}
+				}
+
+				var child = dir.JoinM(nm)
+
+				if child.DirExists() {
+					Todo("Have option to include directories in returned list")
+					stack.Add(child)
+				} else {
+					lst = append(lst, child)
 				}
 			}
-
-			lst = append(lst, NewPathM(nm))
 		}
 		w.absFilesList = lst
 	}
