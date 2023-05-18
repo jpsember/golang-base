@@ -99,39 +99,6 @@ func MkDirs(file string) (string, error) {
 	return file, err
 }
 
-// Deprecated: use Path type
-func DirExists(path string) bool {
-	fileInfo, err := os.Stat(path)
-	return err == nil && fileInfo.IsDir()
-}
-
-// Deprecated: use Path type
-func PathJoin(parent, child string) string {
-	if strings.HasSuffix(parent, "/") || len(parent) == 0 || strings.HasPrefix(child, "/") || len(child) == 0 {
-		Die("illegal args for PathJoin:", parent, child)
-	}
-	return parent + "/" + child
-}
-
-// Deprecated: use Path type
-func ValidatePath(path string) string {
-	if path == "" || strings.HasSuffix(path, "/") {
-		BadArgWithSkip(1, "invalid path:", path)
-	}
-	return path
-}
-
-// Deprecated: use Path type
-func GetName(path string) string {
-	ValidatePath(path)
-	i := strings.LastIndex(path, "/")
-	if i < 0 {
-		return path
-	}
-	return path[i+1:]
-}
-
-// Deprecated: return Path type
 func CurrentDirectory() Path {
 	path, err := os.Getwd()
 	CheckOk(err)
