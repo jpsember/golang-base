@@ -79,7 +79,6 @@ func (j *J) BaseName() string {
 
 func (j *J) GetUnitTestDir() Path {
 	if j.unitTestDir.Empty() {
-
 		var dir = j.GetModuleDir().JoinM("unit_test")
 		dir.MkDirsM()
 		j.unitTestDir = dir
@@ -91,18 +90,11 @@ func (j *J) GetTestResultsDir() Path {
 	if j.testResultsDir.Empty() {
 		var genDir = j.GetUnitTestDir().JoinM("generated")
 		genDir.MkDirsM()
-
-		var testResultsDir = genDir.JoinM(j.Filename + "/" + j.BaseName())
-		Pr("j.Filename:", j.Filename)
-		Pr("j.BaseName:", j.BaseName())
-		Pr("j:", INDENT, j)
-		Pr("testResultsDir:", testResultsDir)
-
+		var dir = genDir.JoinM(j.Filename + "/" + j.BaseName())
 		// Delete any existing contents of this directory
 		// Make sure it contains '/generated/' (pretty sure it does) to avoid crazy deletion
-		Pr(DASHES, CR, "Remaking testResultsDir dir")
-		testResultsDir.RemakeDir("/generated/")
-		j.testResultsDir = testResultsDir
+		dir.RemakeDir("/generated/")
+		j.testResultsDir = dir
 	}
 	return j.testResultsDir
 }
@@ -128,7 +120,6 @@ func (j *J) Log(message ...any) {
 
 func (j *J) GenerateMessage(message ...any) {
 	var text = ToString(message)
-
 	j.generateMessageTo("message.txt", text)
 }
 
@@ -143,7 +134,6 @@ func (j *J) generateMessageTo(filename string, content string) {
 		j.Log("Content:", INDENT, q)
 	}
 	var path = j.GetTestResultsDir().JoinM(filename)
-	Pr("writing content:", INDENT, content, CR, "to:", path)
 	path.WriteStringM(content)
 }
 
@@ -192,7 +182,6 @@ func (j *J) AssertGenerated() {
 		//showDiffs()
 		j.Fail()
 	}
-
 	registry.SaveTestResults()
 }
 

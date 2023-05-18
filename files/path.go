@@ -132,13 +132,10 @@ func (path Path) DeleteDirectory(substring string) error {
 }
 
 func (path Path) MoveTo(target Path) error {
-
 	CheckArg(!path.Empty())
 	CheckArg(!target.Empty())
 	if target.Exists() && !target.DirExists() {
 		return Error("Can't move to existing file:", target)
 	}
-	Halt("renaming:", path, "to:", target)
-
 	return os.Rename(string(path), string(target))
 }
