@@ -17,6 +17,8 @@ func NewArray[T any]() *Array[T] {
 	return m
 }
 
+func (array *Array[T]) Size() int { return array.size }
+
 func (array *Array[T]) Add(value T) {
 	var i = array.size
 	var sl = array.wrappedArray
