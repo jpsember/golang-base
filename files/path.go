@@ -81,7 +81,12 @@ func (path Path) Exists() bool {
 }
 
 // Determine if path refers to directory
+// Deprecated: rename to IsDir
 func (path Path) DirExists() bool {
+	return path.IsDir()
+}
+
+func (path Path) IsDir() bool {
 	fileInfo, err := os.Stat(string(path))
 	return err == nil && fileInfo.IsDir()
 }
@@ -135,7 +140,7 @@ func (path Path) DeleteDirectory(substring string) error {
 func (path Path) MoveTo(target Path) error {
 	CheckArg(!path.Empty())
 	CheckArg(!target.Empty())
-	if target.Exists() && !target.DirExists() {
+	if target.Exists() && !target.IsDir() {
 		return Error("Can't move to existing file:", target)
 	}
 	return os.Rename(string(path), string(target))

@@ -120,7 +120,7 @@ func (w *DirWalk) Files() []Path {
 				var omit = false
 
 				var child = dir.JoinM(nm)
-				var childIsDir = child.DirExists()
+				var childIsDir = child.IsDir()
 
 				// If no explicit patterns to *include* were given, then we apply the omit filter
 				// to everything.  Otherwise, we apply the omit filter only to directories.

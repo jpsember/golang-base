@@ -28,3 +28,17 @@ func (set *Set[KEY]) Contains(value KEY) bool {
 	_, found := set.wrappedMap[value]
 	return found
 }
+
+func (set *Set[KEY]) AddAll(slice []KEY) {
+	for _, v := range slice {
+		set.Add(v)
+	}
+}
+
+func (set *Set[KEY]) Slice() []KEY {
+	arr := NewArray[KEY]()
+	for v, _ := range set.wrappedMap {
+		arr.Add(v)
+	}
+	return arr.Slice()
+}

@@ -36,7 +36,7 @@ func TestJSMapPrettyPrint(t *testing.T) {
 	j.SetVerbose()
 
 	var jsmap = JSMapFromString(text1)
-	var s = jsmap.String()
+	var s = jsmap.String() + "wtf"
 
 	j.GenerateMessage(s)
 	j.AssertGenerated()

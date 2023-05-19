@@ -85,6 +85,12 @@ func (path Path) ReadBytes() (content []byte, err error) {
 	return os.ReadFile(string(path))
 }
 
+func (path Path) ReadBytesM() (content []byte) {
+	bytes, err := os.ReadFile(string(path))
+	CheckOkWithSkip(2, err)
+	return bytes
+}
+
 func CurrentDirectory() Path {
 	path, err := os.Getwd()
 	CheckOk(err)

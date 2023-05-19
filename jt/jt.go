@@ -2,7 +2,7 @@ package jt
 
 import (
 	"hash/fnv"
-	"os"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -43,6 +43,7 @@ func New(t testing.TB) *J {
 }
 
 // Deprecated: this constructor will cause the old hash code to be thrown out
+//goland:noinspection GoUnusedExportedFunction
 func Newz(t testing.TB) *J {
 	return &J{
 		TB:                t,
@@ -93,7 +94,8 @@ func (j *J) GetTestResultsDir() Path {
 		var dir = genDir.JoinM(j.Filename + "/" + j.BaseName())
 		// Delete any existing contents of this directory
 		// Make sure it contains '/generated/' (pretty sure it does) to avoid crazy deletion
-		dir.RemakeDir("/generated/")
+		err := dir.RemakeDir("/generated/")
+		CheckOk(err)
 		j.testResultsDir = dir
 	}
 	return j.testResultsDir
@@ -154,7 +156,8 @@ func HashOfString(str string) int32 {
 
 func HashOfBytes(b []byte) int32 {
 	hasher.Reset()
-	hasher.Write(b)
+	_, e := hasher.Write(b)
+	CheckOk(e)
 	return int32((hasher.Sum32()&0xffff)%9000 + 1000)
 }
 
@@ -185,28 +188,21 @@ func (j *J) AssertGenerated() {
 }
 
 func dirSummary(dir Path) *JSMap {
-	return auxDirSummary(dir, true)
-}
-
-func auxDirSummary(dir Path, calculateFileHashes bool) *JSMap {
 	var jsMap = NewJSMap()
 
-	var entries, err = os.ReadDir(dir.String())
-	CheckOk(err)
+	var w = NewDirWalk(dir).WithRecurse(true)
+	for _, ent := range w.Files() {
 
-	for _, ent := range entries {
-
-		var filename = ent.Name()
+		var filename = ent.Base()
 		var value any
 
 		value = "?"
 		if ent.IsDir() {
-			var subdirSummary = auxDirSummary(dir.JoinM(filename), calculateFileHashes)
+			var subdirSummary = dirSummary(dir.JoinM(filename))
 			Todo("have JSMap.size or empty method")
 			value = subdirSummary
-		} else if calculateFileHashes {
-			var bytes []byte
-			bytes, err = dir.JoinM(filename).ReadBytes()
+		} else {
+			bytes, err := dir.JoinM(filename).ReadBytes()
 			CheckOk(err)
 			value = HashOfBytes(bytes)
 		}
@@ -220,70 +216,68 @@ func auxDirSummary(dir Path, calculateFileHashes bool) *JSMap {
 func (j *J) showDiffs() {
 
 	var refDir = j.registry().referenceDir()
-	if !refDir.DirExists() {
+	if !refDir.IsDir() {
 		return
 	}
+	var genDir = j.GetTestResultsDir()
+	var relFiles = NewSet[Path]()
 
-	var relFiles = make(map[Path]bool)
-	Pr(relFiles)
+	Todo("Always skip .DS_Store?")
+	var dirWalk = NewDirWalk(refDir).WithRecurse(true).OmitNames(`\.DS_Store`)
+	relFiles.AddAll(dirWalk.FilesRelative())
 
-	Todo("what does the pattern parser do with '.DS_Store'?")
-	var dirWalk = NewDirWalk(refDir).WithRecurse(true).OmitNames(".DS_Store")
-	Pr("dirwalk:", dirWalk)
-	dirWalk.Files()
-	Halt("not finished")
-	//     DirWalk dirWalk = new DirWalk(refDir).withRecurse(true).omitNames(".DS_Store");
-	//     relFiles.addAll(dirWalk.filesRelative());
-	//     dirWalk = new DirWalk(generatedDir()).withRecurse(true).omitNames(".DS_Store");
-	//     relFiles.addAll(dirWalk.filesRelative());
+	dirWalk = NewDirWalk(genDir).WithRecurse(true).OmitNames(`\.DS_Store`)
+	relFiles.AddAll(dirWalk.FilesRelative())
 
-	//     for (File fileReceived : relFiles) {
-	//       File fileRecAbs = dirWalk.abs(fileReceived);
-	//       File fileRefAbs = new File(refDir, fileReceived.getPath());
+	for _, fileReceived := range relFiles.Slice() {
+		var fileRecAbs = genDir.JoinM(fileReceived.String())
+		var fileRefAbs = refDir.JoinM(fileReceived.String())
 
-	//       if (fileRefAbs.exists() && fileRecAbs.exists()
-	//           && Arrays.equals(Files.toByteArray(fileRecAbs, null), Files.toByteArray(fileRefAbs, null)))
-	//         continue;
+		if fileRefAbs.Exists() && fileRecAbs.Exists() {
+			var refBytes = fileRefAbs.ReadBytesM()
+			var recBytes = fileRecAbs.ReadBytesM()
+			if reflect.DeepEqual(refBytes, recBytes) {
+				continue
+			}
+		}
+		if !j.Verbose() && !Alert("only call this method if verbose") {
+			continue
+		}
 
-	//       if (!mUnitTest.verbose())
-	//         continue;
+		Pr(CR, DASHES)
+		Pr(fileReceived)
+		if !fileRefAbs.Exists() {
+			Pr("...unexpected file")
+			continue
+		}
+		if !fileRecAbs.Exists() {
+			Pr("...file has disappeared")
+			continue
+		}
 
-	//       pr(CR,
-	//           "------------------------------------------------------------------------------------------------");
-	//       pr(fileReceived);
+		//       // If it looks like a text file, call the 'diff' utility to display differences.
+		//       // Otherwise, only do this (using binary mode) if in verbose mode
+		//       //
+		//       String ext = Files.getExtension(fileReceived);
 
-	//       if (!fileRefAbs.exists()) {
-	//         pr("...unexpected file");
-	//         continue;
-	//       }
-	//       if (!fileRecAbs.exists()) {
-	//         pr("...file has disappeared");
-	//         continue;
-	//       }
+		//       boolean isTextFile = sTextFileExtensions.contains(ext);
 
-	//       // If it looks like a text file, call the 'diff' utility to display differences.
-	//       // Otherwise, only do this (using binary mode) if in verbose mode
-	//       //
-	//       String ext = Files.getExtension(fileReceived);
+		//       SystemCall sc = new SystemCall().arg("diff");
+		//       if (isTextFile)
+		//         sc.arg("--text"); // "Treat all files as text."
 
-	//       boolean isTextFile = sTextFileExtensions.contains(ext);
-
-	//       SystemCall sc = new SystemCall().arg("diff");
-	//       if (isTextFile)
-	//         sc.arg("--text"); // "Treat all files as text."
-
-	//       if (true) {
-	//         sc.arg("-C", "2");
-	//       } else {
-	//         sc.arg("--side-by-side"); //  "Output in two columns."
-	//       }
-	//       sc.arg(fileRefAbs, fileRecAbs);
-	//       pr();
-	//       pr(sc.systemOut());
-	//       // It is returning 2 if it encounters binary files (e.g. xxx.zip), which is problematic
-	//       if (sc.exitCode() > 2)
-	//         badState("System call failed:", INDENT, sc);
-	//     }
-	//   }
+		//       if (true) {
+		//         sc.arg("-C", "2");
+		//       } else {
+		//         sc.arg("--side-by-side"); //  "Output in two columns."
+		//       }
+		//       sc.arg(fileRefAbs, fileRecAbs);
+		//       pr();
+		//       pr(sc.systemOut());
+		//       // It is returning 2 if it encounters binary files (e.g. xxx.zip), which is problematic
+		//       if (sc.exitCode() > 2)
+		//         badState("System call failed:", INDENT, sc);
+		//     }
+	}
 
 }
