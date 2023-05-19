@@ -10,14 +10,14 @@ import (
 var _ = Pr
 
 type HashCodeRegistry struct {
-	Key               string
-	Map               *JSMap
-	_file             Path
-	_dir              Path
-	InvalidateOldHash bool
-	UnitTest          *J
-	_referenceDir     Path
-	UnitTestName      string
+	Key                string
+	Map                *JSMap
+	registryFileCached Path
+	unitTestDirCached  Path
+	InvalidateOldHash  bool
+	UnitTest           *J
+	referenceDirCached Path
+	UnitTestName       string
 }
 
 // Get registry for a test case, constructing one if necessary
@@ -39,19 +39,19 @@ func (j *J) registry() *HashCodeRegistry {
 }
 
 func (r *HashCodeRegistry) file() Path {
-	if r._file.Empty() {
-		r._file = r.unitTestDirectory().JoinM(strings.ReplaceAll(r.Key, ".", "_") + ".json")
+	if r.registryFileCached.Empty() {
+		r.registryFileCached = r.unitTestDirectory().JoinM(strings.ReplaceAll(r.Key, ".", "_") + ".json")
 	}
-	return r._file
+	return r.registryFileCached
 }
 
 func (r *HashCodeRegistry) unitTestDirectory() Path {
-	if r._dir.Empty() {
+	if r.unitTestDirCached.Empty() {
 		path := r.UnitTest.GetModuleDir().JoinM("unit_test")
 		path.MkDirsM()
-		r._dir = path
+		r.unitTestDirCached = path
 	}
-	return r._dir
+	return r.unitTestDirCached
 }
 
 func (r *HashCodeRegistry) VerifyHash(testName string, currentHash int32, invalidateOldHash bool) bool {
@@ -103,10 +103,9 @@ func (r *HashCodeRegistry) SaveTestResults() {
 }
 
 func (r *HashCodeRegistry) referenceDir() Path {
-	Todo("get rid of underscores")
-	if r._referenceDir.Empty() {
+	if r.referenceDirCached.Empty() {
 		var g = r.UnitTest.GetTestResultsDir()
-		r._referenceDir = g.Parent().JoinM(g.Base() + "_REF")
+		r.referenceDirCached = g.Parent().JoinM(g.Base() + "_REF")
 	}
-	return r._referenceDir
+	return r.referenceDirCached
 }

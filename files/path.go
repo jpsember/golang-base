@@ -80,12 +80,6 @@ func (path Path) Exists() bool {
 	return err == nil
 }
 
-// Determine if path refers to directory
-// Deprecated: rename to IsDir
-func (path Path) DirExists() bool {
-	return path.IsDir()
-}
-
 func (path Path) IsDir() bool {
 	fileInfo, err := os.Stat(string(path))
 	return err == nil && fileInfo.IsDir()

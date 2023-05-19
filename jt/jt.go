@@ -174,7 +174,7 @@ func (j *J) AssertGenerated() {
 	var registry = j.registry()
 
 	if !registry.VerifyHash(j.Name(), currentHash, j.InvalidateOldHash) {
-		var summary = ToString("\nUnexpected hash value for directory contents:", CR, DASHES, CR)
+		var summary = ToString("\nUnexpected hash value for directory contents:", CR)
 		Pr(summary)
 		j.showDiffs()
 		j.Fail()
