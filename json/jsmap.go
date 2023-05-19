@@ -1,6 +1,7 @@
 package json
 
 import (
+	"fmt"
 	//. "github.com/jpsember/golang-base/files"
 	"sort"
 
@@ -128,8 +129,15 @@ func (m *JSMap) String() string {
 	return PrintJSEntity(m, true)
 }
 
-func (m *JSMap) Put(key string, value any) {
+func (m *JSMap) Put(key string, value any) *JSMap {
 	m.wrappedMap[key] = ToJSEntity(value)
+	return m
+}
+
+func (m *JSMap) PutNumbered(value any) *JSMap {
+	var numKeys = len(m.wrappedMap)
+	var key = fmt.Sprintf("%3d", numKeys)
+	return m.Put(key, value)
 }
 
 func (p *JSONParser) ParseMap() *JSMap {

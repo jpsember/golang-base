@@ -62,3 +62,7 @@ func (array *Array[T]) ToJson() *JSMap {
 func (array *Array[T]) Slice() []T {
 	return array.wrappedArray
 }
+
+func (array *Array[T]) NonEmpty() bool {
+	return !array.IsEmpty()
+}
