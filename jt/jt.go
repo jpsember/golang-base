@@ -2,6 +2,7 @@ package jt
 
 import (
 	"hash/fnv"
+	"os/exec"
 	"reflect"
 	"strings"
 	"testing"
@@ -43,6 +44,7 @@ func New(t testing.TB) *J {
 }
 
 // Deprecated: this constructor will cause the old hash code to be thrown out
+//
 //goland:noinspection GoUnusedExportedFunction
 func Newz(t testing.TB) *J {
 	return &J{
@@ -136,6 +138,9 @@ func (j *J) generateMessageTo(filename string, content string) {
 		j.Log("Content:", INDENT, q)
 	}
 	var path = j.GetTestResultsDir().JoinM(filename)
+	if !strings.HasSuffix(content, "\n") {
+		content += "\n"
+	}
 	path.WriteStringM(content)
 }
 
@@ -166,16 +171,6 @@ func (j *J) AssertGenerated() {
 
 	var jsonMap = dirSummary(j.GetTestResultsDir())
 	var currentHash = HashOfJSMap(jsonMap)
-	// /**
-	//   - Construct hash of generated directory, and verify it has the expected value
-	//     */
-	//     public void assertGeneratedDirectoryHash() {
-	//     if (mUnitTest.verbose())
-	//     createInspectionDir();
-	//     try {
-	//     JSMap jsonMap = MyTestUtils.dirSummary(generatedDir());
-	//     // Convert hash code to one using exactly four digits
-	//     int currentHash = (jsonMap.HashOfJSMap() & 0xffff) % 9000 + 1000;
 	var registry = j.registry()
 
 	if !registry.VerifyHash(j.Name(), currentHash, j.InvalidateOldHash) {
@@ -255,29 +250,35 @@ func (j *J) showDiffs() {
 			continue
 		}
 
-		//       // If it looks like a text file, call the 'diff' utility to display differences.
-		//       // Otherwise, only do this (using binary mode) if in verbose mode
-		//       //
-		//       String ext = Files.getExtension(fileReceived);
+		// If it looks like a text file, call the 'diff' utility to display differences.
+		// Otherwise, only do this (using binary mode) if in verbose mode
+		//
+		var ext = fileReceived.Extension()
+		var isTextFile = TextFileExtensions.Contains(ext)
 
-		//       boolean isTextFile = sTextFileExtensions.contains(ext);
+		var args = NewArray[string]()
+		args.Append("diff")
+		if isTextFile {
+			args.Add("--text") // "Treat all files as text."
+		}
+		args.Append("-C", "2", fileRefAbs.String(), fileRecAbs.String())
 
-		//       SystemCall sc = new SystemCall().arg("diff");
-		//       if (isTextFile)
-		//         sc.arg("--text"); // "Treat all files as text."
-
-		//       if (true) {
-		//         sc.arg("-C", "2");
-		//       } else {
-		//         sc.arg("--side-by-side"); //  "Output in two columns."
-		//       }
-		//       sc.arg(fileRefAbs, fileRecAbs);
-		//       pr();
-		//       pr(sc.systemOut());
-		//       // It is returning 2 if it encounters binary files (e.g. xxx.zip), which is problematic
-		//       if (sc.exitCode() > 2)
-		//         badState("System call failed:", INDENT, sc);
-		//     }
+		output, err := makeSysCall(args.Slice())
+		_ = err
+		Pr(output)
 	}
+}
 
+var TextFileExtensions = NewSet[string]()
+
+func init() {
+	TextFileExtensions.AddAll(strings.Split("txt json java go", " "))
+}
+
+func makeSysCall(c []string) (string, error) {
+	var cmd = c[0]
+	var args = c[1:]
+	out, err := exec.Command(cmd, args...).Output()
+	var strout = string(out)
+	return strout, err
 }

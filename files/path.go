@@ -145,3 +145,7 @@ func (path Path) MoveTo(target Path) error {
 	}
 	return os.Rename(string(path), string(target))
 }
+
+func (path Path) Extension() string {
+	return strings.TrimPrefix(filepath.Ext(path.String()), ".")
+}

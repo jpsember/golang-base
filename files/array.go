@@ -66,3 +66,7 @@ func (array *Array[T]) Slice() []T {
 func (array *Array[T]) NonEmpty() bool {
 	return !array.IsEmpty()
 }
+
+func (array *Array[T]) Append(items ...T) {
+	array.wrappedArray = append(array.wrappedArray, items...)
+}
