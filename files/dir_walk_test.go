@@ -39,13 +39,17 @@ func TestDirWalk(t *testing.T) {
 }
 
 func TestIncludePrefixes(t *testing.T) {
-	j := jt.New(t) // Use Newz to regenerate hash
+	j := jt.New(t)
 
 	j.SetVerbose()
 	var dir = j.GetModuleDir()
 	var w = NewDirWalk(dir)
 	w.Logger().SetVerbose(true)
-	w.WithRecurse(true).WithExtensions("go", "json")
+	w.WithRecurse(true)
+	// Omit any files (or directories) starting with _SKIP_ or a dot
+	w.OmitNamesWithSubstrings("^_SKIP_", `^\.`)
+	// Include files with particular extensions
+	w.WithExtensions("go", "json")
 
 	var m = NewJSMap()
 	for _, x := range w.FilesRelative() {

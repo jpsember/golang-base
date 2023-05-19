@@ -97,10 +97,6 @@ func (w *DirWalk) Files() []Path {
 
 	if w.absFilesList == nil {
 
-		if w.patternsToInclude.Size() > 0 && w.patternsToOmit.Size() > len(defaultOmitPrefixes) {
-			BadState("Can't mix include AND omit")
-		}
-
 		pr("start dir:", w.startDirectory)
 
 		var lst []Path
@@ -125,7 +121,13 @@ func (w *DirWalk) Files() []Path {
 
 				var child = dir.JoinM(nm)
 				var childIsDir = child.DirExists()
-				if !childIsDir {
+
+				// If no explicit patterns to *include* were given, then we apply the omit filter
+				// to everything.  Otherwise, we apply the omit filter only to directories.
+
+				Todo("Maybe the thing to do is to (formally) have separate filters for directories vs files")
+
+				if childIsDir || w.patternsToInclude.IsEmpty() {
 
 					for _, pat := range w.patternsToOmit.Array() {
 						if pat.MatchString(nm) {
@@ -138,23 +140,22 @@ func (w *DirWalk) Files() []Path {
 					if omit {
 						continue
 					}
+				}
 
-					if w.patternsToInclude.NonEmpty() {
-						omit = true
-						pr("checking if name is to be included:", nm)
-						for _, pat := range w.patternsToInclude.Array() {
-							pr("pattern:", pat)
-							if pat.MatchString(nm) {
-								omit = false
-								pr("...including:", nm)
-								break
-							}
+				if !childIsDir && w.patternsToInclude.NonEmpty() {
+					omit = true
+					for _, pat := range w.patternsToInclude.Array() {
+						if pat.MatchString(nm) {
+							omit = false
+							pr("...including file:", nm)
+							break
 						}
 					}
-					if omit {
-						continue
-					}
 				}
+				if omit {
+					continue
+				}
+
 				if childIsDir {
 					Todo("Have option to include directories in returned list")
 					stack.Add(child)
