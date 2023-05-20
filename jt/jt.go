@@ -51,6 +51,7 @@ func Newz(t testing.TB) *J {
 		TB:                t,
 		Filename:          determineUnittestFilename(CallerLocation(3)),
 		InvalidateOldHash: true,
+		verbose:           true,
 	}
 }
 
@@ -185,7 +186,7 @@ func (j *J) AssertGenerated() {
 func dirSummary(dir Path) *JSMap {
 	var jsMap = NewJSMap()
 
-	var w = NewDirWalk(dir).WithRecurse(true)
+	var w = NewDirWalk(dir).WithRecurse()
 	for _, ent := range w.Files() {
 
 		var filename = ent.Base()
@@ -218,10 +219,10 @@ func (j *J) showDiffs() {
 	var relFiles = NewSet[Path]()
 
 	Todo("Always skip .DS_Store?")
-	var dirWalk = NewDirWalk(refDir).WithRecurse(true).OmitNames(`\.DS_Store`)
+	var dirWalk = NewDirWalk(refDir).WithRecurse().OmitNames(`\.DS_Store`)
 	relFiles.AddAll(dirWalk.FilesRelative())
 
-	dirWalk = NewDirWalk(genDir).WithRecurse(true).OmitNames(`\.DS_Store`)
+	dirWalk = NewDirWalk(genDir).WithRecurse().OmitNames(`\.DS_Store`)
 	relFiles.AddAll(dirWalk.FilesRelative())
 
 	for _, fileReceived := range relFiles.Slice() {

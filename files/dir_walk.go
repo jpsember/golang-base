@@ -11,13 +11,14 @@ type DirWalk struct {
 	withRecurse    bool
 	filePatterns   *patternCollection
 	dirPatterns    *patternCollection
-	absFilesList []Path
-	relFilesList []Path
-	logger       Logger
-	patternFlags int
-	regexpSet    map[string]*regexp.Regexp
+	absFilesList   []Path
+	relFilesList   []Path
+	logger         Logger
+	patternFlags   int
+	regexpSet      map[string]*regexp.Regexp
 }
 
+// BaseObject implementation
 func (w *DirWalk) Logger() Logger {
 	return w.logger
 }
@@ -43,19 +44,22 @@ var defaultOmitPrefixes = []string{
 
 // Have subsequent patterns affect only files
 func (w *DirWalk) ForFiles() *DirWalk {
+	w.assertMutable()
 	w.patternFlags = patflag_file
 	return w
 }
 
 // Have subsequent patterns affect only directories
 func (w *DirWalk) ForDirs() *DirWalk {
+	w.assertMutable()
 	w.patternFlags = patflag_dir
 	return w
 }
 
-func (w *DirWalk) WithRecurse(flag bool) *DirWalk {
+// Recurse into subdirectories
+func (w *DirWalk) WithRecurse() *DirWalk {
 	w.assertMutable()
-	w.withRecurse = flag
+	w.withRecurse = true
 	return w
 }
 
@@ -77,57 +81,55 @@ func (w *DirWalk) addPattern(pat string) *regexp.Regexp {
 	return r
 }
 
+// Include filenames that have particular extensions
+// (This includes directories, unless ForFiles() is in effect; which
+// might be a bit strange)
 func (w *DirWalk) IncludeExtensions(ext ...string) *DirWalk {
-	Todo("only files should have extensions?")
-	var flags = w.patternFlags
-	Pr("include extensions:", ext)
 	for _, exp := range ext {
-		var exp2 = `\.` + exp + `$`
-		Pr("adding include exp:", exp2)
-		r := w.addPattern(exp2)
-
-		if (flags & patflag_file) != 0 {
-			w.filePatterns.Include.Add(r)
-		}
-		if (flags & patflag_dir) != 0 {
-			w.dirPatterns.Include.Add(r)
-		}
+		w.includePattern(`\.` + exp + `$`)
 	}
 	return w
+}
+
+func (w *DirWalk) includePattern(exp string) {
+	var flags = w.patternFlags
+	r := w.addPattern(exp)
+	if (flags & patflag_file) != 0 {
+		w.filePatterns.Include.Add(r)
+	}
+	if (flags & patflag_dir) != 0 {
+		w.dirPatterns.Include.Add(r)
+	}
+}
+
+func (w *DirWalk) omitPattern(exp string) {
+	var flags = w.patternFlags
+	r := w.addPattern(exp)
+	if (flags & patflag_file) != 0 {
+		w.filePatterns.Omit.Add(r)
+	}
+	if (flags & patflag_dir) != 0 {
+		w.dirPatterns.Omit.Add(r)
+	}
 }
 
 // Add a list of regular expressions describing filenames that should be omitted.
 // Wraps each expression in '^' ... '$' so that the expression must match the entire string.
 // See: https://pkg.go.dev/regexp/syntax
 func (w *DirWalk) OmitNames(nameExprs ...string) *DirWalk {
-	var flags = w.patternFlags
 	for _, exp := range nameExprs {
-		var exp2 = `^` + exp + `$`
-		r := w.addPattern(exp2)
-
-		if (flags & patflag_file) != 0 {
-			w.filePatterns.Omit.Add(r)
-		}
-		if (flags & patflag_dir) != 0 {
-			w.dirPatterns.Omit.Add(r)
-		}
+		w.omitPattern(`^` + exp + `$`)
 	}
 	return w
 }
 
-// Add a list of regular expressions describing filenames that should be omitted.
+// Add a list of regular expressions describing filenames that should be omitted if they
+// contain a substring.
 // Any name that contains text matching one of the regular expressions will be omitted
 // See: https://pkg.go.dev/regexp/syntax
 func (w *DirWalk) OmitNamesWithSubstrings(nameExprs ...string) *DirWalk {
-	var flags = w.patternFlags
 	for _, exp := range nameExprs {
-		r := w.addPattern(exp)
-		if (flags & patflag_file) != 0 {
-			w.filePatterns.Omit.Add(r)
-		}
-		if (flags & patflag_dir) != 0 {
-			w.dirPatterns.Omit.Add(r)
-		}
+		w.omitPattern(exp)
 	}
 	return w
 }
@@ -163,22 +165,18 @@ func (w *DirWalk) Files() []Path {
 
 				var child = dir.JoinM(nm)
 				var childIsDir = child.IsDir()
-				pr("candidate:", nm, "dir:", childIsDir)
 
 				// Determine which pattern set to apply
 				var pats *patternCollection
 				if childIsDir {
 					pats = w.dirPatterns
-					pr("looking at dirPatterns")
 				} else {
-					pr("looking at filePatterns")
 					pats = w.filePatterns
 				}
 
 				for _, pat := range pats.Omit.wrappedArray {
 					if pat.MatchString(nm) {
 						omit = true
-						pr("...omitting:", nm)
 						break
 					}
 				}
@@ -187,8 +185,7 @@ func (w *DirWalk) Files() []Path {
 					continue
 				}
 
-			if pats.Include.NonEmpty() {
-					pr("include is nonempty, checking...")
+				if pats.Include.NonEmpty() {
 					omit = true
 					for _, pat := range pats.Include.wrappedArray {
 						if pat.MatchString(nm) {
@@ -213,7 +210,6 @@ func (w *DirWalk) Files() []Path {
 			}
 		}
 		w.absFilesList = lst
-		pr("constructed list:", lst)
 	}
 	return w.absFilesList
 }
@@ -239,18 +235,6 @@ func (w *DirWalk) assertMutable() {
 	CheckState(w.absFilesList == nil, "results already generated")
 }
 
-//type patternSet struct {
-//	PatternSet  *Set[string]
-//	PatternList *Array[*regexp.Regexp]
-//}
-
-//func newPatternSet() *patternSet {
-//	var p = new(patternSet)
-//	p.PatternSet = NewSet[string]()
-//	p.PatternList = NewArray[*regexp.Regexp]()
-//	return p
-//}
-
 type patternCollection struct {
 	Include *Array[*regexp.Regexp]
 	Omit    *Array[*regexp.Regexp]
@@ -262,11 +246,3 @@ func newPatternCollection() *patternCollection {
 	p.Omit = NewArray[*regexp.Regexp]()
 	return p
 }
-
-//type patterns struct {
-//	patternsSet          *Set[string]
-//	patternsToOmit       *Array[*regexp.Regexp]
-//	patternsToIncludeSet *Set[string]
-//	patternsToInclude    *Array[*regexp.Regexp]
-//
-//}

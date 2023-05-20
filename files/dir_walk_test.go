@@ -11,16 +11,17 @@ import (
 var _ = Pr
 var _ = JSFalse
 
+func sampleDir(j *jt.J) Path {
+	return j.GetUnitTestDir().JoinM("sample_dir")
+}
+
 func TestDirWalk(t *testing.T) {
 	j := jt.New(t) // Use Newz to regenerate hash
 	j.SetVerbose()
 
-	var dir = j.GetModuleDir()
-	Pr("module dir:", dir)
-
-	var w = NewDirWalk(dir)
+	var w = NewDirWalk(sampleDir(j))
 	w.Logger().SetVerbose(true)
-	w.WithRecurse(true)
+	w.WithRecurse()
 
 	// Skip specific full names
 	//
@@ -40,16 +41,15 @@ func TestDirWalk(t *testing.T) {
 
 func TestIncludePrefixes(t *testing.T) {
 	j := jt.New(t)
-
-	j.SetVerbose()
-	var dir = j.GetModuleDir()
-	var w = NewDirWalk(dir)
-	w.Logger().SetVerbose(true)
-	w.WithRecurse(true)
+	var w = NewDirWalk(sampleDir(j))
+	w.Logger().SetVerbose(j.Verbose())
+	w.WithRecurse()
 	// Omit any files (or directories) starting with _SKIP_ or a dot
 	w.OmitNamesWithSubstrings("^_SKIP_", `^\.`)
 	// Include files with particular extensions
 	w.ForFiles().IncludeExtensions("go", "json")
+	// Omit subdirectories with substring "harl"
+	w.ForDirs().OmitNamesWithSubstrings("harl")
 
 	var m = NewJSMap()
 	for _, x := range w.FilesRelative() {
