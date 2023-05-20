@@ -6,6 +6,9 @@ import (
 	"regexp"
 )
 
+// Use a type alias, but don't export it
+type regex = *regexp.Regexp
+
 type DirWalk struct {
 	startDirectory Path
 	withRecurse    bool
@@ -15,7 +18,7 @@ type DirWalk struct {
 	relFilesList   []Path
 	logger         Logger
 	patternFlags   int
-	regexpSet      map[string]*regexp.Regexp
+	regexpSet      map[string]regex
 	includeDirs    bool
 }
 
@@ -24,13 +27,13 @@ func (w *DirWalk) Logger() Logger {
 	return w.logger
 }
 
-const patflag_file = 1 << 0
-const patflag_dir = 1 << 1
+const patflagFile = 1 << 0
+const patflagDir = 1 << 1
 
 func NewDirWalk(directory Path) *DirWalk {
 	var w = new(DirWalk)
-	w.patternFlags = patflag_file | patflag_dir
-	w.regexpSet = make(map[string]*regexp.Regexp)
+	w.patternFlags = patflagFile | patflagDir
+	w.regexpSet = make(map[string]regex)
 	w.logger = NewLogger(w)
 	w.startDirectory = directory.CheckNonEmptyWithSkip(1)
 	w.filePatterns = newPatternCollection()
@@ -53,14 +56,14 @@ func (w *DirWalk) WithDirNames() *DirWalk {
 // Have subsequent patterns affect only files
 func (w *DirWalk) ForFiles() *DirWalk {
 	w.assertMutable()
-	w.patternFlags = patflag_file
+	w.patternFlags = patflagFile
 	return w
 }
 
 // Have subsequent patterns affect only directories
 func (w *DirWalk) ForDirs() *DirWalk {
 	w.assertMutable()
-	w.patternFlags = patflag_dir
+	w.patternFlags = patflagDir
 	return w
 }
 
@@ -77,7 +80,7 @@ func (w *DirWalk) addPatterns(pat ...string) {
 	}
 }
 
-func (w *DirWalk) addPattern(pat string) *regexp.Regexp {
+func (w *DirWalk) addPattern(pat string) regex {
 	w.assertMutable()
 	r, hasKey := w.regexpSet[pat]
 	if !hasKey {
@@ -102,10 +105,10 @@ func (w *DirWalk) IncludeExtensions(ext ...string) *DirWalk {
 func (w *DirWalk) includePattern(exp string) {
 	var flags = w.patternFlags
 	r := w.addPattern(exp)
-	if (flags & patflag_file) != 0 {
+	if (flags & patflagFile) != 0 {
 		w.filePatterns.Include.Add(r)
 	}
-	if (flags & patflag_dir) != 0 {
+	if (flags & patflagDir) != 0 {
 		w.dirPatterns.Include.Add(r)
 	}
 }
@@ -113,10 +116,10 @@ func (w *DirWalk) includePattern(exp string) {
 func (w *DirWalk) omitPattern(exp string) {
 	var flags = w.patternFlags
 	r := w.addPattern(exp)
-	if (flags & patflag_file) != 0 {
+	if (flags & patflagFile) != 0 {
 		w.filePatterns.Omit.Add(r)
 	}
-	if (flags & patflag_dir) != 0 {
+	if (flags & patflagDir) != 0 {
 		w.dirPatterns.Omit.Add(r)
 	}
 }
@@ -248,13 +251,13 @@ func (w *DirWalk) assertMutable() {
 }
 
 type patternCollection struct {
-	Include *Array[*regexp.Regexp]
-	Omit    *Array[*regexp.Regexp]
+	Include *Array[regex]
+	Omit    *Array[regex]
 }
 
 func newPatternCollection() *patternCollection {
 	var p = new(patternCollection)
-	p.Include = NewArray[*regexp.Regexp]()
-	p.Omit = NewArray[*regexp.Regexp]()
+	p.Include = NewArray[regex]()
+	p.Omit = NewArray[regex]()
 	return p
 }
