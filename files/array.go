@@ -60,6 +60,7 @@ func (array *Array[T]) ToJson() *JSMap {
 	return m
 }
 
+// Deprecated; use Array instead
 func (array *Array[T]) Slice() []T {
 	return array.wrappedArray
 }

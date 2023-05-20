@@ -19,13 +19,13 @@ type BaseObject interface {
 	Logger() Logger
 }
 
-type concreteLogger struct {
+type ConcreteLogger struct {
 	name    string
 	owner   any
 	verbose bool
 }
 
-func (c *concreteLogger) Name() string {
+func (c *ConcreteLogger) Name() string {
 	if c.name == "" {
 		t := reflect.TypeOf(c.owner)
 		var s = t.String()
@@ -39,26 +39,26 @@ func (c *concreteLogger) Name() string {
 	return c.name
 }
 
-func (c *concreteLogger) SetName(name string) {
+func (c *ConcreteLogger) SetName(name string) {
 	c.name = name
 }
 
-func (c *concreteLogger) SetVerbose(flag bool) {
+func (c *ConcreteLogger) SetVerbose(flag bool) {
 	c.verbose = flag
 }
 
-func (c *concreteLogger) Verbose() bool {
+func (c *ConcreteLogger) Verbose() bool {
 	return c.verbose
 }
 
-func (c *concreteLogger) Pr(messages ...any) {
+func (c *ConcreteLogger) Pr(messages ...any) {
 	if c.verbose {
 		Pr(append([]any{"[", c.Name(), "]:"}, messages...)...)
 	}
 }
 
-func NewLogger(owner any) Logger {
-	x := new(concreteLogger)
+func NewLogger(owner any) *ConcreteLogger {
+	x := new(ConcreteLogger)
 	x.owner = owner
 	return x
 }

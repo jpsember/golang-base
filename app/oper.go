@@ -9,4 +9,5 @@ var _ = Pr
 type Oper interface {
 	UserCommand() string
 	Perform(app *App)
+	GetHelp(printer *BasePrinter)
 }

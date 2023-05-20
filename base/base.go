@@ -245,6 +245,11 @@ func Error(message ...any) error {
 	return errors.New(s)
 }
 
+func HasKey[K comparable, V any](m map[K]V, key K) bool {
+	var _, result = m[key]
+	return result
+}
+
 // ---------------------------------------------------------------------------------------
 // Generated data type interface
 // ---------------------------------------------------------------------------------------

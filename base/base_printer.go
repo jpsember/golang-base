@@ -18,6 +18,11 @@ func ToString(message ...any) string {
 	return x.Pr(message...).String()
 }
 
+func NewBasePrinter() *BasePrinter {
+	var b = new(BasePrinter)
+	return b
+}
+
 type BasePrinter struct {
 	indentColumn  int
 	column        int
