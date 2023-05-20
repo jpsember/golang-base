@@ -12,6 +12,7 @@ type Array[T any] struct {
 }
 
 func NewArray[T any]() *Array[T] {
+	Todo("Array and Set should be moved to base package")
 	m := new(Array[T])
 	// Make a slice that has length zero, but whose underlying array has a capacity of 10
 	m.wrappedArray = make([]T, 0, 10)

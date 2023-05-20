@@ -1,11 +1,29 @@
 package main
-
 import (
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/data"
+	. "github.com/jpsember/golang-base/app"
 )
 
+var _ = Pr
+
+
+
+
+
 func main() {
-	var x = NewEnumInfo("inactive running stopped")
-	Pr(x)
+
+
+
+
+	var oper = NewOper()
+oper.UserCommand = "speak"
+oper.Perform =
+
+
+
+
+
+	var app = NewApp()
+
+	app.RegisterOper()
 }
