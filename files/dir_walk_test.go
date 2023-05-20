@@ -17,10 +17,7 @@ func sampleDir(j *jt.J) Path {
 
 func TestDirWalk(t *testing.T) {
 	j := jt.New(t) // Use Newz to regenerate hash
-	j.SetVerbose()
-
-	var w = NewDirWalk(sampleDir(j))
-	w.Logger().SetVerbose(true)
+	var w = sampleWalker(j)
 	w.WithRecurse()
 
 	// Skip specific full names
@@ -30,19 +27,41 @@ func TestDirWalk(t *testing.T) {
 	// Skip names containing substrings (prefixes in this case)
 	//
 	w.OmitNamesWithSubstrings("^_SKIP_", `^\.`)
+	assertWalk(j, w)
+}
 
+func sampleWalker(j *jt.J) *DirWalk {
+	var w = NewDirWalk(sampleDir(j))
+	w.Logger().SetVerbose(j.Verbose())
+	return w
+}
+
+func assertWalk(j *jt.J, w *DirWalk) {
 	var m = NewJSMap()
 	for _, x := range w.FilesRelative() {
 		m.PutNumbered(x.String())
 	}
 	j.AssertMessage(m)
+}
 
+func TestSampleDir(t *testing.T) {
+	j := jt.New(t)
+	var w = sampleWalker(j)
+	w.WithRecurse()
+	assertWalk(j, w)
+}
+
+func TestSampleDirWithDirNames(t *testing.T) {
+	j := jt.New(t)
+	var w = sampleWalker(j)
+	w.WithRecurse()
+	w.WithDirNames()
+	assertWalk(j, w)
 }
 
 func TestIncludePrefixes(t *testing.T) {
 	j := jt.New(t)
-	var w = NewDirWalk(sampleDir(j))
-	w.Logger().SetVerbose(j.Verbose())
+	var w = sampleWalker(j)
 	w.WithRecurse()
 	// Omit any files (or directories) starting with _SKIP_ or a dot
 	w.OmitNamesWithSubstrings("^_SKIP_", `^\.`)
@@ -50,11 +69,5 @@ func TestIncludePrefixes(t *testing.T) {
 	w.ForFiles().IncludeExtensions("go", "json")
 	// Omit subdirectories with substring "harl"
 	w.ForDirs().OmitNamesWithSubstrings("harl")
-
-	var m = NewJSMap()
-	for _, x := range w.FilesRelative() {
-		m.PutNumbered(x.String())
-	}
-	j.AssertMessage(m)
-
+	assertWalk(j, w)
 }

@@ -16,6 +16,7 @@ type DirWalk struct {
 	logger         Logger
 	patternFlags   int
 	regexpSet      map[string]*regexp.Regexp
+	includeDirs    bool
 }
 
 // BaseObject implementation
@@ -40,6 +41,13 @@ func NewDirWalk(directory Path) *DirWalk {
 
 var defaultOmitPrefixes = []string{
 	"_SKIP_", "_OLD_",
+}
+
+// Include directory names in the returned file list.  Normally,
+// these are omitted.
+func (w *DirWalk) WithDirNames() *DirWalk {
+	w.includeDirs = true
+	return w
 }
 
 // Have subsequent patterns affect only files
@@ -144,6 +152,7 @@ func (w *DirWalk) Files() []Path {
 		pr("start dir:", w.startDirectory)
 
 		var lst []Path
+
 		var stack = NewArray[Path]()
 		stack.Add(w.startDirectory)
 
@@ -155,6 +164,10 @@ func (w *DirWalk) Files() []Path {
 				continue
 			}
 			firstDir = false
+
+			if w.includeDirs {
+				lst = append(lst, dir)
+			}
 
 			files, err := os.ReadDir(dir.String())
 			CheckOk(err, "failed to read dir:", dir)
@@ -200,7 +213,6 @@ func (w *DirWalk) Files() []Path {
 				}
 
 				if childIsDir {
-					Todo("Have option to include directories in returned list")
 					stack.Add(child)
 					pr("stacking dir", child)
 				} else {

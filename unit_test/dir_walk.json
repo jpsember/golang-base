@@ -1,3 +1,5 @@
-{         "TestDirWalk" : 4404,
-  "TestIncludePrefixes" : 9899
+{               "TestDirWalk" : 6315,
+        "TestIncludePrefixes" : 9899,
+              "TestSampleDir" : 6315,
+  "TestSampleDirWithDirNames" : 1799
 }
