@@ -49,7 +49,7 @@ func TestIncludePrefixes(t *testing.T) {
 	// Omit any files (or directories) starting with _SKIP_ or a dot
 	w.OmitNamesWithSubstrings("^_SKIP_", `^\.`)
 	// Include files with particular extensions
-	w.WithExtensions("go", "json")
+	w.ForFiles().IncludeExtensions("go", "json")
 
 	var m = NewJSMap()
 	for _, x := range w.FilesRelative() {
