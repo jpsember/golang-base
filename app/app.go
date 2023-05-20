@@ -9,18 +9,15 @@ import (
 var _ = Pr
 
 type App struct {
-	logger             Logger
-	UserCommand        func() string
-	Perform            func()
-	RegisterOperations func()
-	operMap            map[string]*Oper
-	orderedCommands    Array[string]
+	logger Logger
+	operMap         map[string]Oper
+	orderedCommands Array[string]
 }
 
 func NewApp() *App {
 	var w = new(App)
 	w.logger = NewLogger(w)
-	w.operMap = make(map[string]*Oper)
+	w.operMap = make(map[string]Oper)
 	return w
 }
 
@@ -28,7 +25,7 @@ func (a *App) Logger() Logger {
 	return a.logger
 }
 
-func (a *App) RegisterOper(oper *Oper) {
+func (a *App) RegisterOper(oper Oper) {
 	key := oper.UserCommand()
 	_, ok := a.operMap[key]
 	CheckState(!ok, "duplicate oper key:", key)
@@ -37,7 +34,6 @@ func (a *App) RegisterOper(oper *Oper) {
 	}
 	a.orderedCommands.Add(key)
 	a.operMap[key] = oper
-	oper.App = a
 }
 
 func (a *App) HasMultipleOperations() bool {
@@ -54,6 +50,7 @@ func (a *App) Start() {
 		ordered.Add(k)
 	}
 
+	a.operMap[ordered.Get(0)].Perform(a)
 	Todo("sort the Array of oper names")
 
 	Todo("construct and parse command line arguments")

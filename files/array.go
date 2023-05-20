@@ -71,3 +71,7 @@ func (array *Array[T]) NonEmpty() bool {
 func (array *Array[T]) Append(items ...T) {
 	array.wrappedArray = append(array.wrappedArray, items...)
 }
+
+func (array *Array[T]) Get(i int) T {
+	return array.wrappedArray[i]
+}

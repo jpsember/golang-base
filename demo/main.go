@@ -1,29 +1,30 @@
 package main
+
 import (
-	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/app"
+	. "github.com/jpsember/golang-base/base"
 )
 
 var _ = Pr
 
+type SpeakOper struct {
+}
 
+func (oper *SpeakOper) UserCommand() string {
+	return "speak"
+}
 
+func (oper *SpeakOper) Perform(app *App) {
+	app.Logger().SetVerbose(true)
+	pr := app.Logger().Pr
+	pr("this is SpeakOper.perform")
 
+	Pr("hello")
+}
 
 func main() {
-
-
-
-
-	var oper = NewOper()
-oper.UserCommand = "speak"
-oper.Perform =
-
-
-
-
-
+	var oper = &SpeakOper{}
 	var app = NewApp()
-
-	app.RegisterOper()
+	app.RegisterOper(oper)
+	app.Start()
 }
