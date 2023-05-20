@@ -17,6 +17,7 @@ type App struct {
 	cmdLineArgs     *CmdLineArgs
 	Name            string
 	Version         string
+	DryRun          bool
 }
 
 func NewApp() *App {
@@ -122,8 +123,8 @@ func (a *App) GetName() string {
 
 func (a *App) Start() {
 	args := os.Args[1:]
-	_ = args
-	Pr("args:", args)
+	//_ = args
+	//Pr("args:", args)
 
 	var ordered = NewArray[string]()
 	for k := range a.operMap {
@@ -134,25 +135,23 @@ func (a *App) Start() {
 	Todo("sort the Array of oper names")
 
 	Todo("construct and parse command line arguments")
+
+	var c = a.CmdLineArgs()
+	c.Parse(args)
+	if c.HelpShown() {
+		return
+	}
+	if c.Get(CLARG_VERSION) {
+		Pr(a.Version)
+		return
+	}
+	a.Logger().SetVerbose(c.Get(CLARG_VERBOSE))
+	a.DryRun = c.Get(CLARG_DRYRUN)
+
 	/**
 		<pre>
 
-		    mOperMap = hashMap();
-	    mOrderedOperCommands = arrayList();
-	    registerOperations();
-	    mOrderedOperCommands.sort(null);
 
-	    cmdLineArgs().parse(cmdLineArguments);
-	    if (cmdLineArgs().helpShown())
-	      return;
-
-	    if (cmdLineArgs().get(CLARG_VERSION)) {
-	      pr(getVersion());
-	      return;
-	    }
-
-	    setVerbose(cmdLineArgs().get(CLARG_VERBOSE));
-	    mDryRun = cmdLineArgs().get(CLARG_DRYRUN);
 	    if (supportArgsFile()) {
 	      mGenArgs = cmdLineArgs().get(CLARG_GEN_ARGS);
 	      mArgsFile = new File(cmdLineArgs().getString(CLARG_ARGS_FILE));
@@ -169,4 +168,26 @@ func (a *App) Start() {
 
 		</pre>
 	*/
+
+	if !a.HasMultipleOperations() {
+		CheckState(a.orderedCommands.NonEmpty(), "no operations defined")
+		var oper = a.operMap[a.orderedCommands.Get(0)]
+		a.auxRunOper(oper)
+	} else {
+		for c.HasNextArg() {
+			var operation = c.NextArg()
+			var oper = a.operMap[operation]
+			CheckState(oper != nil, "no such operation:", operation)
+			a.auxRunOper(oper)
+		}
+	}
+
+	if c.HasNextArg() {
+		Pr("*** Ignoring remaining arguments:", c.ExtraArgs())
+	}
+}
+
+func (a *App) auxRunOper(oper Oper) {
+	oper.ProcessArgs(a.cmdLineArgs)
+	oper.Perform(a)
 }

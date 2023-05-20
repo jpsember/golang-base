@@ -11,9 +11,12 @@ type CmdLineArgs struct {
 	banner string
 	locked bool
 
-	opt            *Option
-	namedOptionMap map[string]*Option
-	optionList     *Array[string]
+	opt             *Option
+	namedOptionMap  map[string]*Option
+	optionList      *Array[string]
+	extraArgsCursor int
+	exArgs          []string
+	helpShown       bool
 }
 
 func NewCmdLineArgs() *CmdLineArgs {
@@ -163,11 +166,96 @@ type Option struct {
 }
 
 func NewOption(longName string) *Option {
-	var opt = Option{LongName: longName}
+	var opt = Option{
+		LongName: longName,
+		Type:     Bool,
+	}
 	return &opt
 }
 
 func (opt *Option) SetType(t OptType) {
 	CheckState(opt.Type == Unknown)
 	opt.Type = t
+}
+
+// // ------------------------------------------------------------------
+// // Additional functionality moved from App class
+// // ------------------------------------------------------------------
+//
+// private String[] mExtraArgs;
+// private int mExtraArgsCursor;
+// private Map<String, Object> mArgValueMap = hashMap();
+// private boolean mStillHandlingArgs;
+//
+//	private int extraArgsCursor() {
+//	  return mExtraArgsCursor;
+//	}
+func (c *CmdLineArgs) ExtraArgs() []string {
+	if c.exArgs == nil {
+		c.exArgs = []string{}
+		Todo("determine extra args")
+	}
+	return c.exArgs
+}
+
+//	private String[] extraArgs() {
+//	  if (mExtraArgs == null)
+//	    mExtraArgs = getExtras();
+//	  return mExtraArgs;
+//	}
+func (c *CmdLineArgs) HasNextArg() bool {
+	return c.extraArgsCursor < len(c.ExtraArgs())
+}
+
+//	  return extraArgsCursor() < extraArgs().length;
+//	}
+//
+//	public final void assertArgsDone() {
+//	  if (hasNextArg())
+//	    fail("Unexpected extra argument(s): " + nextArg());
+//	}
+//
+//	public final String peekNextArg() {
+//	  if (!hasNextArg())
+//	    fail("missing argument(s)");
+//	  return extraArgs()[mExtraArgsCursor];
+//	}
+func (c *CmdLineArgs) PeekNextArg() string {
+	if !c.HasNextArg() {
+		BadState("missing argument(s)")
+	}
+	return c.ExtraArgs()[c.extraArgsCursor]
+}
+
+func (c *CmdLineArgs) NextArg() string {
+	arg := c.PeekNextArg()
+	c.extraArgsCursor++
+	return arg
+}
+
+// public final String nextArg(String defaultValue) {
+//   String value = defaultValue;
+//   if (hasNextArg() || value == null)
+//     value = nextArg();
+//   return value;
+// }
+
+func (c *CmdLineArgs) HelpShown() bool {
+	return c.helpShown
+}
+
+// Get the boolean value supplied for an option, or its default if none was given. If no default was specified, assume it was false.
+func (c *CmdLineArgs) Get(optionName string) bool {
+
+	var opt = c.findOption(optionName)
+	Pr("opt:", opt)
+	CheckState(opt.Type == Bool, "type mismatch", optionName)
+	Todo("do we need to store a default value somewhere?")
+	return false
+}
+
+func (c *CmdLineArgs) findOption(optionName string) *Option {
+	opt := c.namedOptionMap[optionName]
+	CheckState(opt != nil, "unrecognized option:", optionName)
+	return opt
 }

@@ -25,6 +25,10 @@ func (oper *SpeakOper) Perform(app *App) {
 func (oper *SpeakOper) GetHelp(bp *BasePrinter) {
 
 }
+
+func (oper *SpeakOper) ProcessArgs(args *CmdLineArgs) {
+}
+
 func main() {
 	var oper = &SpeakOper{}
 	var app = NewApp()

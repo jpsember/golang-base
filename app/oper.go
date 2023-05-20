@@ -10,4 +10,5 @@ type Oper interface {
 	UserCommand() string
 	Perform(app *App)
 	GetHelp(printer *BasePrinter)
+	ProcessArgs(args *CmdLineArgs)
 }
