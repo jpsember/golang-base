@@ -26,12 +26,18 @@ func (oper *SpeakOper) GetHelp(bp *BasePrinter) {
 
 }
 
-func (oper *SpeakOper) ProcessArgs(args *CmdLineArgs) {
-}
+//func (oper *SpeakOper) ProcessArgs(args *CmdLineArgs) {
+//
+//}
 
 func main() {
 	var oper = &SpeakOper{}
 	var app = NewApp()
+	app.CmdLineArgs(). //
+				Add("debugging").Desc("perform extra tests"). //
+				Add("speed").SetInt().Add("jumping")
+
 	app.RegisterOper(oper)
+	app.SetTestArgs("-d --speed 42 --verbose --dryrun --version")
 	app.Start()
 }

@@ -2,6 +2,7 @@ package app
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"strconv"
 	"strings"
 )
 import . "github.com/jpsember/golang-base/files"
@@ -11,12 +12,14 @@ type CmdLineArgs struct {
 	banner string
 	locked bool
 
-	opt             *Option
-	namedOptionMap  map[string]*Option
-	optionList      *Array[string]
-	extraArgsCursor int
-	exArgs          []string
-	helpShown       bool
+	opt               *Option
+	namedOptionMap    map[string]*Option
+	optionList        *Array[string]
+	extraArgsCursor   int
+	exArgs            []string
+	helpShown         bool
+	extraArguments    *Array[string]
+	stillHandlingArgs bool
 }
 
 func NewCmdLineArgs() *CmdLineArgs {
@@ -24,6 +27,7 @@ func NewCmdLineArgs() *CmdLineArgs {
 	c.logger = NewLogger(c)
 	c.namedOptionMap = make(map[string]*Option)
 	c.optionList = NewArray[string]()
+	c.extraArguments = NewArray[string]()
 	return c
 }
 
@@ -34,6 +38,107 @@ func (c *CmdLineArgs) WithBanner(banner string) *CmdLineArgs {
 
 func (c *CmdLineArgs) Parse(args []string) {
 	c.lock()
+	var argList = c.unpackArguments(args)
+	c.readArgumentValues(argList)
+}
+
+// Read the arguments, and return an array that contains
+// [*Option, value, *Option, *Option, value, ...]
+func (c *CmdLineArgs) unpackArguments(args []string) *Array[any] {
+	var pattern = Regexp(`^--?[a-z_A-Z][a-z_A-Z\-]*$`)
+
+	var argList = NewArray[any]()
+	for _, arg := range args {
+		if pattern.MatchString(arg) {
+			if strings.HasPrefix(arg, "--") {
+				var opt = c.findOption(arg[2:])
+				opt.Invocation = arg
+				argList.Add(opt)
+			} else {
+				for i := 1; i < len(arg); i++ {
+					var opt = c.findOption(arg[i : i+1])
+					opt.Invocation = arg
+					argList.Add(opt)
+				}
+			}
+			continue
+		}
+		argList.Add(arg)
+	}
+	return argList
+}
+
+func (c *CmdLineArgs) Help() {
+	if c.helpShown {
+		return
+	}
+	c.helpShown = true
+	Pr("....not implemented; help...")
+}
+
+// Process the unpacked list of options and values, assigning values to the
+// options
+func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
+
+	var cursor = 0
+	for cursor < args.Size() {
+		var arg = args.Get(cursor)
+		cursor++
+
+		Pr("examining arg:", arg)
+		opt, ok := arg.(*Option)
+		if ok {
+			Pr("processing option, type:", opt.Type)
+			if opt.Type == Bool {
+				opt.BoolValue = true
+				continue
+			}
+			if opt.LongName == "help" {
+				c.Help()
+				break
+			}
+
+			for {
+
+				// We expect a string to be the next argument.
+				// If it is missing, or is another option, that's a problem
+				missing := true
+				var value string
+				if cursor < args.Size() {
+					arg = args.Get(cursor)
+					cursor++
+					v, ok := arg.(string)
+					if ok {
+						missing = false
+						value = v
+					}
+				}
+
+				if missing {
+					BadArg("Expected value for argument:", opt.Invocation)
+				}
+
+				switch opt.Type {
+				case Int:
+					intVal, err := strconv.ParseInt(value, 10, 64)
+					CheckArg(err == nil, "Can't parse int:", value, "from", opt.Invocation)
+					opt.IntValue = intVal
+				case Float:
+					float64Val, err := strconv.ParseFloat(value, 64)
+					CheckArg(err == nil, "Can't parse float:", value, "from", opt.Invocation)
+					opt.FloatValue = float64Val
+				case Str:
+					opt.StringValue = value
+				default:
+					Halt("unsupported type:", opt.Type)
+				}
+			}
+		} else {
+			// This was an argument not tied to an option;
+			// add them to the extra arguments list
+			c.extraArguments.Add(arg.(string))
+		}
+	}
 }
 
 func (c *CmdLineArgs) lock() {
@@ -48,24 +153,45 @@ func (c *CmdLineArgs) lock() {
 	c.chooseShortNames()
 }
 
-func (c *CmdLineArgs) claimName(name string, owner *Option) {
+func (c *CmdLineArgs) claimName(name string) {
 	if value, hasKey := c.namedOptionMap[name]; hasKey {
 		BadState("option already exists:", name, "for:", value.Description)
 	}
-	c.namedOptionMap[name] = owner
+	c.namedOptionMap[name] = c.option()
 }
 
 func (c *CmdLineArgs) Add(longName string) *CmdLineArgs {
 	c.checkNotLocked()
 	c.opt = NewOption(longName)
-	c.claimName(longName, c.opt)
+	c.claimName(longName)
 	c.optionList.Add(longName)
 	return c
 }
 
 func (c *CmdLineArgs) ShortName(shortName string) *CmdLineArgs {
-	c.opt.ShortName = shortName
-	c.claimName(shortName, c.opt)
+	c.option().ShortName = shortName
+	c.claimName(shortName)
+	return c
+}
+
+func (c *CmdLineArgs) option() *Option {
+	if c.opt == nil {
+		BadState("No current Option")
+	}
+	return c.opt
+}
+
+// Set type of current option to int
+func (c *CmdLineArgs) SetInt() *CmdLineArgs {
+	c.option().Type = Int
+	return c
+}
+func (c *CmdLineArgs) SetFloat() *CmdLineArgs {
+	c.option().Type = Float
+	return c
+}
+func (c *CmdLineArgs) SetString() *CmdLineArgs {
+	c.option().Type = Str
 	return c
 }
 
@@ -74,12 +200,12 @@ func (c *CmdLineArgs) checkNotLocked() {
 }
 
 func (c *CmdLineArgs) Desc(description string) *CmdLineArgs {
-	c.opt.Description = description
+	c.option().Description = description
 	return c
 }
 func (c *CmdLineArgs) chooseShortNames() {
 	for _, key := range c.optionList.Array() {
-		opt := c.namedOptionMap[key]
+		c.opt = c.namedOptionMap[key]
 
 		j := 0
 		// If option has prefix "no", it's probably 'noXXX', so avoid
@@ -87,7 +213,7 @@ func (c *CmdLineArgs) chooseShortNames() {
 		if strings.HasPrefix(key, "no") {
 			j = 2
 		}
-		for ; opt.ShortName == ""; j++ {
+		for ; c.option().ShortName == ""; j++ {
 			if j >= len(key) {
 				// choose first unused character
 
@@ -95,8 +221,8 @@ func (c *CmdLineArgs) chooseShortNames() {
 				for k := 0; k < len(poss); k++ {
 					candidate := poss[k : k+1]
 					if !HasKey(c.namedOptionMap, candidate) {
-						c.claimName(candidate, opt)
-						opt.ShortName = candidate
+						c.claimName(candidate)
+						c.option().ShortName = candidate
 						break
 					}
 				}
@@ -104,19 +230,16 @@ func (c *CmdLineArgs) chooseShortNames() {
 			}
 
 			candidate := key[j : j+1]
-			if !HasKey(c.namedOptionMap, candidate) {
-				c.claimName(candidate, opt)
-				opt.ShortName = candidate
-				break
+			if HasKey(c.namedOptionMap, candidate) {
+				candidate = strings.ToUpper(candidate)
 			}
-			candidate = strings.ToUpper(candidate)
 			if !HasKey(c.namedOptionMap, candidate) {
-				c.claimName(candidate, opt)
-				opt.ShortName = candidate
+				c.claimName(candidate)
+				c.option().ShortName = candidate
 				break
 			}
 		}
-		c.validate(opt.ShortName != "", "can't find short name for", key)
+		c.validate(c.option().ShortName != "", "can't find short name for", key)
 	}
 
 }
@@ -130,8 +253,10 @@ func (c *CmdLineArgs) validate(condition bool, message ...any) {
 type OptType int
 
 const (
-	Unknown = iota
-	Bool
+	Bool = iota
+	Int
+	Float
+	Str
 )
 
 // Representation of a command line option
@@ -141,28 +266,15 @@ type Option struct {
 	Type        OptType
 	typeDefined bool
 	Description string
+	Invocation  string
+	BoolValue   bool
+	IntValue    int64
+	FloatValue  float64
+	StringValue string
+}
 
-	/**
-		<pre>
-		    public boolean hasValue() {
-	      return !mValues.isEmpty();
-	    }
-
-	    public String mLongName;
-	    public String mShortName;
-	    public Object mDefaultValue;
-	    public String mDescription = "*** No description! ***";
-	    public int mType;
-	    public boolean mArray;
-	    // Number of values expected; -1 if variable-length array
-	    public int mExpectedValueCount = 1;
-	    public boolean mTypeDefined;
-	    public String mInvocation;
-	    public ArrayList<Object> mValues = arrayList();
-	  }
-
-		</pre>
-	*/
+func (x *Option) String() string {
+	return "Option"
 }
 
 func NewOption(longName string) *Option {
@@ -174,8 +286,18 @@ func NewOption(longName string) *Option {
 }
 
 func (opt *Option) SetType(t OptType) {
-	CheckState(opt.Type == Unknown)
 	opt.Type = t
+}
+
+func (c *CmdLineArgs) HandlingArgs() bool {
+	c.stillHandlingArgs = !c.stillHandlingArgs
+	if !c.stillHandlingArgs {
+		//ensureRequiredArgsProvided()
+		if c.HasNextArg() {
+			Pr("...done handling args; argument(s) remain:", c.PeekNextArg())
+		}
+	}
+	return c.stillHandlingArgs
 }
 
 // // ------------------------------------------------------------------
@@ -246,9 +368,7 @@ func (c *CmdLineArgs) HelpShown() bool {
 
 // Get the boolean value supplied for an option, or its default if none was given. If no default was specified, assume it was false.
 func (c *CmdLineArgs) Get(optionName string) bool {
-
 	var opt = c.findOption(optionName)
-	Pr("opt:", opt)
 	CheckState(opt.Type == Bool, "type mismatch", optionName)
 	Todo("do we need to store a default value somewhere?")
 	return false

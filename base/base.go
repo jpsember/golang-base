@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"regexp"
 	"runtime/debug"
 	"strings"
+	"sync"
 )
 
 var Dashes = "------------------------------------------------------------------------------------------\n"
@@ -260,4 +262,17 @@ type DataClass interface {
 	fmt.Stringer
 	ToJson() any // This should return a JSEntity, to be defined elsewhere
 	Parse(source any) DataClass
+}
+
+var regexpCache = &sync.Map{}
+
+func Regexp(expr string) *regexp.Regexp {
+	value, ok := regexpCache.Load(expr)
+	if ok {
+		return value.(*regexp.Regexp)
+	}
+	pat, err := regexp.Compile(expr)
+	CheckOk(err, "trouble compiling regexp:", Quoted(expr))
+	regexpCache.Store(expr, pat)
+	return pat
 }

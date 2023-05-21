@@ -11,13 +11,15 @@ import (
 var _ = Pr
 
 type App struct {
-	logger          Logger
-	operMap         map[string]Oper
-	orderedCommands Array[string]
-	cmdLineArgs     *CmdLineArgs
-	Name            string
-	Version         string
-	DryRun          bool
+	logger                Logger
+	operMap               map[string]Oper
+	orderedCommands       Array[string]
+	cmdLineArgs           *CmdLineArgs
+	Name                  string
+	Version               string
+	DryRun                bool
+	ProcessAdditionalArgs func(c *CmdLineArgs)
+	testArgs              []string
 }
 
 func NewApp() *App {
@@ -55,7 +57,9 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 	//   ca.add(CLARG_GEN_ARGS).desc("Generate default operation arguments").shortName("g");
 	// }
 
-	Todo("have optional func pointer to addAppCommandLineArgs")
+	if false {
+		Todo("have optional func pointer to addAppCommandLineArgs")
+	}
 	// a.addAppCommandLineArgs(ca)
 	//for _, oper = range a.operMap {
 	//
@@ -95,6 +99,10 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 	return ca
 }
 
+func (a *App) SetTestArgs(args string) {
+	a.testArgs = strings.Split(args, " ")
+}
+
 func (a *App) RegisterOper(oper Oper) {
 	key := oper.UserCommand()
 	_, ok := a.operMap[key]
@@ -123,18 +131,18 @@ func (a *App) GetName() string {
 
 func (a *App) Start() {
 	args := os.Args[1:]
-	//_ = args
-	//Pr("args:", args)
+
+	if a.testArgs != nil {
+		args = a.testArgs
+		Pr("Using test args:", args)
+	}
 
 	var ordered = NewArray[string]()
 	for k := range a.operMap {
 		ordered.Add(k)
 	}
 
-	a.operMap[ordered.Get(0)].Perform(a)
 	Todo("sort the Array of oper names")
-
-	Todo("construct and parse command line arguments")
 
 	var c = a.CmdLineArgs()
 	c.Parse(args)
@@ -185,9 +193,142 @@ func (a *App) Start() {
 	if c.HasNextArg() {
 		Pr("*** Ignoring remaining arguments:", c.ExtraArgs())
 	}
+
+	a.processArgs()
 }
 
+func (a *App) processArgs() {
+	var c = a.CmdLineArgs()
+	var inf = 0
+	for c.HandlingArgs() {
+		inf++
+		if inf > 100 {
+			Die("infinite loop")
+		}
+		if a.ProcessAdditionalArgs != nil {
+			a.ProcessAdditionalArgs(c)
+		}
+	}
+
+	Todo("Check for no operation selected (only if multiple opers)")
+	//  if (app().hasMultipleOperations() && nullOrEmpty(userCommand())) {
+	//    throw badArg("No userCommand defined");
+	//  }
+	//
+
+	Todo("Perform generate args if requested")
+	//  if (app().genArgsFlag()) {
+	//    AbstractData data = defaultArgs();
+	//    if (data == null) {
+	//      pr("*** json arguments aren't supported for:", userCommand());
+	//    } else {
+	//      pr(config());
+	//    }
+	//    throw new ExitOperImmediately();
+	//  }
+	//
+	Todo("if json arguments are supported, process them")
+	//  if (argsSupported()) {
+	//    mJsonArgs = defaultArgs();
+	//
+	//    // Start with the args file that the user supplied as the command line argument (if any)
+	//    File argsFile = app().argsFile();
+	//    argsFile = Files.subprojectVariant(Files.ifEmpty(argsFile, defaultArgsFilename()));
+	//    log("...looking for arguments in:", argsFile);
+	//    if (!argsFile.exists()) {
+	//      // If there is a version of the args file with underscores instead, raise hell
+	//      {
+	//        String name = argsFile.getName();
+	//        String fixed = name.replace('_', '-');
+	//        if (!fixed.equals(name)) {
+	//          File fixedFile = new File(Files.parent(argsFile), fixed);
+	//          if (fixedFile.exists())
+	//            setError("Could not find arguments file:", argsFile,
+	//                "but did find one with different spelling:", fixedFile, "(assuming this is a mistake)");
+	//        }
+	//      }
+	//
+	//      if (argsFileMustExist())
+	//        throw setError("No args file specified, and no default found at:", argsFile);
+	//    } else {
+	//      mJsonArgs = Files.parseAbstractData(mJsonArgs, argsFile);
+	//      if (a.get(App.CLARG_VALIDATE_KEYS)) {
+	//        //
+	//        // Generate a JSMap A from the parsed arguments
+	//        // Re-parse the args file to a JSMap B.
+	//        // See if B.keys - A.keys is nonempty... if so, that's a problem.
+	//        //
+	//        // NOTE: this will only check the top-level JSMap, not any nested maps.
+	//        //
+	//        Set<String> keysA = mJsonArgs.toJson().asMap().keySet();
+	//        JSMap json = JSMap.fromFileIfExists(argsFile);
+	//        Set<String> keysB = json.keySet();
+	//        keysB.removeAll(keysA);
+	//        if (!keysB.isEmpty())
+	//          throw setError("Unexpected keys in", argsFile, INDENT, keysB);
+	//      }
+	//    }
+	//
+	//    AbstractData argsBuilder = mJsonArgs.toBuilder();
+	//
+	//    // While a next arg exists, and matches one of the keys in the args map,
+	//    // parse a key/value pair as an override
+	//    //
+	//    while (a.hasNextArg()) {
+	//      String key = a.peekNextArg();
+	//      Object parsedValue = null;
+	//      Accessor accessor = null;
+	//      try {
+	//        // Attempt to construct a data accessor for a field with this name
+	//        accessor = Accessor.dataAccessor(argsBuilder, key);
+	//        a.nextArg();
+	//      } catch (IllegalArgumentException e) {
+	//        log("no accessor built for arg:", key, e.getMessage());
+	//        break;
+	//      }
+	//      Object value = accessor.get();
+	//      if (value == null)
+	//        throw badArg("Accessor for", quote(key), "returned null; is it optional? They aren't supported");
+	//
+	//      Class valueClass = accessor.get().getClass();
+	//      String valueAsString = null;
+	//      if (a.hasNextArg())
+	//        valueAsString = a.peekNextArg();
+	//
+	//      // Special handling for boolean args: if no value given or
+	//      // fails parsing (i.e. next arg is some other key/value pair), assume 'true'
+	//      //
+	//      if (valueClass == Boolean.class) {
+	//        if (valueAsString == null)
+	//          parsedValue = true;
+	//        else {
+	//          parsedValue = tryParseAsBoolean(valueAsString);
+	//          if (parsedValue != null)
+	//            a.nextArg();
+	//          else
+	//            parsedValue = true;
+	//        }
+	//      }
+	//
+	//      if (parsedValue == null) {
+	//        if (!a.hasNextArg())
+	//          throw badArg("Missing value for command line argument:", key);
+	//        valueAsString = a.nextArg();
+	//        try {
+	//          parsedValue = DataUtil.parseValueFromString(valueAsString, valueClass);
+	//        } catch (Throwable t) {
+	//          throw badArgWithCause(t, "Failed to parse", quote(key), ":", valueAsString);
+	//        }
+	//      }
+	//      accessor.set(parsedValue);
+	//    }
+	//    mJsonArgs = argsBuilder.build();
+	//  }
+	//}
+	//
+
+}
 func (a *App) auxRunOper(oper Oper) {
-	oper.ProcessArgs(a.cmdLineArgs)
+	a.processArgs()
 	oper.Perform(a)
 }
