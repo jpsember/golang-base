@@ -10,22 +10,24 @@ import (
 	"strings"
 )
 
-var _ = Pr
-
 type App struct {
-	logger                Logger
-	operMap               map[string]Oper
-	orderedCommands       Array[string]
-	cmdLineArgs           *CmdLineArgs
+
+	// Client app should supply these fields:
 	Name                  string
 	Version               string
-	DryRun                bool
 	ProcessAdditionalArgs func(c *CmdLineArgs)
-	testArgs              []string
-	genArgsFlag           bool
-	argsFile              Path
-	operArguments         DataClass
 	ArgsFileMustExist     bool
+
+	logger          Logger
+	operMap         map[string]Oper
+	orderedCommands Array[string]
+	cmdLineArgs     *CmdLineArgs
+
+	dryRun        bool
+	testArgs      []string
+	genArgsFlag   bool
+	argsFile      Path
+	operArguments DataClass
 }
 
 func NewApp() *App {
@@ -55,13 +57,6 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 	ca := NewCmdLineArgs()
 	a.cmdLineArgs = ca
 
-	Todo("add support for args file")
-	//if (supportArgsFile()) {
-	//   ca.add(CLARG_ARGS_FILE).def("").desc("Specify file containing arguments").shortName("a");
-	//   ca.add(CLARG_VALIDATE_KEYS).desc("Check for extraneous keys").shortName("K");
-	//   ca.add(CLARG_GEN_ARGS).desc("Generate default operation arguments").shortName("g");
-	// }
-
 	if false {
 		Todo("have optional func pointer to addAppCommandLineArgs")
 	}
@@ -83,7 +78,7 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 	sb.WriteString(a.Version)
 	sb.WriteString("\n")
 
-	if a.HasMultipleOperations() {
+	if a.hasMultipleOperations() {
 		sb.WriteString("\nUsage: [--<app arg>]* [<operation> <operation arg>*]*\n\n")
 		sb.WriteString("Operations:\n")
 	}
@@ -91,14 +86,14 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 		oper := a.operMap[key]
 		bp := NewBasePrinter()
 		oper.GetHelp(bp)
-		if !a.HasMultipleOperations() {
+		if !a.hasMultipleOperations() {
 			sb.WriteString("\nUsage: " + a.GetName() + " ")
 		}
 		sb.WriteString(bp.String())
 		sb.WriteString("\n")
 	}
 
-	if a.HasMultipleOperations() {
+	if a.hasMultipleOperations() {
 		sb.WriteString("\nApp arguments:")
 	}
 	ca.WithBanner(sb.String())
@@ -121,7 +116,7 @@ func (a *App) RegisterOper(oper Oper) {
 	a.operMap[key] = oper
 }
 
-func (a *App) HasMultipleOperations() bool {
+func (a *App) hasMultipleOperations() bool {
 	return len(a.operMap) > 1
 }
 
@@ -172,7 +167,7 @@ func (a *App) Start() {
 	}
 
 	a.Logger().SetVerbose(c.Get(ClArgVerbose))
-	a.DryRun = c.Get(ClArgDryrun)
+	a.dryRun = c.Get(ClArgDryrun)
 	var pr = Printer(a)
 
 	var oper = a.determineOper()
@@ -207,7 +202,7 @@ func (a *App) determineOper() Oper {
 	var c = a.CmdLineArgs()
 
 	var oper Oper
-	if !a.HasMultipleOperations() {
+	if !a.hasMultipleOperations() {
 		CheckState(a.orderedCommands.NonEmpty(), "no operations defined")
 		oper = a.operMap[a.orderedCommands.Get(0)]
 		pr("single operation")
@@ -228,6 +223,7 @@ func (a *App) processArgs() {
 	pr := Printer(a)
 
 	var c = a.CmdLineArgs()
+	Todo("test the 'ProcessAdditionalArgs' option")
 	for c.HandlingArgs() {
 		if a.ProcessAdditionalArgs != nil {
 			a.ProcessAdditionalArgs(c)
