@@ -80,17 +80,28 @@ func (c *CmdLineArgs) Help() {
 // options
 func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
 
+	var pr func(message ...any)
+
+	if false {
+		pr = Pr
+	} else {
+		pr = func(message ...any) {}
+	}
+
+	pr("processing unpacked list of options and values")
+
 	var cursor = 0
 	for cursor < args.Size() {
 		var arg = args.Get(cursor)
+		pr("cursor", cursor, "arg:", arg)
 		cursor++
 
-		Pr("examining arg:", arg)
 		opt, ok := arg.(*Option)
 		if ok {
-			Pr("processing option, type:", opt.Type)
+			pr("...it is an option, type:", opt.Type, "name;", opt.LongName)
 			if opt.Type == Bool {
 				opt.BoolValue = true
+				pr("set boolean value to true")
 				continue
 			}
 			if opt.LongName == "help" {
@@ -98,14 +109,15 @@ func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
 				break
 			}
 
-			for {
-
+			//for
+			{
 				// We expect a string to be the next argument.
 				// If it is missing, or is another option, that's a problem
 				missing := true
 				var value string
 				if cursor < args.Size() {
 					arg = args.Get(cursor)
+					pr("cursor:", cursor, "read next arg as value for option:", arg)
 					cursor++
 					v, ok := arg.(string)
 					if ok {
@@ -123,12 +135,15 @@ func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
 					intVal, err := strconv.ParseInt(value, 10, 64)
 					CheckArg(err == nil, "Can't parse int:", value, "from", opt.Invocation)
 					opt.IntValue = intVal
+					pr("set int value", intVal)
 				case Float:
 					float64Val, err := strconv.ParseFloat(value, 64)
 					CheckArg(err == nil, "Can't parse float:", value, "from", opt.Invocation)
 					opt.FloatValue = float64Val
+					pr("set float value", float64Val)
 				case Str:
 					opt.StringValue = value
+					pr("set string value", value)
 				default:
 					Halt("unsupported type:", opt.Type)
 				}
@@ -186,10 +201,12 @@ func (c *CmdLineArgs) SetInt() *CmdLineArgs {
 	c.option().Type = Int
 	return c
 }
+
 func (c *CmdLineArgs) SetFloat() *CmdLineArgs {
 	c.option().Type = Float
 	return c
 }
+
 func (c *CmdLineArgs) SetString() *CmdLineArgs {
 	c.option().Type = Str
 	return c
@@ -203,6 +220,7 @@ func (c *CmdLineArgs) Desc(description string) *CmdLineArgs {
 	c.option().Description = description
 	return c
 }
+
 func (c *CmdLineArgs) chooseShortNames() {
 	for _, key := range c.optionList.Array() {
 		c.opt = c.namedOptionMap[key]
@@ -261,27 +279,32 @@ const (
 
 // Representation of a command line option
 type Option struct {
-	LongName    string
-	ShortName   string
-	Type        OptType
-	typeDefined bool
-	Description string
-	Invocation  string
-	BoolValue   bool
-	IntValue    int64
-	FloatValue  float64
-	StringValue string
+	LongName     string
+	ShortName    string
+	Type         OptType
+	typeDefined  bool
+	Description  string
+	Invocation   string
+	BoolValue    bool
+	IntValue     int64
+	FloatValue   float64
+	StringValue  string
+	DebugCounter int
 }
 
+var debugCounter = 500
+
 func (x *Option) String() string {
-	return "Option"
+	return "Option #" + strconv.Itoa(x.DebugCounter) + " '" + x.LongName + "' "
 }
 
 func NewOption(longName string) *Option {
 	var opt = Option{
-		LongName: longName,
-		Type:     Bool,
+		LongName:     longName,
+		Type:         Bool,
+		DebugCounter: debugCounter,
 	}
+	debugCounter++
 	return &opt
 }
 
@@ -370,12 +393,12 @@ func (c *CmdLineArgs) HelpShown() bool {
 func (c *CmdLineArgs) Get(optionName string) bool {
 	var opt = c.findOption(optionName)
 	CheckState(opt.Type == Bool, "type mismatch", optionName)
-	Todo("do we need to store a default value somewhere?")
-	return false
+	return opt.BoolValue
 }
 
 func (c *CmdLineArgs) findOption(optionName string) *Option {
 	opt := c.namedOptionMap[optionName]
 	CheckState(opt != nil, "unrecognized option:", optionName)
+	//Pr("found option", optionName, "as:", opt)
 	return opt
 }

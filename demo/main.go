@@ -23,16 +23,12 @@ func (oper *SpeakOper) Perform(app *App) {
 }
 
 func (oper *SpeakOper) GetHelp(bp *BasePrinter) {
-
 }
-
-//func (oper *SpeakOper) ProcessArgs(args *CmdLineArgs) {
-//
-//}
 
 func main() {
 	var oper = &SpeakOper{}
 	var app = NewApp()
+	app.Version = "2.0.3"
 	app.CmdLineArgs(). //
 				Add("debugging").Desc("perform extra tests"). //
 				Add("speed").SetInt().Add("jumping")

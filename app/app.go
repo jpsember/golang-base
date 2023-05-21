@@ -146,13 +146,23 @@ func (a *App) Start() {
 
 	var c = a.CmdLineArgs()
 	c.Parse(args)
+
+	// If we showed the help, exit
 	if c.HelpShown() {
 		return
 	}
+
+	// If user wants the version number, print it and exit
 	if c.Get(CLARG_VERSION) {
-		Pr(a.Version)
+		var vers = a.Version
+		if vers == "" {
+			Pr("*** no version specified ***")
+		} else {
+			Pr(vers)
+		}
 		return
 	}
+
 	a.Logger().SetVerbose(c.Get(CLARG_VERBOSE))
 	a.DryRun = c.Get(CLARG_DRYRUN)
 
