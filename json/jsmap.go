@@ -274,6 +274,11 @@ func (this *JSMap) OptBool(key string, defaultValue bool) bool {
 	return (val.(JSEntity)).ToBool()
 }
 
+// If a key/value pair exists, return the value
+func (jsmap *JSMap) OptAny(key string) JSEntity {
+	return jsmap.wrappedMap[key]
+}
+
 func JSMapFromString(content string) *JSMap {
 	var p JSONParser
 	p.WithText(content)

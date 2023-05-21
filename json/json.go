@@ -130,8 +130,16 @@ func (v JFloat) ToBool() bool {
 
 type JBool bool
 
+const (
+	JBoolFalse = JBool(false)
+	JBoolTrue  = JBool(true)
+)
+
 func MakeJBool(value bool) JSEntity {
-	return JBool(value)
+	if value {
+		return JBoolTrue
+	}
+	return JBoolFalse
 }
 
 func (v JBool) PrintTo(context *JSONPrinter) {

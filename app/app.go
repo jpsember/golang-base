@@ -3,9 +3,10 @@ package app
 import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
-	"github.com/jpsember/golang-base/json"
+	. "github.com/jpsember/golang-base/json"
 	"os"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
@@ -24,6 +25,9 @@ type App struct {
 	genArgsFlag           bool
 	argsFile              Path
 	oper                  Oper
+	operArguments         DataClass
+	gotOperArguments      bool
+	ArgsFileMustExist     bool
 }
 
 func NewApp() *App {
@@ -191,7 +195,7 @@ func (a *App) Start() {
 	}
 	a.oper = oper
 
-	if oper.GetArguments() != nil {
+	if a.getOperArguments() != nil {
 		a.genArgsFlag = c.Get(CLARG_GEN_ARGS)
 		var path = NewPathOrEmptyM(c.GetString(CLARG_ARGS_FILE))
 		if path.NonEmpty() {
@@ -251,115 +255,118 @@ func (a *App) processArgs() {
 	}
 
 	if a.genArgsFlag {
-		var data = a.oper.GetArguments()
+		var data = a.getOperArguments()
 		// Get default arguments by parsing an empty map
-		defaultArgs := data.Parse(json.NewJSMap())
+		defaultArgs := data.Parse(NewJSMap())
 		Pr(defaultArgs)
 		return
 	}
 
-	Todo("if json arguments are supported, process them")
-	//  if (argsSupported()) {
-	//    mJsonArgs = defaultArgs();
-	//
-	//    // Start with the args file that the user supplied as the command line argument (if any)
-	//    File argsFile = app().argsFile();
-	//    argsFile = Files.subprojectVariant(Files.ifEmpty(argsFile, defaultArgsFilename()));
-	//    log("...looking for arguments in:", argsFile);
-	//    if (!argsFile.exists()) {
-	//      // If there is a version of the args file with underscores instead, raise hell
-	//      {
-	//        String name = argsFile.getName();
-	//        String fixed = name.replace('_', '-');
-	//        if (!fixed.equals(name)) {
-	//          File fixedFile = new File(Files.parent(argsFile), fixed);
-	//          if (fixedFile.exists())
-	//            setError("Could not find arguments file:", argsFile,
-	//                "but did find one with different spelling:", fixedFile, "(assuming this is a mistake)");
-	//        }
-	//      }
-	//
-	//      if (argsFileMustExist())
-	//        throw setError("No args file specified, and no default found at:", argsFile);
-	//    } else {
-	//      mJsonArgs = Files.parseAbstractData(mJsonArgs, argsFile);
-	//      if (a.get(App.CLARG_VALIDATE_KEYS)) {
-	//        //
-	//        // Generate a JSMap A from the parsed arguments
-	//        // Re-parse the args file to a JSMap B.
-	//        // See if B.keys - A.keys is nonempty... if so, that's a problem.
-	//        //
-	//        // NOTE: this will only check the top-level JSMap, not any nested maps.
-	//        //
-	//        Set<String> keysA = mJsonArgs.toJson().asMap().keySet();
-	//        JSMap json = JSMap.fromFileIfExists(argsFile);
-	//        Set<String> keysB = json.keySet();
-	//        keysB.removeAll(keysA);
-	//        if (!keysB.isEmpty())
-	//          throw setError("Unexpected keys in", argsFile, INDENT, keysB);
-	//      }
-	//    }
-	//
-	//    AbstractData argsBuilder = mJsonArgs.toBuilder();
-	//
-	//    // While a next arg exists, and matches one of the keys in the args map,
-	//    // parse a key/value pair as an override
-	//    //
-	//    while (a.hasNextArg()) {
-	//      String key = a.peekNextArg();
-	//      Object parsedValue = null;
-	//      Accessor accessor = null;
-	//      try {
-	//        // Attempt to construct a data accessor for a field with this name
-	//        accessor = Accessor.dataAccessor(argsBuilder, key);
-	//        a.nextArg();
-	//      } catch (IllegalArgumentException e) {
-	//        log("no accessor built for arg:", key, e.getMessage());
-	//        break;
-	//      }
-	//      Object value = accessor.get();
-	//      if (value == null)
-	//        throw badArg("Accessor for", quote(key), "returned null; is it optional? They aren't supported");
-	//
-	//      Class valueClass = accessor.get().getClass();
-	//      String valueAsString = null;
-	//      if (a.hasNextArg())
-	//        valueAsString = a.peekNextArg();
-	//
-	//      // Special handling for boolean args: if no value given or
-	//      // fails parsing (i.e. next arg is some other key/value pair), assume 'true'
-	//      //
-	//      if (valueClass == Boolean.class) {
-	//        if (valueAsString == null)
-	//          parsedValue = true;
-	//        else {
-	//          parsedValue = tryParseAsBoolean(valueAsString);
-	//          if (parsedValue != null)
-	//            a.nextArg();
-	//          else
-	//            parsedValue = true;
-	//        }
-	//      }
-	//
-	//      if (parsedValue == null) {
-	//        if (!a.hasNextArg())
-	//          throw badArg("Missing value for command line argument:", key);
-	//        valueAsString = a.nextArg();
-	//        try {
-	//          parsedValue = DataUtil.parseValueFromString(valueAsString, valueClass);
-	//        } catch (Throwable t) {
-	//          throw badArgWithCause(t, "Failed to parse", quote(key), ":", valueAsString);
-	//        }
-	//      }
-	//      accessor.set(parsedValue);
-	//    }
-	//    mJsonArgs = argsBuilder.build();
-	//  }
-	//}
-	//
-
+	if a.getOperArguments() != nil {
+		a.compileDataArgs()
+	}
 }
+func (a *App) compileDataArgs() {
+	pr := Printer(a)
+
+	var operArgs = a.getOperArguments()
+
+	// Start with the args file that the user supplied as the command line argument (if any)
+	if a.argsFile.NonEmpty() {
+		argsFile := a.argsFile
+
+		// Todo: add support for subprojects
+		//    argsFile = Files.subprojectVariant(Files.ifEmpty(argsFile, defaultArgsFilename()));
+
+		pr("...looking for arguments in:", argsFile)
+		if !argsFile.Exists() {
+			// If there is a version of the args file with underscores instead, raise hell
+			name := argsFile.Base()
+			fixed := strings.ReplaceAll(name, "_", "-")
+			if fixed != name {
+				fixedFile := argsFile.Parent().JoinM(fixed)
+				if fixedFile.Exists() {
+					BadArg("Could not find arguments file:", argsFile, "but did find one with different spelling:", fixedFile, "(assuming this is a mistake)")
+				}
+			}
+			//
+			if a.ArgsFileMustExist {
+				BadArg("No args file specified, and no default found at:", argsFile)
+			}
+		}
+
+		operArgs = operArgs.Parse(argsFile.ReadStringIfExistsM("{}"))
+
+		var js = operArgs.ToJson().(*JSMap)
+
+		// While a next arg exists, and matches one of the keys in the args map,
+		// parse a key/value pair as an override
+
+		var c = a.CmdLineArgs()
+		for c.HasNextArg() {
+			var key = c.PeekNextArg()
+			value := js.OptAny(key)
+			if value == nil {
+				Pr("...can't find key:", Quoted(key), "in operation arguments")
+				break
+			}
+			c.NextArg()
+
+			if !c.HasNextArg() {
+				BadArg("Missing value for key", Quoted(key))
+			}
+			var userArg = c.NextArg()
+
+			var newVal JSEntity
+
+			// Determine the type of the field
+			switch t := value.(type) {
+			case JInteger:
+				val, err := strconv.Atoi(userArg)
+				CheckOk(err, "failed to convert to integer:", userArg)
+				newVal = MakeJInteger(int64(val))
+			case JFloat:
+				val, err := strconv.ParseFloat(userArg, 64)
+				CheckOk(err, "failed to convert to float64:", userArg)
+				newVal = MakeJFloat(float64(val))
+			case JBool:
+				switch userArg {
+				case "t", "true":
+					newVal = JBoolTrue
+				case "f", "false":
+					newVal = JBoolFalse
+				default:
+					BadArg("Bad bool value for key", Quoted(key), ":", Quoted(userArg))
+				}
+			case JString:
+				newVal = MakeJString(userArg)
+			default:
+				BadState("Unsupported value for key", Quoted(key), ":", t)
+			}
+
+			// Replace the value within the json map
+			js.Put(key, newVal)
+		}
+
+		// Re-parse the arguments from the (possibly modified) jsmap
+
+		Pr("about to re-parse:", INDENT, js)
+		operArgs = operArgs.Parse(js)
+		Pr("new oper args:", INDENT, operArgs)
+
+		a.operArguments = operArgs
+	}
+}
+
 func (a *App) auxRunOper(oper Oper) {
 	a.processArgs()
 	oper.Perform(a)
+}
+
+func (a *App) getOperArguments() DataClass {
+	if !a.gotOperArguments {
+		a.operArguments = a.oper.GetArguments()
+		a.gotOperArguments = true
+	}
+	return a.operArguments
 }

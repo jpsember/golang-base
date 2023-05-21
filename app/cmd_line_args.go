@@ -335,11 +335,7 @@ func (c *CmdLineArgs) HandlingArgs() bool {
 //	  return mExtraArgsCursor;
 //	}
 func (c *CmdLineArgs) ExtraArgs() []string {
-	if c.exArgs == nil {
-		c.exArgs = []string{}
-		Todo("determine extra args")
-	}
-	return c.exArgs
+	return c.extraArguments.Array()
 }
 
 //	private String[] extraArgs() {
