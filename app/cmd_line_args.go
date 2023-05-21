@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 )
-import . "github.com/jpsember/golang-base/files"
 
 type CmdLineArgs struct {
 	logger            Logger

@@ -1,8 +1,4 @@
-package files
-
-import (
-	. "github.com/jpsember/golang-base/base"
-)
+package base
 
 var _ = Pr
 

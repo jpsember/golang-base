@@ -190,7 +190,7 @@ func (w *DirWalk) Files() []Path {
 					pats = w.filePatterns
 				}
 
-				for _, pat := range pats.Omit.wrappedArray {
+				for _, pat := range pats.Omit.Array() {
 					if pat.MatchString(nm) {
 						omit = true
 						break
@@ -203,7 +203,7 @@ func (w *DirWalk) Files() []Path {
 
 				if pats.Include.NonEmpty() {
 					omit = true
-					for _, pat := range pats.Include.wrappedArray {
+					for _, pat := range pats.Include.Array() {
 						if pat.MatchString(nm) {
 							omit = false
 							break

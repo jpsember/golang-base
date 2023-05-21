@@ -1,9 +1,4 @@
-package files
-
-import (
-	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/json"
-)
+package base
 
 var _ = Pr
 
@@ -12,7 +7,6 @@ type Array[T any] struct {
 }
 
 func NewArray[T any]() *Array[T] {
-	Todo("Array and Set should be moved to base package")
 	m := new(Array[T])
 	// Make a slice that has length zero, but whose underlying array has a capacity of 10
 	m.wrappedArray = make([]T, 0, 10)
@@ -42,27 +36,6 @@ func (array *Array[T]) Pop() T {
 	var result = w[i-1]
 	array.wrappedArray = w[:i-1]
 	return result
-}
-
-func (array *Array[T]) ToJson() *JSMap {
-	var m *JSMap = NewJSMap()
-	m.Put("", "Array")
-	m.Put("cap", cap(array.wrappedArray))
-	m.Put("len", len(array.wrappedArray))
-	m.Put("size", len(array.wrappedArray))
-	var lst = NewJSList()
-	for _, x := range array.wrappedArray {
-		{
-			lst.Add(ToString(x))
-		}
-	}
-	m.Put("[]", lst)
-	return m
-}
-
-// Deprecated; use Array instead
-func (array *Array[T]) Slice() []T {
-	return array.wrappedArray
 }
 
 func (array *Array[T]) NonEmpty() bool {
