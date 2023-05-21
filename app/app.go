@@ -153,7 +153,8 @@ func (a *App) Start() {
 		ordered.Add(k)
 	}
 
-	Todo("sort the Array of oper names")
+	err := ordered.Sort()
+	CheckOk(err)
 
 	var c = a.CmdLineArgs()
 	c.Parse(args)

@@ -241,7 +241,7 @@ func (w *DirWalk) FilesRelative() []Path {
 			}
 			x.Add(NewPathM(str[prefixLength:]))
 		}
-		w.relFilesList = x.Slice()
+		w.relFilesList = x.Array()
 	}
 	return w.relFilesList
 }

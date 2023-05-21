@@ -1,5 +1,7 @@
 package base
 
+import "sort"
+
 var _ = Pr
 
 type Array[T any] struct {
@@ -49,3 +51,19 @@ func (array *Array[T]) Append(items ...T) {
 func (array *Array[T]) Get(i int) T {
 	return array.wrappedArray[i]
 }
+
+// Attempt to sort the array
+func (array *Array[T]) Sort() error {
+	if array.Size() < 2 {
+		return nil
+	}
+
+  // Not sure why; have to cast argument to 'any'
+	a, ok := any(array.wrappedArray).([]string)
+	if ok {
+		sort.Strings(a)
+		return nil
+	}
+	return Error("Not sortable")
+}
+

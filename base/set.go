@@ -36,5 +36,5 @@ func (set *Set[KEY]) Slice() []KEY {
 	for v, _ := range set.wrappedMap {
 		arr.Add(v)
 	}
-	return arr.Slice()
+	return arr.Array()
 }
