@@ -122,14 +122,14 @@ func (b *BasePrinter) ResetIndentation() *BasePrinter {
 func (b *BasePrinter) Pr(messages ...any) *BasePrinter {
 	for _, obj := range messages {
 		b.Sp()
-		b.append(obj)
+		b.Append(obj)
 	}
 	return b
 }
 
 // Append an object's string representation
 // (todo: by looking up its converter)
-func (b *BasePrinter) append(value any) {
+func (b *BasePrinter) Append(value any) {
 	switch v := value.(type) {
 	case nil:
 		b.AppendString("<nil>")
@@ -280,7 +280,7 @@ func (b *BasePrinter) AppendList(value []any) {
 		if i != 0 {
 			b.AppendString(",")
 		}
-		b.append(item)
+		b.Append(item)
 	}
 	b.AppendString("]")
 }

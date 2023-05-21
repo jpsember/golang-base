@@ -177,6 +177,7 @@ func (a *App) Start() {
 
 	a.Logger().SetVerbose(c.Get(CLARG_VERBOSE))
 	a.DryRun = c.Get(CLARG_DRYRUN)
+	var pr = Printer(a)
 
 	// Determine which operation is to be run
 
@@ -184,11 +185,13 @@ func (a *App) Start() {
 	if !a.HasMultipleOperations() {
 		CheckState(a.orderedCommands.NonEmpty(), "no operations defined")
 		oper = a.operMap[a.orderedCommands.Get(0)]
+		pr("single operation")
 	} else {
 		if c.HasNextArg() {
-			var operation = c.NextArg()
-			oper = a.operMap[operation]
-			CheckState(oper != nil, "no such operation:", operation)
+			var operName = c.NextArg()
+			pr("looking for operation named:", operName)
+			oper = a.operMap[operName]
+			CheckState(oper != nil, "no such operation:", operName)
 		} else {
 			Pr("*** Please specify an operation ***")
 			return
@@ -203,8 +206,12 @@ func (a *App) Start() {
 			path.EnsureExists("args file")
 		}
 		a.argsFile = path
+		pr("args file:", path)
+	} else {
+		pr("no oper arguments were supplied")
 	}
 
+	pr("calling processArgs")
 	a.processArgs()
 
 	/**
@@ -244,10 +251,12 @@ func (a *App) Start() {
 	if c.HasNextArg() {
 		Pr("*** Ignoring remaining arguments:", c.ExtraArgs())
 	}
-
+	oper.Perform(a)
 }
 
 func (a *App) processArgs() {
+	pr := Printer(a)
+
 	var c = a.CmdLineArgs()
 	for c.HandlingArgs() {
 		if a.ProcessAdditionalArgs != nil {
@@ -264,15 +273,18 @@ func (a *App) processArgs() {
 	}
 
 	if a.getOperArguments() != nil {
+		pr("calling compileDataArgs")
 		a.compileDataArgs()
 	}
 }
+
 func (a *App) compileDataArgs() {
 	pr := Printer(a)
 
+	// Start with default arguments
 	var operArgs = a.getOperArguments()
 
-	// Start with the args file that the user supplied as the command line argument (if any)
+	// Replace with args file, if there was one
 	if a.argsFile.NonEmpty() {
 		argsFile := a.argsFile
 
@@ -297,77 +309,72 @@ func (a *App) compileDataArgs() {
 		}
 
 		operArgs = operArgs.Parse(argsFile.ReadStringIfExistsM("{}"))
+	}
+	var js = operArgs.ToJson().(*JSMap)
 
-		var js = operArgs.ToJson().(*JSMap)
+	// While a next arg exists, and matches one of the keys in the args map,
+	// parse a key/value pair as an override
 
-		// While a next arg exists, and matches one of the keys in the args map,
-		// parse a key/value pair as an override
+	var c = a.CmdLineArgs()
+	for c.HasNextArg() {
+		var key = c.PeekNextArg()
+		value := js.OptAny(key)
+		if value == nil {
+			Pr("...can't find key:", Quoted(key), "in operation arguments")
+			break
+		}
+		c.NextArg()
 
-		var c = a.CmdLineArgs()
-		for c.HasNextArg() {
-			var key = c.PeekNextArg()
-			value := js.OptAny(key)
-			if value == nil {
-				Pr("...can't find key:", Quoted(key), "in operation arguments")
-				break
-			}
-			c.NextArg()
+		if !c.HasNextArg() {
+			BadArg("Missing value for key", Quoted(key))
+		}
+		var userArg = c.NextArg()
 
-			if !c.HasNextArg() {
-				BadArg("Missing value for key", Quoted(key))
-			}
-			var userArg = c.NextArg()
+		var newVal JSEntity
 
-			var newVal JSEntity
-
-			// Determine the type of the field
-			switch t := value.(type) {
-			case JInteger:
-				val, err := strconv.Atoi(userArg)
-				CheckOk(err, "failed to convert to integer:", userArg)
-				newVal = MakeJInteger(int64(val))
-			case JFloat:
-				val, err := strconv.ParseFloat(userArg, 64)
-				CheckOk(err, "failed to convert to float64:", userArg)
-				newVal = MakeJFloat(float64(val))
-			case JBool:
-				switch userArg {
-				case "t", "true":
-					newVal = JBoolTrue
-				case "f", "false":
-					newVal = JBoolFalse
-				default:
-					BadArg("Bad bool value for key", Quoted(key), ":", Quoted(userArg))
-				}
-			case JString:
-				newVal = MakeJString(userArg)
+		// Determine the type of the field
+		switch t := value.(type) {
+		case JInteger:
+			val, err := strconv.Atoi(userArg)
+			CheckOk(err, "failed to convert to integer:", userArg)
+			newVal = MakeJInteger(int64(val))
+		case JFloat:
+			val, err := strconv.ParseFloat(userArg, 64)
+			CheckOk(err, "failed to convert to float64:", userArg)
+			newVal = MakeJFloat(val)
+		case JBool:
+			switch userArg {
+			case "t", "true":
+				newVal = JBoolTrue
+			case "f", "false":
+				newVal = JBoolFalse
 			default:
-				BadState("Unsupported value for key", Quoted(key), ":", t)
+				BadArg("Bad bool value for key", Quoted(key), ":", Quoted(userArg))
 			}
-
-			// Replace the value within the json map
-			js.Put(key, newVal)
+		case JString:
+			newVal = MakeJString(userArg)
+		default:
+			BadState("Unsupported value for key", Quoted(key), ":", t)
 		}
 
-		// Re-parse the arguments from the (possibly modified) jsmap
-
-		Pr("about to re-parse:", INDENT, js)
-		operArgs = operArgs.Parse(js)
-		Pr("new oper args:", INDENT, operArgs)
-
-		a.operArguments = operArgs
+		// Replace the value within the json map
+		js.Put(key, newVal)
 	}
-}
 
-func (a *App) auxRunOper(oper Oper) {
-	a.processArgs()
-	oper.Perform(a)
+	// Re-parse the arguments from the (possibly modified) jsmap
+
+	operArgs = operArgs.Parse(js)
+	Pr("new oper args:", INDENT, operArgs)
+
+	a.operArguments = operArgs
 }
 
 func (a *App) getOperArguments() DataClass {
 	if !a.gotOperArguments {
+		Pr("getOperArguments...")
 		a.operArguments = a.oper.GetArguments()
 		a.gotOperArguments = true
+		Pr("getOperArguments got:", a.operArguments)
 	}
 	return a.operArguments
 }

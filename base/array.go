@@ -1,6 +1,8 @@
 package base
 
-import "sort"
+import (
+	"sort"
+)
 
 var _ = Pr
 
@@ -57,8 +59,7 @@ func (array *Array[T]) Sort() error {
 	if array.Size() < 2 {
 		return nil
 	}
-
-  // Not sure why; have to cast argument to 'any'
+	// Not sure why; have to cast argument to 'any'
 	a, ok := any(array.wrappedArray).([]string)
 	if ok {
 		sort.Strings(a)
@@ -67,3 +68,15 @@ func (array *Array[T]) Sort() error {
 	return Error("Not sortable")
 }
 
+func (array *Array[T]) String() string {
+	var bp BasePrinter
+	bp.AppendString("[")
+	for i, x := range array.wrappedArray {
+		if i != 0 {
+			bp.AppendString(", ")
+		}
+		bp.Append(x)
+	}
+	bp.AppendString("]")
+	return bp.String()
+}

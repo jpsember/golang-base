@@ -264,7 +264,7 @@ func (j *J) showDiffs() {
 		}
 		args.Append("-C", "2", fileRefAbs.String(), fileRecAbs.String())
 
-		output, err := makeSysCall(args.Slice())
+		output, err := makeSysCall(args.Array())
 		_ = err
 		Pr(output)
 	}

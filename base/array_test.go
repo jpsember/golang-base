@@ -42,3 +42,16 @@ func TestAddAndRemoveLots(t *testing.T) {
 
 	CheckArg(a.Size() == 100)
 }
+
+func TestSort(t *testing.T) {
+	j := jt.New(t) // Use Newz to regenerate hash
+
+	var a = NewArray[string]()
+	a.Add("milk")
+	a.Add("eggs")
+	a.Add("raisins")
+	a.Add("flour")
+	a.Sort()
+
+	j.AssertMessage(a)
+}
