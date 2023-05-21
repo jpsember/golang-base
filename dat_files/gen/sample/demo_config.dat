@@ -1,0 +1,7 @@
+class {
+  bool simulate;
+  //float speed = 5.2;
+  string name;
+  string greeting = "hello";
+  int target = 12;
+}

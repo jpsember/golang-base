@@ -8,10 +8,9 @@ import (
 import . "github.com/jpsember/golang-base/files"
 
 type CmdLineArgs struct {
-	logger Logger
-	banner string
-	locked bool
-
+	logger            Logger
+	banner            string
+	locked            bool
 	opt               *Option
 	namedOptionMap    map[string]*Option
 	optionList        *Array[string]
@@ -394,6 +393,13 @@ func (c *CmdLineArgs) Get(optionName string) bool {
 	var opt = c.findOption(optionName)
 	CheckState(opt.Type == Bool, "type mismatch", optionName)
 	return opt.BoolValue
+}
+
+// Get the value of a string option
+func (c *CmdLineArgs) GetString(optionName string) string {
+	var opt = c.findOption(optionName)
+	CheckState(opt.Type == Str, "type mismatch", optionName)
+	return opt.StringValue
 }
 
 func (c *CmdLineArgs) findOption(optionName string) *Option {

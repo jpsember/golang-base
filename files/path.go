@@ -26,6 +26,21 @@ func NewPath(s string) (Path, error) {
 	return Path(s), nil
 }
 
+// Construct a Path from a string, or the empty path if string is empty
+func NewPathOrEmpty(s string) (Path, error) {
+	if s == "" {
+		return EmptyPath, nil
+	}
+	return NewPath(s)
+}
+
+// Construct a Path from a string, or the empty path if string is empty
+func NewPathOrEmptyM(s string) Path {
+	p, err := NewPathOrEmpty(s)
+	CheckOkWithSkip(1, err)
+	return p
+}
+
 // Construct a Path from a string; panic if there is a problem
 func NewPathM(s string) Path {
 	p, err := NewPath(s)
@@ -142,4 +157,14 @@ func (path Path) MoveTo(target Path) error {
 
 func (path Path) Extension() string {
 	return strings.TrimPrefix(filepath.Ext(path.String()), ".")
+}
+
+func (path Path) NonEmpty() bool {
+	return !path.Empty()
+}
+
+func (path Path) EnsureExists(message ...any) {
+	if !path.Exists() {
+		BadArg(JoinLists([]any{"File doesn't exist:", path, ";"}, message))
+	}
 }

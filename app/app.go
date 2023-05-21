@@ -3,6 +3,7 @@ package app
 import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
+	"github.com/jpsember/golang-base/json"
 	"os"
 	"reflect"
 	"strings"
@@ -20,6 +21,9 @@ type App struct {
 	DryRun                bool
 	ProcessAdditionalArgs func(c *CmdLineArgs)
 	testArgs              []string
+	genArgsFlag           bool
+	argsFile              Path
+	oper                  Oper
 }
 
 func NewApp() *App {
@@ -34,10 +38,11 @@ func (a *App) Logger() Logger {
 }
 
 const (
-	CLARG_VERBOSE = "verbose"
-	CLARG_VERSION = "version"
-	CLARG_DRYRUN  = "dryrun"
-	//CLARG_GEN_ARGS = "gen-args"
+	CLARG_VERBOSE   = "verbose"
+	CLARG_VERSION   = "version"
+	CLARG_DRYRUN    = "dryrun"
+	CLARG_GEN_ARGS  = "gen-args"
+	CLARG_ARGS_FILE = "args"
 	//CLARG_SHOW_EXCEPTIONS = "exceptions"
 	//CLARG_VALIDATE_KEYS = "check-keys"
 )
@@ -69,6 +74,8 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 	ca.Add(CLARG_DRYRUN).Desc("Dry run")
 	ca.Add(CLARG_VERBOSE).Desc("Verbose messages").ShortName("v")
 	ca.Add(CLARG_VERSION).Desc("Display version number").ShortName("n")
+	ca.Add(CLARG_GEN_ARGS).Desc("Generate args for operation")
+	ca.Add(CLARG_ARGS_FILE).SetString().Desc("Specify arguments file (json)")
 
 	sb := strings.Builder{}
 	sb.WriteString(strings.ToLower(a.GetName()))
@@ -166,6 +173,35 @@ func (a *App) Start() {
 	a.Logger().SetVerbose(c.Get(CLARG_VERBOSE))
 	a.DryRun = c.Get(CLARG_DRYRUN)
 
+	// Determine which operation is to be run
+
+	var oper Oper
+	if !a.HasMultipleOperations() {
+		CheckState(a.orderedCommands.NonEmpty(), "no operations defined")
+		oper = a.operMap[a.orderedCommands.Get(0)]
+	} else {
+		if c.HasNextArg() {
+			var operation = c.NextArg()
+			oper = a.operMap[operation]
+			CheckState(oper != nil, "no such operation:", operation)
+		} else {
+			Pr("*** Please specify an operation ***")
+			return
+		}
+	}
+	a.oper = oper
+
+	if oper.GetArguments() != nil {
+		a.genArgsFlag = c.Get(CLARG_GEN_ARGS)
+		var path = NewPathOrEmptyM(c.GetString(CLARG_ARGS_FILE))
+		if path.NonEmpty() {
+			path.EnsureExists("args file")
+		}
+		a.argsFile = path
+	}
+
+	a.processArgs()
+
 	/**
 		<pre>
 
@@ -187,56 +223,41 @@ func (a *App) Start() {
 		</pre>
 	*/
 
-	if !a.HasMultipleOperations() {
-		CheckState(a.orderedCommands.NonEmpty(), "no operations defined")
-		var oper = a.operMap[a.orderedCommands.Get(0)]
-		a.auxRunOper(oper)
-	} else {
-		for c.HasNextArg() {
-			var operation = c.NextArg()
-			var oper = a.operMap[operation]
-			CheckState(oper != nil, "no such operation:", operation)
-			a.auxRunOper(oper)
-		}
-	}
+	//if !a.HasMultipleOperations() {
+	//	CheckState(a.orderedCommands.NonEmpty(), "no operations defined")
+	//	var oper = a.operMap[a.orderedCommands.Get(0)]
+	//	a.auxRunOper(oper)
+	//} else {
+	//	for c.HasNextArg() {
+	//		var operation = c.NextArg()
+	//		var oper = a.operMap[operation]
+	//		CheckState(oper != nil, "no such operation:", operation)
+	//		a.auxRunOper(oper)
+	//	}
+	//}
 
 	if c.HasNextArg() {
 		Pr("*** Ignoring remaining arguments:", c.ExtraArgs())
 	}
 
-	a.processArgs()
 }
 
 func (a *App) processArgs() {
 	var c = a.CmdLineArgs()
-	var inf = 0
 	for c.HandlingArgs() {
-		inf++
-		if inf > 100 {
-			Die("infinite loop")
-		}
 		if a.ProcessAdditionalArgs != nil {
 			a.ProcessAdditionalArgs(c)
 		}
 	}
 
-	Todo("Check for no operation selected (only if multiple opers)")
-	//  if (app().hasMultipleOperations() && nullOrEmpty(userCommand())) {
-	//    throw badArg("No userCommand defined");
-	//  }
-	//
+	if a.genArgsFlag {
+		var data = a.oper.GetArguments()
+		// Get default arguments by parsing an empty map
+		defaultArgs := data.Parse(json.NewJSMap())
+		Pr(defaultArgs)
+		return
+	}
 
-	Todo("Perform generate args if requested")
-	//  if (app().genArgsFlag()) {
-	//    AbstractData data = defaultArgs();
-	//    if (data == null) {
-	//      pr("*** json arguments aren't supported for:", userCommand());
-	//    } else {
-	//      pr(config());
-	//    }
-	//    throw new ExitOperImmediately();
-	//  }
-	//
 	Todo("if json arguments are supported, process them")
 	//  if (argsSupported()) {
 	//    mJsonArgs = defaultArgs();

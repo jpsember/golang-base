@@ -276,3 +276,10 @@ func Regexp(expr string) *regexp.Regexp {
 	regexpCache.Store(expr, pat)
 	return pat
 }
+
+func JoinLists(list1 []any, list2 []any) []any {
+	result := make([]any, 0, len(list1)+len(list2))
+	result = append(result, list1)
+	result = append(result, list2)
+	return result
+}

@@ -3,6 +3,7 @@ package main
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
+	gen "github.com/jpsember/golang-base/gen/sample"
 )
 
 var _ = Pr
@@ -25,6 +26,10 @@ func (oper *SpeakOper) Perform(app *App) {
 func (oper *SpeakOper) GetHelp(bp *BasePrinter) {
 }
 
+func (oper *SpeakOper) GetArguments() DataClass {
+	return gen.DefaultDemoConfig
+}
+
 func main() {
 	var oper = &SpeakOper{}
 	var app = NewApp()
@@ -32,8 +37,8 @@ func main() {
 	app.CmdLineArgs(). //
 				Add("debugging").Desc("perform extra tests"). //
 				Add("speed").SetInt().Add("jumping")
-
 	app.RegisterOper(oper)
-	app.SetTestArgs("-d --speed 42 --verbose --dryrun --version")
+	app.SetTestArgs("-d --speed 42 --verbose --dryrun --gen-args")
+
 	app.Start()
 }
