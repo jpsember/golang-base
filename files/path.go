@@ -63,6 +63,9 @@ func (path Path) JoinM(s string) Path {
 
 // Get string representation of path
 func (path Path) String() string {
+	if path.Empty() {
+		return "<EMPTY>"
+	}
 	return string(path)
 }
 

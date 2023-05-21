@@ -346,6 +346,10 @@ func (c *CmdLineArgs) HasNextArg() bool {
 	return c.extraArgsCursor < len(c.ExtraArgs())
 }
 
+func (c *CmdLineArgs) UnusedExtraArgs() []string {
+	return c.ExtraArgs()[c.extraArgsCursor:]
+}
+
 //	  return extraArgsCursor() < extraArgs().length;
 //	}
 //

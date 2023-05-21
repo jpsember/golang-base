@@ -4,6 +4,7 @@ package base
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -175,8 +176,14 @@ func (b *BasePrinter) Append(value any) {
 			b.Cr()
 			return
 		}
+
+		q := reflect.TypeOf(v)
 		// Fall back on using fmt.Sprint()
-		b.AppendString(fmt.Sprint(v))
+		if false {
+			b.AppendString("???" + q.String() + "???" + fmt.Sprint(v))
+		} else {
+			b.AppendString(fmt.Sprint(v))
+		}
 	}
 }
 

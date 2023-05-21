@@ -38,7 +38,7 @@ func main() {
 				Add("debugging").Desc("perform extra tests"). //
 				Add("speed").SetInt().Add("jumping")
 	app.RegisterOper(oper)
-	app.SetTestArgs("-d --speed 42 --verbose --dryrun name frank")
+	app.SetTestArgs("-d --speed 42 --verbose --dryrun name frank zebra giraffe")
 
 	app.Start()
 }

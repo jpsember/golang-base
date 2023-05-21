@@ -99,7 +99,7 @@ func BadArgWithSkip(skipCount int, message ...any) {
 }
 
 func BadArg(message ...any) {
-	BadArgWithSkip(4, message)
+	BadArgWithSkip(4, message...)
 }
 
 func BadStateWithSkip(skipCount int, message ...any) {
@@ -107,7 +107,7 @@ func BadStateWithSkip(skipCount int, message ...any) {
 }
 
 func BadState(message ...any) {
-	BadStateWithSkip(4, message)
+	BadStateWithSkip(4, message...)
 }
 
 func CheckState(valid bool, message ...any) {
@@ -118,7 +118,7 @@ func CheckState(valid bool, message ...any) {
 
 // Panic if an error code is nonzero.
 func CheckOk(err error, message ...any) {
-	CheckOkWithSkip(2, err, message)
+	CheckOkWithSkip(2, err, message...)
 }
 
 // Panic if an error code is nonzero.
@@ -243,7 +243,7 @@ func AbsLong(a int64) int64 {
 
 // Construct an error with printed arguments
 func Error(message ...any) error {
-	var s = ToString(message)
+	var s = ToString(message...)
 	return errors.New(s)
 }
 

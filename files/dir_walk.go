@@ -145,6 +145,8 @@ func (w *DirWalk) OmitNamesWithSubstrings(nameExprs ...string) *DirWalk {
 	return w
 }
 
+// Return files (and optionally, directories) within the start directory.
+// Does *not* include the start directory itself
 func (w *DirWalk) Files() []Path {
 
 	var pr = Printer(w)
@@ -157,19 +159,17 @@ func (w *DirWalk) Files() []Path {
 		var lst []Path
 
 		var stack = NewArray[Path]()
-		stack.Add(w.startDirectory)
 
-		var firstDir = true
 		for !stack.IsEmpty() {
-
 			var dir = stack.Pop()
-			if !firstDir && !w.withRecurse {
-				continue
-			}
-			firstDir = false
+			if dir != w.startDirectory {
+				if !w.withRecurse {
+					continue
+				}
 
-			if w.includeDirs {
-				lst = append(lst, dir)
+				if w.includeDirs {
+					lst = append(lst, dir)
+				}
 			}
 
 			files, err := os.ReadDir(dir.String())

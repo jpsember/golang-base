@@ -24,9 +24,7 @@ type App struct {
 	testArgs              []string
 	genArgsFlag           bool
 	argsFile              Path
-	oper                  Oper
 	operArguments         DataClass
-	gotOperArguments      bool
 	ArgsFileMustExist     bool
 }
 
@@ -42,13 +40,11 @@ func (a *App) Logger() Logger {
 }
 
 const (
-	CLARG_VERBOSE   = "verbose"
-	CLARG_VERSION   = "version"
-	CLARG_DRYRUN    = "dryrun"
-	CLARG_GEN_ARGS  = "gen-args"
-	CLARG_ARGS_FILE = "args"
-	//CLARG_SHOW_EXCEPTIONS = "exceptions"
-	//CLARG_VALIDATE_KEYS = "check-keys"
+	ClArgVerbose  = "verbose"
+	ClArgVersion  = "version"
+	ClArgDryrun   = "dryrun"
+	ClArgGenArgs  = "gen-args"
+	ClArgArgsFile = "args"
 )
 
 func (a *App) CmdLineArgs() *CmdLineArgs {
@@ -75,11 +71,11 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 	//}
 
 	ca.WithBanner("!!! please add a banner !!!")
-	ca.Add(CLARG_DRYRUN).Desc("Dry run")
-	ca.Add(CLARG_VERBOSE).Desc("Verbose messages").ShortName("v")
-	ca.Add(CLARG_VERSION).Desc("Display version number").ShortName("n")
-	ca.Add(CLARG_GEN_ARGS).Desc("Generate args for operation")
-	ca.Add(CLARG_ARGS_FILE).SetString().Desc("Specify arguments file (json)")
+	ca.Add(ClArgDryrun).Desc("Dry run")
+	ca.Add(ClArgVerbose).Desc("Verbose messages").ShortName("v")
+	ca.Add(ClArgVersion).Desc("Display version number").ShortName("n")
+	ca.Add(ClArgGenArgs).Desc("Generate args for operation")
+	ca.Add(ClArgArgsFile).SetString().Desc("Specify arguments file (json)")
 
 	sb := strings.Builder{}
 	sb.WriteString(strings.ToLower(a.GetName()))
@@ -165,7 +161,7 @@ func (a *App) Start() {
 	}
 
 	// If user wants the version number, print it and exit
-	if c.Get(CLARG_VERSION) {
+	if c.Get(ClArgVersion) {
 		var vers = a.Version
 		if vers == "" {
 			Pr("*** no version specified ***")
@@ -175,11 +171,40 @@ func (a *App) Start() {
 		return
 	}
 
-	a.Logger().SetVerbose(c.Get(CLARG_VERBOSE))
-	a.DryRun = c.Get(CLARG_DRYRUN)
+	a.Logger().SetVerbose(c.Get(ClArgVerbose))
+	a.DryRun = c.Get(ClArgDryrun)
 	var pr = Printer(a)
 
-	// Determine which operation is to be run
+	var oper = a.determineOper()
+	a.operArguments = oper.GetArguments()
+	if a.operArguments != nil {
+		a.genArgsFlag = c.Get(ClArgGenArgs)
+		var path = NewPathOrEmptyM(c.GetString(ClArgArgsFile))
+		if path.NonEmpty() {
+			path.EnsureExists("args file")
+		}
+		a.argsFile = path
+		pr("args file:", path)
+	} else {
+		pr("no oper arguments were supplied")
+	}
+
+	pr("calling processArgs")
+	a.processArgs()
+
+	var unusedArgs = c.UnusedExtraArgs()
+	Todo("instead of crashing, return with error")
+	if len(unusedArgs) != 0 {
+		BadArg("Extraneous arguments:", strings.Join(unusedArgs, ", "))
+	}
+	oper.Perform(a)
+}
+
+// Determine which operation is to be run
+func (a *App) determineOper() Oper {
+	var pr = Printer(a)
+
+	var c = a.CmdLineArgs()
 
 	var oper Oper
 	if !a.HasMultipleOperations() {
@@ -194,64 +219,9 @@ func (a *App) Start() {
 			CheckState(oper != nil, "no such operation:", operName)
 		} else {
 			Pr("*** Please specify an operation ***")
-			return
 		}
 	}
-	a.oper = oper
-
-	if a.getOperArguments() != nil {
-		a.genArgsFlag = c.Get(CLARG_GEN_ARGS)
-		var path = NewPathOrEmptyM(c.GetString(CLARG_ARGS_FILE))
-		if path.NonEmpty() {
-			path.EnsureExists("args file")
-		}
-		a.argsFile = path
-		pr("args file:", path)
-	} else {
-		pr("no oper arguments were supplied")
-	}
-
-	pr("calling processArgs")
-	a.processArgs()
-
-	/**
-		<pre>
-
-
-	    if (supportArgsFile()) {
-	      mGenArgs = cmdLineArgs().get(CLARG_GEN_ARGS);
-	      mArgsFile = new File(cmdLineArgs().getString(CLARG_ARGS_FILE));
-	      if (Files.nonEmpty(mArgsFile))
-	        Files.assertExists(mArgsFile, "args file");
-	    } else
-	      mArgsFile = Files.DEFAULT;
-
-	    try {
-	      runApplication(cmdLineArgs());
-	    } catch (AppErrorException e) {
-	    }
-
-
-		</pre>
-	*/
-
-	//if !a.HasMultipleOperations() {
-	//	CheckState(a.orderedCommands.NonEmpty(), "no operations defined")
-	//	var oper = a.operMap[a.orderedCommands.Get(0)]
-	//	a.auxRunOper(oper)
-	//} else {
-	//	for c.HasNextArg() {
-	//		var operation = c.NextArg()
-	//		var oper = a.operMap[operation]
-	//		CheckState(oper != nil, "no such operation:", operation)
-	//		a.auxRunOper(oper)
-	//	}
-	//}
-
-	if c.HasNextArg() {
-		Pr("*** Ignoring remaining arguments:", c.ExtraArgs())
-	}
-	oper.Perform(a)
+	return oper
 }
 
 func (a *App) processArgs() {
@@ -265,14 +235,14 @@ func (a *App) processArgs() {
 	}
 
 	if a.genArgsFlag {
-		var data = a.getOperArguments()
+		var data = a.operArguments
 		// Get default arguments by parsing an empty map
 		defaultArgs := data.Parse(NewJSMap())
 		Pr(defaultArgs)
 		return
 	}
 
-	if a.getOperArguments() != nil {
+	if a.operArguments != nil {
 		pr("calling compileDataArgs")
 		a.compileDataArgs()
 	}
@@ -282,7 +252,7 @@ func (a *App) compileDataArgs() {
 	pr := Printer(a)
 
 	// Start with default arguments
-	var operArgs = a.getOperArguments()
+	var operArgs = a.operArguments
 
 	// Replace with args file, if there was one
 	if a.argsFile.NonEmpty() {
@@ -367,14 +337,4 @@ func (a *App) compileDataArgs() {
 	Pr("new oper args:", INDENT, operArgs)
 
 	a.operArguments = operArgs
-}
-
-func (a *App) getOperArguments() DataClass {
-	if !a.gotOperArguments {
-		Pr("getOperArguments...")
-		a.operArguments = a.oper.GetArguments()
-		a.gotOperArguments = true
-		Pr("getOperArguments got:", a.operArguments)
-	}
-	return a.operArguments
 }
