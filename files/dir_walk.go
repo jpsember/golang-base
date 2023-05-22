@@ -159,6 +159,7 @@ func (w *DirWalk) Files() []Path {
 		var lst []Path
 
 		var stack = NewArray[Path]()
+		stack.Add(w.startDirectory)
 
 		for !stack.IsEmpty() {
 			var dir = stack.Pop()
