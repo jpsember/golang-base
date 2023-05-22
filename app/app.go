@@ -14,22 +14,23 @@ import (
 type App struct {
 
 	// Client app should supply these fields:
-	Name                  string
-	Version               string
-	ProcessAdditionalArgs func(c *CmdLineArgs, oper Oper)
-	ArgsFileMustExist     bool
+	Name    string
+	Version string
 
 	logger          Logger
 	operMap         map[string]Oper
 	orderedCommands Array[string]
 	cmdLineArgs     *CmdLineArgs
 
-	dryRun        bool
-	testArgs      []string
-	genArgsFlag   bool
-	argsFile      Path
-	operArguments DataClass
-	errorMessage  []any
+	dryRun              bool
+	testArgs            []string
+	genArgsFlag         bool
+	argsFile            Path
+	operArguments       DataClass
+	errorMessage        []any
+	operWithArguments   OperWithArguments
+	operWithCmdLineArgs OperWithCmdLineArgs
+	oper                Oper
 }
 
 func NewApp() *App {
@@ -184,9 +185,14 @@ func (a *App) auxStart() {
 	a.dryRun = c.Get(ClArgDryrun)
 	var pr = Printer(a)
 
-	var oper = a.determineOper()
-	a.operArguments = oper.GetArguments()
-	if a.operArguments != nil {
+	a.determineOper()
+	if a.oper == nil {
+		return
+	}
+
+	if a.operWithArguments != nil {
+		a.operArguments = a.operWithArguments.GetArguments()
+		CheckNotNil(a.operArguments, "No arguments returned by oper")
 		a.genArgsFlag = c.Get(ClArgGenArgs)
 		var path = NewPathOrEmptyM(c.GetString(ClArgArgsFile))
 		if path.NonEmpty() {
@@ -199,7 +205,7 @@ func (a *App) auxStart() {
 	}
 
 	pr("calling processArgs")
-	a.processArgs(oper)
+	a.processArgs()
 	if a.error() {
 		return
 	}
@@ -208,11 +214,11 @@ func (a *App) auxStart() {
 		a.SetError("Extraneous arguments:", strings.Join(unusedArgs, ", "))
 		return
 	}
-	oper.Perform(a)
+	a.oper.Perform(a)
 }
 
 // Determine which operation is to be run
-func (a *App) determineOper() Oper {
+func (a *App) determineOper() {
 	var pr = Printer(a)
 
 	var c = a.CmdLineArgs()
@@ -227,31 +233,47 @@ func (a *App) determineOper() Oper {
 			var operName = c.NextArg()
 			pr("looking for operation named:", operName)
 			oper = a.operMap[operName]
-			CheckState(oper != nil, "no such operation:", operName)
+			if oper == nil {
+				a.SetError("no such operation:", Quoted(operName))
+			}
 		} else {
 			Pr("*** Please specify an operation ***")
 		}
 	}
-	return oper
+	if oper != nil {
+		a.oper = oper
+		if x, ok := oper.(OperWithArguments); ok {
+			a.operWithArguments = x
+		}
+		if x, ok := oper.(OperWithCmdLineArgs); ok {
+			a.operWithCmdLineArgs = x
+		}
+	}
 }
 
-func (a *App) processArgs(oper Oper) {
+func (a *App) processArgs() {
 	pr := Printer(a)
 
 	var c = a.CmdLineArgs()
 
-	Todo("We probably want to only call ProcessAdditionalArgs if *not* using DataClass arguments")
-	for c.HandlingArgs() {
-		if a.ProcessAdditionalArgs != nil {
-			a.ProcessAdditionalArgs(c, oper)
+	operc := a.operWithCmdLineArgs
+	operj := a.operWithArguments
+
+	if operc != nil {
+		for c.HandlingArgs() {
+			operc.ProcessAdditionalArgs(c)
 		}
 	}
 
 	if a.genArgsFlag {
-		var data = a.operArguments
-		// Get default arguments by parsing an empty map
-		defaultArgs := data.Parse(NewJSMap())
-		Pr(defaultArgs)
+		if operj != nil {
+			var data = a.operArguments
+			// Get default arguments by parsing an empty map
+			defaultArgs := data.Parse(NewJSMap())
+			Pr(defaultArgs)
+		} else {
+			Pr("Unavailable for this operation")
+		}
 		return
 	}
 
@@ -266,6 +288,8 @@ func (a *App) processArgs(oper Oper) {
 
 func (a *App) compileDataArgs() {
 	pr := Printer(a)
+
+	var oper = a.operWithArguments
 
 	// Start with default arguments
 	var operArgs = a.operArguments
@@ -292,7 +316,7 @@ func (a *App) compileDataArgs() {
 				}
 			}
 			//
-			if a.ArgsFileMustExist {
+			if oper.ArgsFileMustExist() {
 				a.SetError("No args file specified, and no default found at:", argsFile)
 				return
 			}
