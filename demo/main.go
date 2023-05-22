@@ -47,6 +47,7 @@ func (oper *SpeakOper) AcceptArguments(a DataClass) {
 }
 
 func jsonExample() {
+	Pr(VERT_SP, DASHES, "jsonExample", CR, DASHES)
 	var oper = &SpeakOper{}
 	var app = NewApp()
 	app.Version = "2.0.3"
@@ -54,8 +55,7 @@ func jsonExample() {
 				Add("debugging").Desc("perform extra tests"). //
 				Add("speed").SetInt().Add("jumping")
 	app.RegisterOper(oper)
-	app.SetTestArgs("-d --speed 42 --verbose --dryrun target 18 simulate --help")
-	Todo("help message isn't being shown")
+	app.SetTestArgs("-d --speed 42 --verbose --dryrun target 18 simulate")
 	app.Start()
 }
 
@@ -96,6 +96,7 @@ func (oper *JumpOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func cmdLineExample() {
+	Pr(VERT_SP, DASHES, "cmdLineExample", CR, DASHES)
 	var oper = &JumpOper{}
 	var app = NewApp()
 	app.Version = "2.1.3"

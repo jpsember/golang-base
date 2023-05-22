@@ -199,8 +199,6 @@ func (a *App) auxStart() {
 		}
 		a.argsFile = path
 		pr("args file:", path)
-	} else {
-		pr("no oper arguments were supplied")
 	}
 
 	pr("calling processArgs")

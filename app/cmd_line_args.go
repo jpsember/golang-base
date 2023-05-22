@@ -101,11 +101,11 @@ func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
 			if opt.Type == Bool {
 				opt.BoolValue = true
 				pr("set boolean value to true")
+				if opt.LongName == "help" {
+					c.Help()
+					break
+				}
 				continue
-			}
-			if opt.LongName == "help" {
-				c.Help()
-				break
 			}
 
 			{

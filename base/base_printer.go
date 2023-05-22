@@ -162,21 +162,9 @@ func (b *BasePrinter) Append(value any) {
 		b.AppendBool(v)
 	case strings.Builder:
 		b.AppendString(v.String())
+	case PrintEffect:
+		processPrintEffect(v, b)
 	default:
-		// Todo("What is it doing here to test the equality?  Is it comparing pointers, or something more elaborate?")
-		if value == INDENT {
-			b.Indent()
-			return
-		}
-		if value == OUTDENT {
-			b.Outdent()
-			return
-		}
-		if value == CR {
-			b.Cr()
-			return
-		}
-
 		q := reflect.TypeOf(v)
 		// Fall back on using fmt.Sprint()
 		if false {
@@ -360,7 +348,24 @@ func makeEffect(n int) PrintEffect {
 }
 
 var CR = makeEffect(0)
-var DASH = makeEffect(1)
+var DASHES = makeEffect(1)
 var BR = makeEffect(2)
 var INDENT = makeEffect(3)
 var OUTDENT = makeEffect(4)
+var VERT_SP = makeEffect(5)
+
+func processPrintEffect(v PrintEffect, b *BasePrinter) {
+	switch v {
+	case CR:
+		b.Cr()
+	case INDENT:
+		b.Indent()
+	case OUTDENT:
+		b.Outdent()
+	case DASHES:
+		b.AppendString(Dashes)
+	case VERT_SP:
+		b.Cr()
+		b.contentBuffer.WriteString("\n\n\n\n")
+	}
+}
