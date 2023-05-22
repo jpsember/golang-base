@@ -18,6 +18,7 @@ type CmdLineArgs struct {
 	helpShown         bool
 	extraArguments    *Array[string]
 	stillHandlingArgs bool
+	problem           []any
 }
 
 func NewCmdLineArgs() *CmdLineArgs {
@@ -131,19 +132,26 @@ func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
 				switch opt.Type {
 				case Int:
 					intVal, err := strconv.ParseInt(value, 10, 64)
-					CheckArg(err == nil, "Can't parse int:", value, "from", opt.Invocation)
+					if err != nil {
+						c.SetError("Can't parse int:", value, "from", opt.Invocation)
+						return
+					}
 					opt.IntValue = intVal
 					pr("set int value", intVal)
 				case Float:
 					float64Val, err := strconv.ParseFloat(value, 64)
-					CheckArg(err == nil, "Can't parse float:", value, "from", opt.Invocation)
+					if err != nil {
+						c.SetError("Can't parse float:", value, "from", opt.Invocation)
+						return
+					}
 					opt.FloatValue = float64Val
 					pr("set float value", float64Val)
 				case Str:
 					opt.StringValue = value
 					pr("set string value", value)
 				default:
-					Halt("unsupported type:", opt.Type)
+					c.SetError("Unsupported type:", opt.Type)
+					return
 				}
 			}
 		} else {
@@ -152,6 +160,16 @@ func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
 			c.extraArguments.Add(arg.(string))
 		}
 	}
+}
+
+func (c *CmdLineArgs) SetError(message ...any) {
+	if c.GetProblem() == nil {
+		c.problem = []any{"Problem with command line arguments: ", ToString(message...)}
+	}
+}
+
+func (c *CmdLineArgs) GetProblem() []any {
+	return c.problem
 }
 
 func (c *CmdLineArgs) lock() {

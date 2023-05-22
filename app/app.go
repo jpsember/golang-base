@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/json"
@@ -28,6 +29,7 @@ type App struct {
 	genArgsFlag   bool
 	argsFile      Path
 	operArguments DataClass
+	errorMessage  []any
 }
 
 func NewApp() *App {
@@ -132,6 +134,14 @@ func (a *App) GetName() string {
 }
 
 func (a *App) Start() {
+	a.auxStart()
+	if a.error() {
+		fmt.Fprintln(os.Stderr, "*** "+ToString(a.errorMessage...))
+		os.Exit(1)
+	}
+}
+
+func (a *App) auxStart() {
 	args := os.Args[1:]
 
 	if a.testArgs != nil {
@@ -149,6 +159,10 @@ func (a *App) Start() {
 
 	var c = a.CmdLineArgs()
 	c.Parse(args)
+	if c.GetProblem() != nil {
+		a.SetError(c.GetProblem()...)
+		return
+	}
 
 	// If we showed the help, exit
 	if c.HelpShown() {
@@ -186,11 +200,13 @@ func (a *App) Start() {
 
 	pr("calling processArgs")
 	a.processArgs()
-
+	if a.error() {
+		return
+	}
 	var unusedArgs = c.UnusedExtraArgs()
-	Todo("instead of crashing, return with error")
 	if len(unusedArgs) != 0 {
-		BadArg("Extraneous arguments:", strings.Join(unusedArgs, ", "))
+		a.SetError("Extraneous arguments:", strings.Join(unusedArgs, ", "))
+		return
 	}
 	oper.Perform(a)
 }
@@ -241,6 +257,9 @@ func (a *App) processArgs() {
 	if a.operArguments != nil {
 		pr("calling compileDataArgs")
 		a.compileDataArgs()
+		if a.error() {
+			return
+		}
 	}
 }
 
@@ -249,6 +268,7 @@ func (a *App) compileDataArgs() {
 
 	// Start with default arguments
 	var operArgs = a.operArguments
+	pr("...default arguments:", INDENT, operArgs)
 
 	// Replace with args file, if there was one
 	if a.argsFile.NonEmpty() {
@@ -265,17 +285,22 @@ func (a *App) compileDataArgs() {
 			if fixed != name {
 				fixedFile := argsFile.Parent().JoinM(fixed)
 				if fixedFile.Exists() {
-					BadArg("Could not find arguments file:", argsFile, "but did find one with different spelling:", fixedFile, "(assuming this is a mistake)")
+					a.SetError("Could not find arguments file:", argsFile,
+						"but did find one with different spelling:", fixedFile, "(assuming this is a mistake)")
+					return
 				}
 			}
 			//
 			if a.ArgsFileMustExist {
-				BadArg("No args file specified, and no default found at:", argsFile)
+				a.SetError("No args file specified, and no default found at:", argsFile)
+				return
 			}
 		}
 
 		operArgs = operArgs.Parse(argsFile.ReadStringIfExistsM("{}"))
+		pr("...read from", argsFile, ":", INDENT, operArgs)
 	}
+
 	var js = operArgs.ToJson().(*JSMap)
 
 	// While a next arg exists, and matches one of the keys in the args map,
@@ -294,7 +319,21 @@ func (a *App) compileDataArgs() {
 		if !c.HasNextArg() {
 			BadArg("Missing value for key", Quoted(key))
 		}
-		var userArg = c.NextArg()
+
+		var userArg = c.PeekNextArg()
+		var consume = true
+
+		// Don't consume the argument if the type of the field is boolean and this
+		// doesn't look like a true/false
+		if _, ok := value.(JBool); ok {
+			if !(userArg == "true" || userArg == "false") {
+				consume = false
+				userArg = "true"
+			}
+		}
+		if consume {
+			c.NextArg()
+		}
 
 		var newVal JSEntity
 
@@ -302,25 +341,32 @@ func (a *App) compileDataArgs() {
 		switch t := value.(type) {
 		case JInteger:
 			val, err := strconv.Atoi(userArg)
-			CheckOk(err, "failed to convert to integer:", userArg)
+			if err != nil {
+				a.SetError("Problem with command line arguments; unable to convert", userArg, "to integer")
+				return
+			}
 			newVal = MakeJInteger(int64(val))
 		case JFloat:
 			val, err := strconv.ParseFloat(userArg, 64)
-			CheckOk(err, "failed to convert to float64:", userArg)
+			if err != nil {
+				a.SetError("Problem with command line arguments; unable to convert", userArg, "to float")
+				return
+			}
 			newVal = MakeJFloat(val)
 		case JBool:
 			switch userArg {
-			case "t", "true":
+			case "true":
 				newVal = JBoolTrue
-			case "f", "false":
+			case "false":
 				newVal = JBoolFalse
 			default:
-				BadArg("Bad bool value for key", Quoted(key), ":", Quoted(userArg))
+				BadArg("should not have happened")
 			}
 		case JString:
 			newVal = MakeJString(userArg)
 		default:
-			BadState("Unsupported value for key", Quoted(key), ":", t)
+			a.SetError("Problem with command line arguments; unsupported value for key", Quoted(key), ":", t)
+			return
 		}
 
 		// Replace the value within the json map
@@ -333,4 +379,14 @@ func (a *App) compileDataArgs() {
 	Pr("new oper args:", INDENT, operArgs)
 
 	a.operArguments = operArgs
+}
+
+func (a *App) SetError(message ...any) {
+	if !a.error() {
+		a.errorMessage = message
+	}
+}
+
+func (a *App) error() bool {
+	return a.errorMessage != nil
 }
