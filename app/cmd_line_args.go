@@ -347,6 +347,13 @@ func (c *CmdLineArgs) UnusedExtraArgs() []string {
 	return c.ExtraArgs()[c.extraArgsCursor:]
 }
 
+func (c *CmdLineArgs) PeekNextArgOr(defaultValue string) string {
+	if !c.HasNextArg() {
+		return defaultValue
+	}
+	return c.PeekNextArg()
+}
+
 func (c *CmdLineArgs) PeekNextArg() string {
 	if !c.HasNextArg() {
 		BadState("missing argument(s)")
@@ -355,6 +362,15 @@ func (c *CmdLineArgs) PeekNextArg() string {
 }
 
 func (c *CmdLineArgs) NextArg() string {
+	arg := c.PeekNextArg()
+	c.extraArgsCursor++
+	return arg
+}
+
+func (c *CmdLineArgs) NextArgOr(defaultValue string) string {
+	if !c.HasNextArg() {
+		return defaultValue
+	}
 	arg := c.PeekNextArg()
 	c.extraArgsCursor++
 	return arg

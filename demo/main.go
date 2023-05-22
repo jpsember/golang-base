@@ -30,7 +30,6 @@ func (oper *SpeakOper) Perform(app *App) {
 	app.Logger().SetVerbose(true)
 	pr := app.Logger().Pr
 	pr("this is SpeakOper.perform")
-	Todo("How do we get the possibly modified arguments?")
 	pr("Arguments:", INDENT, oper.config)
 }
 

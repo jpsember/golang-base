@@ -354,27 +354,24 @@ func (a *App) compileDataArgs() {
 		}
 		c.NextArg()
 
-		var userArg = ""
-		var consume = true
+		var userArg string
 
-		if c.HasNextArg() {
-			userArg = c.PeekNextArg()
-		}
-
-		// Don't consume the argument if the type of the field is boolean and this
-		// doesn't look like a true/false
+		// If it's a boolean argument, the value is optional.
+		// Don't consume the next argument if the type of the field is boolean and the
+		// argument doesn't look like a true/false
 		if _, ok := value.(JBool); ok {
-			if !(userArg == "true" || userArg == "false") {
-				consume = false
+			var nextArg = c.PeekNextArgOr("")
+			if !(nextArg == "true" || nextArg == "false") {
 				userArg = "true"
 			}
 		}
 
-		if consume {
+		if userArg == "" {
 			if !c.HasNextArg() {
-				BadArg("Missing value for key", Quoted(key))
+				c.SetError("Missing value for key", Quoted(key))
+				break
 			}
-			c.NextArg()
+			userArg = c.NextArg()
 		}
 
 		var newVal JSEntity
@@ -413,6 +410,9 @@ func (a *App) compileDataArgs() {
 
 		// Replace the value within the json map
 		js.Put(key, newVal)
+	}
+	if a.handleCmdLineArgsError() {
+		return
 	}
 
 	// Re-parse the arguments from the (possibly modified) jsmap
