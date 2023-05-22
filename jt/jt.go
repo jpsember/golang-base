@@ -1,15 +1,15 @@
 package jt
 
 import (
+	. "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/files"
+	. "github.com/jpsember/golang-base/json"
 	"hash/fnv"
 	"os/exec"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
-
-	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/files"
-	. "github.com/jpsember/golang-base/json"
 )
 
 var _ = Pr
@@ -36,10 +36,20 @@ func determineUnittestFilename(location string) string {
 	return result
 }
 
+var unitTestCounter atomic.Int32
+
 func New(t testing.TB) *J {
+
+	// Ideally we could determine ahead of time how many unit tests are being run in the current session;
+	// but there doesn't seem to be a way to do that.  Instead, turn on verbosity iff this is the first
+	// J object being constructed.
+
+	var testNumber = unitTestCounter.Add(1)
+
 	return &J{
 		TB:       t,
 		Filename: determineUnittestFilename(CallerLocation(3)),
+		verbose:  testNumber == 1,
 	}
 }
 
