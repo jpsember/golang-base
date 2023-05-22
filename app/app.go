@@ -160,8 +160,7 @@ func (a *App) auxStart() {
 
 	var c = a.CmdLineArgs()
 	c.Parse(args)
-	if c.GetProblem() != nil {
-		a.SetError(c.GetProblem()...)
+	if a.handleCmdLineArgsError() {
 		return
 	}
 
@@ -214,7 +213,18 @@ func (a *App) auxStart() {
 		a.SetError("Extraneous arguments:", strings.Join(unusedArgs, ", "))
 		return
 	}
+	pr("calling oper.Perform")
 	a.oper.Perform(a)
+}
+
+func (a *App) handleCmdLineArgsError() bool {
+	if !a.error() {
+		var c = a.CmdLineArgs()
+		if c.HasError() {
+			a.SetError(c.GetError()...)
+		}
+	}
+	return a.error()
 }
 
 // Determine which operation is to be run
@@ -262,6 +272,9 @@ func (a *App) processArgs() {
 	if operc != nil {
 		for c.handlingArgs() {
 			operc.ProcessArgs(c)
+		}
+		if a.handleCmdLineArgsError() {
+			return
 		}
 	}
 
@@ -341,12 +354,12 @@ func (a *App) compileDataArgs() {
 		}
 		c.NextArg()
 
-		if !c.HasNextArg() {
-			BadArg("Missing value for key", Quoted(key))
-		}
-
-		var userArg = c.PeekNextArg()
+		var userArg = ""
 		var consume = true
+
+		if c.HasNextArg() {
+			userArg = c.PeekNextArg()
+		}
 
 		// Don't consume the argument if the type of the field is boolean and this
 		// doesn't look like a true/false
@@ -356,7 +369,11 @@ func (a *App) compileDataArgs() {
 				userArg = "true"
 			}
 		}
+
 		if consume {
+			if !c.HasNextArg() {
+				BadArg("Missing value for key", Quoted(key))
+			}
 			c.NextArg()
 		}
 
@@ -404,6 +421,9 @@ func (a *App) compileDataArgs() {
 	Pr("new oper args:", INDENT, operArgs)
 
 	a.operDataClassArgs = operArgs
+
+	Todo("is .operDataClassArgs used elsewhere?")
+	oper.AcceptArguments(operArgs)
 }
 
 func (a *App) SetError(message ...any) {

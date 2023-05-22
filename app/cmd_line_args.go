@@ -18,7 +18,7 @@ type CmdLineArgs struct {
 	helpShown         bool
 	extraArguments    *Array[string]
 	stillHandlingArgs bool
-	problem           []any
+	error             []any
 }
 
 func NewCmdLineArgs() *CmdLineArgs {
@@ -162,14 +162,17 @@ func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
 }
 
 func (c *CmdLineArgs) SetError(message ...any) {
-	Todo("integrate better with app")
-	if c.GetProblem() == nil {
-		c.problem = []any{"Problem with command line arguments: ", ToString(message...)}
+	if !c.HasError() {
+		c.error = message
 	}
 }
 
-func (c *CmdLineArgs) GetProblem() []any {
-	return c.problem
+func (c *CmdLineArgs) HasError() bool {
+	return c.error != nil
+}
+
+func (c *CmdLineArgs) GetError() []any {
+	return c.error
 }
 
 func (c *CmdLineArgs) lock() {
@@ -320,6 +323,9 @@ func (opt *Option) SetType(t OptType) {
 }
 
 func (c *CmdLineArgs) handlingArgs() bool {
+	if c.HasError() {
+		return false
+	}
 	c.stillHandlingArgs = !c.stillHandlingArgs
 	if !c.stillHandlingArgs {
 		if c.HasNextArg() {
@@ -334,8 +340,7 @@ func (c *CmdLineArgs) ExtraArgs() []string {
 }
 
 func (c *CmdLineArgs) HasNextArg() bool {
-	Todo("If c.Error was called, this should always return false")
-	return c.extraArgsCursor < len(c.ExtraArgs())
+	return !c.HasError() && c.extraArgsCursor < len(c.ExtraArgs())
 }
 
 func (c *CmdLineArgs) UnusedExtraArgs() []string {

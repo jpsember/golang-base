@@ -21,6 +21,8 @@ type OperWithJsonArgs interface {
 	GetArguments() DataClass
 	// Does an explicit arguments file have to exist, vs using the defaults?
 	ArgsFileMustExist() bool
+	// Accept the possibly modified arguments for later processing
+	AcceptArguments(args DataClass)
 }
 
 // A subtype of Oper that supports additional arguments on the command line,
