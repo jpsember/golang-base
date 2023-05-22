@@ -70,7 +70,7 @@ func (oper *JumpOper) Perform(app *App) {
 func (oper *JumpOper) GetHelp(bp *BasePrinter) {
 }
 
-func (oper *JumpOper) ProcessAdditionalArgs(c *CmdLineArgs) {
+func (oper *JumpOper) ProcessArgs(c *CmdLineArgs) {
 	for c.HasNextArg() {
 		var arg = c.NextArg()
 		switch arg {
@@ -80,7 +80,8 @@ func (oper *JumpOper) ProcessAdditionalArgs(c *CmdLineArgs) {
 		case "height":
 			Pr("jump")
 		default:
-			BadArg("extraneous argument:", arg)
+			c.SetError("extraneous argument:", arg)
+			//BadArg("extraneous argument:", arg)
 		}
 	}
 }
@@ -93,6 +94,6 @@ func cmdLineExample() {
 				Add("debugging").Desc("perform extra tests"). //
 				Add("speed").SetInt().Add("jumping")
 	app.RegisterOper(oper)
-	app.SetTestArgs("--verbose --dryrun height compact compact")
+	app.SetTestArgs("--verbose --dryrun height compact compact zebra height compact")
 	app.Start()
 }

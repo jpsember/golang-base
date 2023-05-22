@@ -26,9 +26,9 @@ type App struct {
 	testArgs            []string
 	genArgsFlag         bool
 	argsFile            Path
-	operArguments       DataClass
+	operDataClassArgs   DataClass
 	errorMessage        []any
-	operWithArguments   OperWithArguments
+	operWithJsonArgs    OperWithJsonArgs
 	operWithCmdLineArgs OperWithCmdLineArgs
 	oper                Oper
 }
@@ -190,9 +190,9 @@ func (a *App) auxStart() {
 		return
 	}
 
-	if a.operWithArguments != nil {
-		a.operArguments = a.operWithArguments.GetArguments()
-		CheckNotNil(a.operArguments, "No arguments returned by oper")
+	if a.operWithJsonArgs != nil {
+		a.operDataClassArgs = a.operWithJsonArgs.GetArguments()
+		CheckNotNil(a.operDataClassArgs, "No arguments returned by oper")
 		a.genArgsFlag = c.Get(ClArgGenArgs)
 		var path = NewPathOrEmptyM(c.GetString(ClArgArgsFile))
 		if path.NonEmpty() {
@@ -242,8 +242,8 @@ func (a *App) determineOper() {
 	}
 	if oper != nil {
 		a.oper = oper
-		if x, ok := oper.(OperWithArguments); ok {
-			a.operWithArguments = x
+		if x, ok := oper.(OperWithJsonArgs); ok {
+			a.operWithJsonArgs = x
 		}
 		if x, ok := oper.(OperWithCmdLineArgs); ok {
 			a.operWithCmdLineArgs = x
@@ -257,17 +257,17 @@ func (a *App) processArgs() {
 	var c = a.CmdLineArgs()
 
 	operc := a.operWithCmdLineArgs
-	operj := a.operWithArguments
+	operj := a.operWithJsonArgs
 
 	if operc != nil {
-		for c.HandlingArgs() {
-			operc.ProcessAdditionalArgs(c)
+		for c.handlingArgs() {
+			operc.ProcessArgs(c)
 		}
 	}
 
 	if a.genArgsFlag {
 		if operj != nil {
-			var data = a.operArguments
+			var data = a.operDataClassArgs
 			// Get default arguments by parsing an empty map
 			defaultArgs := data.Parse(NewJSMap())
 			Pr(defaultArgs)
@@ -277,7 +277,7 @@ func (a *App) processArgs() {
 		return
 	}
 
-	if a.operArguments != nil {
+	if a.operDataClassArgs != nil {
 		pr("calling compileDataArgs")
 		a.compileDataArgs()
 		if a.error() {
@@ -289,10 +289,10 @@ func (a *App) processArgs() {
 func (a *App) compileDataArgs() {
 	pr := Printer(a)
 
-	var oper = a.operWithArguments
+	var oper = a.operWithJsonArgs
 
 	// Start with default arguments
-	var operArgs = a.operArguments
+	var operArgs = a.operDataClassArgs
 	pr("...default arguments:", INDENT, operArgs)
 
 	// Replace with args file, if there was one
@@ -403,7 +403,7 @@ func (a *App) compileDataArgs() {
 	operArgs = operArgs.Parse(js)
 	Pr("new oper args:", INDENT, operArgs)
 
-	a.operArguments = operArgs
+	a.operDataClassArgs = operArgs
 }
 
 func (a *App) SetError(message ...any) {

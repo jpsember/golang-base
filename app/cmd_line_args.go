@@ -162,6 +162,7 @@ func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
 }
 
 func (c *CmdLineArgs) SetError(message ...any) {
+	Todo("integrate better with app")
 	if c.GetProblem() == nil {
 		c.problem = []any{"Problem with command line arguments: ", ToString(message...)}
 	}
@@ -318,7 +319,7 @@ func (opt *Option) SetType(t OptType) {
 	opt.Type = t
 }
 
-func (c *CmdLineArgs) HandlingArgs() bool {
+func (c *CmdLineArgs) handlingArgs() bool {
 	c.stillHandlingArgs = !c.stillHandlingArgs
 	if !c.stillHandlingArgs {
 		if c.HasNextArg() {
@@ -333,6 +334,7 @@ func (c *CmdLineArgs) ExtraArgs() []string {
 }
 
 func (c *CmdLineArgs) HasNextArg() bool {
+	Todo("If c.Error was called, this should always return false")
 	return c.extraArgsCursor < len(c.ExtraArgs())
 }
 
