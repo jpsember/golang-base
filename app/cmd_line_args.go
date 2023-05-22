@@ -108,7 +108,6 @@ func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
 				break
 			}
 
-			//for
 			{
 				// We expect a string to be the next argument.
 				// If it is missing, or is another option, that's a problem
@@ -295,32 +294,23 @@ const (
 
 // Representation of a command line option
 type Option struct {
-	LongName     string
-	ShortName    string
-	Type         OptType
-	typeDefined  bool
-	Description  string
-	Invocation   string
-	BoolValue    bool
-	IntValue     int64
-	FloatValue   float64
-	StringValue  string
-	DebugCounter int
-}
-
-var debugCounter = 500
-
-func (x *Option) String() string {
-	return "Option #" + strconv.Itoa(x.DebugCounter) + " '" + x.LongName + "' "
+	LongName    string
+	ShortName   string
+	Type        OptType
+	typeDefined bool
+	Description string
+	Invocation  string
+	BoolValue   bool
+	IntValue    int64
+	FloatValue  float64
+	StringValue string
 }
 
 func NewOption(longName string) *Option {
 	var opt = Option{
-		LongName:     longName,
-		Type:         Bool,
-		DebugCounter: debugCounter,
+		LongName: longName,
+		Type:     Bool,
 	}
-	debugCounter++
 	return &opt
 }
 
@@ -331,7 +321,6 @@ func (opt *Option) SetType(t OptType) {
 func (c *CmdLineArgs) HandlingArgs() bool {
 	c.stillHandlingArgs = !c.stillHandlingArgs
 	if !c.stillHandlingArgs {
-		//ensureRequiredArgsProvided()
 		if c.HasNextArg() {
 			Pr("...done handling args; argument(s) remain:", c.PeekNextArg())
 		}
@@ -339,27 +328,10 @@ func (c *CmdLineArgs) HandlingArgs() bool {
 	return c.stillHandlingArgs
 }
 
-// // ------------------------------------------------------------------
-// // Additional functionality moved from App class
-// // ------------------------------------------------------------------
-//
-// private String[] mExtraArgs;
-// private int mExtraArgsCursor;
-// private Map<String, Object> mArgValueMap = hashMap();
-// private boolean mStillHandlingArgs;
-//
-//	private int extraArgsCursor() {
-//	  return mExtraArgsCursor;
-//	}
 func (c *CmdLineArgs) ExtraArgs() []string {
 	return c.extraArguments.Array()
 }
 
-//	private String[] extraArgs() {
-//	  if (mExtraArgs == null)
-//	    mExtraArgs = getExtras();
-//	  return mExtraArgs;
-//	}
 func (c *CmdLineArgs) HasNextArg() bool {
 	return c.extraArgsCursor < len(c.ExtraArgs())
 }
@@ -368,19 +340,6 @@ func (c *CmdLineArgs) UnusedExtraArgs() []string {
 	return c.ExtraArgs()[c.extraArgsCursor:]
 }
 
-//	  return extraArgsCursor() < extraArgs().length;
-//	}
-//
-//	public final void assertArgsDone() {
-//	  if (hasNextArg())
-//	    fail("Unexpected extra argument(s): " + nextArg());
-//	}
-//
-//	public final String peekNextArg() {
-//	  if (!hasNextArg())
-//	    fail("missing argument(s)");
-//	  return extraArgs()[mExtraArgsCursor];
-//	}
 func (c *CmdLineArgs) PeekNextArg() string {
 	if !c.HasNextArg() {
 		BadState("missing argument(s)")
@@ -393,13 +352,6 @@ func (c *CmdLineArgs) NextArg() string {
 	c.extraArgsCursor++
 	return arg
 }
-
-// public final String nextArg(String defaultValue) {
-//   String value = defaultValue;
-//   if (hasNextArg() || value == null)
-//     value = nextArg();
-//   return value;
-// }
 
 func (c *CmdLineArgs) HelpShown() bool {
 	return c.helpShown
@@ -422,6 +374,5 @@ func (c *CmdLineArgs) GetString(optionName string) string {
 func (c *CmdLineArgs) findOption(optionName string) *Option {
 	opt := c.namedOptionMap[optionName]
 	CheckState(opt != nil, "unrecognized option:", optionName)
-	//Pr("found option", optionName, "as:", opt)
 	return opt
 }

@@ -239,7 +239,8 @@ func (a *App) processArgs(oper Oper) {
 	pr := Printer(a)
 
 	var c = a.CmdLineArgs()
-	Todo("test the 'ProcessAdditionalArgs' option")
+
+	Todo("We probably want to only call ProcessAdditionalArgs if *not* using DataClass arguments")
 	for c.HandlingArgs() {
 		if a.ProcessAdditionalArgs != nil {
 			a.ProcessAdditionalArgs(c, oper)
