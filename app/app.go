@@ -16,7 +16,7 @@ type App struct {
 	// Client app should supply these fields:
 	Name                  string
 	Version               string
-	ProcessAdditionalArgs func(c *CmdLineArgs)
+	ProcessAdditionalArgs func(c *CmdLineArgs, oper Oper)
 	ArgsFileMustExist     bool
 
 	logger          Logger
@@ -199,7 +199,7 @@ func (a *App) auxStart() {
 	}
 
 	pr("calling processArgs")
-	a.processArgs()
+	a.processArgs(oper)
 	if a.error() {
 		return
 	}
@@ -235,14 +235,14 @@ func (a *App) determineOper() Oper {
 	return oper
 }
 
-func (a *App) processArgs() {
+func (a *App) processArgs(oper Oper) {
 	pr := Printer(a)
 
 	var c = a.CmdLineArgs()
 	Todo("test the 'ProcessAdditionalArgs' option")
 	for c.HandlingArgs() {
 		if a.ProcessAdditionalArgs != nil {
-			a.ProcessAdditionalArgs(c)
+			a.ProcessAdditionalArgs(c, oper)
 		}
 	}
 

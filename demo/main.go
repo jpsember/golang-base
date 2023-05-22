@@ -9,6 +9,7 @@ import (
 var _ = Pr
 
 type SpeakOper struct {
+	compactMode bool
 }
 
 func (oper *SpeakOper) UserCommand() string {
@@ -30,6 +31,23 @@ func (oper *SpeakOper) GetArguments() DataClass {
 	return gen.DefaultDemoConfig
 }
 
+func OurProcAdditionalArgs(args *CmdLineArgs, oper Oper) {
+	var sop = oper.(*SpeakOper)
+
+	for args.HasNextArg() {
+		var arg = args.NextArg()
+		switch arg {
+		case "compact":
+			Pr("compact mode")
+			sop.compactMode = true
+		case "height":
+			Pr("jump")
+		default:
+			BadArg("extraneous argument:", arg)
+		}
+	}
+}
+
 func main() {
 	var oper = &SpeakOper{}
 	var app = NewApp()
@@ -38,7 +56,8 @@ func main() {
 				Add("debugging").Desc("perform extra tests"). //
 				Add("speed").SetInt().Add("jumping")
 	app.RegisterOper(oper)
-	app.SetTestArgs("-d --speed 42 --verbose --dryrun name frank")
-
+	app.SetTestArgs("-d --speed 42 --verbose --dryrun")
+	app.SetTestArgs("--verbose --dryrun height compact compact")
+	app.ProcessAdditionalArgs = OurProcAdditionalArgs
 	app.Start()
 }

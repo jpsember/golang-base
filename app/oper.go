@@ -11,5 +11,4 @@ type Oper interface {
 	Perform(app *App)
 	GetHelp(printer *BasePrinter)
 	GetArguments() DataClass
-	//ProcessArgs(args *CmdLineArgs)
 }
