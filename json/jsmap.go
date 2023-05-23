@@ -141,7 +141,6 @@ func (m *JSMap) PutNumbered(value any) *JSMap {
 }
 
 func (p *JSONParser) ParseMap() *JSMap {
-	Todo("Have parser return errors throughout")
 	var jsMap = NewJSMap()
 
 	var ourMap = make(map[string]JSEntity)
@@ -149,7 +148,11 @@ func (p *JSONParser) ParseMap() *JSMap {
 
 	p.ReadExpectedByte('{')
 	var firstKeyFlag = true
-	for !p.readIf('}') {
+	for !p.hasProblem() {
+		if p.readIf('}') {
+			break
+		}
+
 		if !firstKeyFlag {
 			p.ReadExpectedByte(',')
 			if p.readIf('}') {

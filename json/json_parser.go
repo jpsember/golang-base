@@ -276,10 +276,7 @@ func (p *JSONParser) ReadExpectedBytes(s []byte) {
 }
 
 func (p *JSONParser) readValue() JSEntity {
-	// Set result to something, in case we get an error before
-	// we can assign something
 	var result JSEntity
-	result = JBoolFalse
 	if !p.hasProblem() {
 		var ch = p.peek()
 		switch ch {
@@ -301,9 +298,11 @@ func (p *JSONParser) readValue() JSEntity {
 			result = p.readNumber()
 		}
 		p.skipWhitespace()
-		if result == nil {
-			Die("failed to parse value, ch:", ch)
-		}
+
+	}
+	// If there was an error, result might be nil; set it to something
+	if result == nil {
+		result = JBoolFalse
 	}
 	return result
 }

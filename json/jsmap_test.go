@@ -2,7 +2,7 @@
 package json_test
 
 import (
-	"strconv"
+	"strings"
 	"testing" // We still need to import the standard testing package
 
 	. "github.com/jpsember/golang-base/base"
@@ -48,40 +48,39 @@ func TestPrintJSMapToString(t *testing.T) {
 
 func TestBadInput1(t *testing.T) {
 	j := jt.New(t)
-	var badtext = `{"name" : "John", "age":30, "hobbies" : ["swimming", "coding"], "sign": "alpha bravo charlie" }`
+	var badtext = `{"nm":"J","ag":30, "hs": ["sw","co"], "si":"al be ch" }`
 
 	var results = NewJSMap()
 	for i := 0; i < 100; i++ {
-
 		var s = badtext
+		if i == 0 {
+			results.PutNumbered(replaceQuotes(s))
+		}
 		s = corrupt(j, s)
-		j.Log("s:", s)
 		var p JSONParser
 		p.WithText(s)
 		p.ParseMap()
 		if p.Error != nil {
 			var q = NewJSMap()
-			q.Put("", s)
-			q.Put("err", p.Error.Error())
-			results.Put(strconv.Itoa(i), q)
+			q.Put("", replaceQuotes(s))
+			q.Put("err", replaceQuotes(p.Error.Error()))
+			results.PutNumbered(q)
 		}
 	}
 	j.AssertMessage(results)
 }
 
-var newBytes = []byte("truefalse\":,{}")
+func replaceQuotes(value string) string {
+	return strings.ReplaceAll(value, "\"", "'")
+}
+
+var newBytes = []byte("abc%\":,{}")
 
 func corrupt(j *jt.J, s string) string {
 	var b = []byte(s)
 	i := j.Rand().Intn(len(b))
 	k := j.Rand().Intn(len(newBytes))
 	var c = CopyOfBytes(b)
-
-	//Pr("s:", s)
-	//Pr("i:", i)
-	//Pr("k:", k)
-	//Pr("len b:", len(b))
-	//Pr("len newbytes:", len(newBytes))
 	c[i] = newBytes[k]
 	return string(c)
 }
