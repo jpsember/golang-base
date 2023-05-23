@@ -76,6 +76,24 @@ func replaceQuotes(value string) string {
 
 var newBytes = []byte("abc%\":,{}")
 
+func TestBadInput2(t *testing.T) {
+	j := jt.New(t)
+	b := strings.Builder{}
+	var k = 1000
+	for i := 0; i < k; i++ {
+		b.WriteString(`{"":`)
+	}
+	b.WriteString(`"hi"`)
+	for i := 0; i < k; i++ {
+		b.WriteString(`}`)
+	}
+	var p JSONParser
+	p.WithText(b.String())
+	p.ParseMap()
+
+	j.AssertMessage(p.Error)
+}
+
 func corrupt(j *jt.J, s string) string {
 	var b = []byte(s)
 	i := j.Rand().Intn(len(b))

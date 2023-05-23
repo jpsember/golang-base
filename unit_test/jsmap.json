@@ -1,4 +1,5 @@
 {          "TestBadInput1" : 6097,
+           "TestBadInput2" : 8250,
     "TestJSMapPrettyPrint" : 1227,
   "TestPrintJSMapToString" : 1227
 }
