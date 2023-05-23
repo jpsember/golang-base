@@ -5,9 +5,12 @@ import (
 	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/json"
 	"strings"
+	"sync"
 )
 
 var _ = Pr
+
+var mutex sync.RWMutex
 
 type HashCodeRegistry struct {
 	Key                string
@@ -22,7 +25,7 @@ type HashCodeRegistry struct {
 
 // Get registry for a test case, constructing one if necessary
 //
-// (must be thread safe?)
+// Must be thread safe
 func (j *J) registry() *HashCodeRegistry {
 	var key = j.Filename
 	var registry = sClassesMap[key]
@@ -30,9 +33,14 @@ func (j *J) registry() *HashCodeRegistry {
 		registry = new(HashCodeRegistry)
 		registry.UnitTest = j
 		registry.Key = key
+
+		// Don't let other threads modify the map while we are modifying it or creating the registry's jsmap
+		mutex.Lock()
 		sClassesMap[key] = registry
 		// See if there is a file it was saved to
 		registry.Map = JSMapFromFileIfExists(registry.file())
+		mutex.Unlock()
+
 		registry.UnitTestName = strings.TrimPrefix(j.TB.Name(), "Test")
 	}
 	return registry
@@ -57,9 +65,11 @@ func (r *HashCodeRegistry) unitTestDirectory() Path {
 func (r *HashCodeRegistry) VerifyHash(testName string, currentHash int32, invalidateOldHash bool) bool {
 	var expectedHash = r.Map.OptInt32(testName, 0)
 	if expectedHash == 0 || invalidateOldHash {
-		Todo("synchronize access to map?")
+		// Don't let other threads modify or write the map
+		mutex.Lock()
 		r.Map.Put(testName, currentHash)
 		r.write()
+		mutex.Unlock()
 		expectedHash = currentHash
 	}
 	return currentHash == expectedHash
@@ -68,7 +78,7 @@ func (r *HashCodeRegistry) VerifyHash(testName string, currentHash int32, invali
 func (r *HashCodeRegistry) write() {
 	var path = r.file()
 	var content = PrintJSEntity(r.Map, true)
-	path.WriteString(content)
+	path.WriteStringM(content)
 }
 
 var sClassesMap = make(map[string]*HashCodeRegistry)
@@ -88,7 +98,7 @@ func (r *HashCodeRegistry) SaveTestResults() {
 	// If we're going to replace the hash in any case, delete any existing reference directory,
 	// since its old contents may correspond to an older hash code
 	if r.InvalidateOldHash {
-		r.referenceDir().DeleteDirectory("/generated/")
+		r.referenceDir().DeleteDirectoryM("/generated/")
 	}
 
 	var res = r.UnitTest.GetTestResultsDir()

@@ -1,1 +1,3 @@
-{ "TestJSMapPrettyPrint" : 5984 }
+{   "TestJSMapPrettyPrint" : 1227,
+  "TestPrintJSMapToString" : 1227
+}

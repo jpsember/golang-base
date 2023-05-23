@@ -134,7 +134,7 @@ func (j *J) Log(message ...any) {
 }
 
 func (j *J) GenerateMessage(message ...any) {
-	var text = ToString(message)
+	var text = ToString(message...)
 	j.generateMessageTo("message.txt", text)
 }
 
@@ -228,7 +228,6 @@ func (j *J) showDiffs() {
 	var genDir = j.GetTestResultsDir()
 	var relFiles = NewSet[Path]()
 
-	Todo("Always skip .DS_Store?")
 	var dirWalk = NewDirWalk(refDir).WithRecurse().OmitNames(`\.DS_Store`)
 	relFiles.AddAll(dirWalk.FilesRelative())
 

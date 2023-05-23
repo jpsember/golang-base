@@ -149,6 +149,10 @@ func (path Path) DeleteDirectory(substring string) error {
 	return os.RemoveAll(string(path))
 }
 
+func (path Path) DeleteDirectoryM(substring string) {
+	CheckOkWithSkip(1, path.DeleteDirectory(substring))
+}
+
 func (path Path) MoveTo(target Path) error {
 	CheckArg(!path.Empty())
 	CheckArg(!target.Empty())
