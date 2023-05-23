@@ -76,6 +76,7 @@ func NewJSList() *JSList {
 }
 
 func (p *JSONParser) ParseList() JSEntity {
+	p.adjustNest(1)
 	var result []JSEntity
 	p.ReadExpectedByte('[')
 	var first = true
@@ -98,7 +99,7 @@ func (p *JSONParser) ParseList() JSEntity {
 		result = append(result, elem)
 	}
 	p.skipWhitespace()
-
+	p.adjustNest(-1)
 	var jsList = new(JSList)
 	jsList.wrappedList = result
 	return jsList

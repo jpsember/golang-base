@@ -141,6 +141,7 @@ func (m *JSMap) PutNumbered(value any) *JSMap {
 }
 
 func (p *JSONParser) ParseMap() *JSMap {
+	p.adjustNest(1)
 	var jsMap = NewJSMap()
 
 	var ourMap = make(map[string]JSEntity)
@@ -166,6 +167,7 @@ func (p *JSONParser) ParseMap() *JSMap {
 		var value = p.readValue()
 		ourMap[key] = value
 	}
+	p.adjustNest(-1)
 	return jsMap
 }
 

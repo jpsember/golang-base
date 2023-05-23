@@ -11,6 +11,7 @@ type JSONParser struct {
 	textBytes []byte
 	cursor    int
 	Error     error
+	nestLevel int
 }
 
 type ParseError struct {
@@ -320,4 +321,12 @@ func (p *JSONParser) readFalse() bool {
 func (p *JSONParser) readKeywordValue(kword *JSKeyword) any {
 	p.ReadExpectedBytes(kword.bytes)
 	return kword.value
+}
+
+func (p *JSONParser) adjustNest(amount int) {
+	if p.nestLevel == 100 {
+		p.fail("too many levels of nesting")
+	} else {
+		p.nestLevel += amount
+	}
 }
