@@ -4,11 +4,28 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/gen/sample"
+	. "github.com/jpsember/golang-base/json"
 )
 
 var _ = Pr
 
 func main() {
+
+	{
+		var badtext1 = `
+  {"name" : "John", 
+   "age":30, 
+    "hobbies" : [
+		"swimming", "coding",	,
+	"newlines": "alpha\nbravo\ncharlie",
+  }
+`
+		var p JSONParser
+		p.WithText(badtext1)
+		var jsmap = p.ParseMap()
+		Pr(jsmap)
+		return
+	}
 
 	jsonExample()
 

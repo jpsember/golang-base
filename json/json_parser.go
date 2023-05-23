@@ -1,16 +1,26 @@
 package json
 
 import (
+	"fmt"
 	. "github.com/jpsember/golang-base/base"
 	"strconv"
 	"strings"
 )
 
 type JSONParser struct {
-	textBytes     []byte
-	cursor        int
-	problemText   string
-	problemCursor int
+	textBytes []byte
+	cursor    int
+	Error     error
+}
+
+type ParseError struct {
+	prob    string
+	Context string
+	Cursor  int
+}
+
+func (e *ParseError) Error() string {
+	return e.prob
 }
 
 type JSKeyword struct {
@@ -42,19 +52,41 @@ func (p *JSONParser) WithText(text string) *JSONParser {
 }
 
 func (p *JSONParser) hasProblem() bool {
-	return NonEmpty(p.problemText)
+	return p.Error != nil
 }
 
 func (p *JSONParser) fail(message ...any) {
-	if NonEmpty(p.problemText) {
+
+	if p.Error != nil {
 		return
 	}
+
 	var txt = "problem parsing json"
 	if len(message) != 0 {
 		txt += "; " + ToString(message...)
 	}
-	p.problemText, p.problemCursor = txt, p.cursor
-	Die("set problem to:", p.problemText, "cursor:", p.problemCursor)
+
+	sb := strings.Builder{}
+	sb.WriteString("...")
+	{
+		i := MaxInt(p.cursor-15, 0)
+		if i < p.cursor {
+			sb.WriteString(string(p.textBytes[i:p.cursor]))
+		}
+	}
+	sb.WriteString("!")
+
+	{
+		i := MinInt(p.cursor+15, len(p.textBytes))
+		if i > p.cursor {
+		}
+		sb.WriteString(string(p.textBytes[p.cursor:i]))
+	}
+	var context = sb.String()
+	var msg = ToString(JoinLists([]any{
+		fmt.Sprintf("Problem parsing json, cursor: %v,", p.cursor), "context:",
+		context}, message)...)
+	p.Error = &ParseError{prob: msg, Context: context, Cursor: p.cursor}
 }
 
 func (p *JSONParser) skipWhitespace() bool {
@@ -154,7 +186,7 @@ func (p *JSONParser) assertCompleted() {
 }
 
 func (p *JSONParser) peek() byte {
-	if p.cursor == len(p.textBytes) {
+	if p.cursor >= len(p.textBytes) {
 		p.fail("reached end of input")
 		return 0
 	}
@@ -189,6 +221,7 @@ func (p *JSONParser) readHexint() int {
 }
 
 func (p *JSONParser) readNumber() JSEntity {
+
 	var start = p.cursor
 	var isFloat = false
 
@@ -222,6 +255,7 @@ func (p *JSONParser) readNumber() JSEntity {
 	}
 	if value == nil {
 		p.fail("problem parsing number", expr)
+		value = JInteger(0)
 	}
 	return value
 }
@@ -242,29 +276,35 @@ func (p *JSONParser) ReadExpectedBytes(s []byte) {
 }
 
 func (p *JSONParser) readValue() JSEntity {
-
+	// Set result to something, in case we get an error before
+	// we can assign something
 	var result JSEntity
-
-	var ch = p.peek()
-	switch ch {
-	case '[':
-		result = p.ParseList()
-	case '{':
-		result = p.ParseMap()
-	case '"':
-		result = MakeJString(p.readString())
-	case 't':
-		result = MakeJBool(p.readTrue())
-	case 'f':
-		result = MakeJBool(p.readFalse())
-	case 'n':
-		p.read()
-		p.ReadExpectedBytes(JSNull.bytes)
-		result = JNullValue
-	default:
-		result = p.readNumber()
+	result = JBoolFalse
+	if !p.hasProblem() {
+		var ch = p.peek()
+		switch ch {
+		case '[':
+			result = p.ParseList()
+		case '{':
+			result = p.ParseMap()
+		case '"':
+			result = MakeJString(p.readString())
+		case 't':
+			result = MakeJBool(p.readTrue())
+		case 'f':
+			result = MakeJBool(p.readFalse())
+		case 'n':
+			p.read()
+			p.ReadExpectedBytes(JSNull.bytes)
+			result = JNullValue
+		default:
+			result = p.readNumber()
+		}
+		p.skipWhitespace()
+		if result == nil {
+			Die("failed to parse value, ch:", ch)
+		}
 	}
-	p.skipWhitespace()
 	return result
 }
 

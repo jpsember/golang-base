@@ -277,7 +277,15 @@ func Regexp(expr string) *regexp.Regexp {
 
 func JoinLists(list1 []any, list2 []any) []any {
 	result := make([]any, 0, len(list1)+len(list2))
-	result = append(result, list1)
-	result = append(result, list2)
+	result = append(result, list1...)
+	result = append(result, list2...)
+	return result
+}
+
+// Move this to some other package later
+func CopyOfBytes(array []byte) []byte {
+	CheckNotNil(array)
+	result := make([]byte, len(array))
+	copy(result, array)
 	return result
 }

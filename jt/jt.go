@@ -5,6 +5,7 @@ import (
 	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/json"
 	"hash/fnv"
+	"math/rand"
 	"os/exec"
 	"reflect"
 	"strings"
@@ -74,6 +75,8 @@ type J struct {
 	moduleDir         Path
 	baseNameCached    string
 	InvalidateOldHash bool
+	rand              *rand.Rand
+	randSeed          int
 }
 
 func (j *J) Verbose() bool {
@@ -291,4 +294,20 @@ func makeSysCall(c []string) (string, error) {
 	out, err := exec.Command(cmd, args...).Output()
 	var strout = string(out)
 	return strout, err
+}
+
+func (j *J) Seed(seed int) *J {
+	j.randSeed = seed
+	j.rand = nil
+	return j
+}
+
+func (j *J) Rand() *rand.Rand {
+	if j.rand == nil {
+		if j.randSeed == 0 {
+			j.randSeed = 1965
+		}
+		j.rand = rand.New(rand.NewSource(int64(j.randSeed)))
+	}
+	return j.rand
 }

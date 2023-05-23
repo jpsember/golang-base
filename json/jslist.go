@@ -101,7 +101,6 @@ func (p *JSONParser) ParseList() JSEntity {
 
 	var jsList = new(JSList)
 	jsList.wrappedList = result
-
 	return jsList
 }
 
