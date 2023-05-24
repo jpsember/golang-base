@@ -5,12 +5,17 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/gen/sample"
 	. "github.com/jpsember/golang-base/json"
+	"github.com/jpsember/golang-base/webserv"
 )
 
 var _ = Pr
 
 func main() {
 
+	if true {
+		webserv.Demo()
+		return
+	}
 	{
 		var badtext1 = `
   {"name" : "John", 
