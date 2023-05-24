@@ -2,6 +2,7 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/files"
 	"log"
 	"net/http"
 )
@@ -21,8 +22,13 @@ func HelloServer(w http.ResponseWriter, req *http.Request) {
 }
 
 func Demo() {
+
+	var keyDir = NewPathM("webserv/keys")
+	var certPath = keyDir.JoinM("server.crt")
+	var keyPath = keyDir.JoinM("server.key")
+	
 	http.HandleFunc("/hello", HelloServer)
-	err := http.ListenAndServeTLS(":443", "webserv/keys/server.crt", "webserv/keys/server.key", nil)
+	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
