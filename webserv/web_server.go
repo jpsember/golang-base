@@ -45,16 +45,20 @@ func (oper *SampleOper) Perform(app *App) {
 	}
 }
 
-func handleHello(w http.ResponseWriter, req *http.Request) {
-	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte("This is an example server; " + time.Now().Format(time.ANSIC)))
+func handler(msg ...any) func(http.ResponseWriter, *http.Request) {
+	var m = ToString(msg...)
+	return func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte(time.Now().Format(time.ANSIC) + ": " + m))
+	}
 }
 
 // ------------------------------------------------------------------------------------
 
 func (oper *SampleOper) doHttp() {
 	Todo("I don't think I need separate handlers for secure vs non")
-	http.HandleFunc("/hello", handleHello)
+	http.HandleFunc("/hello", handler("hello"))
+	http.HandleFunc("/", handler("home page"))
 	Pr("Type:", INDENT, "curl -sL http://localhost:8090/hello")
 	err := http.ListenAndServe(":8090", nil)
 	if err != nil {
@@ -79,7 +83,18 @@ func (oper *SampleOper) doHttps() {
 
 	Pr("Type:", INDENT, "curl -sL https://"+url+"/hello")
 
-	http.HandleFunc("/hello", handleHello)
+	// This handles xxx.org
+	//
+	http.HandleFunc("/", handler("home page"))
+
+	// xxx.org/hello
+	//
+	http.HandleFunc("/hello/", handler("hello"))
+
+	// xxx.org/hey???
+	//
+	http.HandleFunc("/hey/", handler("hey"))
+
 	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
 
 	if err != nil {
