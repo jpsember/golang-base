@@ -29,6 +29,6 @@ type OperWithJsonArgs interface {
 // other than flags ('-x', '--yyyy')
 type OperWithCmdLineArgs interface {
 	Oper
-	// Handle remaining arguments.  See main.go for an example
+	// Handle remaining arguments.  See web_server.go for an example
 	ProcessArgs(c *CmdLineArgs)
 }

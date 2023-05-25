@@ -31,7 +31,7 @@ func Demo() {
 	app.Version = "1.0"
 	app.CmdLineArgs().Add("https").Desc("secure mode")
 	app.RegisterOper(oper)
-	app.SetTestArgs("--https")
+	//app.SetTestArgs("--https")
 	app.Start()
 }
 
