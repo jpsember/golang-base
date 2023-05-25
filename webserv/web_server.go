@@ -12,7 +12,8 @@ import (
 // Define an app with a single operation
 
 type SampleOper struct {
-	https bool
+	https  bool
+	ticker *time.Ticker
 }
 
 func (oper *SampleOper) UserCommand() string {
@@ -97,9 +98,39 @@ func (oper *SampleOper) doHttps() {
 	//
 	http.HandleFunc("/hey/", handler("hey"))
 
+	Todo("Make web requests, e.g.  " + `
+
+resp, err := http.Get("https://jsonplaceholder.typicode.com/posts/1")
+if err != nil {
+   log.Fatalln(err)
+}
+
+`)
+
+	oper.startTicker()
+	
 	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
 
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
+}
+
+func (oper *SampleOper) startTicker() {
+	oper.ticker = time.NewTicker(5 * time.Second)
+
+	quit := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-oper.ticker.C:
+				Pr("ticker is running")
+			case <-quit:
+				oper.ticker.Stop()
+				oper.ticker = nil
+				return
+			}
+		}
+	}()
+
 }
