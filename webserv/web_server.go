@@ -70,9 +70,9 @@ func (oper *SampleOper) doHttp() {
 
 func (oper *SampleOper) doHttps() {
 
-	var keyDir = NewPathM("webserv/keys")
-	var certPath = keyDir.JoinM("server.crt")
-	var keyPath = keyDir.JoinM("server.key")
+	var keyDir = NewPathM("webserv/newkeys")
+	var certPath = keyDir.JoinM("animalaid.crt")
+	var keyPath = keyDir.JoinM("animalaid.key")
 
 	Pr("Type:", INDENT, "curl -sL https://localhost/hello")
 
