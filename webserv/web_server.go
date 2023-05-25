@@ -31,7 +31,7 @@ func Demo() {
 	app.Version = "1.0"
 	app.CmdLineArgs().Add("https").Desc("secure mode")
 	app.RegisterOper(oper)
-	//app.SetTestArgs("--https")
+	app.SetTestArgs("--https")
 	app.Start()
 }
 
@@ -70,11 +70,13 @@ func (oper *SampleOper) doHttp() {
 
 func (oper *SampleOper) doHttps() {
 
-	var keyDir = NewPathM("webserv/newkeys")
-	var certPath = keyDir.JoinM("animalaid.crt")
-	var keyPath = keyDir.JoinM("animalaid.key")
+	var url = "animalaid.org"
 
-	Pr("Type:", INDENT, "curl -sL https://localhost/hello")
+	var keyDir = NewPathM("webserv/https_keys")
+	var certPath = keyDir.JoinM(url + ".crt")
+	var keyPath = keyDir.JoinM(url + ".key")
+
+	Pr("Type:", INDENT, "curl -sL https://"+url+"/hello")
 
 	http.HandleFunc("/hello", handleHello)
 	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
