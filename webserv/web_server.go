@@ -48,8 +48,10 @@ func (oper *SampleOper) Perform(app *App) {
 func handler(msg ...any) func(http.ResponseWriter, *http.Request) {
 	var m = ToString(msg...)
 	return func(w http.ResponseWriter, req *http.Request) {
+
 		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte(time.Now().Format(time.ANSIC) + ": " + m))
+		w.Write([]byte(time.Now().Format(time.ANSIC) + ": " + m + "\n\nRequest URI:" + req.RequestURI))
+
 	}
 }
 
