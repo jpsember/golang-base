@@ -6,6 +6,7 @@ import (
 	. "github.com/jpsember/golang-base/files"
 	"log"
 	"net/http"
+	"time"
 )
 
 // Define an app with a single operation
@@ -46,7 +47,7 @@ func (oper *SampleOper) Perform(app *App) {
 
 func handleHello(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte("This is an example server.\n"))
+	w.Write([]byte("This is an example server; " + time.Now().Format(time.ANSIC)))
 }
 
 // ------------------------------------------------------------------------------------
@@ -80,6 +81,7 @@ func (oper *SampleOper) doHttps() {
 
 	http.HandleFunc("/hello", handleHello)
 	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
+
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
