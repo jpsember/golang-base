@@ -129,10 +129,10 @@ func cmdLineExample() {
 	var app = NewApp()
 	app.SetName("cmd_line_example")
 	app.Version = "2.1.3"
+	app.RegisterOper(oper)
 	app.CmdLineArgs(). //
 				Add("debugging").Desc("perform extra tests"). //
-				Add("speed").SetInt().Add("jumping")
-	app.RegisterOper(oper)
-	app.SetTestArgs("--verbose --dryrun height compact compact zebra height compact")
+				Add("speed").SetInt().Add("jumping")          //
+	app.SetTestArgs("--verbose --dryrun height compact compact zebra height compact --help")
 	app.Start()
 }

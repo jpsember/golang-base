@@ -68,10 +68,12 @@ func Halt(message ...any) {
 	os.Exit(1)
 }
 
+//goland:noinspection GoUnusedExportedFunction
 func NotSupported(message ...any) {
 	panic("*** Not supported (" + CallerLocation(3) + ") " + ToString(message...))
 }
 
+//goland:noinspection GoUnusedExportedFunction
 func NotImplemented(message ...any) {
 	panic("*** Not implemented (" + CallerLocation(3) + ") " + ToString(message...))
 }

@@ -64,20 +64,20 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 	sb.WriteString(a.Name())
 	sb.WriteString(" version: ")
 	sb.WriteString(a.Version)
-	sb.WriteString("\n")
+	sb.WriteString("\n\n")
 
 	if a.hasMultipleOperations() {
-		sb.WriteString("\nUsage: [--<app arg>]* [<operation> <operation arg>*]*\n\n")
+		sb.WriteString("Usage: [--<app arg>]* [<operation> <operation arg>*]*\n\n")
 		sb.WriteString("Operations:\n")
 	}
 	for _, key := range a.orderedCommands.Array() {
 		oper := a.operMap[key]
 		bp := NewBasePrinter()
 		oper.GetHelp(bp)
-		if !a.hasMultipleOperations() {
-			sb.WriteString("\nUsage: " + a.Name() + " ")
-		}
 		sb.WriteString(bp.String())
+		if !a.hasMultipleOperations() {
+			sb.WriteString("\n\nUsage: " + a.Name())
+		}
 		sb.WriteString("\n")
 	}
 
@@ -85,7 +85,6 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 		sb.WriteString("\nApp arguments:")
 	}
 	ca.WithBanner(sb.String())
-
 	return ca
 }
 

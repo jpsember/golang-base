@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	. "github.com/jpsember/golang-base/base"
 	"strconv"
 	"strings"
@@ -72,7 +73,7 @@ func (c *CmdLineArgs) Help() {
 		return
 	}
 	c.helpShown = true
-	Pr("....not implemented; help...")
+	fmt.Println(c.banner)
 }
 
 // Process the unpacked list of options and values, assigning values to the
