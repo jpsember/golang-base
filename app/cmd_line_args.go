@@ -7,7 +7,7 @@ import (
 )
 
 type CmdLineArgs struct {
-	Logger
+	BaseObject
 	banner            string
 	locked            bool
 	opt               *Option

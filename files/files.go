@@ -7,8 +7,6 @@ import (
 	"strings"
 )
 
-// var pr = Pr
-
 // Deprecated: use Path type
 // Delete a directory.  For safety, the path must contain a particular substring.
 func DeleteDir(path string, substring string) error {

@@ -5,24 +5,24 @@ import (
 	"strings"
 )
 
-type Logger struct {
+type BaseObject struct {
 	verbose bool
 	name    string
 }
 
-func (logger *Logger) Name() string {
-	if logger.name == "" {
-		logger.SetName("<no name defined>")
+func (obj *BaseObject) Name() string {
+	if obj.name == "" {
+		obj.SetName("<no name defined>")
 	}
-	return logger.name
+	return obj.name
 }
 
-func (logger *Logger) SetName(name string) {
-	logger.name = name
+func (obj *BaseObject) SetName(name string) {
+	obj.name = name
 }
 
-func (logger *Logger) ProvideName(owner any) {
-	name := logger.name
+func (obj *BaseObject) ProvideName(owner any) {
+	name := obj.name
 	if name != "" {
 		return
 	}
@@ -37,19 +37,19 @@ func (logger *Logger) ProvideName(owner any) {
 	i = MaxInt(i, strings.LastIndex(name, "."))
 	name = name[i+1:]
 	CheckArg(name != "")
-	logger.SetName(name)
+	obj.SetName(name)
 }
 
-func (logger *Logger) Pr(messages ...any) {
-	if logger.verbose {
-		Pr(JoinLists([]any{"[" + logger.Name() + ":]"}, messages)...)
+func (obj *BaseObject) Log(messages ...any) {
+	if obj.verbose {
+		Pr(JoinLists([]any{"[" + obj.Name() + ":]"}, messages)...)
 	}
 }
 
-func (logger *Logger) SetVerbose(verbose bool) {
-	logger.verbose = verbose
+func (obj *BaseObject) SetVerbose(verbose bool) {
+	obj.verbose = verbose
 }
 
-func (logger *Logger) Verbose() bool {
-	return logger.verbose
+func (obj *BaseObject) Verbose() bool {
+	return obj.verbose
 }

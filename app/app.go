@@ -11,7 +11,7 @@ import (
 )
 
 type App struct {
-	Logger
+	BaseObject
 
 	// Client app should supply these fields:
 	Version string
@@ -156,7 +156,7 @@ func (a *App) auxStart() {
 
 	a.SetVerbose(c.Get(ClArgVerbose))
 	a.dryRun = c.Get(ClArgDryrun)
-	var pr = a.Pr
+	var pr = a.Log
 
 	a.determineOper()
 	if a.oper == nil {
@@ -201,7 +201,7 @@ func (a *App) handleCmdLineArgsError() bool {
 
 // Determine which operation is to be run
 func (a *App) determineOper() {
-	var pr = a.Pr
+	var pr = a.Log
 
 	var c = a.CmdLineArgs()
 
@@ -234,7 +234,7 @@ func (a *App) determineOper() {
 }
 
 func (a *App) processArgs() {
-	pr := a.Pr
+	pr := a.Log
 
 	var c = a.CmdLineArgs()
 
@@ -272,7 +272,7 @@ func (a *App) processArgs() {
 }
 
 func (a *App) compileDataArgs() {
-	pr := a.Pr
+	pr := a.Log
 
 	var oper = a.operWithJsonArgs
 

@@ -41,7 +41,7 @@ func main() {
 // -------------------------------------------------------------------------
 
 type SpeakOper struct {
-	Logger
+	BaseObject
 	compactMode bool
 	config      DemoConfig
 }
@@ -52,7 +52,7 @@ func (oper *SpeakOper) UserCommand() string {
 
 func (oper *SpeakOper) Perform(app *App) {
 	oper.SetVerbose(true)
-	pr := oper.Pr
+	pr := oper.Log
 	pr("this is SpeakOper.perform")
 	pr("Arguments:", INDENT, oper.config)
 }
@@ -88,7 +88,7 @@ func jsonExample() {
 // -------------------------------------------------------------------------
 
 type JumpOper struct {
-	Logger
+	BaseObject
 	compactMode bool
 }
 
@@ -98,12 +98,13 @@ func (oper *JumpOper) UserCommand() string {
 
 func (oper *JumpOper) Perform(app *App) {
 	oper.SetVerbose(true)
-	pr := oper.Pr
+	pr := oper.Log
 	pr("this is JumpOper.perform")
 	Pr("goodbye")
 }
 
 func (oper *JumpOper) GetHelp(bp *BasePrinter) {
+	bp.Pr("An example of an app that uses conventional command line arguments only.")
 }
 
 func (oper *JumpOper) ProcessArgs(c *CmdLineArgs) {
@@ -117,7 +118,6 @@ func (oper *JumpOper) ProcessArgs(c *CmdLineArgs) {
 			Pr("jump")
 		default:
 			c.SetError("extraneous argument:", arg)
-			//BadArg("extraneous argument:", arg)
 		}
 	}
 }

@@ -32,7 +32,7 @@ func TestDirWalk(t *testing.T) {
 
 func sampleWalker(j *jt.J) *DirWalk {
 	var w = NewDirWalk(sampleDir(j))
-	w.Logger().SetVerbose(j.Verbose())
+	w.BaseObject().SetVerbose(j.Verbose())
 	return w
 }
 

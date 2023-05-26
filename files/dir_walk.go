@@ -10,16 +10,16 @@ import (
 type regex = *regexp.Regexp
 
 type DirWalk struct {
-	Logger
+	BaseObject
 	startDirectory Path
 	withRecurse    bool
 	filePatterns   *patternCollection
 	dirPatterns    *patternCollection
 	absFilesList   []Path
 	relFilesList   []Path
-	patternFlags int
-	regexpSet    map[string]regex
-	includeDirs  bool
+	patternFlags   int
+	regexpSet      map[string]regex
+	includeDirs    bool
 }
 
 const patflagFile = 1 << 0
@@ -144,7 +144,7 @@ func (w *DirWalk) OmitNamesWithSubstrings(nameExprs ...string) *DirWalk {
 // Does *not* include the start directory itself
 func (w *DirWalk) Files() []Path {
 
-	var pr = w.Pr
+	var pr = w.Log
 	pr("Files()")
 
 	if w.absFilesList == nil {
