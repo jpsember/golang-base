@@ -17,7 +17,7 @@ func main() {
 		return
 	}
 	Todo("this should have failed (now disabled)")
-	if false {
+	if true {
 		var badtext1 = `
   {"name" : "John", 
    "age":30, 
@@ -29,7 +29,11 @@ func main() {
 		var p JSONParser
 		p.WithText(badtext1)
 		var jsmap = p.ParseMap()
-		Pr(jsmap)
+		if p.Error != nil {
+			Pr("Error parsing!", INDENT, p.Error)
+		} else {
+			Pr(jsmap)
+		}
 		return
 	}
 

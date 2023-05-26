@@ -148,24 +148,21 @@ func (p *JSONParser) ParseMap() *JSMap {
 	jsMap.wrappedMap = ourMap
 
 	p.ReadExpectedByte('{')
-	var firstKeyFlag = true
+	commaExpected := false
 	for !p.hasProblem() {
 		if p.readIf('}') {
 			break
 		}
-
-		if !firstKeyFlag {
+		if commaExpected {
 			p.ReadExpectedByte(',')
 			if p.readIf('}') {
 				break
 			}
-		} else {
-			firstKeyFlag = false
+			commaExpected = false
 		}
-		var key = p.readString()
+		key := p.readString()
 		p.ReadExpectedByte(':')
-		var value = p.readValue()
-		ourMap[key] = value
+		ourMap[key] = p.readValue()
 	}
 	p.adjustNest(-1)
 	return jsMap

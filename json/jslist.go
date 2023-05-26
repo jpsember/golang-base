@@ -79,20 +79,19 @@ func (p *JSONParser) ParseList() JSEntity {
 	p.adjustNest(1)
 	var result []JSEntity
 	p.ReadExpectedByte('[')
-	var first = true
+	commaExpected := false
 	for !p.hasProblem() {
 		if p.readIf(']') {
 			break
 		}
-		if !first {
+		if commaExpected {
 			p.ReadExpectedByte(',')
 			if p.readIf(']') {
 				break
 			}
-		} else {
-			first = false
+			commaExpected = false
 		}
-		var elem = p.readValue()
+		elem := p.readValue()
 		if p.hasProblem() {
 			break
 		}
