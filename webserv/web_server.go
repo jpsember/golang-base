@@ -5,6 +5,8 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
+	. "github.com/jpsember/golang-base/gen/webservgen"
+
 	"io"
 	"log"
 	"net/http"
@@ -63,7 +65,7 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	sb.Pr("URI:", req.RequestURI, CR)
 
 	// Determine what session this is, by examining cookies
-	var session *Session
+	var session Session
 	{
 
 		cookies := req.Cookies()
@@ -88,7 +90,7 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 			cookie := &http.Cookie{
 				Name:   "session",
-				Value:  session.Id,
+				Value:  session.Id(),
 				MaxAge: 1200, // 20 minutes
 			}
 			sb.Pr("...no session cookie found, created one with id:", session.Id, CR)
@@ -98,14 +100,6 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 
 	w.Write([]byte(sb.String()))
-}
-
-type Session struct {
-	Id string
-}
-
-func (session *Session) String() string {
-	return session.Id
 }
 
 func (oper *SampleOper) handler() func(http.ResponseWriter, *http.Request) {

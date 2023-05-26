@@ -14,13 +14,13 @@ type JSONParser struct {
 	nestLevel int
 }
 
-type ParseError struct {
+type JsonParseError struct {
 	prob    string
 	Context string
 	Cursor  int
 }
 
-func (e *ParseError) Error() string {
+func (e *JsonParseError) Error() string {
 	return e.prob
 }
 
@@ -87,7 +87,7 @@ func (p *JSONParser) fail(message ...any) {
 	var msg = ToString(JoinLists([]any{
 		fmt.Sprintf("Problem parsing json, cursor: %v,", p.cursor), "context:",
 		context}, message)...)
-	p.Error = &ParseError{prob: msg, Context: context, Cursor: p.cursor}
+	p.Error = &JsonParseError{prob: msg, Context: context, Cursor: p.cursor}
 }
 
 func (p *JSONParser) skipWhitespace() bool {

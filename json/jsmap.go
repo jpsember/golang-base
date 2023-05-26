@@ -176,6 +176,7 @@ func (this *JSMap) GetMap(key string) *JSMap {
 }
 
 func (this *JSMap) OptMap(key string) *JSMap {
+	CheckNotNil(key, "nil key for OptMap")
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return nil
