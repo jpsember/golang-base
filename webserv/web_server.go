@@ -77,6 +77,9 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 				sb.Pr("sessionId:", sessionId, "found:", session)
 			}
 			sb.Cr()
+			if session != nil {
+				break
+			}
 		}
 
 		// If no session was found, create one, and send a cookie
