@@ -12,11 +12,12 @@ var _ = Pr
 
 func main() {
 
-	if true {
+	if false {
 		webserv.Demo()
 		return
 	}
-	{
+	Todo("this should have failed (now disabled)")
+	if false {
 		var badtext1 = `
   {"name" : "John", 
    "age":30, 
@@ -40,6 +41,7 @@ func main() {
 // -------------------------------------------------------------------------
 
 type SpeakOper struct {
+	Logger
 	compactMode bool
 	config      DemoConfig
 }
@@ -49,8 +51,8 @@ func (oper *SpeakOper) UserCommand() string {
 }
 
 func (oper *SpeakOper) Perform(app *App) {
-	app.Logger().SetVerbose(true)
-	pr := app.Logger().Pr
+	oper.SetVerbose(true)
+	pr := oper.Pr
 	pr("this is SpeakOper.perform")
 	pr("Arguments:", INDENT, oper.config)
 }
@@ -71,7 +73,9 @@ func (oper *SpeakOper) AcceptArguments(a DataClass) {
 func jsonExample() {
 	Pr(VERT_SP, DASHES, "jsonExample", CR, DASHES)
 	var oper = &SpeakOper{}
+	oper.ProvideName(oper)
 	var app = NewApp()
+	app.SetName("jsonExample")
 	app.Version = "2.0.3"
 	app.CmdLineArgs(). //
 				Add("debugging").Desc("perform extra tests"). //
@@ -84,6 +88,7 @@ func jsonExample() {
 // -------------------------------------------------------------------------
 
 type JumpOper struct {
+	Logger
 	compactMode bool
 }
 
@@ -92,8 +97,8 @@ func (oper *JumpOper) UserCommand() string {
 }
 
 func (oper *JumpOper) Perform(app *App) {
-	app.Logger().SetVerbose(true)
-	pr := app.Logger().Pr
+	oper.SetVerbose(true)
+	pr := oper.Pr
 	pr("this is JumpOper.perform")
 	Pr("goodbye")
 }
@@ -120,7 +125,9 @@ func (oper *JumpOper) ProcessArgs(c *CmdLineArgs) {
 func cmdLineExample() {
 	Pr(VERT_SP, DASHES, "cmdLineExample", CR, DASHES)
 	var oper = &JumpOper{}
+	oper.ProvideName(oper)
 	var app = NewApp()
+	app.SetName("cmd_line_example")
 	app.Version = "2.1.3"
 	app.CmdLineArgs(). //
 				Add("debugging").Desc("perform extra tests"). //

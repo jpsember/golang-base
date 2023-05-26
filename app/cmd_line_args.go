@@ -7,7 +7,7 @@ import (
 )
 
 type CmdLineArgs struct {
-	logger            Logger
+	Logger
 	banner            string
 	locked            bool
 	opt               *Option
@@ -23,7 +23,7 @@ type CmdLineArgs struct {
 
 func NewCmdLineArgs() *CmdLineArgs {
 	var c = new(CmdLineArgs)
-	c.logger = NewLogger(c)
+	c.SetName("CmdLineArgs")
 	c.namedOptionMap = make(map[string]*Option)
 	c.optionList = NewArray[string]()
 	c.extraArguments = NewArray[string]()

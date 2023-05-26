@@ -33,6 +33,7 @@ func (oper *SampleOper) ProcessArgs(c *CmdLineArgs) {
 func Demo() {
 	var oper = &SampleOper{}
 	var app = NewApp()
+	app.SetName("WebServer")
 	app.Version = "1.0"
 	app.CmdLineArgs().Add("https").Desc("secure mode")
 	app.RegisterOper(oper)

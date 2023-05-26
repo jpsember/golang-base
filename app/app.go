@@ -6,18 +6,16 @@ import (
 	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/json"
 	"os"
-	"reflect"
 	"strconv"
 	"strings"
 )
 
 type App struct {
+	Logger
 
 	// Client app should supply these fields:
-	Name    string
 	Version string
 
-	logger          Logger
 	operMap         map[string]Oper
 	orderedCommands Array[string]
 	cmdLineArgs     *CmdLineArgs
@@ -35,13 +33,8 @@ type App struct {
 
 func NewApp() *App {
 	var w = new(App)
-	w.logger = NewLogger(w)
 	w.operMap = make(map[string]Oper)
 	return w
-}
-
-func (a *App) Logger() Logger {
-	return a.logger
 }
 
 const (
@@ -60,14 +53,6 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 	ca := NewCmdLineArgs()
 	a.cmdLineArgs = ca
 
-	if false {
-		Todo("have optional func pointer to addAppCommandLineArgs")
-	}
-	// a.addAppCommandLineArgs(ca)
-	//for _, oper = range a.operMap {
-	//
-	//}
-
 	ca.WithBanner("!!! please add a banner !!!")
 	ca.Add(ClArgDryrun).Desc("Dry run")
 	ca.Add(ClArgVerbose).Desc("Verbose messages").ShortName("v")
@@ -76,7 +61,7 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 	ca.Add(ClArgArgsFile).SetString().Desc("Specify arguments file (json)")
 
 	sb := strings.Builder{}
-	sb.WriteString(strings.ToLower(a.GetName()))
+	sb.WriteString(a.Name())
 	sb.WriteString(" version: ")
 	sb.WriteString(a.Version)
 	sb.WriteString("\n")
@@ -90,7 +75,7 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 		bp := NewBasePrinter()
 		oper.GetHelp(bp)
 		if !a.hasMultipleOperations() {
-			sb.WriteString("\nUsage: " + a.GetName() + " ")
+			sb.WriteString("\nUsage: " + a.Name() + " ")
 		}
 		sb.WriteString(bp.String())
 		sb.WriteString("\n")
@@ -121,17 +106,6 @@ func (a *App) RegisterOper(oper Oper) {
 
 func (a *App) hasMultipleOperations() bool {
 	return len(a.operMap) > 1
-}
-
-func (a *App) GetName() string {
-	if a.Name == "" {
-		if t := reflect.TypeOf(a); t.Kind() == reflect.Ptr {
-			a.Name = t.Elem().Name()
-		} else {
-			a.Name = "***unknown app name***"
-		}
-	}
-	return a.Name
 }
 
 func (a *App) Start() {
@@ -180,9 +154,9 @@ func (a *App) auxStart() {
 		return
 	}
 
-	a.Logger().SetVerbose(c.Get(ClArgVerbose))
+	a.SetVerbose(c.Get(ClArgVerbose))
 	a.dryRun = c.Get(ClArgDryrun)
-	var pr = Printer(a)
+	var pr = a.Pr
 
 	a.determineOper()
 	if a.oper == nil {
@@ -227,7 +201,7 @@ func (a *App) handleCmdLineArgsError() bool {
 
 // Determine which operation is to be run
 func (a *App) determineOper() {
-	var pr = Printer(a)
+	var pr = a.Pr
 
 	var c = a.CmdLineArgs()
 
@@ -260,7 +234,7 @@ func (a *App) determineOper() {
 }
 
 func (a *App) processArgs() {
-	pr := Printer(a)
+	pr := a.Pr
 
 	var c = a.CmdLineArgs()
 
@@ -298,7 +272,7 @@ func (a *App) processArgs() {
 }
 
 func (a *App) compileDataArgs() {
-	pr := Printer(a)
+	pr := a.Pr
 
 	var oper = a.operWithJsonArgs
 
