@@ -1,11 +1,14 @@
 package webserv
 
 import (
+	"fmt"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -98,17 +101,8 @@ func (oper *SampleOper) doHttps() {
 	//
 	http.HandleFunc("/hey/", handler("hey"))
 
-	Todo("Make web requests, e.g.  " + `
-
-resp, err := http.Get("https://jsonplaceholder.typicode.com/posts/1")
-if err != nil {
-   log.Fatalln(err)
-}
-
-`)
-
 	oper.startTicker()
-	
+
 	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
 
 	if err != nil {
@@ -124,7 +118,7 @@ func (oper *SampleOper) startTicker() {
 		for {
 			select {
 			case <-oper.ticker.C:
-				Pr("ticker is running")
+				oper.makeRequest()
 			case <-quit:
 				oper.ticker.Stop()
 				oper.ticker = nil
@@ -133,4 +127,17 @@ func (oper *SampleOper) startTicker() {
 		}
 	}()
 
+}
+
+func (oper *SampleOper) makeRequest() {
+	resp, err := http.Get("https://animalaid.org/hey/joe")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	resBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Printf("client: could not read response body: %s\n", err)
+		os.Exit(1)
+	}
+	Pr("client: response body:", INDENT, string(resBody))
 }
