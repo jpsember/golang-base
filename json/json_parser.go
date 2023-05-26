@@ -282,9 +282,9 @@ func (p *JSONParser) readValue() JSEntity {
 		var ch = p.peek()
 		switch ch {
 		case '[':
-			result = p.ParseList()
+			result, _ = p.ParseList()
 		case '{':
-			result = p.ParseMap()
+			result, _ = p.ParseMap()
 		case '"':
 			result = MakeJString(p.readString())
 		case 't':

@@ -16,21 +16,20 @@ func main() {
 		webserv.Demo()
 		return
 	}
-	Todo("this should have failed (now disabled)")
 	if true {
 		var badtext1 = `
   {"name" : "John", 
    "age":30, 
     "hobbies" : [
-		"swimming", "coding",	,
+		"swimming", "coding",	],
 	"newlines": "alpha\nbravo\ncharlie",
   }
 `
 		var p JSONParser
 		p.WithText(badtext1)
-		var jsmap = p.ParseMap()
-		if p.Error != nil {
-			Pr("Error parsing!", INDENT, p.Error)
+		var jsmap, err = p.ParseMap()
+		if err != nil {
+			Pr("Error parsing!", INDENT, err)
 		} else {
 			Pr(jsmap)
 		}

@@ -75,7 +75,7 @@ func NewJSList() *JSList {
 	return m
 }
 
-func (p *JSONParser) ParseList() JSEntity {
+func (p *JSONParser) ParseList() (*JSList, error) {
 	p.adjustNest(1)
 	var result []JSEntity
 	p.ReadExpectedByte('[')
@@ -96,12 +96,16 @@ func (p *JSONParser) ParseList() JSEntity {
 			break
 		}
 		result = append(result, elem)
+		commaExpected = true
 	}
 	p.skipWhitespace()
 	p.adjustNest(-1)
-	var jsList = new(JSList)
-	jsList.wrappedList = result
-	return jsList
+	var jsList *JSList
+	if p.Error == nil {
+		jsList = new(JSList)
+		jsList.wrappedList = result
+	}
+	return jsList, p.Error
 }
 
 func (this *JSList) Add(value any) *JSList {

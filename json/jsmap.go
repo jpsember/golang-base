@@ -140,13 +140,9 @@ func (m *JSMap) PutNumbered(value any) *JSMap {
 	return m.Put(key, value)
 }
 
-func (p *JSONParser) ParseMap() *JSMap {
+func (p *JSONParser) ParseMap() (*JSMap, error) {
 	p.adjustNest(1)
-	var jsMap = NewJSMap()
-
 	var ourMap = make(map[string]JSEntity)
-	jsMap.wrappedMap = ourMap
-
 	p.ReadExpectedByte('{')
 	commaExpected := false
 	for !p.hasProblem() {
@@ -163,9 +159,15 @@ func (p *JSONParser) ParseMap() *JSMap {
 		key := p.readString()
 		p.ReadExpectedByte(':')
 		ourMap[key] = p.readValue()
+		commaExpected = true
 	}
 	p.adjustNest(-1)
-	return jsMap
+	var jsMap *JSMap
+	if p.Error == nil {
+		jsMap = NewJSMap()
+		jsMap.wrappedMap = ourMap
+	}
+	return jsMap, p.Error
 }
 
 func (this *JSMap) GetMap(key string) *JSMap {
@@ -281,9 +283,14 @@ func (jsmap *JSMap) OptAny(key string) JSEntity {
 	return jsmap.wrappedMap[key]
 }
 
-func JSMapFromString(content string) *JSMap {
+func JSMapFromString(content string) (*JSMap, error) {
 	var p JSONParser
 	p.WithText(content)
-	var jsmap = p.ParseMap()
-	return jsmap
+	return p.ParseMap()
+}
+
+func JSMapFromStringM(content string) *JSMap {
+	var result, err = JSMapFromString(content)
+	CheckOk(err)
+	return result
 }

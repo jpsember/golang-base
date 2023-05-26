@@ -101,7 +101,13 @@ func CurrentDirectory() Path {
 	return NewPathM(path)
 }
 
-func JSMapFromFileIfExists(file Path) *JSMap {
+func JSMapFromFileIfExists(file Path) (*JSMap, error) {
 	var content, _ = file.ReadStringIfExists("{}")
 	return JSMapFromString(content)
+}
+
+func JSMapFromFileIfExistsM(file Path) *JSMap {
+	var result, err = JSMapFromFileIfExists(file)
+	CheckOkWithSkip(1, err)
+	return result
 }
