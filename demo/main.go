@@ -12,11 +12,11 @@ var _ = Pr
 
 func main() {
 
-	if false {
+	if true {
 		webserv.Demo()
 		return
 	}
-	if true {
+	if false {
 		var badtext1 = `
   {"name" : "John", 
    "age":30, 

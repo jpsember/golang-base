@@ -34,11 +34,12 @@ func (j *J) registry() *HashCodeRegistry {
 		registry.UnitTest = j
 		registry.Key = key
 
+		Todo("I think I need to lock the mutex for reading as well")
 		// Don't let other threads modify the map while we are modifying it or creating the registry's jsmap
 		mutex.Lock()
 		sClassesMap[key] = registry
 		// See if there is a file it was saved to
-		registry.Map = JSMapFromFileIfExists(registry.file())
+		registry.Map = JSMapFromFileIfExistsM(registry.file())
 		mutex.Unlock()
 
 		registry.UnitTestName = strings.TrimPrefix(j.TB.Name(), "Test")

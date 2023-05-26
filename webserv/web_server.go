@@ -9,6 +9,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -17,6 +19,11 @@ import (
 type SampleOper struct {
 	https  bool
 	ticker *time.Ticker
+
+	sessionMap  map[string]*Session
+	sessionLock sync.RWMutex
+
+	uniqueSessionId atomic.Int64
 }
 
 func (oper *SampleOper) UserCommand() string {
@@ -32,6 +39,7 @@ func (oper *SampleOper) ProcessArgs(c *CmdLineArgs) {
 
 func Demo() {
 	var oper = &SampleOper{}
+	oper.sessionMap = make(map[string]*Session)
 	var app = NewApp()
 	app.SetName("WebServer")
 	app.Version = "1.0"
@@ -50,12 +58,71 @@ func (oper *SampleOper) Perform(app *App) {
 	}
 }
 
-func handler(msg ...any) func(http.ResponseWriter, *http.Request) {
+func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request, msg string) {
+	// Determine what session this is, by examining cookies
+	var session *Session
+	{
+
+		cookies := req.Cookies()
+		Pr("received", len(cookies), "cookies")
+		for _, c := range cookies {
+			Pr("Cookie:", c)
+			if c.Name == "session" {
+				sessionId := c.Value
+				session = oper.findSession(sessionId)
+				Pr("session id in cookie is", sessionId, "finding:", session)
+			}
+		}
+
+		// If no session was found, create one, and send a cookie
+		if session == nil {
+			session = oper.createSession()
+
+			cookie := &http.Cookie{
+				Name:   "session",
+				Value:  session.Id,
+				MaxAge: 1200, // 20 minutes
+			}
+			Pr("created session with id", session.Id, "and storing in response")
+			http.SetCookie(w, cookie)
+		}
+
+	}
+	w.Header().Set("Content-Type", "text/plain")
+
+	s := ToString(time.Now().Format(time.ANSIC)+":", msg, CR, "Request URI:", req.RequestURI, CR, "Session:", session)
+	w.Write([]byte(s))
+}
+
+type Session struct {
+	Id string
+}
+
+func (session *Session) String() string {
+	return session.Id
+}
+
+func (oper *SampleOper) findSession(key string) *Session {
+	oper.sessionLock.RLock()
+	session := oper.sessionMap[key]
+	oper.sessionLock.RUnlock()
+	return session
+}
+
+func (oper *SampleOper) createSession() *Session {
+	oper.sessionLock.Lock()
+	ourId := oper.uniqueSessionId.Add(1)
+	session := new(Session)
+	session.Id = fmt.Sprintf("%v", ourId)
+	oper.sessionMap[session.Id] = session
+	oper.sessionLock.Unlock()
+	return session
+}
+
+func (oper *SampleOper) handler(msg ...any) func(http.ResponseWriter, *http.Request) {
 	var m = ToString(msg...)
 	return func(w http.ResponseWriter, req *http.Request) {
-
-		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte(time.Now().Format(time.ANSIC) + ": " + m + "\n\nRequest URI:" + req.RequestURI))
+		oper.handle(w, req, m)
 
 	}
 }
@@ -64,8 +131,8 @@ func handler(msg ...any) func(http.ResponseWriter, *http.Request) {
 
 func (oper *SampleOper) doHttp() {
 	Todo("I don't think I need separate handlers for secure vs non")
-	http.HandleFunc("/hello", handler("hello"))
-	http.HandleFunc("/", handler("home page"))
+	http.HandleFunc("/hello", oper.handler("hello"))
+	http.HandleFunc("/", oper.handler("home page"))
 	Pr("Type:", INDENT, "curl -sL http://localhost:8090/hello")
 	err := http.ListenAndServe(":8090", nil)
 	if err != nil {
@@ -92,15 +159,15 @@ func (oper *SampleOper) doHttps() {
 
 	// This handles xxx.org
 	//
-	http.HandleFunc("/", handler("home page"))
+	http.HandleFunc("/", oper.handler("home page"))
 
 	// xxx.org/hello
 	//
-	http.HandleFunc("/hello/", handler("hello"))
+	http.HandleFunc("/hello/", oper.handler("hello"))
 
 	// xxx.org/hey???
 	//
-	http.HandleFunc("/hey/", handler("hey"))
+	http.HandleFunc("/hey/", oper.handler("hey"))
 
 	oper.startTicker()
 
