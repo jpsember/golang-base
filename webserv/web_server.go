@@ -9,8 +9,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -20,10 +18,7 @@ type SampleOper struct {
 	https  bool
 	ticker *time.Ticker
 
-	sessionMap  map[string]*Session
-	sessionLock sync.RWMutex
-
-	uniqueSessionId atomic.Int64
+	sessionMap *SessionMap
 }
 
 func (oper *SampleOper) UserCommand() string {
@@ -39,7 +34,7 @@ func (oper *SampleOper) ProcessArgs(c *CmdLineArgs) {
 
 func Demo() {
 	var oper = &SampleOper{}
-	oper.sessionMap = make(map[string]*Session)
+	oper.sessionMap = BuildSessionMap()
 	var app = NewApp()
 	app.SetName("WebServer")
 	app.Version = "1.0"
@@ -78,7 +73,7 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 			sb.Pr("Cookie #", i, "name:", c.Name)
 			if c.Name == "session" {
 				sessionId := c.Value
-				session = oper.findSession(sessionId)
+				session = oper.sessionMap.FindSession(sessionId)
 				sb.Pr("sessionId:", sessionId, "found:", session)
 			}
 			sb.Cr()
@@ -86,7 +81,7 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 		// If no session was found, create one, and send a cookie
 		if session == nil {
-			session = oper.createSession()
+			session = oper.sessionMap.CreateSession()
 
 			cookie := &http.Cookie{
 				Name:   "session",
@@ -110,23 +105,6 @@ func (session *Session) String() string {
 	return session.Id
 }
 
-func (oper *SampleOper) findSession(key string) *Session {
-	oper.sessionLock.RLock()
-	session := oper.sessionMap[key]
-	oper.sessionLock.RUnlock()
-	return session
-}
-
-func (oper *SampleOper) createSession() *Session {
-	oper.sessionLock.Lock()
-	ourId := oper.uniqueSessionId.Add(1)
-	session := new(Session)
-	session.Id = fmt.Sprintf("%v", ourId)
-	oper.sessionMap[session.Id] = session
-	oper.sessionLock.Unlock()
-	return session
-}
-
 func (oper *SampleOper) handler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		oper.handle(w, req)
@@ -146,11 +124,6 @@ func (oper *SampleOper) doHttp() {
 
 // ------------------------------------------------------------------------------------
 
-// https://github.com/denji/golang-tls
-
-// How to get a certificate: server.crt
-// https://www.vultr.com/docs/secure-a-golang-web-server-with-a-selfsigned-or-lets-encrypt-ssl-certificate/
-
 func (oper *SampleOper) doHttps() {
 
 	var url = "animalaid.org"
@@ -161,8 +134,6 @@ func (oper *SampleOper) doHttps() {
 
 	Pr("Type:", INDENT, "curl -sL https://"+url+"/hello")
 
-	// This handles xxx.org
-	//
 	http.HandleFunc("/", oper.handler())
 
 	if false {
