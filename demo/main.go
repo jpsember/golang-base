@@ -4,6 +4,7 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/gen/sample"
+	. "github.com/jpsember/golang-base/gen/webservgen"
 	. "github.com/jpsember/golang-base/json"
 	"github.com/jpsember/golang-base/webserv"
 )
@@ -12,6 +13,27 @@ var _ = Pr
 
 func main() {
 
+	if true {
+		a := DefaultPersistSessionMap
+		Pr("default:", INDENT, a)
+
+		b := NewPersistSessionMap()
+		// We have to store a new map, since it will have copied the static object's map to this one
+		b.SetSessionMap(make(map[string]Session))
+		b.SessionMap()["hey"] = NewSession().SetId("joe").Build()
+		Pr(b)
+
+		Pr("default still unchanged?", INDENT, a)
+
+		c := b.Build()
+		Pr("built:", INDENT, c)
+		b.SessionMap()["you"] = NewSession().SetId("out there in the cold").Build()
+		Pr("Modified builder:", INDENT, b)
+
+		Pr("built form uses same map as was in the builder:", INDENT, c)
+		Todo("convenience methods to construct deep copy of underlying map?")
+		return
+	}
 	if true {
 		webserv.Demo()
 		return

@@ -295,3 +295,7 @@ func JSMapFromStringM(content string) *JSMap {
 	CheckOk(err)
 	return result
 }
+
+func (jsmap *JSMap) WrappedMap() map[string]JSEntity {
+	return jsmap.wrappedMap
+}
