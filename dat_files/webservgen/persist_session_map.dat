@@ -1,0 +1,4 @@
+class {
+   // This is not supported yet
+   //map string webserv.gen.Session session_map;
+}

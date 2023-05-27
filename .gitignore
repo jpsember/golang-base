@@ -8,4 +8,6 @@ unit_test/generated
 demo/demo
 
 webserv/cache
+
+# Generated data classes
 gen
