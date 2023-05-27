@@ -6,8 +6,6 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/gen/webservgen"
-	"reflect"
-
 	"io"
 	"log"
 	"net/http"
@@ -68,9 +66,14 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	// Determine what session this is, by examining cookies
 
 	// Can a session be non-nil and its builder nil?
+	//
+	// https://codefibershq.com/blog/golang-why-nil-is-not-always-nil
+	//
+	// We can avoid nil != nil nonsense if we use an explicit type, instead
+	// of an interface (e.g. 'Session')
+	//
+	var session *SessionBuilder
 
-	//var session *SessionBuilder
-	var session Session
 	{
 
 		cookies := req.Cookies()
@@ -78,24 +81,14 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 		for i, c := range cookies {
 			sb.Pr("Cookie #", i, "name:", c.Name, CR)
-			Pr("cookie", i, "name:", c.Name)
 			if c.Name == "session" {
 				sessionId := c.Value
 				session = oper.sessionMap.FindSession(sessionId)
-				Pr("session id:", sessionId, "non nil:", session != nil, "found:", INDENT, session)
-				sb.Pr("sessionId:", sessionId, INDENT, "found:", INDENT, session)
+				sb.Pr("sessionId:", sessionId)
 			}
 			sb.Cr()
 			if session != nil {
 				sb.Pr("found a non-nil session:", INDENT, session)
-				// This is a non-nil pointer to null? wtf
-				// https://codefibershq.com/blog/golang-why-nil-is-not-always-nil
-
-				Pr("session type:", reflect.TypeOf(session))
-				fmt.Println(session)
-				st := session.Build()
-				Pr("built:", st)
-				Pr("Stringer session:", session.String())
 				break
 			}
 		}

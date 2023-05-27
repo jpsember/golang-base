@@ -13,7 +13,11 @@ var _ = Pr
 
 func main() {
 
-	if true {
+	if false {
+
+		// Nil not always nil... sounds like a huge language code smell
+		//
+		// https://stackoverflow.com/questions/60733102
 
 		var p *int        // (type=*int,value=nil)
 		var i interface{} // (type=nil,value=nil)

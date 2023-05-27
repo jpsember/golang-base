@@ -353,6 +353,7 @@ var BR = makeEffect(2)
 var INDENT = makeEffect(3)
 var OUTDENT = makeEffect(4)
 var VERT_SP = makeEffect(5)
+var RESET = makeEffect(6)
 
 func processPrintEffect(v PrintEffect, b *BasePrinter) {
 	switch v {
@@ -367,5 +368,7 @@ func processPrintEffect(v PrintEffect, b *BasePrinter) {
 	case VERT_SP:
 		b.Cr()
 		b.contentBuffer.WriteString("\n\n\n\n")
+	case RESET:
+		b.ResetIndentation()
 	}
 }

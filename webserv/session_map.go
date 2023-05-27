@@ -24,7 +24,6 @@ type SessionMap struct {
 func BuildSessionMap() *SessionMap {
 	sm := new(SessionMap)
 	sm.SetName("SessionMap")
-	sm.SetVerbose(true)
 	sm.sessionMap = make(map[string]*SessionBuilder)
 
 	// If there's a file on disk to restore from, do so
