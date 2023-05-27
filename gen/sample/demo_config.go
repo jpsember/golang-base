@@ -158,6 +158,6 @@ func (v *DemoConfigBuilder) Parse(source any) DataClass {
 }
 
 func (v *DemoConfigBuilder) String() string {
-  return v.String()
+  return v.Build().String()
 }
 

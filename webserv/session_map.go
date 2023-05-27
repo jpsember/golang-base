@@ -6,7 +6,6 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/gen/webservgen"
-	. "github.com/jpsember/golang-base/json"
 	"io"
 	"sync"
 	"time"
@@ -14,7 +13,7 @@ import (
 
 type SessionMap struct {
 	BaseObject
-	sessionMap    *JSMap
+	sessionMap    *PersistSessionMapBuilder
 	lastWrittenMs int64
 	modified      bool
 	lock          sync.RWMutex
@@ -29,13 +28,27 @@ func BuildSessionMap() *SessionMap {
 	// If there's a file on disk to restore from, do so
 	// (in future, use a database or something)
 	pth := sm.getPath()
+	var sessionMap *PersistSessionMapBuilder
 	if pth.Exists() {
-		sm.sessionMap = JSMapFromFileIfExistsM(pth)
+		json := JSMapFromFileIfExistsM(pth)
+		Todo("should parse be part of the interface? This cast is annoying")
+		sessionMap = DefaultPersistSessionMap.Parse(json).(PersistSessionMap).ToBuilder()
 		sm.lastWrittenMs = time.Now().UnixMilli()
 	} else {
-		sm.sessionMap = NewJSMap()
+		sessionMap = DefaultPersistSessionMap.ToBuilder()
 	}
-	CheckState(sm.sessionMap != nil)
+
+	sm.sessionMap = sessionMap
+
+	{
+		// Make a fresh copy of the wrapped map field so we don't modify the immutable value
+		fresh := make(map[string]Session)
+		Todo("Have a convenience method in the builder perhaps?")
+		for k, v := range sm.sessionMap.SessionMap() {
+			fresh[k] = v
+		}
+		sm.sessionMap.SetSessionMap(fresh)
+	}
 	return sm
 }
 
@@ -43,12 +56,9 @@ func (s *SessionMap) FindSession(id string) Session {
 	s.Log("FindSession, id:", id)
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	var result Session
-	sm := s.sessionMap.OptMap(id)
-	if sm != nil {
-		result = DefaultSession.Parse(sm).(Session)
-	}
-	s.Log("Restult:", INDENT, result)
+	Todo("but the Session object probably needs to be mutable, so we shouldn't use a data class..?")
+	var result = s.sessionMap.SessionMap()[id]
+	s.Log("Result:", INDENT, result)
 	return result
 }
 
@@ -65,12 +75,12 @@ func (s *SessionMap) CreateSession() Session {
 	b := NewSession()
 	for {
 		b.SetId(randomSessionId())
-		if s.sessionMap.OptMap(b.Id()) == nil {
+		if s.sessionMap.SessionMap()[b.Id()] == nil {
 			break
 		}
 	}
 	session := b.Build()
-	s.sessionMap.Put(session.Id(), session.ToJson())
+	s.sessionMap.SessionMap()[session.Id()] = session
 	s.setModified()
 	s.lock.Unlock()
 

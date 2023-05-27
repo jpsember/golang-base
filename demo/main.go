@@ -13,7 +13,7 @@ var _ = Pr
 
 func main() {
 
-	if true {
+	if false {
 		a := DefaultPersistSessionMap
 		Pr("default:", INDENT, a)
 
