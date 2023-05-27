@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/gen/sample"
-	. "github.com/jpsember/golang-base/gen/webservgen"
 	"github.com/jpsember/golang-base/webserv"
 )
 
@@ -13,50 +11,6 @@ var _ = Pr
 
 func main() {
 
-	if false {
-
-		// Nil not always nil... sounds like a huge language code smell
-		//
-		// https://stackoverflow.com/questions/60733102
-
-		var p *int        // (type=*int,value=nil)
-		var i interface{} // (type=nil,value=nil)
-
-		if i != nil { // (type=nil,value=nil) != (type=nil,value=nil)
-			fmt.Println("a not a nil")
-		}
-
-		i = p // assign p to i
-
-		// a hardcoded nil is always nil,nil (type,value)
-		if i != nil { // (type=*int,value=nil) != (type=nil,value=nil)
-			fmt.Println("b not a nil")
-		}
-
-		return
-	}
-	if false {
-		s := DefaultSession
-		Pr("session:", s)
-
-		b := s.ToBuilder()
-		Pr("builder:", b)
-
-		jm := s.ToJson()
-		Pr("json:", INDENT, jm)
-
-		c := DefaultSession.Parse(jm).(Session)
-		Pr("c:", INDENT, c)
-
-		b2 := c.ToBuilder()
-		Pr("b2:", b2)
-
-		b3 := b2.ToBuilder()
-		Pr("b3:", b3)
-
-		return
-
-	}
 	if true {
 		webserv.Demo()
 		return
