@@ -1,4 +1,3 @@
 class {
-   // This is not supported yet
-   //map string webserv.gen.Session session_map;
+   map string gen.webservgen.Session session_map;
 }
