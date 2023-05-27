@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -eu
 
-datagen language go clean "$@"
+datagen language go source_path gen clean "$@"
