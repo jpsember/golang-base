@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/gen/sample"
 	. "github.com/jpsember/golang-base/gen/webservgen"
-	. "github.com/jpsember/golang-base/json"
 	"github.com/jpsember/golang-base/webserv"
 )
 
@@ -13,48 +13,48 @@ var _ = Pr
 
 func main() {
 
-	if false {
-		a := DefaultPersistSessionMap
-		Pr("default:", INDENT, a)
+	if true {
 
-		b := NewPersistSessionMap()
-		// We have to store a new map, since it will have copied the static object's map to this one
-		b.SetSessionMap(make(map[string]Session))
-		b.SessionMap()["hey"] = NewSession().SetId("joe").Build()
-		Pr(b)
+		var p *int        // (type=*int,value=nil)
+		var i interface{} // (type=nil,value=nil)
 
-		Pr("default still unchanged?", INDENT, a)
+		if i != nil { // (type=nil,value=nil) != (type=nil,value=nil)
+			fmt.Println("a not a nil")
+		}
 
-		c := b.Build()
-		Pr("built:", INDENT, c)
-		b.SessionMap()["you"] = NewSession().SetId("out there in the cold").Build()
-		Pr("Modified builder:", INDENT, b)
+		i = p // assign p to i
 
-		Pr("built form uses same map as was in the builder:", INDENT, c)
-		Todo("convenience methods to construct deep copy of underlying map?")
+		// a hardcoded nil is always nil,nil (type,value)
+		if i != nil { // (type=*int,value=nil) != (type=nil,value=nil)
+			fmt.Println("b not a nil")
+		}
+
 		return
+	}
+	if false {
+		s := DefaultSession
+		Pr("session:", s)
+
+		b := s.ToBuilder()
+		Pr("builder:", b)
+
+		jm := s.ToJson()
+		Pr("json:", INDENT, jm)
+
+		c := DefaultSession.Parse(jm).(Session)
+		Pr("c:", INDENT, c)
+
+		b2 := c.ToBuilder()
+		Pr("b2:", b2)
+
+		b3 := b2.ToBuilder()
+		Pr("b3:", b3)
+
+		return
+
 	}
 	if true {
 		webserv.Demo()
-		return
-	}
-	if false {
-		var badtext1 = `
-  {"name" : "John", 
-   "age":30, 
-    "hobbies" : [
-		"swimming", "coding",	],
-	"newlines": "alpha\nbravo\ncharlie",
-  }
-`
-		var p JSONParser
-		p.WithText(badtext1)
-		var jsmap, err = p.ParseMap()
-		if err != nil {
-			Pr("Error parsing!", INDENT, err)
-		} else {
-			Pr(jsmap)
-		}
 		return
 	}
 

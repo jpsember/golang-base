@@ -22,6 +22,7 @@ type JSEntity interface {
 	ToFloat() float64
 
 	// Get value of a string.
+	// Deprecated: should be renamed to avoid confusion with String()
 	ToString() string
 
 	// Get value of a bool.
@@ -240,7 +241,7 @@ func toHex(target []byte, value int, digits int) []byte {
 		var v = (value >> shift) & 0xf
 		var c int
 		if v < 10 {
-			c = ('0' + v)
+			c = '0' + v
 		} else {
 			c = 'a' + (v - 10)
 		}

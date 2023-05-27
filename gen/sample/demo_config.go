@@ -150,7 +150,7 @@ func (v *DemoConfigBuilder) ToBuilder() *DemoConfigBuilder {
 }
 
 func (v *DemoConfigBuilder) ToJson() any {
-  return v.ToJson()
+  return v.Build().ToJson()
 }
 
 func (v *DemoConfigBuilder) Parse(source any) DataClass {

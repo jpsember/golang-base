@@ -6,6 +6,7 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/gen/webservgen"
+	. "github.com/jpsember/golang-base/json"
 	"io"
 	"sync"
 	"time"
@@ -13,7 +14,7 @@ import (
 
 type SessionMap struct {
 	BaseObject
-	sessionMap    *PersistSessionMapBuilder
+	sessionMap    map[string]*SessionBuilder
 	lastWrittenMs int64
 	modified      bool
 	lock          sync.RWMutex
@@ -24,70 +25,63 @@ func BuildSessionMap() *SessionMap {
 	sm := new(SessionMap)
 	sm.SetName("SessionMap")
 	sm.SetVerbose(true)
+	sm.sessionMap = make(map[string]*SessionBuilder)
 
 	// If there's a file on disk to restore from, do so
 	// (in future, use a database or something)
 	pth := sm.getPath()
-	var sessionMap *PersistSessionMapBuilder
 	if pth.Exists() {
 		json := JSMapFromFileIfExistsM(pth)
-		Todo("should parse be part of the interface? This cast is annoying")
-		sessionMap = DefaultPersistSessionMap.Parse(json).(PersistSessionMap).ToBuilder()
-		sm.lastWrittenMs = time.Now().UnixMilli()
-	} else {
-		sessionMap = DefaultPersistSessionMap.ToBuilder()
-	}
-
-	sm.sessionMap = sessionMap
-
-	{
-		// Make a fresh copy of the wrapped map field so we don't modify the immutable value
-		fresh := make(map[string]Session)
-		Todo("Have a convenience method in the builder perhaps?")
-		for k, v := range sm.sessionMap.SessionMap() {
-			fresh[k] = v
+		for k, v := range json.WrappedMap() {
+			Todo("should parse be part of the interface? This cast is annoying")
+			s := DefaultSession.Parse(v).(Session).ToBuilder()
+			sm.sessionMap[k] = s
 		}
-		sm.sessionMap.SetSessionMap(fresh)
+		sm.lastWrittenMs = time.Now().UnixMilli()
 	}
 	return sm
 }
 
-func (s *SessionMap) FindSession(id string) Session {
+func (s *SessionMap) FindSession(id string) *SessionBuilder {
 	s.Log("FindSession, id:", id)
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	Todo("but the Session object probably needs to be mutable, so we shouldn't use a data class..?")
-	var result = s.sessionMap.SessionMap()[id]
+	var result = s.sessionMap[id]
 	s.Log("Result:", INDENT, result)
 	return result
 }
 
 func randomSessionId() string {
-	b := make([]byte, 32)
+	var idLength = 32
+	if true {
+		// For now, use a much smaller id for legibility
+		idLength = 3
+	}
+	b := make([]byte, idLength)
 	_, err := io.ReadFull(rand.Reader, b)
 	CheckOk(err)
 	return base64.URLEncoding.EncodeToString(b)
 }
 
-func (s *SessionMap) CreateSession() Session {
+func (s *SessionMap) CreateSession() *SessionBuilder {
 	s.lock.Lock()
 
-	b := NewSession()
+	b := NewSession().ToBuilder()
+
 	for {
 		b.SetId(randomSessionId())
-		if s.sessionMap.SessionMap()[b.Id()] == nil {
+		// Stop looking for session ids if we've found one that isn't used
+		if s.sessionMap[b.Id()] == nil {
 			break
 		}
 	}
-	session := b.Build()
-	s.sessionMap.SessionMap()[session.Id()] = session
+	s.sessionMap[b.Id()] = b
 	s.setModified()
 	s.lock.Unlock()
 
 	Todo("have a background task handle flushing any modifications")
 	s.flush()
-
-	return session
+	return b
 }
 
 func (s *SessionMap) setModified() {
@@ -99,17 +93,20 @@ func (s *SessionMap) flush() {
 		return
 	}
 	s.lock.Lock()
-
+	defer s.lock.Unlock()
 	if s.modified {
 		pth := s.getPath()
-		Pr("writing session map to path:", pth, INDENT, s.sessionMap)
-		pth.WriteStringM(s.sessionMap.String())
+		Pr("writing session map to path:", pth)
+		jsm := NewJSMap()
+		for k, v := range s.sessionMap {
+			jsm.Put(k, v.ToJson())
+		}
+		pth.WriteStringM(PrintJSEntity(jsm, false))
 		s.lastWrittenMs = time.Now().UnixMilli()
 		Pr("flushed modified session map to:", pth)
 		s.modified = false
 	}
 
-	defer s.lock.Unlock()
 }
 
 func (s *SessionMap) getPath() Path {

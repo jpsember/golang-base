@@ -6,6 +6,7 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/gen/webservgen"
+	"reflect"
 
 	"io"
 	"log"
@@ -65,6 +66,10 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	sb.Pr("URI:", req.RequestURI, CR)
 
 	// Determine what session this is, by examining cookies
+
+	// Can a session be non-nil and its builder nil?
+
+	//var session *SessionBuilder
 	var session Session
 	{
 
@@ -72,20 +77,32 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 		sb.Pr("Cookies received:", len(cookies), CR)
 
 		for i, c := range cookies {
-			sb.Pr("Cookie #", i, "name:", c.Name)
+			sb.Pr("Cookie #", i, "name:", c.Name, CR)
+			Pr("cookie", i, "name:", c.Name)
 			if c.Name == "session" {
 				sessionId := c.Value
 				session = oper.sessionMap.FindSession(sessionId)
-				sb.Pr("sessionId:", sessionId, "found:", session)
+				Pr("session id:", sessionId, "non nil:", session != nil, "found:", INDENT, session)
+				sb.Pr("sessionId:", sessionId, INDENT, "found:", INDENT, session)
 			}
 			sb.Cr()
 			if session != nil {
+				sb.Pr("found a non-nil session:", INDENT, session)
+				// This is a non-nil pointer to null? wtf
+				// https://codefibershq.com/blog/golang-why-nil-is-not-always-nil
+
+				Pr("session type:", reflect.TypeOf(session))
+				fmt.Println(session)
+				st := session.Build()
+				Pr("built:", st)
+				Pr("Stringer session:", session.String())
 				break
 			}
 		}
 
 		// If no session was found, create one, and send a cookie
 		if session == nil {
+			sb.Pr("creating session")
 			session = oper.sessionMap.CreateSession()
 
 			cookie := &http.Cookie{
@@ -93,7 +110,7 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 				Value:  session.Id(),
 				MaxAge: 1200, // 20 minutes
 			}
-			sb.Pr("...no session cookie found, created one with id:", session.Id, CR)
+			sb.Pr("...no session cookie found, created one:", INDENT, session, CR)
 			http.SetCookie(w, cookie)
 		}
 	}
