@@ -161,3 +161,8 @@ func (v *DemoConfigBuilder) String() string {
   return v.Build().String()
 }
 
+// Convenience method to parse a DemoConfig from a JSMap
+func ParseDemoConfig(jsmap JSEntity) DemoConfig {
+  m := jsmap.(*JSMap)
+  return DefaultDemoConfig.Parse(m).(DemoConfig)
+}

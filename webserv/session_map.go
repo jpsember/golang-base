@@ -32,8 +32,7 @@ func BuildSessionMap() *SessionMap {
 	if pth.Exists() {
 		json := JSMapFromFileIfExistsM(pth)
 		for k, v := range json.WrappedMap() {
-			Todo("should parse be part of the interface? This cast is annoying")
-			s := DefaultSession.Parse(v).(Session).ToBuilder()
+			s := ParseSession(v).ToBuilder()
 			sm.sessionMap[k] = s
 		}
 		sm.lastWrittenMs = time.Now().UnixMilli()
