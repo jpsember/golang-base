@@ -1,6 +1,7 @@
 package webserv
 
 import (
+	"bufio"
 	"fmt"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
@@ -61,8 +62,6 @@ func (oper *SampleOper) Perform(app *App) {
 }
 
 func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
-
-	Pr("request:", req.RequestURI)
 
 	resource := req.RequestURI[1:]
 	if resource != "" {
@@ -243,14 +242,10 @@ func (oper *SampleOper) makeRequest() {
 }
 
 func (oper *SampleOper) handleResourceRequest(w http.ResponseWriter, req *http.Request, resource string) {
-	Pr("resource:", resource)
 	if resource == "picture.jpg" {
 		picPath := oper.resources.JoinM("picture.jpg")
 		content := picPath.ReadBytesM()
-
 		Todo("when does caching come into effect?  Is that a browser thing?")
-
-		Pr("sending image")
 		w.Header().Set("Content-Type", "image/jpeg ")
 		w.Write(content)
 		return
@@ -258,7 +253,6 @@ func (oper *SampleOper) handleResourceRequest(w http.ResponseWriter, req *http.R
 	if resource == "recent.jpg" && oper.uploadedFile.NonEmpty() {
 		picPath := oper.uploadedFile
 		content := picPath.ReadBytesM()
-		Pr("sending image")
 		Todo("just assuming we're sending a jpeg")
 		w.Header().Set("Content-Type", "image/jpeg")
 		w.Write(content)
@@ -275,24 +269,60 @@ func (oper *SampleOper) handleUpload(w http.ResponseWriter, r *http.Request, res
 		return
 	}
 
-	Todo("maybe use multipart upload?")
-	file, header, err := r.FormFile("file")
+	// Relevant: https://medium.com/@owlwalks/dont-parse-everything-from-client-multipart-post-golang-9280d23cd4ad
+
+	r.Body = http.MaxBytesReader(w, r.Body, 32<<20+1024)
+	reader, err := r.MultipartReader()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	p, err := reader.NextPart()
+	if err != nil && err != io.EOF {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	buf := bufio.NewReader(p)
+	sniff, _ := buf.Peek(512)
+	contentType := http.DetectContentType(sniff)
+	Pr("contentType:", contentType)
+	if contentType != "image/jpeg" {
+		http.Error(w, "file type not allowed", http.StatusBadRequest)
+		return
+	}
+
+	Todo("not defering closing the file, since we want to copy it immediately")
+	f, err := os.CreateTemp("", "")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var maxSize int64 = 32 << 20
+	lmt := io.MultiReader(buf, io.LimitReader(p, maxSize-511))
+	written, err := io.Copy(f, lmt)
+	if err != nil && err != io.EOF {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if written > maxSize {
+		os.Remove(f.Name())
+		http.Error(w, "file size over limit", http.StatusBadRequest)
+		return
+	}
+	f.Close()
+
+	oldLocation := f.Name()
+	newPath := oper.appRoot.JoinM("uploaded/recent.jpg")
+	if newPath.Exists() {
+		newPath.DeleteFileM()
+	}
+
+	err = os.Rename(oldLocation, newPath.String())
 	CheckOk(err)
-	defer file.Close()
 
-	Pr("upload filename:", header.Filename)
-
-	uploadPath := oper.appRoot.JoinM("uploaded/" + header.Filename)
-
-	out, err := os.Create(uploadPath.String())
-	CheckOk(err, "failed to create:", uploadPath)
-
-	defer out.Close()
-
-	// write the content from POST to the file
-	_, err = io.Copy(out, file)
-	CheckOk(err, "failed to copy")
-	Pr("uploaded:", file)
-	oper.uploadedFile = uploadPath
-	oper.sendResponseMarkup(w, r, "Successfully uploaded: "+uploadPath.String())
+	oper.uploadedFile = newPath
+	oper.sendResponseMarkup(w, r, "Successfully uploaded: "+newPath.String())
 }
