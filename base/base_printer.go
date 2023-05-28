@@ -175,6 +175,22 @@ func (b *BasePrinter) Append(value any) {
 	}
 }
 
+func (b *BasePrinter) HtmlComment(messages ...any) *BasePrinter {
+	b.AppendString(`<!-- `)
+	b.Pr(messages...)
+	b.AppendString("-->\n")
+	return b
+}
+
+func (b *BasePrinter) CloseHtml(tag string, comment string) *BasePrinter {
+	b.AppendString("</")
+	b.AppendString(tag)
+	b.AppendString("> <!--")
+	b.AppendString(comment)
+	b.AppendString(" -->\n")
+	return b
+}
+
 // Append string; split into separate strings where linefeeds exist, and request linefeeds
 // to continue the next string with the appropriate indenting.
 func (b *BasePrinter) AppendString(str string) *BasePrinter {

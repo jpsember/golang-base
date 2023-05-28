@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -352,13 +353,14 @@ func (oper *SampleOper) processViewRequest(w http.ResponseWriter, req *http.Requ
 // Assign a view heirarchy to a session
 func (oper *SampleOper) constructView(sess Session) {
 	v := NewView()
-	v.Bounds = RectWith(0, 0, 1, 1)
+	// Make the root view have the full width (12)
+	v.Bounds = RectWith(0, 0, 12, 1)
 
 	ch := &v.Children
 	for y := 0; y < 3; y++ {
 		for x := 0; x < 3; x++ {
 			c := NewView()
-			c.Bounds = RectWith(x, y, 1, 1)
+			c.Bounds = RectWith(x, y, 4, 1)
 			ch.Add(c)
 		}
 	}
@@ -367,21 +369,41 @@ func (oper *SampleOper) constructView(sess Session) {
 
 func (oper *SampleOper) renderView(sess Session, sb *BasePrinter) {
 	CheckState(sess.View != nil, "no view!")
+
+	sb.AppendString(`<div class="container">`).Cr()
+
 	renderViewHelper(sess, sb, sess.View)
+
+	sb.CloseHtml("div", "container")
 }
 
 func renderViewHelper(sess Session, sb *BasePrinter, view View) {
 	Todo("ignoring view class for now")
-	sb.AppendString(`
-<div class="container">
-`)
+
+	// We need to keep track of whether we are rendering a row of more than one view
+	wrapInCol := view.Bounds.Size.W != 12
+	if wrapInCol {
+		sb.AppendString(`<div class="col-sm-` + strconv.Itoa(view.Bounds.Size.W) + `">`).Cr()
+	}
 
 	sb.Pr("view with bounds:", view.Bounds)
 
-	for i, child := range view.Children.Array() {
-		renderViewHelper(sess, sb, child)
+	if view.Children.NonEmpty() {
+		// We will assume all child views are in grid order
+		var prevBounds *Rect = nil
+		sb.AppendString(`<div class="row">`)
+		for _, child := range view.Children.Array() {
+			b := &child.Bounds
+			if prevBounds != nil && b.Location.Y != prevBounds.Location.Y {
+				sb.CloseHtml("div", "row")
+				sb.AppendString(`<div class="row">`)
+			}
+			prevBounds = b
+			renderViewHelper(sess, sb, child)
+		}
+		sb.CloseHtml("div", "row")
 	}
-	sb.AppendString(`
-</div>
-`)
+	if wrapInCol {
+		sb.CloseHtml("div", "col")
+	}
 }
