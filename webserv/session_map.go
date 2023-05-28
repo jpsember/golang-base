@@ -109,8 +109,7 @@ func (s *SessionMap) flush() {
 
 func (s *SessionMap) getPath() Path {
 	if s.persistPath == "" {
-		pth, err := AscendToDirectoryContainingFile("", "go.mod")
-		CheckOkWithSkip(1, err)
+		pth := AscendToDirectoryContainingFileM("", "go.mod")
 		pth = pth.JoinM("webserv/cache")
 		if !pth.IsDir() {
 			pth.MkDirsM()

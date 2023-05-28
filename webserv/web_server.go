@@ -7,20 +7,21 @@ import (
 	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/gen/webservgen"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 )
 
 // Define an app with a single operation
 
 type SampleOper struct {
-	https      bool
-	ticker     *time.Ticker
-	sessionMap *SessionMap
+	https        bool
+	ticker       *time.Ticker
+	sessionMap   *SessionMap
+	appRoot      Path
+	resources    Path
+	uploadedFile Path
 }
 
 func (oper *SampleOper) UserCommand() string {
@@ -37,6 +38,10 @@ func (oper *SampleOper) ProcessArgs(c *CmdLineArgs) {
 func Demo() {
 	var oper = &SampleOper{}
 	oper.sessionMap = BuildSessionMap()
+
+	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
+	oper.resources = oper.appRoot.JoinM("resources")
+
 	var app = NewApp()
 	app.SetName("WebServer")
 	app.Version = "1.0"
@@ -57,9 +62,11 @@ func (oper *SampleOper) Perform(app *App) {
 
 func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
+	Pr("request:", req.RequestURI)
+
 	resource := req.RequestURI[1:]
 	if resource != "" {
-		if strings.HasPrefix(resource, "upload?") {
+		if resource == "upload" {
 			oper.handleUpload(w, req, resource)
 			return
 		}
@@ -86,19 +93,27 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	sb.Pr("Request received at:", time.Now().Format(time.ANSIC), CR)
 	sb.Pr("URI:", req.RequestURI, CR)
 
-	var session = oper.determineSession(w, req)
+	var session = oper.determineSession(w, req, true)
 
 	sb.Pr("session:", session.Id())
 
 	sb.Pr(`<p>Here is a picture: <img src=picture.jpg alt="Picture"></p>`, CR)
 
+	if oper.uploadedFile != "" {
+		sb.Pr(`<p>Here is a recently uploaded image: <img src=recent.jpg></p>`, CR)
+	}
 	sb.Pr(`<p>Click on the "Choose File" button to upload a file:</p>
 
-<form action="upload">
-  <input type="file" id="myFile" name="filename">
-  <input type="submit">
+
+
+<form action="upload" enctype="multipart/form-data" method="post">
+    <input type="file" name="file" id="file" />
+    <input type="hidden" name="token" value="{{.}}" />
+    <input type="submit" />
 </form>
+
 `)
+	// What is the hidden / name token for?
 
 	sb.Pr(`
 </BODY>
@@ -109,7 +124,29 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(sb.String()))
 }
 
-func (oper *SampleOper) determineSession(w http.ResponseWriter, req *http.Request) *SessionBuilder {
+func (oper *SampleOper) sendResponseMarkup(w http.ResponseWriter, req *http.Request, content string) {
+	sb := NewBasePrinter()
+
+	sb.Pr(`
+<HMTL>
+
+<HEAD>
+<TITLE>Example</TITLE>
+</HEAD>
+
+<BODY>
+`)
+	sb.Pr("<p>")
+	sb.Pr(content)
+	sb.Pr("</p>")
+	sb.Pr(`</BODY>`)
+
+	w.Header().Set("Content-Type", "text/html")
+
+	w.Write([]byte(sb.String()))
+}
+
+func (oper *SampleOper) determineSession(w http.ResponseWriter, req *http.Request, createIfNone bool) *SessionBuilder {
 	// Determine what session this is, by examining cookies
 	var session *SessionBuilder
 	cookies := req.Cookies()
@@ -124,7 +161,7 @@ func (oper *SampleOper) determineSession(w http.ResponseWriter, req *http.Reques
 	}
 
 	// If no session was found, create one, and send a cookie
-	if session == nil {
+	if session == nil && createIfNone {
 		session = oper.sessionMap.CreateSession()
 		cookie := &http.Cookie{
 			Name:   "session",
@@ -159,7 +196,7 @@ func (oper *SampleOper) doHttps() {
 
 	var url = "animalaid.org"
 
-	var keyDir = NewPathM("webserv/https_keys")
+	var keyDir = oper.appRoot.JoinM("https_keys")
 	var certPath = keyDir.JoinM(url + ".crt")
 	var keyPath = keyDir.JoinM(url + ".key")
 
@@ -213,11 +250,7 @@ func (oper *SampleOper) makeRequest() {
 func (oper *SampleOper) handleResourceRequest(w http.ResponseWriter, req *http.Request, resource string) {
 	Pr("resource:", resource)
 	if resource == "picture.jpg" {
-		pth, err := AscendToDirectoryContainingFile("", "go.mod")
-		CheckOk(err)
-		resourcesPath := pth.JoinM("webserv/resources")
-
-		picPath := resourcesPath.JoinM("picture.jpg")
+		picPath := oper.resources.JoinM("picture.jpg")
 		content := picPath.ReadBytesM()
 
 		Todo("when does caching come into effect?  Is that a browser thing?")
@@ -225,50 +258,46 @@ func (oper *SampleOper) handleResourceRequest(w http.ResponseWriter, req *http.R
 		Pr("sending image")
 		w.Header().Set("Content-Type", "image/jpeg ")
 		w.Write(content)
+		return
+	}
+	if resource == "recent.jpg" && oper.uploadedFile.NonEmpty() {
+		picPath := oper.uploadedFile
+		content := picPath.ReadBytesM()
+		Pr("sending image")
+		Todo("just assuming we're sending a jpeg")
+		w.Header().Set("Content-Type", "image/jpeg")
+		w.Write(content)
+		return
 	}
 }
 
 func (oper *SampleOper) handleUpload(w http.ResponseWriter, r *http.Request, resource string) {
 
-	Pr("request:", INDENT, r)
-
-	// Parse our multipart form, 10 << 20 specifies a maximum
-	// upload of 10 MB files.
-	err := r.ParseMultipartForm(10 << 20)
-	Pr("parse multipart form produced:", err)
-
-	// FormFile returns the first file for the given key `myFile`
-	// it also returns the FileHeader so we can get the Filename,
-	// the Header and the size of the file
-	file, handler, err := r.FormFile("filename")
-	if err != nil {
-		fmt.Println("Error Retrieving the File")
-		fmt.Println(err)
+	// If there is no session, do nothing
+	var session = oper.determineSession(w, r, false)
+	if session == nil {
+		oper.sendResponseMarkup(w, r, "no session, sorry")
 		return
 	}
+
+	Todo("maybe use multipart upload?")
+	file, header, err := r.FormFile("file")
+	CheckOk(err)
 	defer file.Close()
-	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
-	fmt.Printf("File Size: %+v\n", handler.Size)
-	fmt.Printf("MIME Header: %+v\n", handler.Header)
 
-	// Create a temporary file within our temp-images directory that follows
-	// a particular naming pattern
-	tempFile, err := ioutil.TempFile("temp-images", "upload-*.png")
-	if err != nil {
-		fmt.Println(err)
-	}
-	defer tempFile.Close()
+	Pr("upload filename:", header.Filename)
 
-	// read all of the contents of our uploaded file into a
-	// byte array
-	fileBytes, err := io.ReadAll(file)
-	if err != nil {
-		fmt.Println(err)
-	}
-	Pr("read:", len(fileBytes), "bytes")
-	//// write this byte array to our temporary file
-	tempFile.Write(fileBytes)
-	//// return that we have successfully uploaded our file!
-	fmt.Fprintf(w, "Successfully Uploaded File\n")
+	uploadPath := oper.appRoot.JoinM("uploaded/" + header.Filename)
 
+	out, err := os.Create(uploadPath.String())
+	CheckOk(err, "failed to create:", uploadPath)
+
+	defer out.Close()
+
+	// write the content from POST to the file
+	_, err = io.Copy(out, file)
+	CheckOk(err, "failed to copy")
+	Pr("uploaded:", file)
+	oper.uploadedFile = uploadPath
+	oper.sendResponseMarkup(w, r, "Successfully uploaded: "+uploadPath.String())
 }

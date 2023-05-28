@@ -46,6 +46,12 @@ func AscendToDirectoryContainingFile(startDir Path, seekFile string) (Path, erro
 	}
 }
 
+func AscendToDirectoryContainingFileM(startDir Path, seekFile string) Path {
+	var pth, err = AscendToDirectoryContainingFile(startDir, seekFile)
+	CheckOkWithSkip(1, err)
+	return pth
+}
+
 func (path Path) ReadStringIfExistsM(defaultContent string) string {
 	a, err := path.ReadStringIfExists(defaultContent)
 	CheckOkWithSkip(1, err)
