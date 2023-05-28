@@ -12,7 +12,7 @@ var _ = Pr
 func main() {
 
 	if true {
-		webserv.Demo()
+		webserv.WebServerDemo()
 		return
 	}
 

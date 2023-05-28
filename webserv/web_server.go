@@ -2,7 +2,6 @@ package webserv
 
 import (
 	"bufio"
-	"fmt"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
@@ -16,8 +15,7 @@ import (
 // Define an app with a single operation
 
 type SampleOper struct {
-	https        bool
-	ticker       *time.Ticker
+	insecure     bool
 	sessionMap   SessionManager
 	appRoot      Path
 	resources    Path
@@ -35,7 +33,7 @@ func (oper *SampleOper) GetHelp(bp *BasePrinter) {
 func (oper *SampleOper) ProcessArgs(c *CmdLineArgs) {
 }
 
-func Demo() {
+func WebServerDemo() {
 	var oper = &SampleOper{}
 	oper.sessionMap = BuildFileSystemSessionMap()
 
@@ -45,18 +43,18 @@ func Demo() {
 	var app = NewApp()
 	app.SetName("WebServer")
 	app.Version = "1.0"
-	app.CmdLineArgs().Add("https").Desc("secure mode")
+	app.CmdLineArgs().Add("insecure").Desc("insecure (http) mode")
 	app.RegisterOper(oper)
-	app.SetTestArgs("--https")
+	app.SetTestArgs("--insecure")
 	app.Start()
 }
 
 func (oper *SampleOper) Perform(app *App) {
-	var secure = app.CmdLineArgs().Get("https")
-	if secure {
-		oper.doHttps()
-	} else {
+	var insecure = app.CmdLineArgs().Get("insecure")
+	if insecure {
 		oper.doHttp()
+	} else {
+		oper.doHttps()
 	}
 }
 
@@ -64,6 +62,12 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	resource := req.RequestURI[1:]
 	if resource != "" {
+
+		if resource == "robot" {
+			oper.sendResponseMarkup(w, req, "Hi, Robot")
+			return
+		}
+
 		if resource == "upload" {
 			oper.handleUpload(w, req, resource)
 			return
@@ -117,6 +121,7 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(sb.String()))
 }
 
+// Send a simple web page back with a message
 func (oper *SampleOper) sendResponseMarkup(w http.ResponseWriter, req *http.Request, content string) {
 	sb := NewBasePrinter()
 
@@ -135,16 +140,19 @@ func (oper *SampleOper) sendResponseMarkup(w http.ResponseWriter, req *http.Requ
 	sb.Pr(`</BODY>`)
 
 	w.Header().Set("Content-Type", "text/html")
-
+	Todo("Have an HTML string class that handles escaping")
 	w.Write([]byte(sb.String()))
 }
 
 func (oper *SampleOper) determineSession(w http.ResponseWriter, req *http.Request, createIfNone bool) Session {
+
+	const sessionCookieName = "session_cookie"
+
 	// Determine what session this is, by examining cookies
 	var session Session
 	cookies := req.Cookies()
 	for _, c := range cookies {
-		if c.Name == "session" {
+		if c.Name == sessionCookieName {
 			sessionId := c.Value
 			session = oper.sessionMap.FindSession(sessionId)
 		}
@@ -157,7 +165,7 @@ func (oper *SampleOper) determineSession(w http.ResponseWriter, req *http.Reques
 	if session == nil && createIfNone {
 		session = oper.sessionMap.CreateSession()
 		cookie := &http.Cookie{
-			Name:   "session",
+			Name:   sessionCookieName,
 			Value:  session.Id(),
 			MaxAge: 1200, // 20 minutes
 		}
@@ -198,7 +206,10 @@ func (oper *SampleOper) doHttps() {
 	http.HandleFunc("/", oper.handler())
 
 	if false {
-		oper.startTicker()
+		var robot = NewRobotRequester("https://animalaid.org/robot")
+		robot.SetVerbose(true)
+		robot.IntervalMS = 5000
+		robot.Start()
 	}
 
 	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
@@ -206,38 +217,7 @@ func (oper *SampleOper) doHttps() {
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
-}
 
-func (oper *SampleOper) startTicker() {
-	oper.ticker = time.NewTicker(5 * time.Second)
-
-	quit := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-oper.ticker.C:
-				oper.makeRequest()
-			case <-quit:
-				oper.ticker.Stop()
-				oper.ticker = nil
-				return
-			}
-		}
-	}()
-
-}
-
-func (oper *SampleOper) makeRequest() {
-	resp, err := http.Get("https://animalaid.org/hey/joe")
-	if err != nil {
-		log.Fatalln(err)
-	}
-	resBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Printf("client: could not read response body: %s\n", err)
-		os.Exit(1)
-	}
-	Pr("client: response body:", INDENT, string(resBody))
 }
 
 func (oper *SampleOper) handleResourceRequest(w http.ResponseWriter, req *http.Request, resource string) {
