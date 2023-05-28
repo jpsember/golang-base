@@ -69,14 +69,20 @@ func (oper *SampleOper) writeHeader(bp *BasePrinter) {
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
 
+
 <script>
-$(document).ready(function(){
-  $("button").click(function(){
-    $.ajax({url: "ajax", success: function(result){
-      $("#div1").html(result);
-    }});
-  });
-});
+
+function loadDoc() {
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+     document.getElementById("div1").innerHTML = this.responseText;
+    }
+  };
+  xhttp.open("GET", "ajax", true);
+  xhttp.send();
+}
+
 </script>
 </head>
 `)
@@ -134,8 +140,8 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 `)
 
 	sb.Pr(`
-	<div id="div1"><h2>Let jQuery AJAX Change This Text</h2></div>
-<button>Get External Content</button>
+	<div id="div1"><h2>Let AJAX Change This Text</h2></div>
+<button onclick="loadDoc()">Get External Content</button>
 `)
 	sb.Pr(`
 </body></html>
@@ -328,6 +334,6 @@ func (oper *SampleOper) handleUpload(w http.ResponseWriter, r *http.Request, res
 
 func (oper *SampleOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
 	sb := NewBasePrinter()
-	sb.Pr(`<h3> This was changed via an AJAX call</h3>`)
+	sb.Pr(`<h3> This was changed via an AJAX call without using JQuery</h3>`)
 	w.Write([]byte(sb.String()))
 }
