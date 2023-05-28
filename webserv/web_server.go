@@ -27,7 +27,7 @@ func (oper *SampleOper) UserCommand() string {
 }
 
 func (oper *SampleOper) GetHelp(bp *BasePrinter) {
-	bp.Pr("Demonstrates an http or https server")
+	bp.Pr("Demonstrates a web server")
 }
 
 func (oper *SampleOper) ProcessArgs(c *CmdLineArgs) {
@@ -45,7 +45,7 @@ func WebServerDemo() {
 	app.Version = "1.0"
 	app.CmdLineArgs().Add("insecure").Desc("insecure (http) mode")
 	app.RegisterOper(oper)
-	app.SetTestArgs("--insecure")
+	//app.SetTestArgs("--insecure")
 	app.Start()
 }
 
@@ -58,6 +58,7 @@ func (oper *SampleOper) Perform(app *App) {
 	}
 }
 
+// A handler such as this must be thread safe!
 func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	resource := req.RequestURI[1:]
@@ -76,8 +77,6 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	Todo("the Pr method is not thread safe")
-
 	// Create a buffer to accumulate the response text
 
 	sb := NewBasePrinter()
@@ -87,6 +86,15 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 <HEAD>
 <TITLE>Example</TITLE>
+
+<script
+  src="https://code.jquery.com/jquery-1.12.4.min.js"
+  integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="
+  crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
 </HEAD>
 
 <BODY>
