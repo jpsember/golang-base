@@ -7,9 +7,11 @@ import (
 	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/gen/webservgen"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -57,6 +59,10 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	resource := req.RequestURI[1:]
 	if resource != "" {
+		if strings.HasPrefix(resource, "upload?") {
+			oper.handleUpload(w, req, resource)
+			return
+		}
 		oper.handleResourceRequest(w, req, resource)
 		return
 	}
@@ -85,6 +91,14 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	sb.Pr("session:", session.Id())
 
 	sb.Pr(`<p>Here is a picture: <img src=picture.jpg alt="Picture"></p>`, CR)
+
+	sb.Pr(`<p>Click on the "Choose File" button to upload a file:</p>
+
+<form action="upload">
+  <input type="file" id="myFile" name="filename">
+  <input type="submit">
+</form>
+`)
 
 	sb.Pr(`
 </BODY>
@@ -212,4 +226,49 @@ func (oper *SampleOper) handleResourceRequest(w http.ResponseWriter, req *http.R
 		w.Header().Set("Content-Type", "image/jpeg ")
 		w.Write(content)
 	}
+}
+
+func (oper *SampleOper) handleUpload(w http.ResponseWriter, r *http.Request, resource string) {
+
+	Pr("request:", INDENT, r)
+
+	// Parse our multipart form, 10 << 20 specifies a maximum
+	// upload of 10 MB files.
+	err := r.ParseMultipartForm(10 << 20)
+	Pr("parse multipart form produced:", err)
+
+	// FormFile returns the first file for the given key `myFile`
+	// it also returns the FileHeader so we can get the Filename,
+	// the Header and the size of the file
+	file, handler, err := r.FormFile("filename")
+	if err != nil {
+		fmt.Println("Error Retrieving the File")
+		fmt.Println(err)
+		return
+	}
+	defer file.Close()
+	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
+	fmt.Printf("File Size: %+v\n", handler.Size)
+	fmt.Printf("MIME Header: %+v\n", handler.Header)
+
+	// Create a temporary file within our temp-images directory that follows
+	// a particular naming pattern
+	tempFile, err := ioutil.TempFile("temp-images", "upload-*.png")
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer tempFile.Close()
+
+	// read all of the contents of our uploaded file into a
+	// byte array
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Println(err)
+	}
+	Pr("read:", len(fileBytes), "bytes")
+	//// write this byte array to our temporary file
+	tempFile.Write(fileBytes)
+	//// return that we have successfully uploaded our file!
+	fmt.Fprintf(w, "Successfully Uploaded File\n")
+
 }
