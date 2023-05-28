@@ -345,7 +345,6 @@ func (oper *SampleOper) processViewRequest(w http.ResponseWriter, req *http.Requ
 		oper.constructView(sess)
 	}
 	oper.writeHeader(sb)
-
 	oper.renderView(sess, sb)
 	oper.writeFooter(w, sb)
 }
@@ -354,6 +353,15 @@ func (oper *SampleOper) processViewRequest(w http.ResponseWriter, req *http.Requ
 func (oper *SampleOper) constructView(sess Session) {
 	v := NewView()
 	v.Bounds = RectWith(0, 0, 1, 1)
+
+	ch := &v.Children
+	for y := 0; y < 3; y++ {
+		for x := 0; x < 3; x++ {
+			c := NewView()
+			c.Bounds = RectWith(x, y, 1, 1)
+			ch.Add(c)
+		}
+	}
 	sess.View = v
 }
 
@@ -370,7 +378,7 @@ func renderViewHelper(sess Session, sb *BasePrinter, view View) {
 
 	sb.Pr("view with bounds:", view.Bounds)
 
-	for _, child := range view.Children.Array() {
+	for i, child := range view.Children.Array() {
 		renderViewHelper(sess, sb, child)
 	}
 	sb.AppendString(`
