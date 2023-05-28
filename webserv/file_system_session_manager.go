@@ -1,20 +1,15 @@
 package webserv
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/gen/webservgen"
 	. "github.com/jpsember/golang-base/json"
-	"io"
 	"sync"
 	"time"
 )
 
-type Session = *SessionDataBuilder
-
-type SessionMap struct {
+type FileSystemSessionManager struct {
 	BaseObject
 	sessionMap    map[string]Session
 	lastWrittenMs int64
@@ -23,9 +18,9 @@ type SessionMap struct {
 	persistPath   Path
 }
 
-func BuildSessionMap() *SessionMap {
-	sm := new(SessionMap)
-	sm.SetName("SessionMap")
+func BuildFileSystemSessionMap() *FileSystemSessionManager {
+	sm := new(FileSystemSessionManager)
+	sm.SetName("FileSystemSessionManager")
 	sm.sessionMap = make(map[string]Session)
 
 	// If there's a file on disk to restore from, do so
@@ -42,7 +37,11 @@ func BuildSessionMap() *SessionMap {
 	return sm
 }
 
-func (s *SessionMap) FindSession(id string) Session {
+func (s *FileSystemSessionManager) SetModified(session Session) {
+	Todo("Have some process flush changes periodically")
+}
+
+func (s *FileSystemSessionManager) FindSession(id string) Session {
 	s.Log("FindSession, id:", id)
 	s.lock.RLock()
 	defer s.lock.RUnlock()
@@ -51,25 +50,13 @@ func (s *SessionMap) FindSession(id string) Session {
 	return result
 }
 
-func randomSessionId() string {
-	var idLength = 32
-	if true {
-		// For now, use a much smaller id for legibility
-		idLength = 3
-	}
-	b := make([]byte, idLength)
-	_, err := io.ReadFull(rand.Reader, b)
-	CheckOk(err)
-	return base64.URLEncoding.EncodeToString(b)
-}
-
-func (s *SessionMap) CreateSession() Session {
+func (s *FileSystemSessionManager) CreateSession() Session {
 	s.lock.Lock()
 
 	b := NewSessionData().ToBuilder()
 
 	for {
-		b.SetId(randomSessionId())
+		b.SetId(RandomSessionId())
 		// Stop looking for session ids if we've found one that isn't used
 		if s.sessionMap[b.Id()] == nil {
 			break
@@ -84,11 +71,11 @@ func (s *SessionMap) CreateSession() Session {
 	return b
 }
 
-func (s *SessionMap) setModified() {
+func (s *FileSystemSessionManager) setModified() {
 	s.modified = true
 }
 
-func (s *SessionMap) flush() {
+func (s *FileSystemSessionManager) flush() {
 	if !s.modified {
 		return
 	}
@@ -109,7 +96,7 @@ func (s *SessionMap) flush() {
 
 }
 
-func (s *SessionMap) getPath() Path {
+func (s *FileSystemSessionManager) getPath() Path {
 	if s.persistPath == "" {
 		pth := AscendToDirectoryContainingFileM("", "go.mod")
 		pth = pth.JoinM("webserv/cache")

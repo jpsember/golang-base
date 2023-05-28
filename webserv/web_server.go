@@ -18,7 +18,7 @@ import (
 type SampleOper struct {
 	https        bool
 	ticker       *time.Ticker
-	sessionMap   *SessionMap
+	sessionMap   SessionManager
 	appRoot      Path
 	resources    Path
 	uploadedFile Path
@@ -37,7 +37,7 @@ func (oper *SampleOper) ProcessArgs(c *CmdLineArgs) {
 
 func Demo() {
 	var oper = &SampleOper{}
-	oper.sessionMap = BuildSessionMap()
+	oper.sessionMap = BuildFileSystemSessionMap()
 
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
