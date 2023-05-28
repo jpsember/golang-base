@@ -85,7 +85,15 @@ function ajax(id) {
 
 </script>
 </head>
+<body>
 `)
+}
+
+// Write footer markup, then write the page to the response
+func (oper *SampleOper) writeFooter(w http.ResponseWriter, bp *BasePrinter) {
+	bp.AppendString(`</body></html>`)
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(bp.String()))
 }
 
 // A handler such as this must be thread safe!
@@ -118,7 +126,6 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	sb := NewBasePrinter()
 	oper.writeHeader(sb)
-	sb.AppendString("<body>\n")
 
 	sb.Pr("Request received at:", time.Now().Format(time.ANSIC), CR)
 	sb.Pr("URI:", req.RequestURI, CR)
@@ -143,11 +150,7 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	sb.Pr(`<div id="div1"><h2>Let AJAX Change This Text</h2></div><button onclick="ajax('div1')">Get External Content</button>`)
 	sb.Pr(`<div id="div2"><h2>Another independent element</h2></div><button onclick="ajax('div2')">Button 2</button>`)
 
-	sb.Pr(`</body></html>`)
-
-	w.Header().Set("Content-Type", "text/html")
-
-	w.Write([]byte(sb.String()))
+	oper.writeFooter(w, sb)
 }
 
 // Send a simple web page back with a message
@@ -155,8 +158,6 @@ func (oper *SampleOper) sendResponseMarkup(w http.ResponseWriter, req *http.Requ
 	sb := NewBasePrinter()
 
 	oper.writeHeader(sb)
-
-	sb.AppendString("<body>\n")
 
 	sb.Pr("<p>")
 	sb.Pr(content)
@@ -345,15 +346,8 @@ func (oper *SampleOper) processViewRequest(w http.ResponseWriter, req *http.Requ
 	}
 	oper.writeHeader(sb)
 
-	sb.AppendString("<body>\n")
-
 	oper.renderView(sess, sb)
-	Todo("have header write the <body>, and add a writeFooter method")
-
-	sb.Pr(`</body></html>`)
-	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(sb.String()))
-
+	oper.writeFooter(w, sb)
 }
 
 // Assign a view heirarchy to a session
