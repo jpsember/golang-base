@@ -6,7 +6,6 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
-	. "github.com/jpsember/golang-base/gen/webservgen"
 	"io"
 	"log"
 	"net/http"
@@ -140,9 +139,9 @@ func (oper *SampleOper) sendResponseMarkup(w http.ResponseWriter, req *http.Requ
 	w.Write([]byte(sb.String()))
 }
 
-func (oper *SampleOper) determineSession(w http.ResponseWriter, req *http.Request, createIfNone bool) *SessionBuilder {
+func (oper *SampleOper) determineSession(w http.ResponseWriter, req *http.Request, createIfNone bool) Session {
 	// Determine what session this is, by examining cookies
-	var session *SessionBuilder
+	var session Session
 	cookies := req.Cookies()
 	for _, c := range cookies {
 		if c.Name == "session" {

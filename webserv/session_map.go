@@ -12,9 +12,11 @@ import (
 	"time"
 )
 
+type Session = *SessionDataBuilder
+
 type SessionMap struct {
 	BaseObject
-	sessionMap    map[string]*SessionBuilder
+	sessionMap    map[string]Session
 	lastWrittenMs int64
 	modified      bool
 	lock          sync.RWMutex
@@ -24,7 +26,7 @@ type SessionMap struct {
 func BuildSessionMap() *SessionMap {
 	sm := new(SessionMap)
 	sm.SetName("SessionMap")
-	sm.sessionMap = make(map[string]*SessionBuilder)
+	sm.sessionMap = make(map[string]Session)
 
 	// If there's a file on disk to restore from, do so
 	// (in future, use a database or something)
@@ -32,7 +34,7 @@ func BuildSessionMap() *SessionMap {
 	if pth.Exists() {
 		json := JSMapFromFileIfExistsM(pth)
 		for k, v := range json.WrappedMap() {
-			s := ParseSession(v).ToBuilder()
+			s := ParseSessionData(v).ToBuilder()
 			sm.sessionMap[k] = s
 		}
 		sm.lastWrittenMs = time.Now().UnixMilli()
@@ -40,7 +42,7 @@ func BuildSessionMap() *SessionMap {
 	return sm
 }
 
-func (s *SessionMap) FindSession(id string) *SessionBuilder {
+func (s *SessionMap) FindSession(id string) Session {
 	s.Log("FindSession, id:", id)
 	s.lock.RLock()
 	defer s.lock.RUnlock()
@@ -61,10 +63,10 @@ func randomSessionId() string {
 	return base64.URLEncoding.EncodeToString(b)
 }
 
-func (s *SessionMap) CreateSession() *SessionBuilder {
+func (s *SessionMap) CreateSession() Session {
 	s.lock.Lock()
 
-	b := NewSession().ToBuilder()
+	b := NewSessionData().ToBuilder()
 
 	for {
 		b.SetId(randomSessionId())
