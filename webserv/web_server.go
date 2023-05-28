@@ -16,6 +16,7 @@ import (
 // Define an app with a single operation
 
 type SampleOper struct {
+	BaseObject
 	https  bool
 	ticker *time.Ticker
 
@@ -35,6 +36,7 @@ func (oper *SampleOper) ProcessArgs(c *CmdLineArgs) {
 
 func Demo() {
 	var oper = &SampleOper{}
+	oper.SetVerbose(true)
 	oper.sessionMap = BuildSessionMap()
 	var app = NewApp()
 	app.SetName("WebServer")
@@ -56,60 +58,71 @@ func (oper *SampleOper) Perform(app *App) {
 
 func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
+	resource := req.RequestURI[1:]
+	if resource != "" {
+		oper.handleResourceRequest(w, req, resource)
+		return
+	}
+
+	Todo("the Pr method is not thread safe")
+
 	// Create a buffer to accumulate the response text
 
 	sb := NewBasePrinter()
 
+	sb.Pr(`
+<HMTL>
+
+<HEAD>
+<TITLE>Example</TITLE>
+</HEAD>
+
+<BODY>
+`)
+
 	sb.Pr("Request received at:", time.Now().Format(time.ANSIC), CR)
 	sb.Pr("URI:", req.RequestURI, CR)
 
-	// Determine what session this is, by examining cookies
+	var session = oper.determineSession(w, req)
 
-	// Can a session be non-nil and its builder nil?
-	//
-	// https://codefibershq.com/blog/golang-why-nil-is-not-always-nil
-	//
-	// We can avoid nil != nil nonsense if we use an explicit type, instead
-	// of an interface (e.g. 'Session')
-	//
-	var session *SessionBuilder
+	sb.Pr("session:", session.Id())
 
-	{
+	sb.Pr(`<p>Here is a picture: <img src=picture.jpg alt="Picture"></p>`, CR)
 
-		cookies := req.Cookies()
-		sb.Pr("Cookies received:", len(cookies), CR)
+	sb.Pr(`
+</BODY>
+`)
 
-		for i, c := range cookies {
-			sb.Pr("Cookie #", i, "name:", c.Name, CR)
-			if c.Name == "session" {
-				sessionId := c.Value
-				session = oper.sessionMap.FindSession(sessionId)
-				sb.Pr("sessionId:", sessionId)
-			}
-			sb.Cr()
-			if session != nil {
-				sb.Pr("found a non-nil session:", INDENT, session)
-				break
-			}
-		}
-
-		// If no session was found, create one, and send a cookie
-		if session == nil {
-			sb.Pr("creating session")
-			session = oper.sessionMap.CreateSession()
-
-			cookie := &http.Cookie{
-				Name:   "session",
-				Value:  session.Id(),
-				MaxAge: 1200, // 20 minutes
-			}
-			sb.Pr("...no session cookie found, created one:", INDENT, session, CR)
-			http.SetCookie(w, cookie)
-		}
-	}
-	w.Header().Set("Content-Type", "text/plain")
+	w.Header().Set("Content-Type", "text/html")
 
 	w.Write([]byte(sb.String()))
+}
+
+func (oper *SampleOper) determineSession(w http.ResponseWriter, req *http.Request) *SessionBuilder {
+	// Determine what session this is, by examining cookies
+	var session *SessionBuilder
+	cookies := req.Cookies()
+	for _, c := range cookies {
+		if c.Name == "session" {
+			sessionId := c.Value
+			session = oper.sessionMap.FindSession(sessionId)
+		}
+		if session != nil {
+			break
+		}
+	}
+
+	// If no session was found, create one, and send a cookie
+	if session == nil {
+		session = oper.sessionMap.CreateSession()
+		cookie := &http.Cookie{
+			Name:   "session",
+			Value:  session.Id(),
+			MaxAge: 1200, // 20 minutes
+		}
+		http.SetCookie(w, cookie)
+	}
+	return session
 }
 
 func (oper *SampleOper) handler() func(http.ResponseWriter, *http.Request) {
@@ -139,7 +152,7 @@ func (oper *SampleOper) doHttps() {
 	var certPath = keyDir.JoinM(url + ".crt")
 	var keyPath = keyDir.JoinM(url + ".key")
 
-	Pr("Type:", INDENT, "curl -sL https://"+url+"/hello")
+	Pr("Type:", INDENT, "curl -sL https://"+url)
 
 	http.HandleFunc("/", oper.handler())
 
@@ -184,4 +197,22 @@ func (oper *SampleOper) makeRequest() {
 		os.Exit(1)
 	}
 	Pr("client: response body:", INDENT, string(resBody))
+}
+
+func (oper *SampleOper) handleResourceRequest(w http.ResponseWriter, req *http.Request, resource string) {
+	Pr("resource:", resource)
+	if resource == "picture.jpg" {
+		pth, err := AscendToDirectoryContainingFile("", "go.mod")
+		CheckOk(err)
+		resourcesPath := pth.JoinM("webserv/resources")
+
+		picPath := resourcesPath.JoinM("picture.jpg")
+		content := picPath.ReadBytesM()
+
+		Todo("when does caching come into effect?  Is that a browser thing?")
+
+		Pr("sending image")
+		w.Header().Set("Content-Type", "image/jpeg ")
+		w.Write(content)
+	}
 }
