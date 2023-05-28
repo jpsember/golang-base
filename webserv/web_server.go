@@ -72,7 +72,7 @@ func (oper *SampleOper) writeHeader(bp *BasePrinter) {
 
 <script>
 
-function loadDoc() {
+function ajax() {
   var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
@@ -141,7 +141,7 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	sb.Pr(`
 	<div id="div1"><h2>Let AJAX Change This Text</h2></div>
-<button onclick="loadDoc()">Get External Content</button>
+<button onclick="ajax()">Get External Content</button>
 `)
 	sb.Pr(`
 </body></html>
