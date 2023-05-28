@@ -16,10 +16,8 @@ import (
 // Define an app with a single operation
 
 type SampleOper struct {
-	BaseObject
-	https  bool
-	ticker *time.Ticker
-
+	https      bool
+	ticker     *time.Ticker
 	sessionMap *SessionMap
 }
 
@@ -36,7 +34,6 @@ func (oper *SampleOper) ProcessArgs(c *CmdLineArgs) {
 
 func Demo() {
 	var oper = &SampleOper{}
-	oper.SetVerbose(true)
 	oper.sessionMap = BuildSessionMap()
 	var app = NewApp()
 	app.SetName("WebServer")
