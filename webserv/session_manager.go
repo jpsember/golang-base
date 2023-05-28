@@ -4,12 +4,35 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/gen/webservgen"
+	. "github.com/jpsember/golang-base/json"
 	"io"
 	"sync"
 )
 
-type Session = *SessionDataBuilder
+type Session = *UserSession
+
+func (s Session) ToJson() *JSMap {
+	m := NewJSMap()
+	m.Put("id", s.Id)
+	return m
+}
+
+type UserSession struct {
+	Id   string
+	View View
+}
+
+func NewSession() Session {
+	s := UserSession{}
+	return &s
+}
+
+func ParseSession(source JSEntity) Session {
+	var s = source.(*JSMap)
+	var n = NewSession()
+	n.Id = s.OptString("id", "")
+	return n
+}
 
 type SessionManager interface {
 	FindSession(id string) Session
@@ -58,17 +81,16 @@ func (s *inMemorySessionMap) FindSession(id string) Session {
 func (s *inMemorySessionMap) CreateSession() Session {
 	s.lock.Lock()
 
-	b := NewSessionData().ToBuilder()
-
+	b := NewSession()
 	for {
-		b.SetId(RandomSessionId())
+		b.Id = RandomSessionId()
 		// Stop looking for session ids if we've found one that isn't used
-		if s.sessionMap[b.Id()] == nil {
+		if s.sessionMap[b.Id] == nil {
 			break
 		}
 	}
 	s.Log("Creating new session:", INDENT, b)
-	s.sessionMap[b.Id()] = b
+	s.sessionMap[b.Id] = b
 	s.lock.Unlock()
 	return b
 }

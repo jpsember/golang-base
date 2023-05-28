@@ -3,7 +3,6 @@ package webserv
 import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
-	. "github.com/jpsember/golang-base/gen/webservgen"
 	. "github.com/jpsember/golang-base/json"
 	"sync"
 	"time"
@@ -29,7 +28,7 @@ func BuildFileSystemSessionMap() *FileSystemSessionManager {
 	if pth.Exists() {
 		json := JSMapFromFileIfExistsM(pth)
 		for k, v := range json.WrappedMap() {
-			s := ParseSessionData(v).ToBuilder()
+			s := ParseSession(v)
 			sm.sessionMap[k] = s
 		}
 		sm.lastWrittenMs = time.Now().UnixMilli()
@@ -53,16 +52,16 @@ func (s *FileSystemSessionManager) FindSession(id string) Session {
 func (s *FileSystemSessionManager) CreateSession() Session {
 	s.lock.Lock()
 
-	b := NewSessionData().ToBuilder()
+	b := NewSession()
 
 	for {
-		b.SetId(RandomSessionId())
+		b.Id = RandomSessionId()
 		// Stop looking for session ids if we've found one that isn't used
-		if s.sessionMap[b.Id()] == nil {
+		if s.sessionMap[b.Id] == nil {
 			break
 		}
 	}
-	s.sessionMap[b.Id()] = b
+	s.sessionMap[b.Id] = b
 	s.setModified()
 	s.lock.Unlock()
 

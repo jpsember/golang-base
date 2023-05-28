@@ -94,6 +94,9 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	resource := req.RequestURI[1:]
 	if resource != "" {
 
+		if resource == "view" {
+			oper.processViewRequest(w, req)
+		}
 		if resource == "ajax" {
 			oper.sendAjaxMarkup(w, req)
 		}
@@ -122,7 +125,7 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	var session = oper.determineSession(w, req, true)
 
-	sb.Pr("session:", session.Id())
+	sb.Pr("session:", session.Id)
 
 	sb.Pr(`<p>Here is a picture: <img src=picture.jpg alt="Picture"></p>`, CR)
 
@@ -187,7 +190,7 @@ func (oper *SampleOper) determineSession(w http.ResponseWriter, req *http.Reques
 		session = oper.sessionMap.CreateSession()
 		cookie := &http.Cookie{
 			Name:   sessionCookieName,
-			Value:  session.Id(),
+			Value:  session.Id,
 			MaxAge: 1200, // 20 minutes
 		}
 		http.SetCookie(w, cookie)
@@ -332,4 +335,51 @@ func (oper *SampleOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request)
 	sb.Pr(`<h3> This was changed via an AJAX call without using JQuery at ` +
 		time.Now().Format(time.ANSIC) + `</h3>`)
 	w.Write([]byte(sb.String()))
+}
+
+func (oper *SampleOper) processViewRequest(w http.ResponseWriter, req *http.Request) {
+	sb := NewBasePrinter()
+	sess := oper.determineSession(w, req, true)
+	if sess.View == nil {
+		oper.constructView(sess)
+	}
+	oper.writeHeader(sb)
+
+	sb.AppendString("<body>\n")
+
+	oper.renderView(sess, sb)
+	Todo("have header write the <body>, and add a writeFooter method")
+
+	sb.Pr(`</body></html>`)
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(sb.String()))
+
+}
+
+// Assign a view heirarchy to a session
+func (oper *SampleOper) constructView(sess Session) {
+	v := NewView()
+	v.Bounds = RectWith(0, 0, 1, 1)
+	sess.View = v
+}
+
+func (oper *SampleOper) renderView(sess Session, sb *BasePrinter) {
+	CheckState(sess.View != nil, "no view!")
+	renderViewHelper(sess, sb, sess.View)
+}
+
+func renderViewHelper(sess Session, sb *BasePrinter, view View) {
+	Todo("ignoring view class for now")
+	sb.AppendString(`
+<div class="container">
+`)
+
+	sb.Pr("view with bounds:", view.Bounds)
+
+	for _, child := range view.Children.Array() {
+		renderViewHelper(sess, sb, child)
+	}
+	sb.AppendString(`
+</div>
+`)
 }
