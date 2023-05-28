@@ -72,11 +72,11 @@ func (oper *SampleOper) writeHeader(bp *BasePrinter) {
 
 <script>
 
-function ajax() {
+function ajax(id) {
   var xhttp = new XMLHttpRequest();
   xhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
-     document.getElementById("div1").innerHTML = this.responseText;
+     document.getElementById(id).innerHTML = this.responseText;
     }
   };
   xhttp.open("GET", "ajax", true);
@@ -90,8 +90,6 @@ function ajax() {
 
 // A handler such as this must be thread safe!
 func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
-
-	Pr("handle, URI:", req.RequestURI)
 
 	resource := req.RequestURI[1:]
 	if resource != "" {
@@ -139,13 +137,10 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 </form>
 `)
 
-	sb.Pr(`
-	<div id="div1"><h2>Let AJAX Change This Text</h2></div>
-<button onclick="ajax()">Get External Content</button>
-`)
-	sb.Pr(`
-</body></html>
-`)
+	sb.Pr(`<div id="div1"><h2>Let AJAX Change This Text</h2></div><button onclick="ajax('div1')">Get External Content</button>`)
+	sb.Pr(`<div id="div2"><h2>Another independent element</h2></div><button onclick="ajax('div2')">Button 2</button>`)
+
+	sb.Pr(`</body></html>`)
 
 	w.Header().Set("Content-Type", "text/html")
 
@@ -334,6 +329,7 @@ func (oper *SampleOper) handleUpload(w http.ResponseWriter, r *http.Request, res
 
 func (oper *SampleOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
 	sb := NewBasePrinter()
-	sb.Pr(`<h3> This was changed via an AJAX call without using JQuery</h3>`)
+	sb.Pr(`<h3> This was changed via an AJAX call without using JQuery at ` +
+		time.Now().Format(time.ANSIC) + `</h3>`)
 	w.Write([]byte(sb.String()))
 }
