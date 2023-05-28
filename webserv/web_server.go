@@ -104,17 +104,12 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	}
 	sb.Pr(`<p>Click on the "Choose File" button to upload a file:</p>
 
-
-
 <form action="upload" enctype="multipart/form-data" method="post">
     <input type="file" name="file" id="file" />
-    <input type="hidden" name="token" value="{{.}}" />
     <input type="submit" />
 </form>
 
 `)
-	// What is the hidden / name token for?
-
 	sb.Pr(`
 </BODY>
 `)
