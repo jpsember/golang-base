@@ -58,11 +58,41 @@ func (oper *SampleOper) Perform(app *App) {
 	}
 }
 
+func (oper *SampleOper) writeHeader(bp *BasePrinter) {
+	bp.AppendString(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>Example</title>
+<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+<script>
+$(document).ready(function(){
+  $("button").click(function(){
+    $.ajax({url: "ajax", success: function(result){
+      $("#div1").html(result);
+    }});
+  });
+});
+</script>
+</head>
+`)
+}
+
 // A handler such as this must be thread safe!
 func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
+	Pr("handle, URI:", req.RequestURI)
+
 	resource := req.RequestURI[1:]
 	if resource != "" {
+
+		if resource == "ajax" {
+			oper.sendAjaxMarkup(w, req)
+		}
 
 		if resource == "robot" {
 			oper.sendResponseMarkup(w, req, "Hi, Robot")
@@ -80,19 +110,8 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	// Create a buffer to accumulate the response text
 
 	sb := NewBasePrinter()
-
-	sb.Pr(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<title>Example</title>
-<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-</head>
-<body>
-`)
+	oper.writeHeader(sb)
+	sb.AppendString("<body>\n")
 
 	sb.Pr("Request received at:", time.Now().Format(time.ANSIC), CR)
 	sb.Pr("URI:", req.RequestURI, CR)
@@ -112,7 +131,11 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
     <input type="file" name="file" id="file">
     <input type="submit">
 </form>
+`)
 
+	sb.Pr(`
+	<div id="div1"><h2>Let jQuery AJAX Change This Text</h2></div>
+<button>Get External Content</button>
 `)
 	sb.Pr(`
 </body></html>
@@ -127,15 +150,10 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 func (oper *SampleOper) sendResponseMarkup(w http.ResponseWriter, req *http.Request, content string) {
 	sb := NewBasePrinter()
 
-	sb.Pr(`
-<HMTL>
+	oper.writeHeader(sb)
 
-<HEAD>
-<TITLE>Example</TITLE>
-</HEAD>
+	sb.AppendString("<body>\n")
 
-<BODY>
-`)
 	sb.Pr("<p>")
 	sb.Pr(content)
 	sb.Pr("</p>")
@@ -306,4 +324,10 @@ func (oper *SampleOper) handleUpload(w http.ResponseWriter, r *http.Request, res
 
 	oper.uploadedFile = newPath
 	oper.sendResponseMarkup(w, r, "Successfully uploaded: "+newPath.String())
+}
+
+func (oper *SampleOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
+	sb := NewBasePrinter()
+	sb.Pr(`<h3> This was changed via an AJAX call</h3>`)
+	w.Write([]byte(sb.String()))
 }
