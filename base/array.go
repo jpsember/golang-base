@@ -46,6 +46,10 @@ func (array *Array[T]) NonEmpty() bool {
 	return !array.IsEmpty()
 }
 
+func (array *Array[T]) Last() T {
+	return array.Get(array.Size() - 1)
+}
+
 func (array *Array[T]) Append(items ...T) {
 	array.wrappedArray = append(array.wrappedArray, items...)
 }
