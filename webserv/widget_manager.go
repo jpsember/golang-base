@@ -3,6 +3,7 @@ package webserv
 import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/json"
+	"math/rand"
 	"strings"
 )
 
@@ -22,6 +23,7 @@ func (w Widget) ReadValue() JSEntity {
 }
 
 type WidgetManagerObj struct {
+	rand                 *rand.Rand
 	pendingColumnWeights []int
 	// Note: this was a sorted map in the Java code
 	widgetMap   map[string]Widget
@@ -519,3 +521,22 @@ func (m WidgetManager) clearPendingComponentFields() {
 /**
 func (m WidgetManager)  ( ) WidgetManager {
 **/
+
+func RandomText(rand *rand.Rand, maxLength int, withLinefeeds bool) string {
+
+	sample := "orhxxidfusuytelrcfdlordburswfxzjfjllppdsywgswkvukrammvxvsjzqwplxcpkoekiznlgsgjfonlugreiqvtvpjgrqotzu"
+
+	sb := strings.Builder{}
+	length := MinInt(maxLength, rand.Intn(maxLength+2))
+	for sb.Len() < length {
+		wordSize := rand.Intn(8) + 2
+		if withLinefeeds && rand.Intn(4) == 0 {
+			sb.WriteByte('\n')
+		} else {
+			sb.WriteByte(' ')
+		}
+		c := rand.Intn(len(sample) - wordSize)
+		sb.WriteString(sample[c : c+wordSize])
+	}
+	return strings.TrimSpace(sb.String())
+}
