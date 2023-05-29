@@ -4,61 +4,7 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
-type IPoint struct {
-	X int
-	Y int
-}
-
-func IPointWith(x int, y int) IPoint {
-	return IPoint{X: x, Y: y}
-}
-
-type GridCellObj struct {
-	view  any
-	X     int
-	Y     int
-	Width int
-	GrowX int
-	GrowY int
-}
-type GridCell = *GridCellObj
-
-func (g GridCell) IsEmpty() bool {
-	return g.view == nil
-}
-
-type CellWeightList struct {
-	weights []int
-}
-
-func NewCellWeightList() CellWeightList {
-	return CellWeightList{
-		weights: []int{},
-	}
-}
-
-func (w CellWeightList) Set(index int, weight int) {
-	w.GrowTo(1 + index)
-	w.weights[index] = weight
-}
-
-func (w CellWeightList) GrowTo(size int) {
-	for len(w.weights) < size {
-		w.weights = append(w.weights, 0)
-	}
-}
-
-func (w CellWeightList) Get(index int) int {
-	if len(w.weights) <= index {
-		return 0
-	}
-	return w.weights[index]
-}
-
-/**
- * Data for a View that contains a grid of child views
- */
-
+// Data for a View that contains a grid of child views
 type GridObj struct {
 	mDebugContext string
 	mCells        *Array[GridCell]
@@ -83,11 +29,6 @@ func (g Grid) SetContext(debugContext string) {
 	g.mDebugContext = debugContext
 }
 
-/**
-func (g Grid)  ( ) {
-
-*/
-
 func (g Grid) String() string {
 	return ToString("Grid, context:", g.mDebugContext)
 
@@ -95,10 +36,6 @@ func (g Grid) String() string {
 func (g Grid) DebugContext() string {
 	return g.mDebugContext
 }
-
-//public <T extends Widget> T widget() {
-//  return (T) mWidget;
-//}
 
 func (g Grid) SetWidget(widget Widget) {
 	g.mWidget = widget
