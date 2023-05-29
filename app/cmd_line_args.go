@@ -131,7 +131,7 @@ func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
 
 				switch opt.Type {
 				case Int:
-					intVal, err := strconv.ParseInt(value, 10, 64)
+					intVal, err := ParseInt(value)
 					if err != nil {
 						c.SetError("Can't parse int:", value, "from", opt.Invocation)
 						return

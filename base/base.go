@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -290,4 +291,15 @@ func CopyOfBytes(array []byte) []byte {
 	result := make([]byte, len(array))
 	copy(result, array)
 	return result
+}
+
+func ParseInt(str string) (int64, error) {
+	result, err := strconv.ParseInt(str, 10, 64)
+	return result, err
+}
+
+func ParseIntM(str string) int {
+	result, err := ParseInt(str)
+	CheckOk(err, "Failed to parse int from:", Quoted(str))
+	return int(result)
 }
