@@ -7,22 +7,9 @@ import (
 	"strings"
 )
 
-type WidgetObj struct {
-	Id string
-}
-
-type Widget = *WidgetObj
-
-func (w Widget) WriteValue(v JSEntity) {
-	NotImplemented("WriteValue")
-}
-
-func (w Widget) ReadValue() JSEntity {
-	NotImplemented("ReadValue")
-	return JBoolFalse
-}
 
 type WidgetManagerObj struct {
+	BaseObject
 	rand                 *rand.Rand
 	pendingColumnWeights []int
 	// Note: this was a sorted map in the Java code
@@ -47,9 +34,15 @@ type WidgetManagerObj struct {
 	mPendingDefaultFloatValue   float64
 	mPendingDefaultIntValue     int
 
-
 	mPanelStack *Array[Grid]
 
+}
+
+func NewWidgetManager() WidgetManager {
+	w := WidgetManagerObj	{
+		mPanelStack : NewArray[Grid](),
+	}
+	return &w
 }
 
 type WidgetManager = *WidgetManagerObj
@@ -571,14 +564,31 @@ func (m WidgetManager)  ( ) WidgetManager {
 
 
 
+  /**
+   * Add widget to view hierarchy
+   */
+  func (m WidgetManager) Add(widget Widget) WidgetManager {
+	  id := widget.GetId()
+   	 m.Log("add widget", id)
+
+	  if id != "" {
+		  if m.Exists(id) {
+			  BadState("Attempt to add widget with duplicate id:", id)
+		  }
+		  m.widgetMap[id] = widget
+	  }
+
+	m.addView(widget)
+	  return m
+  }
 
 
 
   /**
-   * Create a child view and push onto stack
+   * Create a child view and push onto stack;  TODO: clarify terminology, widget vs view
    */
   func (m WidgetManager)  openFor(debugContext string ) WidgetManager {
-grid := NewGrid()
+	grid := NewGrid()
     grid.SetContext(debugContext);
 
     {
@@ -588,70 +598,59 @@ grid := NewGrid()
       grid.ColumnSizes = m.pendingColumnWeights
 	  m.pendingColumnWeights = nil
 
-      JComponent panel;
-      if (mPendingContainer != null) {
-        panel = mPendingContainer;
-        log2("pending container:", panel.getClass());
-        mPendingContainer = null;
-      } else {
-        log2("constructing JPanel");
-        panel = new JPanel();
-        applyMinDimensions(panel, mPendingMinWidthEm, mPendingMinHeightEm);
-      }
-      panel.setLayout(buildLayout());
-      addStandardBorderForSpacing(panel);
-      grid.setWidget(wrap(panel));
+	  widget := NewContainerWidget()
+      // {
+      //  log2("constructing JPanel");
+      //  panel = new JPanel();
+      //  applyMinDimensions(panel, mPendingMinWidthEm, mPendingMinHeightEm);
+      //}
+      grid.SetWidget(widget);
     }
-    add(grid.widget());
-    mPanelStack.add(grid);
-    log2("added grid to panel stack, its widget:", grid.widget().getClass());
+	m.Add (grid.mWidget)
+	m.mPanelStack.Add(grid)
+	m.Log("added grid to panel stack");
     return m
   }
 
   /**
    * Pop view from the stack
    */
-  func (m WidgetManager)  close( ) WidgetManager {
-    return closeFor("<no context>");
+  func (m WidgetManager) close( ) WidgetManager {
+    return m.closeFor("<no context>");
   }
 
   /**
    * Pop view from the stack
    */
-  func (m WidgetManager) closeFor (string debugContext   ) WidgetManager {
-    Grid parent = pop(mPanelStack);
-    if (verbose())
-      log2("close", debugContext, compInfo(gridComponent(parent)));
-    endRow();
-
-    if (!(parent.widget() instanceof TabbedPaneWidget))
-      assignViewsToGridLayout(parent);
+  func (m WidgetManager) closeFor (debugContext  string  ) WidgetManager {
+	  m.Log("close",debugContext)
+	  parent := m.mPanelStack.Pop()
+    m.EndRow();
+      m.assignViewsToGridLayout(parent);
     return m
   }
 
-  /**
-   * Verify that no unused 'pending' arguments exist, calls are balanced, etc
-   */
+
+ // If current row is only partially complete, add space to its end
+ func (m WidgetManager) EndRow() WidgetManager {
+    if (!m.mPanelStack.IsEmpty()) {
+		parent := m.mPanelStack.Last()
+		if  parent.NextCellLocation().X != 0 {
+			m.Spanx().AddHorzSpace();
+		}
+	}
+    return m;
+  }
+
+  // Verify that no unused 'pending' arguments exist, calls are balanced, etc
   func (m WidgetManager)  finish( ) WidgetManager {
     m.clearPendingComponentFields();
-    if (!mPanelStack.isEmpty())
-      badState("panel stack nonempty; size:", mPanelStack.size());
-    if (!mListenerStack.isEmpty())
-      badState("listener stack nonempty; size:", mListenerStack.size());
-    return m;
+    if (!m.mPanelStack.IsEmpty()) {
+		BadState("panel stack nonempty; size:", m.mPanelStack.Size());
+	}
+	return m;
   }
 
-  /**
-   * If current row is only partially complete, add space to its end
-   */
-  func (m WidgetManager)  EndRow( ) WidgetManager {
-    if (mPanelStack.isEmpty())
-      return m;
-    Grid parent = last(mPanelStack);
-    if (parent.nextCellLocation().x != 0)
-      spanx().addHorzSpace();
-    return m;
-  }
 
   func (m WidgetManager)  AddText(id string ) WidgetManager {
     TextWidget t = new TextWidget(consumePendingListener(), id, consumePendingStringDefaultValue(),
@@ -712,26 +711,6 @@ grid := NewGrid()
     return m
   }
 
-  /**
-   * Add widget to view hierarchy
-   */
-  func (m WidgetManager)  Add (widget Widget ) WidgetManager {
-    String id = null;
-    if (widget.hasId())
-      id = widget.id();
-    log2("add widget", id != null ? id : "<anon>");
-
-    if (id != null) {
-      if (exists(widget.id()))
-        badState("attempt to add widget id:", widget.id(), "that already exists");
-      mWidgetMap.put(id, widget);
-    }
-    JComponent tooltipOwner = widget.componentForTooltip();
-    if (tooltipOwner != null)
-      consumeTooltip(tooltipOwner);
-    addView(widget);
-    return m
-  }
 
 
 
@@ -739,8 +718,6 @@ grid := NewGrid()
    * Add a component to the current panel. Process pending constraints
    */
   func (m WidgetManager)  addView(widget Widget ) WidgetManager {
-    consumeTooltip(widget);
-
     if (!mPanelStack.isEmpty())
       auxAddComponent(widget);
 
@@ -839,82 +816,53 @@ grid := NewGrid()
     return widget.swingComponent();
   }
 
-  private void assignViewsToGridLayout(Grid grid) {
-    grid.propagateGrowFlags();
-    Widget containerWidget = grid.widget();
-    JComponent container = containerWidget.swingComponent();
+   func (m WidgetManager) assignViewsToGridLayout (grid Grid )  {
+    grid.PropagateGrowFlags();
+      containerWidget := grid.Widget().(ContainerWidget)
+    //JComponent container = containerWidget.swingComponent();
 
-    int gridWidth = grid.numColumns();
-    int gridHeight = grid.numRows();
-    for (int gridY = 0; gridY < gridHeight; gridY++) {
-      for (int gridX = 0; gridX < gridWidth; gridX++) {
-        GridCell cell = grid.cellAt(gridX, gridY);
-        if (cell.isEmpty())
-          continue;
+      gridWidth := grid.NumColumns();
+     gridHeight := grid.NumRows();
+    for  gridY := 0; gridY < gridHeight; gridY++  {
+      for  gridX := 0; gridX < gridWidth; gridX++  {
+          cell := grid.cellAt(gridX, gridY)
+        if  cell.IsEmpty() {
+			continue;
+		}
 
         // If cell's coordinates don't match our iteration coordinates, we've
         // already added this cell
-        if (cell.x != gridX || cell.y != gridY)
-          continue;
+        if  cell.X != gridX || cell.Y != gridY {
+			continue
+		}
+		//
+		//
 
-        GridBagConstraints gc = new GridBagConstraints();
+  //gc := NewGridBagConstraints();
+  //
+  //
+  //       weightX := cell.GrowX;
+  //      gc.weightx = weightX;
+  //      gc.gridx = cell.X;
+  //      gc.gridwidth = cell.Width;
+  //      gc.weighty = cell.GrowY;
+  //      gc.gridy = cell.Y;
+  //      gc.gridheight = 1;
 
-        float weightX = cell.growX;
-        gc.weightx = weightX;
-        gc.gridx = cell.x;
-        gc.gridwidth = cell.width;
-        gc.weighty = cell.growY;
-        gc.gridy = cell.y;
-        gc.gridheight = 1;
-
-        Widget widget = (Widget) cell.view;
-        JComponent component = widget.swingComponent();
+        widget := cell.view // (Widget) cell.view;
+        //JComponent component = widget.swingComponent();
         // Padding widgets have no views
-        if (component == null)
-          continue;
+        //if (component == null)
+        //  continue;
 
-        // Not using gc.anchor
-        gc.fill = GridBagConstraints.BOTH;
+        //// Not using gc.anchor
+        //gc.fill = GridBagConstraints.BOTH;
 
         // Not using gravity
-        container.add(widget.swingComponent(), gc);
+        containerWidget.AddChild(widget , cell);
       }
     }
   }
 
-  static Font getFont(boolean monospaced, int widgetFontSize) {
-    int fontSize;
-    switch (widgetFontSize) {
-    case SIZE_DEFAULT:
-      fontSize = 16;
-      break;
-    case SIZE_MEDIUM:
-      fontSize = 16;
-      break;
-    case SIZE_SMALL:
-      fontSize = 12;
-      break;
-    case SIZE_LARGE:
-      fontSize = 22;
-      break;
-    case SIZE_HUGE:
-      fontSize = 28;
-      break;
-    default:
-      alert("unsupported widget font size:", widgetFontSize);
-      fontSize = 16;
-      break;
-    }
 
-    Integer mapKey = fontSize + (monospaced ? 0 : 1000);
 
-    Font f = sFontMap.get(mapKey);
-    if (f == null) {
-      if (monospaced)
-        f = new Font("Monaco", Font.PLAIN, fontSize);
-      else
-        f = new Font("Lucida Grande", Font.PLAIN, fontSize);
-      sFontMap.put(mapKey, f);
-    }
-    return f;
-  }

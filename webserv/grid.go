@@ -40,6 +40,9 @@ func (g Grid) DebugContext() string {
 func (g Grid) SetWidget(widget Widget) {
 	g.mWidget = widget
 }
+func (g Grid) Widget() Widget {
+	return g.mWidget
+}
 
 func (g Grid) NumColumns() int {
 	return len(g.ColumnSizes)

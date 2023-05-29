@@ -1,7 +1,7 @@
 package webserv
 
 type GridCellObj struct {
-	view  any
+	view  Widget
 	X     int
 	Y     int
 	Width int
