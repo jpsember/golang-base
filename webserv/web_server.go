@@ -100,6 +100,10 @@ func (oper *SampleOper) writeFooter(w http.ResponseWriter, bp *BasePrinter) {
 // A handler such as this must be thread safe!
 func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
+	if Alert("experimenting with widgets") {
+		oper.widgetExp(w, req)
+		return
+	}
 	resource := req.RequestURI[1:]
 	if resource != "" {
 
@@ -406,4 +410,22 @@ func renderViewHelper(sess Session, sb *BasePrinter, view View) {
 	if wrapInCol {
 		sb.CloseHtml("div", "col")
 	}
+}
+
+func (oper *SampleOper) widgetExp(w http.ResponseWriter, req *http.Request) {
+	// Create a buffer to accumulate the response text
+
+	sb := NewBasePrinter()
+	oper.writeHeader(sb)
+
+	m := NewWidgetManager()
+	widget := m.openFor("outer panel")
+	m.AddLabel("x51")
+	m.close()
+
+	widget.RenderTo(sb)
+
+	sb.Pr(`<div id="div1"><h2>Widgets</h2></div>`)
+
+	oper.writeFooter(w, sb)
 }

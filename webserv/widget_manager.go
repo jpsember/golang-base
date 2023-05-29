@@ -39,6 +39,7 @@ type WidgetManagerObj struct {
 func NewWidgetManager() WidgetManager {
 	w := WidgetManagerObj{
 		mPanelStack: NewArray[Grid](),
+		widgetMap:   make(map[string]Widget),
 	}
 	return &w
 }
@@ -487,11 +488,11 @@ func verifyUsed(flag bool, name string) {
 
 func (m WidgetManager) clearPendingComponentFields() {
 	// If some values were not used, issue warnings
-	verifyUsed(0 != len(m.pendingColumnWeights), "pending column weights")
+	verifyUsed(0 == len(m.pendingColumnWeights), "pending column weights")
 	//verifyUsed(mComboChoices, "pending combo choices");
 	verifyUsed(m.mPendingDefaultIntValue == 0, "pendingDefaultIntValue")
-	verifyUsed(m.mPendingStringDefaultValue != "", "mPendingStringDefaultValue")
-	verifyUsed(m.mPendingLabel != "", "mPendingLabel ")
+	verifyUsed(m.mPendingStringDefaultValue == "", "mPendingStringDefaultValue")
+	verifyUsed(m.mPendingLabel == "", "mPendingLabel ")
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
 
 	m.pendingColumnWeights = nil
@@ -532,11 +533,7 @@ func RandomText(rand *rand.Rand, maxLength int, withLinefeeds bool) string {
 	return strings.TrimSpace(sb.String())
 }
 
-/**
-func (m WidgetManager)  ( ) WidgetManager {
-**/
-
-func (m WidgetManager) open() WidgetManager {
+func (m WidgetManager) open() Widget {
 	return m.openFor("<no context>")
 }
 
@@ -561,17 +558,18 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 /**
  * Create a child view and push onto stack;  TODO: clarify terminology, widget vs view
  */
-func (m WidgetManager) openFor(debugContext string) WidgetManager {
+func (m WidgetManager) openFor(debugContext string) Widget {
 	grid := NewGrid()
 	grid.SetContext(debugContext)
 
+	Pr("openFor:", debugContext)
 	{
 		if m.pendingColumnWeights == nil {
 			m.Columns("x")
 		}
 		grid.ColumnSizes = m.pendingColumnWeights
 		m.pendingColumnWeights = nil
-
+		Pr("set pending column weights to nil")
 		widget := NewContainerWidget()
 		// {
 		//  log2("constructing JPanel");
@@ -583,7 +581,7 @@ func (m WidgetManager) openFor(debugContext string) WidgetManager {
 	m.Add(grid.mWidget)
 	m.mPanelStack.Add(grid)
 	m.Log("added grid to panel stack")
-	return m
+	return grid.mWidget
 }
 
 /**

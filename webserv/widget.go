@@ -11,6 +11,7 @@ type Widget interface {
 	GetId() string
 	WriteValue(v JSEntity)
 	ReadValue() JSEntity
+	RenderTo(sb *BasePrinter)
 }
 
 // The simplest concrete Widget implementation
@@ -31,6 +32,14 @@ func (w BaseWidget) ReadValue() JSEntity {
 
 func (w BaseWidget) GetId() string {
 	return w.Id
+}
+
+func (w BaseWidget) RenderTo(sb *BasePrinter) {
+	sb.AppendString(`<div id="`)
+	sb.AppendString(w.Id)
+	sb.AppendString(`">BaseWidget, id: `)
+	sb.AppendString(w.Id)
+	sb.AppendString(`</div>\n`)
 }
 
 // A concrete Widget that can contain others
