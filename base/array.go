@@ -58,6 +58,10 @@ func (array *Array[T]) Get(i int) T {
 	return array.wrappedArray[i]
 }
 
+func (array *Array[T]) Set(i int, value T) {
+	array.wrappedArray[i] = value
+}
+
 // Attempt to sort the array
 func (array *Array[T]) Sort() error {
 	if array.Size() < 2 {

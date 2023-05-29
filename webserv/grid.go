@@ -111,8 +111,9 @@ func (g Grid) Cells() *Array[GridCell] {
 
 func (g Grid) PropagateGrowFlags() {
 
-	colGrowFlags := NewCellWeightList()
-	rowGrowFlags := NewCellWeightList()
+	cs := g.Cells().Size()
+	var colGrowFlags = make([]int, cs)
+	var rowGrowFlags = make([]int, cs)
 
 	for _, cell := range g.Cells().Array() {
 		if cell.IsEmpty() {
@@ -121,15 +122,15 @@ func (g Grid) PropagateGrowFlags() {
 
 		// If view occupies multiple cells horizontally, don't propagate its grow flag
 		if cell.GrowX > 0 && cell.Width == 1 {
-			if colGrowFlags.Get(cell.X) < cell.GrowX {
-				colGrowFlags.Set(cell.X, cell.GrowX)
+			if colGrowFlags[cell.X] < cell.GrowX {
+				colGrowFlags[cell.X] = cell.GrowX
 			}
 		}
 		// If view occupies multiple cells vertically, don't propagate its grow flag
 		// (at present, we don't support views stretching across multiple rows)
 		if cell.GrowY > 0 {
-			if rowGrowFlags.Get(cell.Y) < cell.GrowY {
-				rowGrowFlags.Set(cell.Y, cell.GrowY)
+			if rowGrowFlags[cell.Y] < cell.GrowY {
+				rowGrowFlags[cell.Y] = cell.GrowY
 			}
 		}
 	}
@@ -142,8 +143,8 @@ func (g Grid) PropagateGrowFlags() {
 		}
 
 		for x := cell.X; x < cell.X+cell.Width; x++ {
-			cell.GrowX = MaxInt(cell.GrowX, colGrowFlags.Get(x))
+			cell.GrowX = MaxInt(cell.GrowX, colGrowFlags[x])
 		}
-		cell.GrowY = rowGrowFlags.Get(cell.Y)
+		cell.GrowY = rowGrowFlags[cell.Y]
 	}
 }

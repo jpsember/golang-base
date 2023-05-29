@@ -562,14 +562,13 @@ func (m WidgetManager) openFor(debugContext string) Widget {
 	grid := NewGrid()
 	grid.SetContext(debugContext)
 
-	Pr("openFor:", debugContext)
+	m.Log("openFor:", debugContext)
 	{
 		if m.pendingColumnWeights == nil {
 			m.Columns("x")
 		}
 		grid.ColumnSizes = m.pendingColumnWeights
 		m.pendingColumnWeights = nil
-		Pr("set pending column weights to nil")
 		widget := NewContainerWidget()
 		// {
 		//  log2("constructing JPanel");
