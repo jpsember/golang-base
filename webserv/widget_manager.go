@@ -24,7 +24,26 @@ func (w Widget) ReadValue() JSEntity {
 type WidgetManagerObj struct {
 	pendingColumnWeights []int
 	// Note: this was a sorted map in the Java code
-	widgetMap map[string]Widget
+	widgetMap   map[string]Widget
+	mSpanXCount int
+
+	mGrowXFlag                  int
+	mGrowYFlag                  int
+	mPendingSize                int
+	mPendingAlignment           int
+	mPendingGravity             int
+	mPendingMinWidthEm          float64
+	mPendingMinHeightEm         float64
+	mPendingMonospaced          bool
+	mLineCount                  int
+	mComboChoices               *Array[string]
+	mPendingBooleanDefaultValue bool
+	mPendingStringDefaultValue  string
+	mPendingLabel               string
+	mPendingTabTitle            string
+	mPendingFloatingPointFlag   bool
+	mPendingDefaultFloatValue   float64
+	mPendingDefaultIntValue     int
 }
 
 type WidgetManager = *WidgetManagerObj
@@ -197,3 +216,306 @@ func (m WidgetManager) Columns(columnsExpr string) WidgetManager {
 	m.pendingColumnWeights = columnSizes.Array()
 	return m
 }
+
+const (
+	SIZE_DEFAULT = iota
+	SIZE_TINY
+	SIZE_SMALL
+	SIZE_LARGE
+	SIZE_HUGE
+	SIZE_MEDIUM
+)
+
+const (
+	ALIGNMENT_DEFAULT = iota
+	ALIGNMENT_LEFT
+	ALIGNMENT_CENTER
+	ALIGNMENT_RIGHT
+)
+
+/**
+ * Make next component added occupy remaining columns in its row
+ */
+func (m WidgetManager) Spanx() WidgetManager {
+	m.mSpanXCount = -1
+	return m
+}
+
+/**
+ * Make next component added occupy some number of columns in its row
+ */
+func (m WidgetManager) SpanxCount(count int) WidgetManager {
+	CheckArg(count > 0)
+	m.mSpanXCount = count
+	return m
+}
+
+/**
+ * Skip a single cell
+ */
+func (m WidgetManager) skip() WidgetManager {
+	m.add(m.wrap(nil))
+	return m
+}
+
+/**
+ * Skip one or more cells
+ */
+func (m WidgetManager) skipN(count int) WidgetManager {
+	m.SpanxCount(count)
+	m.add(m.wrap(nil))
+	return m
+}
+
+/**
+ * Set pending component, and the column it occupies, as 'growable'. This can
+ * also be accomplished by using an 'x' when declaring the columns.
+ * <p>
+ * Calls growX(100)...
+ */
+func (m WidgetManager) GrowX() WidgetManager {
+	return m.GrowXBy(100)
+}
+
+/**
+ * Set pending component, and the column it occupies, as 'growable'. This can
+ * also be accomplished by using an 'x' when declaring the columns.
+ * <p>
+ * Calls growY(100)...
+ */
+func (m WidgetManager) GrowY() WidgetManager {
+	return m.GrowYBy(100)
+}
+
+/**
+ * Set pending component's horizontal weight to a value > 0 (if it is already
+ * less than this value)
+ */
+func (m WidgetManager) GrowXBy(weight int) WidgetManager {
+	m.mGrowXFlag = MaxInt(m.mGrowXFlag, weight)
+	return m
+}
+
+/**
+ * Set pending component's vertical weight to a value > 0 (if it is already
+ * less than this value)
+ */
+func (m WidgetManager) GrowYBy(weight int) WidgetManager {
+	m.mGrowYFlag = MaxInt(m.mGrowYFlag, weight)
+	return m
+}
+
+/**
+ * Specify the component to use for the next open() call, instead of
+ * generating one
+ */
+func (m WidgetManager) SetPendingContainer(component any) WidgetManager {
+	//
+	//public WidgetManager setPendingContainer(JComponent component) {
+	//  checkState(mPanelStack.isEmpty(), "current panel stack isn't empty");
+	//  mPendingContainer = component;
+	//  return this;
+	return m
+}
+
+func (m WidgetManager) setPendingSize(value int) WidgetManager {
+	m.mPendingSize = value
+	return m
+}
+
+func (m WidgetManager) setPendingAlignment(value int) WidgetManager {
+	m.mPendingAlignment = value
+	return m
+}
+
+func (m WidgetManager) Small() WidgetManager {
+	return m.setPendingSize(SIZE_SMALL)
+}
+
+func (m WidgetManager) Large() WidgetManager {
+	return m.setPendingSize(SIZE_LARGE)
+}
+
+func (m WidgetManager) medium() WidgetManager {
+	return m.setPendingSize(SIZE_MEDIUM)
+}
+
+func (m WidgetManager) tiny() WidgetManager {
+	return m.setPendingSize(SIZE_TINY)
+}
+
+func (m WidgetManager) huge() WidgetManager {
+	return m.setPendingSize(SIZE_HUGE)
+}
+
+func (m WidgetManager) left() WidgetManager {
+	return m.setPendingAlignment(ALIGNMENT_LEFT)
+}
+
+func (m WidgetManager) right() WidgetManager {
+	return m.setPendingAlignment(ALIGNMENT_RIGHT)
+}
+
+func (m WidgetManager) center() WidgetManager {
+	return m.setPendingAlignment(ALIGNMENT_CENTER)
+}
+
+/**
+ * Have next widget use a monospaced font
+ */
+func (m WidgetManager) Monospaced() WidgetManager {
+	m.mPendingMonospaced = true
+	return m
+}
+
+func (m WidgetManager) MinWidth(ems float64) WidgetManager {
+	m.mPendingMinWidthEm = ems
+	return m
+}
+
+func (m WidgetManager) MinHeight(ems float64) WidgetManager {
+	m.mPendingMinHeightEm = ems
+	return m
+}
+
+func (m WidgetManager) gravity(gravity int) WidgetManager {
+	m.mPendingGravity = gravity
+	return m
+}
+
+func (m WidgetManager) LineCount(numLines int) WidgetManager {
+	CheckArg(numLines > 0)
+	m.mLineCount = numLines
+	return m
+}
+
+func (m WidgetManager) addLabel(id string) WidgetManager {
+	text := m.ConsumePendingLabel()
+	Todo("addLabel", text)
+	//add(new LabelWidget(id, mPendingGravity, mLineCount, text, mPendingSize, mPendingMonospaced,
+	//    mPendingAlignment));
+	return m
+}
+
+func (m WidgetManager) Floats() WidgetManager {
+	m.mPendingFloatingPointFlag = true
+	return m
+}
+
+/**
+ * Set default value for next boolean-valued control
+ */
+func (m WidgetManager) DefaultBool(value bool) WidgetManager {
+	m.mPendingBooleanDefaultValue = value
+	return m
+}
+
+func (m WidgetManager) DefaultString(value string) WidgetManager {
+	m.mPendingStringDefaultValue = value
+	return m
+}
+
+func (m WidgetManager) Label(value string) WidgetManager {
+	m.mPendingLabel = value
+	return m
+}
+
+/**
+ * Set default value for next double-valued control
+ */
+func (m WidgetManager) defaultFloat(value float64) WidgetManager {
+	m.Floats()
+	m.mPendingDefaultFloatValue = value
+	return m
+}
+
+/**
+ * Set default value for next integer-valued control
+ */
+func (m WidgetManager) defaultInt(value int) WidgetManager {
+	m.mPendingDefaultIntValue = value
+	return m
+}
+
+/**
+ * Append some choices for the next ComboBox
+ */
+func (m WidgetManager) Choices(choices ...string) WidgetManager {
+	for _, s := range choices {
+		if m.mComboChoices == nil {
+			m.mComboChoices = NewArray[string]()
+		}
+		m.mComboChoices.Add(s)
+	}
+	return m
+}
+
+func (m WidgetManager) ConsumePendingBooleanDefaultValue() bool {
+	v := m.mPendingBooleanDefaultValue
+	m.mPendingBooleanDefaultValue = false
+	return v
+}
+
+func (m WidgetManager) ConsumePendingFloatingPointFlag() bool {
+	v := m.mPendingFloatingPointFlag
+	m.mPendingFloatingPointFlag = false
+	return v
+}
+
+func (m WidgetManager) ConsumePendingLabel() string {
+	lbl := m.mPendingLabel
+	m.mPendingLabel = ""
+	return lbl
+}
+
+func (m WidgetManager) ConsumePendingStringDefaultValue() string {
+	s := m.mPendingStringDefaultValue
+	m.mPendingStringDefaultValue = ""
+	return s
+}
+
+func (m WidgetManager) consumePendingTabTitle() string {
+	tabNameExpression := m.mPendingTabTitle
+	m.mPendingTabTitle = ""
+	CheckState(tabNameExpression != "", "no pending tab title")
+	return tabNameExpression
+}
+
+func verifyUsed(flag bool, name string) {
+	if flag {
+		return
+	}
+	BadState("unused value:", name)
+}
+
+func (m WidgetManager) clearPendingComponentFields() {
+	// If some values were not used, issue warnings
+	verifyUsed(0 != len(m.pendingColumnWeights), "pending column weights")
+	//verifyUsed(mComboChoices, "pending combo choices");
+	verifyUsed(m.mPendingDefaultIntValue == 0, "pendingDefaultIntValue")
+	verifyUsed(m.mPendingStringDefaultValue != "", "mPendingStringDefaultValue")
+	verifyUsed(m.mPendingLabel != "", "mPendingLabel ")
+	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
+
+	m.pendingColumnWeights = nil
+	m.mSpanXCount = 0
+	m.mGrowXFlag = 0
+	m.mGrowYFlag = 0
+	m.mPendingSize = SIZE_DEFAULT
+	m.mPendingAlignment = ALIGNMENT_DEFAULT
+	m.mPendingGravity = 0
+	m.mPendingMinWidthEm = 0
+	m.mPendingMinHeightEm = 0
+	m.mPendingMonospaced = false
+	m.mLineCount = 0
+	m.mComboChoices = nil
+	m.mPendingDefaultIntValue = 0
+	m.mPendingBooleanDefaultValue = false
+	m.mPendingStringDefaultValue = ""
+	m.mPendingLabel = ""
+	m.mPendingFloatingPointFlag = false
+}
+
+/**
+func (m WidgetManager)  ( ) WidgetManager {
+**/
