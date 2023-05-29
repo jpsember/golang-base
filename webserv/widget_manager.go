@@ -15,9 +15,29 @@ type Widget = *WidgetObj
 
 type WidgetManagerObj struct {
 	pendingColumnWeights []int
+	// Note: this was a sorted map in the Java code
+	widgetMap map[string]Widget
 }
 
 type WidgetManager = *WidgetManagerObj
+
+// Determine if a widget exists
+func (m WidgetManager) Exists(id string) bool {
+	return m.find(id) != nil
+}
+
+func (m WidgetManager) Get(id string) Widget {
+	w := m.find(id)
+	if w == nil {
+		BadState("Can't find widget with id:", Quoted(id))
+	}
+	return w
+}
+
+func (m WidgetManager) find(id string) Widget {
+	return m.widgetMap[id]
+
+}
 
 var digitsExpr = Regexp(`^\d+$`)
 
