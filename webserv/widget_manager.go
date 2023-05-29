@@ -7,7 +7,6 @@ import (
 	"strings"
 )
 
-
 type WidgetManagerObj struct {
 	BaseObject
 	rand                 *rand.Rand
@@ -35,12 +34,11 @@ type WidgetManagerObj struct {
 	mPendingDefaultIntValue     int
 
 	mPanelStack *Array[Grid]
-
 }
 
 func NewWidgetManager() WidgetManager {
-	w := WidgetManagerObj	{
-		mPanelStack : NewArray[Grid](),
+	w := WidgetManagerObj{
+		mPanelStack: NewArray[Grid](),
 	}
 	return &w
 }
@@ -515,7 +513,6 @@ func (m WidgetManager) clearPendingComponentFields() {
 	m.mPendingFloatingPointFlag = false
 }
 
-
 func RandomText(rand *rand.Rand, maxLength int, withLinefeeds bool) string {
 
 	sample := "orhxxidfusuytelrcfdlordburswfxzjfjllppdsywgswkvukrammvxvsjzqwplxcpkoekiznlgsgjfonlugreiqvtvpjgrqotzu"
@@ -535,334 +532,304 @@ func RandomText(rand *rand.Rand, maxLength int, withLinefeeds bool) string {
 	return strings.TrimSpace(sb.String())
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /**
 func (m WidgetManager)  ( ) WidgetManager {
 **/
 
+func (m WidgetManager) open() WidgetManager {
+	return m.openFor("<no context>")
+}
 
-  func (m WidgetManager)  open( ) WidgetManager {
-    return m.openFor("<no context>");
-  }
+/**
+ * Add widget to view hierarchy
+ */
+func (m WidgetManager) Add(widget Widget) WidgetManager {
+	id := widget.GetId()
+	m.Log("add widget", id)
 
-
-
-
-  /**
-   * Add widget to view hierarchy
-   */
-  func (m WidgetManager) Add(widget Widget) WidgetManager {
-	  id := widget.GetId()
-   	 m.Log("add widget", id)
-
-	  if id != "" {
-		  if m.Exists(id) {
-			  BadState("Attempt to add widget with duplicate id:", id)
-		  }
-		  m.widgetMap[id] = widget
-	  }
+	if id != "" {
+		if m.Exists(id) {
+			BadState("Attempt to add widget with duplicate id:", id)
+		}
+		m.widgetMap[id] = widget
+	}
 
 	m.addView(widget)
-	  return m
-  }
+	return m
+}
 
-
-
-  /**
-   * Create a child view and push onto stack;  TODO: clarify terminology, widget vs view
-   */
-  func (m WidgetManager)  openFor(debugContext string ) WidgetManager {
+/**
+ * Create a child view and push onto stack;  TODO: clarify terminology, widget vs view
+ */
+func (m WidgetManager) openFor(debugContext string) WidgetManager {
 	grid := NewGrid()
-    grid.SetContext(debugContext);
+	grid.SetContext(debugContext)
 
-    {
-      if  m.pendingColumnWeights == nil {
-		 m.Columns("x");
-	  }
-      grid.ColumnSizes = m.pendingColumnWeights
-	  m.pendingColumnWeights = nil
+	{
+		if m.pendingColumnWeights == nil {
+			m.Columns("x")
+		}
+		grid.ColumnSizes = m.pendingColumnWeights
+		m.pendingColumnWeights = nil
 
-	  widget := NewContainerWidget()
-      // {
-      //  log2("constructing JPanel");
-      //  panel = new JPanel();
-      //  applyMinDimensions(panel, mPendingMinWidthEm, mPendingMinHeightEm);
-      //}
-      grid.SetWidget(widget);
-    }
-	m.Add (grid.mWidget)
+		widget := NewContainerWidget()
+		// {
+		//  log2("constructing JPanel");
+		//  panel = new JPanel();
+		//  applyMinDimensions(panel, mPendingMinWidthEm, mPendingMinHeightEm);
+		//}
+		grid.SetWidget(widget)
+	}
+	m.Add(grid.mWidget)
 	m.mPanelStack.Add(grid)
-	m.Log("added grid to panel stack");
-    return m
-  }
+	m.Log("added grid to panel stack")
+	return m
+}
 
-  /**
-   * Pop view from the stack
-   */
-  func (m WidgetManager) close( ) WidgetManager {
-    return m.closeFor("<no context>");
-  }
+/**
+ * Pop view from the stack
+ */
+func (m WidgetManager) close() WidgetManager {
+	return m.closeFor("<no context>")
+}
 
-  /**
-   * Pop view from the stack
-   */
-  func (m WidgetManager) closeFor (debugContext  string  ) WidgetManager {
-	  m.Log("close",debugContext)
-	  parent := m.mPanelStack.Pop()
-    m.EndRow();
-      m.assignViewsToGridLayout(parent);
-    return m
-  }
+/**
+ * Pop view from the stack
+ */
+func (m WidgetManager) closeFor(debugContext string) WidgetManager {
+	m.Log("close", debugContext)
+	parent := m.mPanelStack.Pop()
+	m.EndRow()
+	m.assignViewsToGridLayout(parent)
+	return m
+}
 
-
- // If current row is only partially complete, add space to its end
- func (m WidgetManager) EndRow() WidgetManager {
-    if (!m.mPanelStack.IsEmpty()) {
+// If current row is only partially complete, add space to its end
+func (m WidgetManager) EndRow() WidgetManager {
+	if !m.mPanelStack.IsEmpty() {
 		parent := m.mPanelStack.Last()
-		if  parent.NextCellLocation().X != 0 {
-			m.Spanx().AddHorzSpace();
+		if parent.NextCellLocation().X != 0 {
+			m.Spanx().AddHorzSpace()
 		}
 	}
-    return m;
-  }
+	return m
+}
 
-  // Verify that no unused 'pending' arguments exist, calls are balanced, etc
-  func (m WidgetManager)  finish( ) WidgetManager {
-    m.clearPendingComponentFields();
-    if (!m.mPanelStack.IsEmpty()) {
-		BadState("panel stack nonempty; size:", m.mPanelStack.Size());
+// Verify that no unused 'pending' arguments exist, calls are balanced, etc
+func (m WidgetManager) finish() WidgetManager {
+	m.clearPendingComponentFields()
+	if !m.mPanelStack.IsEmpty() {
+		BadState("panel stack nonempty; size:", m.mPanelStack.Size())
 	}
-	return m;
-  }
+	return m
+}
 
+//func (m WidgetManager)  AddText(id string ) WidgetManager {
+//  TextWidget t = new TextWidget(consumePendingListener(), id, consumePendingStringDefaultValue(),
+//      mLineCount, mEditableFlag, mPendingSize, mPendingMonospaced, mPendingMinWidthEm, mPendingMinHeightEm);
+//  consumeTooltip(t);
+//  return m.add(t);
+//}
 
-  func (m WidgetManager)  AddText(id string ) WidgetManager {
-    TextWidget t = new TextWidget(consumePendingListener(), id, consumePendingStringDefaultValue(),
-        mLineCount, mEditableFlag, mPendingSize, mPendingMonospaced, mPendingMinWidthEm, mPendingMinHeightEm);
-    consumeTooltip(t);
-    return m.add(t);
-  }
+//func (m WidgetManager)  AddHeader(text string ) WidgetManager {
+//  m.spanx();
+//  JLabel label = new JLabel(text);
+//  label.setBorder(
+//      new CompoundBorder(buildStandardBorderWithZeroBottom(), BorderFactory.createEtchedBorder()));
+//  label.setHorizontalAlignment(SwingConstants.CENTER);
+//  add(wrap(label));
+//  return m;
+//}
 
-  func (m WidgetManager)  AddHeader(text string ) WidgetManager {
-    m.spanx();
-    JLabel label = new JLabel(text);
-    label.setBorder(
-        new CompoundBorder(buildStandardBorderWithZeroBottom(), BorderFactory.createEtchedBorder()));
-    label.setHorizontalAlignment(SwingConstants.CENTER);
-    add(wrap(label));
-    return m;
-  }
+/**
+* Add a horizontal space to occupy cell(s) in place of other widgets
+ */
+func (m WidgetManager) AddHorzSpace() WidgetManager {
+	return m.Add(NewPanelWidget())
+}
 
-  /**
-   * Add a horizontal space to occupy cell(s) in place of other widgets
-   */
-  func (m WidgetManager)  AddHorzSpace( ) WidgetManager {
-    add(wrap(new JPanel()));
-    return m;
-  }
+///**
+// * Add a horizontal separator that visually separates components above from
+// * below
+// */
+//func (m WidgetManager)  AddHorzSep( ) WidgetManager {
+//  m.spanx();
+//  m.add(wrap(new JSeparator(JSeparator.HORIZONTAL)));
+//  return m
+//}
 
-  /**
-   * Add a horizontal separator that visually separates components above from
-   * below
-   */
-  func (m WidgetManager)  AddHorzSep( ) WidgetManager {
-    m.spanx();
-    m.add(wrap(new JSeparator(JSeparator.HORIZONTAL)));
-    return m
-  }
+///**
+// * Add a vertical separator that visually separates components left from right
+// */
+//func (m WidgetManager)  AddVertSep( ) WidgetManager {
+// m. spanx();
+// m. growY();
+// m. add(m.wrap(new JSeparator(JSeparator.VERTICAL)));
+//  return m
+//}
 
-  /**
-   * Add a vertical separator that visually separates components left from right
-   */
-  func (m WidgetManager)  AddVertSep( ) WidgetManager {
-   m. spanx();
-   m. growY();
-   m. add(m.wrap(new JSeparator(JSeparator.VERTICAL)));
-    return m
-  }
+///**
+// * Add a row that can stretch vertically to occupy the available space
+// */
+//func (m WidgetManager)  AddVertGrow( ) WidgetManager {
+//  //JComponent panel;
+//  //if (verbose())
+//  //  panel = colorPanel();
+//  //else
+//  //  panel = new JPanel();
+//  //spanx().growY();
+//  //add(wrap(panel));
+//  return m
+//}
 
-  /**
-   * Add a row that can stretch vertically to occupy the available space
-   */
-  func (m WidgetManager)  AddVertGrow( ) WidgetManager {
-    //JComponent panel;
-    //if (verbose())
-    //  panel = colorPanel();
-    //else
-    //  panel = new JPanel();
-    //spanx().growY();
-    //add(wrap(panel));
-    return m
-  }
+/**
+ * Add a component to the current panel. Process pending constraints
+ */
+func (m WidgetManager) addView(widget Widget) WidgetManager {
+	if !m.mPanelStack.IsEmpty() {
+		m.auxAddComponent(widget)
+	}
+	m.clearPendingComponentFields()
+	return m
+}
 
+func (m WidgetManager) auxAddComponent(widget Widget) {
+	//JComponent component = widget.swingComponent();
 
+	grid := m.mPanelStack.Last()
+	// If the parent grid's widget is a tabbed pane,
+	// add the component to it
+	//if (grid.widget() instanceof TabbedPaneWidget) {
+	//  TabbedPaneWidget tabPane = grid.widget();
+	//  String tabIdNameExpression = consumePendingTabTitle(component);
+	//  log2("adding a tab with name:", tabIdNameExpression);
+	//  tabPane.add(tabIdNameExpression, component);
+	//  return;
+	//}
 
+	cell := NewGridCell()
+	cell.View = widget
+	nextGridCellLocation := grid.NextCellLocation()
+	cell.X = nextGridCellLocation.X
+	cell.Y = nextGridCellLocation.Y
 
-  /**
-   * Add a component to the current panel. Process pending constraints
-   */
-  func (m WidgetManager)  addView(widget Widget ) WidgetManager {
-    if (!mPanelStack.isEmpty())
-      auxAddComponent(widget);
-
-    clearPendingComponentFields();
-    return m
-  }
-
-  func  (m WidgetManager) auxAddComponent(widget Widget )
-    JComponent component = widget.swingComponent();
-
-    // If the parent grid's widget is a tabbed pane,
-    // add the component to it
-
-    Grid grid = last(mPanelStack);
-    if (grid.widget() instanceof TabbedPaneWidget) {
-      TabbedPaneWidget tabPane = grid.widget();
-      String tabIdNameExpression = consumePendingTabTitle(component);
-      log2("adding a tab with name:", tabIdNameExpression);
-      tabPane.add(tabIdNameExpression, component);
-      return;
-    }
-
-    GridCell cell = new GridCell();
-    cell.view = widget;
-    IPoint nextGridCellLocation = grid.nextCellLocation();
-    cell.x = nextGridCellLocation.x;
-    cell.y = nextGridCellLocation.y;
-
-    // determine location and size, in cells, of component
-    int cols = 1;
-    if (mSpanXCount != 0) {
-      int remainingCols = grid.numColumns() - cell.x;
-      if (mSpanXCount < 0)
-        cols = remainingCols;
-      else {
-        if (mSpanXCount > remainingCols)
-          throw new IllegalStateException(
-              "requested span of " + mSpanXCount + " yet only " + remainingCols + " remain");
-        cols = mSpanXCount;
-      }
-    }
-    cell.width = cols;
-
-    cell.growX = mGrowXFlag;
-    cell.growY = mGrowYFlag;
-
-    // If any of the spanned columns have 'grow' flag set, set it for this component
-    for (int i = cell.x; i < cell.x + cell.width; i++) {
-      int colSize = grid.columnSizes()[i];
-      cell.growX = Math.max(cell.growX, colSize);
-    }
-
-    // "paint" the cells this view occupies by storing a copy of the entry in each cell
-    for (int i = 0; i < cols; i++)
-      grid.addCell(cell);
-  }
-
-
-  func (m WidgetManager) AddButton ( id string) WidgetManager {
-    ButtonWidget button = new ButtonWidget(consumePendingListener(), id, consumePendingLabel(true));
-    return add(button);
-  }
-
-
-  func (m WidgetManager) AddToggleButton (id string ) WidgetManager {
-    ToggleButtonWidget button = new ToggleButtonWidget(consumePendingListener(), id,
-        consumePendingLabel(true), consumePendingBooleanDefaultValue());
-    return add(button);
-  }
-
-  func (m WidgetManager) AddLabel (id string ) WidgetManager {
-    String text = consumePendingLabel(true);
-    add(new LabelWidget(id, mPendingGravity, mLineCount, text, mPendingSize, mPendingMonospaced,
-        mPendingAlignment));
-    return m
-  }
-
-
-
-  func (m WidgetManager) AddChoiceBox (id string ) WidgetManager {
-    ComboBoxWidget c = new ComboBoxWidget(consumePendingListener(), id, mComboChoices);
-    return add(c);
-  }
-
-
-  // ------------------------------------------------------------------
-  // Layout manager
-  // ------------------------------------------------------------------
-
-  private LayoutManager buildLayout() {
-    return new GridBagLayout();
-  }
-
-  private static <T extends JComponent> T gridComponent(Grid grid) {
-    Widget widget = grid.widget();
-    return widget.swingComponent();
-  }
-
-   func (m WidgetManager) assignViewsToGridLayout (grid Grid )  {
-    grid.PropagateGrowFlags();
-      containerWidget := grid.Widget().(ContainerWidget)
-    //JComponent container = containerWidget.swingComponent();
-
-      gridWidth := grid.NumColumns();
-     gridHeight := grid.NumRows();
-    for  gridY := 0; gridY < gridHeight; gridY++  {
-      for  gridX := 0; gridX < gridWidth; gridX++  {
-          cell := grid.cellAt(gridX, gridY)
-        if  cell.IsEmpty() {
-			continue;
+	// determine location and size, in cells, of component
+	cols := 1
+	if m.mSpanXCount != 0 {
+		remainingCols := grid.NumColumns() - cell.X
+		if m.mSpanXCount < 0 {
+			cols = remainingCols
+		} else {
+			if m.mSpanXCount > remainingCols {
+				BadState("requested span of ", m.mSpanXCount, " yet only ", remainingCols, " remain")
+			}
+			cols = m.mSpanXCount
 		}
+	}
+	cell.Width = cols
 
-        // If cell's coordinates don't match our iteration coordinates, we've
-        // already added this cell
-        if  cell.X != gridX || cell.Y != gridY {
-			continue
+	cell.GrowX = m.mGrowXFlag
+	cell.GrowY = m.mGrowYFlag
+
+	// If any of the spanned columns have 'grow' flag set, set it for this component
+	for i := cell.X; i < cell.X+cell.Width; i++ {
+		colSize := grid.ColumnSizes[i]
+		cell.GrowX = MaxInt(cell.GrowX, colSize)
+	}
+
+	// "paint" the cells this view occupies by storing a copy of the entry in each cell
+	for i := 0; i < cols; i++ {
+		grid.AddCell(cell)
+	}
+}
+
+//func (m WidgetManager) AddButton ( id string) WidgetManager {
+//  ButtonWidget button = new ButtonWidget(consumePendingListener(), id, consumePendingLabel(true));
+//  return add(button);
+//}
+
+//func (m WidgetManager) AddToggleButton (id string ) WidgetManager {
+//  ToggleButtonWidget button = new ToggleButtonWidget(consumePendingListener(), id,
+//      consumePendingLabel(true), consumePendingBooleanDefaultValue());
+//  return add(button);
+//}
+
+func (m WidgetManager) AddLabel(id string) WidgetManager {
+	text := m.ConsumePendingLabel()
+	w := NewLabelWidget()
+	w.Id = id
+	w.LineCount = m.mLineCount
+	w.Text = text
+	w.Size = m.mPendingSize
+	w.Monospaced = m.mPendingMonospaced
+	w.Alignment = m.mPendingAlignment
+	return m.Add(w)
+}
+
+//
+//
+//func (m WidgetManager) AddChoiceBox (id string ) WidgetManager {
+//  ComboBoxWidget c = new ComboBoxWidget(consumePendingListener(), id, mComboChoices);
+//  return add(c);
+//}
+
+// ------------------------------------------------------------------
+// Layout manager
+// ------------------------------------------------------------------
+//
+//private LayoutManager buildLayout() {
+//  return new GridBagLayout();
+//}
+
+//private static <T extends JComponent> T gridComponent(Grid grid) {
+//  Widget widget = grid.widget();
+//  return widget.swingComponent();
+//}
+
+func (m WidgetManager) assignViewsToGridLayout(grid Grid) {
+	grid.PropagateGrowFlags()
+	containerWidget := grid.Widget().(ContainerWidget)
+	//JComponent container = containerWidget.swingComponent();
+
+	gridWidth := grid.NumColumns()
+	gridHeight := grid.NumRows()
+	for gridY := 0; gridY < gridHeight; gridY++ {
+		for gridX := 0; gridX < gridWidth; gridX++ {
+			cell := grid.cellAt(gridX, gridY)
+			if cell.IsEmpty() {
+				continue
+			}
+
+			// If cell's coordinates don't match our iteration coordinates, we've
+			// already added this cell
+			if cell.X != gridX || cell.Y != gridY {
+				continue
+			}
+			//
+			//
+
+			//gc := NewGridBagConstraints();
+			//
+			//
+			//       weightX := cell.GrowX;
+			//      gc.weightx = weightX;
+			//      gc.gridx = cell.X;
+			//      gc.gridwidth = cell.Width;
+			//      gc.weighty = cell.GrowY;
+			//      gc.gridy = cell.Y;
+			//      gc.gridheight = 1;
+
+			widget := cell.View // (Widget) cell.view;
+			//JComponent component = widget.swingComponent();
+			// Padding widgets have no views
+			//if (component == null)
+			//  continue;
+
+			//// Not using gc.anchor
+			//gc.fill = GridBagConstraints.BOTH;
+
+			// Not using gravity
+			containerWidget.AddChild(widget, cell)
 		}
-		//
-		//
-
-  //gc := NewGridBagConstraints();
-  //
-  //
-  //       weightX := cell.GrowX;
-  //      gc.weightx = weightX;
-  //      gc.gridx = cell.X;
-  //      gc.gridwidth = cell.Width;
-  //      gc.weighty = cell.GrowY;
-  //      gc.gridy = cell.Y;
-  //      gc.gridheight = 1;
-
-        widget := cell.view // (Widget) cell.view;
-        //JComponent component = widget.swingComponent();
-        // Padding widgets have no views
-        //if (component == null)
-        //  continue;
-
-        //// Not using gc.anchor
-        //gc.fill = GridBagConstraints.BOTH;
-
-        // Not using gravity
-        containerWidget.AddChild(widget , cell);
-      }
-    }
-  }
-
-
-
+	}
+}

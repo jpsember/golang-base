@@ -60,12 +60,27 @@ func Verify() {
 	Pr("size of w:", unsafe.Sizeof(w))
 }
 
-//
-//type GridBagConstraintsObj struct {
-//
-//}
-//type GridBagConstraints = *GridBagConstraintsObj
-//
-//func NewGridBagConstraints() GridBagConstraints {
-//	return &GridBagConstraintsObj{}
-//}
+type LabelWidgetObj struct {
+	BaseWidgetObj
+	LineCount  int
+	Text       string
+	Size       int
+	Monospaced bool
+	Alignment  int
+}
+
+type LabelWidget = *LabelWidgetObj
+
+func NewLabelWidget() LabelWidget {
+	return &LabelWidgetObj{}
+}
+
+type PanelWidgetObj struct {
+	BaseWidgetObj
+}
+
+type PanelWidget = *PanelWidgetObj
+
+func NewPanelWidget() PanelWidget {
+	return &PanelWidgetObj{}
+}

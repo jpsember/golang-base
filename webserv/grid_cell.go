@@ -1,7 +1,7 @@
 package webserv
 
 type GridCellObj struct {
-	view  Widget
+	View  Widget
 	X     int
 	Y     int
 	Width int
@@ -10,6 +10,9 @@ type GridCellObj struct {
 }
 type GridCell = *GridCellObj
 
+func NewGridCell() GridCell {
+	return &GridCellObj{}
+}
 func (g GridCell) IsEmpty() bool {
-	return g.view == nil
+	return g.View == nil
 }
