@@ -12,11 +12,6 @@ var _ = Pr
 func main() {
 
 	if true {
-		Todo("Todo()", "foo")
-		Alert("Alert()", "Investigating caller location and skip counts")
-		AlertWithSkip(0, "AlertWithSkip()", "Investigating caller location and skip counts")
-		Pr(CallerLocation(0), "CallerLocation")
-		return
 		webserv.WebServerDemo()
 		return
 	}
