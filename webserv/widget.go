@@ -3,7 +3,6 @@ package webserv
 import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/json"
-	"unsafe"
 )
 
 // The interface that all widgets must support
@@ -53,69 +52,6 @@ func (w BaseWidget) GetId() string {
 func (w BaseWidget) RenderTo(m MarkupBuilder) {
 	m.A("BaseWidget, id: ")
 	m.A(w.Id)
-}
-
-// A concrete Widget that can contain others
-type ContainerWidgetObj struct {
-	BaseWidgetObj
-	Children *Array[Widget]
-}
-
-type ContainerWidget = *ContainerWidgetObj
-
-func NewContainerWidget() ContainerWidget {
-	w := ContainerWidgetObj{
-		Children: NewArray[Widget](),
-	}
-	return &w
-}
-
-func (c ContainerWidget) AddChild(w Widget, gc GridCell) {
-	w.GetBaseWidget().Bounds = RectWith(gc.X, gc.Y, gc.Width, 1)
-	c.Children.Add(w)
-}
-
-func (w ContainerWidget) RenderTo(m MarkupBuilder) {
-
-	desc := `ContainerWidget ` + w.IdSummary()
-	m.OpenHtml(`p`, desc).A(desc).CloseHtml(`p`, ``)
-
-	if w.Children.NonEmpty() {
-		// We will assume all child views are in grid order
-		// We will also assume that they define some number of rows, where each row is completely full
-		prevRect := RectWith(-1, -1, 0, 0)
-		for _, child := range w.Children.Array() {
-			bw := child.GetBaseWidget()
-			b := &bw.Bounds
-			CheckArg(b.IsValid())
-			if b.Location.Y > prevRect.Location.Y {
-				if prevRect.Location.Y >= 0 {
-					m.CloseHtml("div", "end of row")
-					m.Br()
-				}
-				m.Br()
-				m.OpenHtml(`div class="row"`, `start of row`)
-				m.Cr()
-			}
-			prevRect = *b
-			m.OpenHtml(`div class="col-sm-`+IntToString(b.Size.W)+`"`, `child`)
-			child.RenderTo(m)
-			m.CloseHtml(`div`, `child`)
-		}
-		m.CloseHtml("div", "row")
-		m.Br()
-	}
-}
-
-func Verify() {
-	var w Widget
-
-	c := ContainerWidgetObj{}
-	w = &c
-
-	Pr("size of c:", unsafe.Sizeof(c))
-
-	Pr("size of w:", unsafe.Sizeof(w))
 }
 
 type LabelWidgetObj struct {

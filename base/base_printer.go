@@ -13,6 +13,19 @@ func Pr(messages ...any) {
 	fmt.Println(ToString(messages...))
 }
 
+func PrIf(active bool) func(messages ...any) {
+	if active {
+		AlertWithSkip(4, "Printing is active")
+		return Pr
+	}
+	return PrNull
+}
+
+// A printer that generates no output
+func PrNull(messages ...any) {
+
+}
+
 // Use a BasePrinter to format a string from an array of objects.
 func ToString(message ...any) string {
 	var x BasePrinter

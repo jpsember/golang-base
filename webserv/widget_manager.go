@@ -12,9 +12,8 @@ type WidgetManagerObj struct {
 	rand                 *rand.Rand
 	pendingColumnWeights []int
 	// Note: this was a sorted map in the Java code
-	widgetMap   map[string]Widget
-	mSpanXCount int
-
+	widgetMap                   map[string]Widget
+	mSpanXCount                 int
 	mGrowXFlag                  int
 	mGrowYFlag                  int
 	mPendingSize                int
@@ -33,13 +32,13 @@ type WidgetManagerObj struct {
 	mPendingDefaultFloatValue   float64
 	mPendingDefaultIntValue     int
 
-	mPanelStack *Array[Grid]
+	gridStack *Array[Grid]
 }
 
 func NewWidgetManager() WidgetManager {
 	w := WidgetManagerObj{
-		mPanelStack: NewArray[Grid](),
-		widgetMap:   make(map[string]Widget),
+		gridStack: NewArray[Grid](),
+		widgetMap: make(map[string]Widget),
 	}
 	w.SetName("WidgetManager")
 	return &w
@@ -178,7 +177,7 @@ var digitsExpr = Regexp(`^\d+$`)
 /**
  * <pre>
  *
- * Set the number of columns, and which ones can grow, for the next view in
+ * Set the number of columns, and which ones can grow, for the next widget in
  * the hierarchy. The columns expression is a string of column expressions,
  * which may be one of:
  *
@@ -539,12 +538,10 @@ func (m WidgetManager) open() Widget {
 }
 
 /**
- * Add widget to view hierarchy
+ * Add widget to the hierarchy
  */
 func (m WidgetManager) Add(widget Widget) WidgetManager {
 	id := widget.GetId()
-	m.Log("add widget", id)
-
 	if id != "" {
 		if m.Exists(id) {
 			BadState("Attempt to add widget with duplicate id:", id)
@@ -552,12 +549,16 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		m.widgetMap[id] = widget
 	}
 
-	m.addView(widget)
+	m.Log("addWidget, id:", widget.GetId(), "panel stack size:", m.gridStack.Size())
+	if !m.gridStack.IsEmpty() {
+		m.addWidgetHelper(widget)
+	}
+	m.clearPendingComponentFields()
 	return m
 }
 
 /**
- * Create a child view and push onto stack;  TODO: clarify terminology, widget vs view
+ * Create a child widget and push onto stack
  */
 func (m WidgetManager) openFor(debugContext string) Widget {
 	grid := NewGrid()
@@ -580,8 +581,9 @@ func (m WidgetManager) openFor(debugContext string) Widget {
 	}
 	m.Log("Adding container widget")
 	m.Add(grid.mWidget)
-	m.mPanelStack.Add(grid)
+	m.gridStack.Add(grid)
 	m.Log("added grid to panel stack")
+	Todo("grid vs panel vs view")
 	return grid.mWidget
 }
 
@@ -597,16 +599,18 @@ func (m WidgetManager) close() WidgetManager {
  */
 func (m WidgetManager) closeFor(debugContext string) WidgetManager {
 	m.Log("close", debugContext)
-	parent := m.mPanelStack.Pop()
+	parent := m.gridStack.Pop()
 	m.EndRow()
-	m.assignViewsToGridLayout(parent)
+
+	w := parent.Widget().(ContainerWidget)
+	w.assignViewsToGridLayout(parent)
 	return m
 }
 
 // If current row is only partially complete, add space to its end
 func (m WidgetManager) EndRow() WidgetManager {
-	if !m.mPanelStack.IsEmpty() {
-		parent := m.mPanelStack.Last()
+	if !m.gridStack.IsEmpty() {
+		parent := m.gridStack.Last()
 		if parent.NextCellLocation().X != 0 {
 			m.Spanx().AddHorzSpace()
 		}
@@ -617,8 +621,8 @@ func (m WidgetManager) EndRow() WidgetManager {
 // Verify that no unused 'pending' arguments exist, calls are balanced, etc
 func (m WidgetManager) finish() WidgetManager {
 	m.clearPendingComponentFields()
-	if !m.mPanelStack.IsEmpty() {
-		BadState("panel stack nonempty; size:", m.mPanelStack.Size())
+	if !m.gridStack.IsEmpty() {
+		BadState("panel stack nonempty; size:", m.gridStack.Size())
 	}
 	return m
 }
@@ -681,33 +685,12 @@ func (m WidgetManager) AddHorzSpace() WidgetManager {
 //  return m
 //}
 
-/**
- * Add a component to its container
- */
-func (m WidgetManager) addView(widget Widget) WidgetManager {
-	m.Log("addWidget, id:", widget.GetId(), "panel stack size:", m.mPanelStack.Size())
-	if !m.mPanelStack.IsEmpty() {
-		m.auxAddComponent(widget)
-	}
-	m.clearPendingComponentFields()
-	return m
-}
-
-func (m WidgetManager) auxAddComponent(widget Widget) {
+func (m WidgetManager) addWidgetHelper(widget Widget) {
 	//JComponent component = widget.swingComponent();
 
-	grid := m.mPanelStack.Last()
+	grid := m.gridStack.Last()
 
 	m.Log("adding widget to container, grid:", INDENT, grid)
-	// If the parent grid's widget is a tabbed pane,
-	// add the component to it
-	//if (grid.widget() instanceof TabbedPaneWidget) {
-	//  TabbedPaneWidget tabPane = grid.widget();
-	//  String tabIdNameExpression = consumePendingTabTitle(component);
-	//  log2("adding a tab with name:", tabIdNameExpression);
-	//  tabPane.add(tabIdNameExpression, component);
-	//  return;
-	//}
 
 	cell := NewGridCell()
 	cell.Widget = widget
@@ -776,26 +759,12 @@ func (m WidgetManager) AddLabel(id string) WidgetManager {
 //  return add(c);
 //}
 
-// ------------------------------------------------------------------
-// Layout manager
-// ------------------------------------------------------------------
-//
-//private LayoutManager buildLayout() {
-//  return new GridBagLayout();
-//}
-
-//private static <T extends JComponent> T gridComponent(Grid grid) {
-//  Widget widget = grid.widget();
-//  return widget.swingComponent();
-//}
-
 func (m WidgetManager) assignViewsToGridLayout(grid Grid) {
 	m.Log("assignViewsToGridLayout, grid:", INDENT, grid)
 
 	grid.PropagateGrowFlags()
 	containerWidget := grid.Widget().(ContainerWidget)
 	m.Log("number of children:", containerWidget.Children.Size())
-	//JComponent container = containerWidget.swingComponent();
 
 	gridWidth := grid.NumColumns()
 	gridHeight := grid.NumRows()
@@ -812,32 +781,10 @@ func (m WidgetManager) assignViewsToGridLayout(grid Grid) {
 			if cell.X != gridX || cell.Y != gridY {
 				continue
 			}
-			//
-			//
 
-			//gc := NewGridBagConstraints();
-			//
-			//
-			//       weightX := cell.GrowX;
-			//      gc.weightx = weightX;
-			//      gc.gridx = cell.X;
-			//      gc.gridwidth = cell.Width;
-			//      gc.weighty = cell.GrowY;
-			//      gc.gridy = cell.Y;
-			//      gc.gridheight = 1;
+			widget := cell.Widget
 
-			widget := cell.Widget // (Widget) cell.view;
-			//JComponent component = widget.swingComponent();
-			// Padding widgets have no views
-			//if (component == null)
-			//  continue;
-
-			//// Not using gc.anchor
-			//gc.fill = GridBagConstraints.BOTH;
-
-			// Not using gravity
 			containerWidget.AddChild(widget, cell)
-			m.Log("done AddChild")
 		}
 	}
 }

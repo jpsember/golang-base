@@ -104,9 +104,12 @@ func (oper *SampleOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 // A handler such as this must be thread safe!
 func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
+	if req.RequestURI == "/favicon.ico" {
+		return
+	}
+
 	if Alert("experimenting with widgets") {
 		oper.processViewRequest(w, req) // This seems to do what we want
-		//oper.widgetExp(w, req)
 		return
 	}
 	resource := req.RequestURI[1:]
@@ -351,99 +354,27 @@ func (oper *SampleOper) processViewRequest(w http.ResponseWriter, req *http.Requ
 	sb := NewMarkupBuilder()
 	sess := oper.determineSession(w, req, true)
 	if sess.PageWidget == nil {
-		oper.constructView(sess)
+		oper.constructPageWidget(sess)
 	}
 
 	oper.writeHeader(sb)
-	oper.renderView(sess, sb)
+	CheckState(sess.PageWidget != nil, "no PageWidget!")
+	sess.PageWidget.RenderTo(sb)
 	oper.writeFooter(w, sb)
 }
 
 // Assign a widget heirarchy to a session
-func (oper *SampleOper) constructView(sess Session) {
+func (oper *SampleOper) constructPageWidget(sess Session) {
 	m := NewWidgetManager()
 	m.SetVerbose(true)
 
+	m.Columns("..x")
 	widget := m.openFor("main container")
 	m.AddLabel("x51")
 	m.AddLabel("x52")
+	m.AddLabel("x53")
 
 	m.close()
 
 	sess.PageWidget = widget
-}
-
-func (oper *SampleOper) renderView(sess Session, sb MarkupBuilder) {
-	CheckState(sess.PageWidget != nil, "no PageWidget!")
-
-	//sb.A(`<div class="container">`)
-
-	sess.PageWidget.RenderTo(sb)
-	//renderViewHelper(sess, sb, sess.View)
-
-	//sb.CloseHtml("div", "container")
-}
-
-//func renderViewHelper(sess Session, sb MarkupBuilder, view View) {
-//
-//	//// We need to keep track of whether we are rendering a row of more than one view
-//	//wrapInCol := view.Bounds.Size.W != 12
-//	//if wrapInCol {
-//	//	sb.A(`<div class="col-sm-`)
-//	//	sb.A(strconv.Itoa(view.Bounds.Size.W))
-//	//	sb.A(`">`)
-//	//}
-//
-//	sb.Pr("view with bounds:", view.Bounds)
-//
-//	if view.Children.NonEmpty() {
-//		// We will assume all child views are in grid order
-//		// We will also assume that they define some number of rows, where each row is completely full
-//		prevRect := RectWith(-1, -1, 0, 0)
-//		//sb.A(`<div class="row">`)
-//		for _, child := range view.Children.Array() {
-//			b := &child.Bounds
-//			if b.Location.Y > prevRect.Location.Y {
-//				if prevRect.Location.Y >= 0 {
-//					sb.CloseHtml("div", "row")
-//				}
-//				sb.OpenHtml(`div class="row"`, ``)
-//			}
-//			prevRect = *b
-//			sb.OpenHtml(`div class="col-sm-`+IntToString(b.Size.W), `child`)
-//			renderViewHelper(sess, sb, child)
-//			sb.CloseHtml(`div`, `child`)
-//		}
-//		sb.CloseHtml("div", "row")
-//	}
-//	//if wrapInCol {
-//	//	sb.CloseHtml("div", "col")
-//	//}
-//}
-
-func (oper *SampleOper) widgetExp(w http.ResponseWriter, req *http.Request) {
-	if req.RequestURI == "/favicon.ico" {
-		return
-	}
-	Pr("widgetExp, request:", req.URL)
-	// Create a buffer to accumulate the response text
-
-	sb := NewMarkupBuilder()
-	oper.writeHeader(sb)
-
-	m := NewWidgetManager()
-	m.SetVerbose(true)
-
-	widget := m.openFor("main container")
-	m.AddLabel("x51")
-	m.AddLabel("x52")
-
-	m.close()
-
-	Pr("rendering widget", widget.GetId())
-	widget.RenderTo(sb)
-
-	sb.Pr(`<div id="div1"><h2>Widgets</h2></div>`)
-
-	oper.writeFooter(w, sb)
 }

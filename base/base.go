@@ -32,7 +32,7 @@ func CallerLocation(skipCount int) string {
 		}
 	}
 
-	cursor := 2 + skipCount*2
+	cursor := 2 + (2+skipCount)*2
 	if cursor >= len(lines) {
 		return "<cannot parse debug_loc (0)>"
 	}
@@ -160,10 +160,12 @@ func Info(arg any) string {
 
 // Print an Alert if an Alert with its key hasn't already been printed.
 // The key is printed, along with the additional message components
-func auxAlert(key string, prompt string, additionalMessage ...any) {
+func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any) {
 	if !debugLocMap[key] {
 		var output strings.Builder
-		output.WriteString("***")
+		locn := CallerLocation(1 + skipCount)
+		output.WriteString(locn)
+		output.WriteString(" ***")
 		output.WriteString(" ")
 		output.WriteString(prompt)
 		output.WriteString(": ")
@@ -172,24 +174,26 @@ func auxAlert(key string, prompt string, additionalMessage ...any) {
 		} else {
 			output.WriteString(key)
 		}
-		locn := CallerLocation(4)
-		output.WriteString(" (")
-		output.WriteString(locn)
-		output.WriteString(")")
 		fmt.Println(output.String())
 		debugLocMap[key] = true
 	}
 }
 
 func Todo(key string, message ...any) bool {
-	auxAlert(key, "TODO", message...)
+	auxAlert(1, key, "TODO", message...)
 	return true
 }
 
 // Print an Alert if an Alert with its key hasn't already been printed.
 // The key is printed, along with the additional message components
 func Alert(key string, additionalMessage ...any) bool {
-	auxAlert(key, "WARNING", additionalMessage...)
+	return AlertWithSkip(1, key, additionalMessage...)
+}
+
+// Print an Alert if an Alert with its key hasn't already been printed.
+// The key is printed, along with the additional message components
+func AlertWithSkip(skipCount int, key string, additionalMessage ...any) bool {
+	auxAlert(1+skipCount, key, "WARNING", additionalMessage...)
 	return true
 }
 

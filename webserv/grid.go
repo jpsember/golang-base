@@ -5,7 +5,7 @@ import (
 	. "github.com/jpsember/golang-base/json"
 )
 
-// Data for a View that contains a grid of child views
+// Data for a widget that contains a grid of child widgets
 type GridObj struct {
 	mDebugContext string
 	mCells        *Array[GridCell]
@@ -22,7 +22,7 @@ func NewGrid() Grid {
 		mDebugContext: "<no context>",
 		mCells:        NewArray[GridCell](),
 	}
-
+	Todo("can Grid be replaced with ContainerWidget (or GridWidget)?")
 	return &g
 }
 
