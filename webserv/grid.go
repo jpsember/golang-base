@@ -17,6 +17,7 @@ type GridObj struct {
 }
 type Grid = *GridObj
 
+// Deprecated
 func NewGrid() Grid {
 	g := GridObj{
 		mDebugContext: "<no context>",

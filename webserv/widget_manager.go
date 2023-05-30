@@ -32,13 +32,13 @@ type WidgetManagerObj struct {
 	mPendingDefaultFloatValue   float64
 	mPendingDefaultIntValue     int
 
-	gridStack *Array[Grid]
+	parentStack *Array[ContainerWidget]
 }
 
 func NewWidgetManager() WidgetManager {
 	w := WidgetManagerObj{
-		gridStack: NewArray[Grid](),
-		widgetMap: make(map[string]Widget),
+		parentStack: NewArray[ContainerWidget](),
+		widgetMap:   make(map[string]Widget),
 	}
 	w.SetName("WidgetManager")
 	return &w
@@ -549,9 +549,9 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		m.widgetMap[id] = widget
 	}
 
-	m.Log("addWidget, id:", widget.GetId(), "panel stack size:", m.gridStack.Size())
-	if !m.gridStack.IsEmpty() {
-		m.addWidgetHelper(widget)
+	m.Log("addWidget, id:", widget.GetId(), "panel stack size:", m.parentStack.Size())
+	if !m.parentStack.IsEmpty() {
+		m.addWidgetToParent(widget, m.parentStack.Last())
 	}
 	m.clearPendingComponentFields()
 	return m
@@ -561,30 +561,20 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
  * Create a child widget and push onto stack
  */
 func (m WidgetManager) openFor(debugContext string) Widget {
-	grid := NewGrid()
-	grid.SetContext(debugContext)
-
 	m.Log("openFor:", debugContext)
+	widget := NewContainerWidget(debugContext)
 	{
 		if m.pendingColumnWeights == nil {
 			m.Columns("x")
 		}
-		grid.ColumnSizes = m.pendingColumnWeights
+		widget.ColumnSizes = m.pendingColumnWeights
 		m.pendingColumnWeights = nil
-		widget := NewContainerWidget()
-		// {
-		//  log2("constructing JPanel");
-		//  panel = new JPanel();
-		//  applyMinDimensions(panel, mPendingMinWidthEm, mPendingMinHeightEm);
-		//}
-		grid.SetWidget(widget)
 	}
 	m.Log("Adding container widget")
-	m.Add(grid.mWidget)
-	m.gridStack.Add(grid)
-	m.Log("added grid to panel stack")
-	Todo("grid vs panel vs view")
-	return grid.mWidget
+	m.Add(widget)
+	m.parentStack.Add(widget)
+	m.Log("added container to stack")
+	return widget
 }
 
 /**
@@ -599,18 +589,16 @@ func (m WidgetManager) close() WidgetManager {
  */
 func (m WidgetManager) closeFor(debugContext string) WidgetManager {
 	m.Log("close", debugContext)
-	parent := m.gridStack.Pop()
+	parent := m.parentStack.Pop()
 	m.EndRow()
-
-	w := parent.Widget().(ContainerWidget)
-	w.assignViewsToGridLayout(parent)
+	parent.layoutChildWidgets()
 	return m
 }
 
 // If current row is only partially complete, add space to its end
 func (m WidgetManager) EndRow() WidgetManager {
-	if !m.gridStack.IsEmpty() {
-		parent := m.gridStack.Last()
+	if !m.parentStack.IsEmpty() {
+		parent := m.parentStack.Last()
 		if parent.NextCellLocation().X != 0 {
 			m.Spanx().AddHorzSpace()
 		}
@@ -621,8 +609,8 @@ func (m WidgetManager) EndRow() WidgetManager {
 // Verify that no unused 'pending' arguments exist, calls are balanced, etc
 func (m WidgetManager) finish() WidgetManager {
 	m.clearPendingComponentFields()
-	if !m.gridStack.IsEmpty() {
-		BadState("panel stack nonempty; size:", m.gridStack.Size())
+	if !m.parentStack.IsEmpty() {
+		BadState("panel stack nonempty; size:", m.parentStack.Size())
 	}
 	return m
 }
@@ -685,11 +673,7 @@ func (m WidgetManager) AddHorzSpace() WidgetManager {
 //  return m
 //}
 
-func (m WidgetManager) addWidgetHelper(widget Widget) {
-	//JComponent component = widget.swingComponent();
-
-	grid := m.gridStack.Last()
-
+func (m WidgetManager) addWidgetToParent(widget Widget, grid ContainerWidget) {
 	m.Log("adding widget to container, grid:", INDENT, grid)
 
 	cell := NewGridCell()
@@ -760,7 +744,7 @@ func (m WidgetManager) AddLabel(id string) WidgetManager {
 //}
 
 func (m WidgetManager) assignViewsToGridLayout(grid Grid) {
-	m.Log("assignViewsToGridLayout, grid:", INDENT, grid)
+	m.Log("layoutChildWidgets, grid:", INDENT, grid)
 
 	grid.PropagateGrowFlags()
 	containerWidget := grid.Widget().(ContainerWidget)

@@ -20,10 +20,10 @@ type ContainerWidgetObj struct {
 
 type ContainerWidget = *ContainerWidgetObj
 
-func NewContainerWidget() ContainerWidget {
+func NewContainerWidget(context string) ContainerWidget {
 	w := ContainerWidgetObj{
 		Children:      NewArray[Widget](),
-		mDebugContext: "<no context>",
+		mDebugContext: context,
 		mCells:        NewArray[GridCell](),
 	}
 	return &w
@@ -66,39 +66,36 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder) {
 	}
 }
 
-func (w ContainerWidget) assignViewsToGridLayout(grid Grid) {
+func (w ContainerWidget) layoutChildWidgets() {
 	pr := PrIf(true)
-	pr("assignViewsToGridLayout, grid:", INDENT, grid)
+	pr("layoutChildWidgets:", INDENT, w)
 
-	grid.PropagateGrowFlags()
-	containerWidget := grid.Widget().(ContainerWidget)
-	pr("number of children:", containerWidget.Children.Size())
+	w.propagateGrowFlags()
+	pr("number of children:", w.Children.Size())
 
-	gridWidth := grid.NumColumns()
-	gridHeight := grid.NumRows()
+	gridWidth := w.NumColumns()
+	gridHeight := w.NumRows()
 
 	for gridY := 0; gridY < gridHeight; gridY++ {
 		for gridX := 0; gridX < gridWidth; gridX++ {
-			cell := grid.cellAt(gridX, gridY)
+			cell := w.cellAt(gridX, gridY)
 			if cell.IsEmpty() {
 				continue
 			}
-
 			// If cell's coordinates don't match our iteration coordinates, we've
 			// already added this cell
 			if cell.X != gridX || cell.Y != gridY {
 				continue
 			}
-
 			widget := cell.Widget
-
-			containerWidget.AddChild(widget, cell)
+			w.AddChild(widget, cell)
 		}
 	}
 }
 
 func (g ContainerWidget) String() string {
 	m := NewJSMap()
+	m.Put("", "ContainerWidget")
 	m.Put("context", g.mDebugContext)
 	m.Put("# cells", g.mCells.Size())
 	m.Put("ColumnSizes", JSListWith(g.ColumnSizes))
@@ -170,17 +167,17 @@ func (g ContainerWidget) AddCell(cell GridCell) {
 /**
  * Get list of cells... must be considered READ ONLY
  */
-func (g ContainerWidget) Cells() *Array[GridCell] {
+func (g ContainerWidget) cells() *Array[GridCell] {
 	return g.mCells
 }
 
-func (g ContainerWidget) PropagateGrowFlags() {
+func (g ContainerWidget) propagateGrowFlags() {
 
-	cs := g.Cells().Size()
+	cs := g.cells().Size()
 	var colGrowFlags = make([]int, cs)
 	var rowGrowFlags = make([]int, cs)
 
-	for _, cell := range g.Cells().Array() {
+	for _, cell := range g.cells().Array() {
 		if cell.IsEmpty() {
 			continue
 		}
@@ -201,7 +198,7 @@ func (g ContainerWidget) PropagateGrowFlags() {
 	}
 
 	// Now propagate grow flags from bit sets back to individual cells
-	for _, cell := range g.Cells().Array() {
+	for _, cell := range g.cells().Array() {
 
 		if cell.IsEmpty() {
 			continue
