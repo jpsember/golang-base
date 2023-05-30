@@ -11,16 +11,25 @@ type JSList struct {
 }
 
 // Construct a JSList from a slice of any, converting to JSEntities
-func JSListWith(values []any) *JSList {
-	var out = NewJSList()
-	for _, x := range values {
-		out.Add(x)
-	}
-	return out
-}
-
-// Construct a JSList from a slice of strings
-func JSListWithStrings(values []string) *JSList {
+//
+//	func JSListWith(values []any) *JSList {
+//		var out = NewJSList()
+//		for _, x := range values {
+//			out.Add(x)
+//		}
+//		return out
+//	}
+//
+// // Construct a JSList from a slice of strings
+//
+//	func JSListWithStrings(values []string) *JSList {
+//		var out = NewJSList()
+//		for _, x := range values {
+//			out.Add(x)
+//		}
+//		return out
+//	}
+func JSListWith[T any](values []T) *JSList {
 	var out = NewJSList()
 	for _, x := range values {
 		out.Add(x)

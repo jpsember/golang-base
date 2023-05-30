@@ -11,7 +11,7 @@ type Widget interface {
 	GetId() string
 	WriteValue(v JSEntity)
 	ReadValue() JSEntity
-	RenderTo(sb *BasePrinter)
+	RenderTo(m MarkupBuilder)
 }
 
 // The simplest concrete Widget implementation
@@ -34,28 +34,51 @@ func (w BaseWidget) GetId() string {
 	return w.Id
 }
 
-func (w BaseWidget) RenderTo(sb *BasePrinter) {
-	sb.AppendString(`<div id="`)
-	sb.AppendString(w.Id)
-	sb.AppendString(`">BaseWidget, id: `)
-	sb.AppendString(w.Id)
-	sb.AppendString(`</div>\n`)
+func (w BaseWidget) RenderTo(m MarkupBuilder) {
+	Todo("I don't think the base widget should include its div; maybe the container should handle that?")
+	m.A("BaseWidget, id: ")
+	m.A(w.Id)
+	//m.A(`<div id="`)
+	//m.A(w.Id)
+	//m.A(`">BaseWidget, id: `)
+	//m.A(w.Id)
+	//m.A(`</div>\n`)
 }
 
 // A concrete Widget that can contain others
 type ContainerWidgetObj struct {
 	BaseWidgetObj
+	Children *Array[Widget]
 }
 
 type ContainerWidget = *ContainerWidgetObj
 
 func NewContainerWidget() ContainerWidget {
-	w := ContainerWidgetObj{}
+	w := ContainerWidgetObj{
+		Children: NewArray[Widget](),
+	}
 	return &w
 }
 
 func (c ContainerWidget) AddChild(w Widget, gc GridCell) {
-	Todo("add child to container")
+	Pr("adding child widget, grid cell:", gc.X, gc.Y)
+	c.Children.Add(w)
+}
+
+func (w ContainerWidget) RenderTo(m MarkupBuilder) {
+
+	desc := `ContainerWidget ` + w.IdComment()
+	m.OpenHtml(`p`, desc).A(desc).CloseHtml(`p`, ``)
+
+	m.A(`<div class="row">`).CR()
+
+	for _, c := range w.Children.Array() {
+		m.A(`<div class="col-sm">`).CR()
+		c.RenderTo(m)
+		m.CloseHtml("div", "child")
+	}
+	m.CloseHtml("div", "row")
+	m.CloseHtml("div", "container")
 }
 
 func Verify() {

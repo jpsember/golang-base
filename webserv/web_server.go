@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -59,18 +58,20 @@ func (oper *SampleOper) Perform(app *App) {
 	}
 }
 
-func (oper *SampleOper) writeHeader(bp *BasePrinter) {
-	bp.AppendString(`
+func (oper *SampleOper) writeHeader(bp MarkupBuilder) {
+	bp.A(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <title>Example</title>
+
 <script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
+
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-
-
 <script>
 
 function ajax(id) {
@@ -86,13 +87,21 @@ function ajax(id) {
 
 </script>
 </head>
+
 <body>
+<div class="container-fluid">
+
 `)
 }
 
 // Write footer markup, then write the page to the response
-func (oper *SampleOper) writeFooter(w http.ResponseWriter, bp *BasePrinter) {
-	bp.AppendString(`</body></html>`)
+func (oper *SampleOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
+	bp.A(`
+</div> <!-- page container -->
+
+</body>
+</html>
+`)
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(bp.String()))
 }
@@ -129,7 +138,7 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	// Create a buffer to accumulate the response text
 
-	sb := NewBasePrinter()
+	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
 
 	sb.Pr("Request received at:", time.Now().Format(time.ANSIC), CR)
@@ -139,12 +148,12 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	sb.Pr("session:", session.Id)
 
-	sb.Pr(`<p>Here is a picture: <img src=picture.jpg alt="Picture"></p>`, CR)
+	sb.A(`<p>Here is a picture: <img src=picture.jpg alt="Picture"></p>`)
 
 	if oper.uploadedFile != "" {
 		sb.Pr(`<p>Here is a recently uploaded image: <img src=recent.jpg></p>`, CR)
 	}
-	sb.Pr(`<p>Click on the "Choose File" button to upload a file:</p>
+	sb.A(`<p>Click on the "Choose File" button to upload a file:</p>
 
 <form action="upload" enctype="multipart/form-data" method="post">
     <input type="file" name="file" id="file">
@@ -160,16 +169,15 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 // Send a simple web page back with a message
 func (oper *SampleOper) sendResponseMarkup(w http.ResponseWriter, req *http.Request, content string) {
-	sb := NewBasePrinter()
+	sb := NewMarkupBuilder()
 
 	oper.writeHeader(sb)
 
 	sb.Pr("<p>")
 	sb.Pr(content)
 	sb.Pr("</p>")
-	sb.Pr(`</BODY>`)
 
-	w.Header().Set("Content-Type", "text/html")
+	oper.writeFooter(w, sb)
 	Todo("Have an HTML string class that handles escaping")
 	w.Write([]byte(sb.String()))
 }
@@ -344,7 +352,7 @@ func (oper *SampleOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request)
 }
 
 func (oper *SampleOper) processViewRequest(w http.ResponseWriter, req *http.Request) {
-	sb := NewBasePrinter()
+	sb := NewMarkupBuilder()
 	sess := oper.determineSession(w, req, true)
 	if sess.View == nil {
 		oper.constructView(sess)
@@ -371,58 +379,74 @@ func (oper *SampleOper) constructView(sess Session) {
 	sess.View = v
 }
 
-func (oper *SampleOper) renderView(sess Session, sb *BasePrinter) {
+func (oper *SampleOper) renderView(sess Session, sb MarkupBuilder) {
 	CheckState(sess.View != nil, "no view!")
 
-	sb.AppendString(`<div class="container">`).Cr()
+	//sb.A(`<div class="container">`)
 
+	sess.View.RenderTo(sb)
 	renderViewHelper(sess, sb, sess.View)
 
-	sb.CloseHtml("div", "container")
+	//sb.CloseHtml("div", "container")
 }
 
-func renderViewHelper(sess Session, sb *BasePrinter, view View) {
-	Todo("ignoring view class for now")
+func renderViewHelper(sess Session, sb MarkupBuilder, view View) {
 
-	// We need to keep track of whether we are rendering a row of more than one view
-	wrapInCol := view.Bounds.Size.W != 12
-	if wrapInCol {
-		sb.AppendString(`<div class="col-sm-` + strconv.Itoa(view.Bounds.Size.W) + `">`).Cr()
-	}
+	//// We need to keep track of whether we are rendering a row of more than one view
+	//wrapInCol := view.Bounds.Size.W != 12
+	//if wrapInCol {
+	//	sb.A(`<div class="col-sm-`)
+	//	sb.A(strconv.Itoa(view.Bounds.Size.W))
+	//	sb.A(`">`)
+	//}
 
 	sb.Pr("view with bounds:", view.Bounds)
 
 	if view.Children.NonEmpty() {
 		// We will assume all child views are in grid order
-		var prevBounds *Rect = nil
-		sb.AppendString(`<div class="row">`)
+		// We will also assume that they define some number of rows, where each row is completely full
+		prevRect := RectWith(-1, -1, 0, 0)
+		//sb.A(`<div class="row">`)
 		for _, child := range view.Children.Array() {
 			b := &child.Bounds
-			if prevBounds != nil && b.Location.Y != prevBounds.Location.Y {
-				sb.CloseHtml("div", "row")
-				sb.AppendString(`<div class="row">`)
+			if b.Location.Y > prevRect.Location.Y {
+				if prevRect.Location.Y >= 0 {
+					sb.CloseHtml("div", "row")
+				}
+				sb.OpenHtml(`div class="row"`, ``)
 			}
-			prevBounds = b
+			prevRect = *b
+			sb.OpenHtml(`div class="col-sm-`+IntToString(b.Size.W), `child`)
 			renderViewHelper(sess, sb, child)
+			sb.CloseHtml(`div`, `child`)
 		}
 		sb.CloseHtml("div", "row")
 	}
-	if wrapInCol {
-		sb.CloseHtml("div", "col")
-	}
+	//if wrapInCol {
+	//	sb.CloseHtml("div", "col")
+	//}
 }
 
 func (oper *SampleOper) widgetExp(w http.ResponseWriter, req *http.Request) {
+	if req.RequestURI == "/favicon.ico" {
+		return
+	}
+	Pr("widgetExp, request:", req.URL)
 	// Create a buffer to accumulate the response text
 
-	sb := NewBasePrinter()
+	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
 
 	m := NewWidgetManager()
-	widget := m.openFor("outer panel")
+	m.SetVerbose(true)
+
+	widget := m.openFor("main container")
 	m.AddLabel("x51")
+	m.AddLabel("x52")
+
 	m.close()
 
+	Pr("rendering widget", widget.GetId())
 	widget.RenderTo(sb)
 
 	sb.Pr(`<div id="div1"><h2>Widgets</h2></div>`)

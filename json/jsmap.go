@@ -25,7 +25,7 @@ func (v *JSMap) ToFloat() float64 {
 }
 
 func (v *JSMap) ToString() string {
-	panic("Not supported")
+	panic("The ToString() method is not supported for JSMap")
 }
 
 func (v *JSMap) ToBool() bool {

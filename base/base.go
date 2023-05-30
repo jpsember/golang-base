@@ -303,3 +303,7 @@ func ParseIntM(str string) int {
 	CheckOk(err, "Failed to parse int from:", Quoted(str))
 	return int(result)
 }
+
+func IntToString(value int) string {
+	return strconv.Itoa(value)
+}

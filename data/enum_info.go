@@ -28,7 +28,7 @@ func NewEnumInfo(enumNames string) *EnumInfo {
 func (info *EnumInfo) String() string {
 	var m = NewJSMap()
 	m.Put("", "EnumInfo")
-	m.Put("names", JSListWithStrings(info.EnumNames))
+	m.Put("names", JSListWithMisc(info.EnumNames))
 
 	var m2 = NewJSMap()
 	for k, v := range info.EnumIds {

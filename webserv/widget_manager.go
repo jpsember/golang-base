@@ -41,6 +41,7 @@ func NewWidgetManager() WidgetManager {
 		mPanelStack: NewArray[Grid](),
 		widgetMap:   make(map[string]Widget),
 	}
+	w.SetName("WidgetManager")
 	return &w
 }
 
@@ -577,6 +578,7 @@ func (m WidgetManager) openFor(debugContext string) Widget {
 		//}
 		grid.SetWidget(widget)
 	}
+	m.Log("Adding container widget")
 	m.Add(grid.mWidget)
 	m.mPanelStack.Add(grid)
 	m.Log("added grid to panel stack")
@@ -680,9 +682,10 @@ func (m WidgetManager) AddHorzSpace() WidgetManager {
 //}
 
 /**
- * Add a component to the current panel. Process pending constraints
+ * Add a component to its container
  */
 func (m WidgetManager) addView(widget Widget) WidgetManager {
+	m.Log("addWidget, id:", widget.GetId(), "panel stack size:", m.mPanelStack.Size())
 	if !m.mPanelStack.IsEmpty() {
 		m.auxAddComponent(widget)
 	}
@@ -694,6 +697,8 @@ func (m WidgetManager) auxAddComponent(widget Widget) {
 	//JComponent component = widget.swingComponent();
 
 	grid := m.mPanelStack.Last()
+
+	m.Log("adding widget to container, grid:", INDENT, grid)
 	// If the parent grid's widget is a tabbed pane,
 	// add the component to it
 	//if (grid.widget() instanceof TabbedPaneWidget) {
@@ -705,7 +710,7 @@ func (m WidgetManager) auxAddComponent(widget Widget) {
 	//}
 
 	cell := NewGridCell()
-	cell.View = widget
+	cell.Widget = widget
 	nextGridCellLocation := grid.NextCellLocation()
 	cell.X = nextGridCellLocation.X
 	cell.Y = nextGridCellLocation.Y
@@ -760,6 +765,7 @@ func (m WidgetManager) AddLabel(id string) WidgetManager {
 	w.Size = m.mPendingSize
 	w.Monospaced = m.mPendingMonospaced
 	w.Alignment = m.mPendingAlignment
+	m.Log("Adding label, id:", id)
 	return m.Add(w)
 }
 
@@ -784,12 +790,16 @@ func (m WidgetManager) AddLabel(id string) WidgetManager {
 //}
 
 func (m WidgetManager) assignViewsToGridLayout(grid Grid) {
+	m.Log("assignViewsToGridLayout, grid:", INDENT, grid)
+
 	grid.PropagateGrowFlags()
 	containerWidget := grid.Widget().(ContainerWidget)
+	m.Log("number of children:", containerWidget.Children.Size())
 	//JComponent container = containerWidget.swingComponent();
 
 	gridWidth := grid.NumColumns()
 	gridHeight := grid.NumRows()
+
 	for gridY := 0; gridY < gridHeight; gridY++ {
 		for gridX := 0; gridX < gridWidth; gridX++ {
 			cell := grid.cellAt(gridX, gridY)
@@ -816,7 +826,7 @@ func (m WidgetManager) assignViewsToGridLayout(grid Grid) {
 			//      gc.gridy = cell.Y;
 			//      gc.gridheight = 1;
 
-			widget := cell.View // (Widget) cell.view;
+			widget := cell.Widget // (Widget) cell.view;
 			//JComponent component = widget.swingComponent();
 			// Padding widgets have no views
 			//if (component == null)
