@@ -2,20 +2,29 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	//. "github.com/jpsember/golang-base/json"
+	. "github.com/jpsember/golang-base/json"
 )
 
 // A concrete Widget that can contain others
 type ContainerWidgetObj struct {
 	BaseWidgetObj
 	Children *Array[Widget]
+
+	mDebugContext string
+	mCells        *Array[GridCell]
+	ColumnSizes   []int
+
+	mCachedNextCellLocation IPoint
+	mNextCellKnown          bool
 }
 
 type ContainerWidget = *ContainerWidgetObj
 
 func NewContainerWidget() ContainerWidget {
 	w := ContainerWidgetObj{
-		Children: NewArray[Widget](),
+		Children:      NewArray[Widget](),
+		mDebugContext: "<no context>",
+		mCells:        NewArray[GridCell](),
 	}
 	return &w
 }
@@ -85,5 +94,122 @@ func (w ContainerWidget) assignViewsToGridLayout(grid Grid) {
 
 			containerWidget.AddChild(widget, cell)
 		}
+	}
+}
+
+func (g ContainerWidget) String() string {
+	m := NewJSMap()
+	m.Put("context", g.mDebugContext)
+	m.Put("# cells", g.mCells.Size())
+	m.Put("ColumnSizes", JSListWith(g.ColumnSizes))
+	return m.String()
+}
+
+func (g ContainerWidget) DebugContext() string {
+	return g.mDebugContext
+}
+
+func (g ContainerWidget) NumColumns() int {
+	return len(g.ColumnSizes)
+}
+
+func (g ContainerWidget) NextCellLocation() IPoint {
+	if !g.mNextCellKnown {
+		x := 0
+		y := 0
+		if g.mCells.NonEmpty() {
+
+			lastCell := g.mCells.Last()
+
+			x = lastCell.X + lastCell.Width
+			y = lastCell.Y
+			CheckState(x <= g.NumColumns())
+			if x == g.NumColumns() {
+				x = 0
+				y += 1
+			}
+		}
+		g.mCachedNextCellLocation = IPointWith(x, y)
+		g.mNextCellKnown = true
+	}
+	return g.mCachedNextCellLocation
+}
+
+func (g ContainerWidget) NumRows() int {
+	nextLoc := g.NextCellLocation()
+	y := nextLoc.Y
+	if nextLoc.X > 0 {
+		y++
+	}
+	return y
+}
+
+func (g ContainerWidget) checkValidColumn(x int) int {
+	if x < 0 || x >= g.NumColumns() {
+		BadArg("not a valid column:", x)
+	}
+	return x
+}
+
+func (g ContainerWidget) checkValidRow(y int) int {
+	if y < 0 || y >= g.NumRows() {
+		BadArg("not a valid row:", y)
+	}
+	return y
+}
+
+func (g ContainerWidget) cellAt(x int, y int) GridCell {
+	return g.mCells.Get(g.checkValidRow(y)*g.NumColumns() + g.checkValidColumn(x))
+}
+
+func (g ContainerWidget) AddCell(cell GridCell) {
+	g.mCells.Add(cell)
+	g.mNextCellKnown = false
+}
+
+/**
+ * Get list of cells... must be considered READ ONLY
+ */
+func (g ContainerWidget) Cells() *Array[GridCell] {
+	return g.mCells
+}
+
+func (g ContainerWidget) PropagateGrowFlags() {
+
+	cs := g.Cells().Size()
+	var colGrowFlags = make([]int, cs)
+	var rowGrowFlags = make([]int, cs)
+
+	for _, cell := range g.Cells().Array() {
+		if cell.IsEmpty() {
+			continue
+		}
+
+		// If view occupies multiple cells horizontally, don't propagate its grow flag
+		if cell.GrowX > 0 && cell.Width == 1 {
+			if colGrowFlags[cell.X] < cell.GrowX {
+				colGrowFlags[cell.X] = cell.GrowX
+			}
+		}
+		// If view occupies multiple cells vertically, don't propagate its grow flag
+		// (at present, we don't support views stretching across multiple rows)
+		if cell.GrowY > 0 {
+			if rowGrowFlags[cell.Y] < cell.GrowY {
+				rowGrowFlags[cell.Y] = cell.GrowY
+			}
+		}
+	}
+
+	// Now propagate grow flags from bit sets back to individual cells
+	for _, cell := range g.Cells().Array() {
+
+		if cell.IsEmpty() {
+			continue
+		}
+
+		for x := cell.X; x < cell.X+cell.Width; x++ {
+			cell.GrowX = MaxInt(cell.GrowX, colGrowFlags[x])
+		}
+		cell.GrowY = rowGrowFlags[cell.Y]
 	}
 }
