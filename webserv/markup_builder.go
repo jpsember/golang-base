@@ -9,6 +9,7 @@ import (
 
 type MarkupBuilderObj struct {
 	strings.Builder
+	indent int
 }
 
 type MarkupBuilder = *MarkupBuilderObj
@@ -36,15 +37,15 @@ func (b MarkupBuilder) HtmlComment(messages ...any) MarkupBuilder {
 }
 
 func (b MarkupBuilder) OpenHtml(tag string, comment string) MarkupBuilder {
+	CheckState(b.indent < 100, "too many indents")
+	if comment != "" {
+		b.A("<!--")
+		b.A(comment)
+		b.A(" --> ")
+	}
 	b.A("<")
 	b.A(tag)
-	if comment != "" {
-		b.A("> <!--")
-		b.A(comment)
-		b.A(" -->\n")
-	} else {
-		b.A(">\n")
-	}
+	b.A(">")
 	return b
 }
 
@@ -61,6 +62,11 @@ func (b MarkupBuilder) CloseHtml(tag string, comment string) MarkupBuilder {
 	return b
 }
 
-func (b MarkupBuilder) CR() MarkupBuilder {
+func (b MarkupBuilder) Cr() MarkupBuilder {
 	return b.A("\n")
+}
+
+func WrapWithinComment(text string) string {
+	CheckArg(!strings.HasPrefix(text, "<"))
+	return "<!-- " + text + " -->"
 }

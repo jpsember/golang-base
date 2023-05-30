@@ -837,6 +837,7 @@ func (m WidgetManager) assignViewsToGridLayout(grid Grid) {
 
 			// Not using gravity
 			containerWidget.AddChild(widget, cell)
+			m.Log("done AddChild")
 		}
 	}
 }

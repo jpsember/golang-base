@@ -18,8 +18,9 @@ func (s Session) ToJson() *JSMap {
 }
 
 type UserSession struct {
-	Id   string
-	View View
+	Id string
+	// widget representing the entire page; nil if not constructed yet
+	PageWidget Widget
 }
 
 func NewSession() Session {

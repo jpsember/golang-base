@@ -110,7 +110,8 @@ func (oper *SampleOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	if Alert("experimenting with widgets") {
-		oper.widgetExp(w, req)
+		oper.processViewRequest(w, req) // This seems to do what we want
+		//oper.widgetExp(w, req)
 		return
 	}
 	resource := req.RequestURI[1:]
@@ -354,78 +355,76 @@ func (oper *SampleOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request)
 func (oper *SampleOper) processViewRequest(w http.ResponseWriter, req *http.Request) {
 	sb := NewMarkupBuilder()
 	sess := oper.determineSession(w, req, true)
-	if sess.View == nil {
+	if sess.PageWidget == nil {
 		oper.constructView(sess)
 	}
+
 	oper.writeHeader(sb)
 	oper.renderView(sess, sb)
 	oper.writeFooter(w, sb)
 }
 
-// Assign a view heirarchy to a session
+// Assign a widget heirarchy to a session
 func (oper *SampleOper) constructView(sess Session) {
-	v := NewView()
-	// Make the root view have the full width (12)
-	v.Bounds = RectWith(0, 0, 12, 1)
+	m := NewWidgetManager()
+	m.SetVerbose(true)
 
-	ch := &v.Children
-	for y := 0; y < 3; y++ {
-		for x := 0; x < 3; x++ {
-			c := NewView()
-			c.Bounds = RectWith(x, y, 4, 1)
-			ch.Add(c)
-		}
-	}
-	sess.View = v
+	widget := m.openFor("main container")
+	m.AddLabel("x51")
+	m.AddLabel("x52")
+
+	m.close()
+
+	sess.PageWidget = widget
 }
 
 func (oper *SampleOper) renderView(sess Session, sb MarkupBuilder) {
-	CheckState(sess.View != nil, "no view!")
+	CheckState(sess.PageWidget != nil, "no PageWidget!")
 
 	//sb.A(`<div class="container">`)
 
-	sess.View.RenderTo(sb)
-	renderViewHelper(sess, sb, sess.View)
+	sess.PageWidget.RenderTo(sb)
+	//renderViewHelper(sess, sb, sess.View)
 
 	//sb.CloseHtml("div", "container")
 }
 
-func renderViewHelper(sess Session, sb MarkupBuilder, view View) {
-
-	//// We need to keep track of whether we are rendering a row of more than one view
-	//wrapInCol := view.Bounds.Size.W != 12
-	//if wrapInCol {
-	//	sb.A(`<div class="col-sm-`)
-	//	sb.A(strconv.Itoa(view.Bounds.Size.W))
-	//	sb.A(`">`)
-	//}
-
-	sb.Pr("view with bounds:", view.Bounds)
-
-	if view.Children.NonEmpty() {
-		// We will assume all child views are in grid order
-		// We will also assume that they define some number of rows, where each row is completely full
-		prevRect := RectWith(-1, -1, 0, 0)
-		//sb.A(`<div class="row">`)
-		for _, child := range view.Children.Array() {
-			b := &child.Bounds
-			if b.Location.Y > prevRect.Location.Y {
-				if prevRect.Location.Y >= 0 {
-					sb.CloseHtml("div", "row")
-				}
-				sb.OpenHtml(`div class="row"`, ``)
-			}
-			prevRect = *b
-			sb.OpenHtml(`div class="col-sm-`+IntToString(b.Size.W), `child`)
-			renderViewHelper(sess, sb, child)
-			sb.CloseHtml(`div`, `child`)
-		}
-		sb.CloseHtml("div", "row")
-	}
-	//if wrapInCol {
-	//	sb.CloseHtml("div", "col")
-	//}
-}
+//func renderViewHelper(sess Session, sb MarkupBuilder, view View) {
+//
+//	//// We need to keep track of whether we are rendering a row of more than one view
+//	//wrapInCol := view.Bounds.Size.W != 12
+//	//if wrapInCol {
+//	//	sb.A(`<div class="col-sm-`)
+//	//	sb.A(strconv.Itoa(view.Bounds.Size.W))
+//	//	sb.A(`">`)
+//	//}
+//
+//	sb.Pr("view with bounds:", view.Bounds)
+//
+//	if view.Children.NonEmpty() {
+//		// We will assume all child views are in grid order
+//		// We will also assume that they define some number of rows, where each row is completely full
+//		prevRect := RectWith(-1, -1, 0, 0)
+//		//sb.A(`<div class="row">`)
+//		for _, child := range view.Children.Array() {
+//			b := &child.Bounds
+//			if b.Location.Y > prevRect.Location.Y {
+//				if prevRect.Location.Y >= 0 {
+//					sb.CloseHtml("div", "row")
+//				}
+//				sb.OpenHtml(`div class="row"`, ``)
+//			}
+//			prevRect = *b
+//			sb.OpenHtml(`div class="col-sm-`+IntToString(b.Size.W), `child`)
+//			renderViewHelper(sess, sb, child)
+//			sb.CloseHtml(`div`, `child`)
+//		}
+//		sb.CloseHtml("div", "row")
+//	}
+//	//if wrapInCol {
+//	//	sb.CloseHtml("div", "col")
+//	//}
+//}
 
 func (oper *SampleOper) widgetExp(w http.ResponseWriter, req *http.Request) {
 	if req.RequestURI == "/favicon.ico" {
