@@ -9,7 +9,9 @@ import (
 
 type MarkupBuilderObj struct {
 	strings.Builder
-	indent int
+	indent    int
+	indented  bool
+	crRequest int
 }
 
 type MarkupBuilder = *MarkupBuilderObj
@@ -20,50 +22,83 @@ func NewMarkupBuilder() MarkupBuilder {
 }
 
 func (m MarkupBuilder) A(text string) MarkupBuilder {
+	if m.crRequest != 0 {
+		if m.crRequest == 1 {
+			m.WriteString("\n")
+		} else {
+			m.WriteString("\n\n")
+		}
+		m.crRequest = 0
+		m.doIndent()
+	}
 	m.WriteString(text)
 	return m
 }
 
 func (m MarkupBuilder) Pr(message ...any) MarkupBuilder {
-	m.WriteString(ToString(message...))
+	m.A(ToString(message...))
 	return m
 }
 
 func (b MarkupBuilder) HtmlComment(messages ...any) MarkupBuilder {
 	b.A(`<!-- `)
 	b.Pr(messages...)
-	b.A("-->\n")
+	b.A("-->")
+	b.Cr()
 	return b
 }
 
+func (b MarkupBuilder) doIndent() {
+	b.WriteString(SPACES[0:b.indent])
+	b.indented = true
+}
+
+// func (b MarkupBuilder) NewLine() MarkupBuilder {
+//
+//		if !b.atStartOfLine {
+//			b.Cr()
+//		}
+//	}
 func (b MarkupBuilder) OpenHtml(tag string, comment string) MarkupBuilder {
 	CheckState(b.indent < 100, "too many indents")
-	if comment != "" {
-		b.A("<!--")
-		b.A(comment)
-		b.A(" --> ")
-	}
+
 	b.A("<")
 	b.A(tag)
 	b.A(">")
+	if comment != "" {
+		b.A(" <!--")
+		b.A(comment)
+		b.A(" -->")
+	}
+	b.Cr()
+	b.indent += 2
 	return b
 }
 
 func (b MarkupBuilder) CloseHtml(tag string, comment string) MarkupBuilder {
+	b.indent -= 2
+	CheckState(b.indent >= 0, "indent underflow")
+	b.Cr()
 	b.A("</")
 	b.A(tag)
 	if comment != "" {
-		b.A("> <!--")
+		b.A("> <!-- ")
 		b.A(comment)
-		b.A(" -->\n")
+		b.A(" -->")
 	} else {
-		b.A(">\n")
+		b.A(">")
 	}
-	return b
+	return b.Cr()
 }
 
 func (b MarkupBuilder) Cr() MarkupBuilder {
-	return b.A("\n")
+	b.crRequest = MaxInt(1, b.crRequest)
+	return b
+}
+
+func (b MarkupBuilder) Br() MarkupBuilder {
+	b.crRequest = 2
+	return b
 }
 
 func WrapWithinComment(text string) string {

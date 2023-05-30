@@ -87,21 +87,16 @@ function ajax(id) {
 
 </script>
 </head>
-
-<body>
-<div class="container-fluid">
-
 `)
+	bp.OpenHtml("body", "").Br()
+	bp.OpenHtml(`div class="container-fluid"`, "body")
 }
 
 // Write footer markup, then write the page to the response
 func (oper *SampleOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
-	bp.A(`
-</div> <!-- page container -->
-
-</body>
-</html>
-`)
+	bp.CloseHtml("div", "body")
+	bp.Br().CloseHtml("body", "")
+	bp.A(`</html>`).Cr()
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(bp.String()))
 }

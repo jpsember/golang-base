@@ -55,7 +55,6 @@ func (g Grid) NumColumns() int {
 
 func (g Grid) NextCellLocation() IPoint {
 	if !g.mNextCellKnown {
-		Pr("Calculating next cell location, # cells:", g.mCells.Size())
 		x := 0
 		y := 0
 		if g.mCells.NonEmpty() {
@@ -65,16 +64,12 @@ func (g Grid) NextCellLocation() IPoint {
 			x = lastCell.X + lastCell.Width
 			y = lastCell.Y
 			CheckState(x <= g.NumColumns())
-
-			Pr("end of last cell:", x, y)
 			if x == g.NumColumns() {
 				x = 0
 				y += 1
-				Pr("bumped to next row")
 			}
 		}
 		g.mCachedNextCellLocation = IPointWith(x, y)
-		Pr("next cell loc:", x, y)
 		g.mNextCellKnown = true
 	}
 	return g.mCachedNextCellLocation
