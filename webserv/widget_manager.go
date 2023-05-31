@@ -32,12 +32,12 @@ type WidgetManagerObj struct {
 	mPendingDefaultFloatValue   float64
 	mPendingDefaultIntValue     int
 
-	parentStack *Array[ContainerWidget]
+	parentStack *Array[Widget]
 }
 
 func NewWidgetManager() WidgetManager {
 	w := WidgetManagerObj{
-		parentStack: NewArray[ContainerWidget](),
+		parentStack: NewArray[Widget](),
 		widgetMap:   make(map[string]Widget),
 	}
 	w.SetName("WidgetManager")
@@ -551,7 +551,8 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 
 	m.Log("addWidget, id:", widget.GetId(), "panel stack size:", m.parentStack.Size())
 	if !m.parentStack.IsEmpty() {
-		m.addWidgetToParent(widget, m.parentStack.Last())
+		m.parentStack.Last().AddChild(widget, m)
+
 	}
 	m.clearPendingComponentFields()
 	return m
@@ -590,19 +591,8 @@ func (m WidgetManager) close() WidgetManager {
 func (m WidgetManager) closeFor(debugContext string) WidgetManager {
 	m.Log("close", debugContext)
 	parent := m.parentStack.Pop()
-	m.EndRow()
-	parent.layoutChildWidgets()
-	return m
-}
-
-// If current row is only partially complete, add space to its end
-func (m WidgetManager) EndRow() WidgetManager {
-	if !m.parentStack.IsEmpty() {
-		parent := m.parentStack.Last()
-		if parent.NextCellLocation().X != 0 {
-			m.Spanx().AddHorzSpace()
-		}
-	}
+	//m.EndRow()
+	parent.LayoutChildren(m)
 	return m
 }
 
@@ -676,6 +666,8 @@ func (m WidgetManager) AddHorzSpace() WidgetManager {
 func (m WidgetManager) addWidgetToParent(widget Widget, grid ContainerWidget) {
 	m.Log("adding widget to container, grid:", INDENT, grid)
 
+	Todo("Replace with widget.AddChild, which not all widgets support")
+
 	cell := NewGridCell()
 	cell.Widget = widget
 	nextGridCellLocation := grid.NextCellLocation()
@@ -743,32 +735,3 @@ func (m WidgetManager) AddLabel(id string) WidgetManager {
 //  return add(c);
 //}
 
-func (m WidgetManager) assignViewsToGridLayout(grid Grid) {
-	m.Log("layoutChildWidgets, grid:", INDENT, grid)
-
-	grid.PropagateGrowFlags()
-	containerWidget := grid.Widget().(ContainerWidget)
-	m.Log("number of children:", containerWidget.Children.Size())
-
-	gridWidth := grid.NumColumns()
-	gridHeight := grid.NumRows()
-
-	for gridY := 0; gridY < gridHeight; gridY++ {
-		for gridX := 0; gridX < gridWidth; gridX++ {
-			cell := grid.cellAt(gridX, gridY)
-			if cell.IsEmpty() {
-				continue
-			}
-
-			// If cell's coordinates don't match our iteration coordinates, we've
-			// already added this cell
-			if cell.X != gridX || cell.Y != gridY {
-				continue
-			}
-
-			widget := cell.Widget
-
-			containerWidget.AddChild(widget, cell)
-		}
-	}
-}

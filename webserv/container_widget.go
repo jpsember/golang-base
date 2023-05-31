@@ -29,11 +29,6 @@ func NewContainerWidget(context string) ContainerWidget {
 	return &w
 }
 
-func (c ContainerWidget) AddChild(w Widget, gc GridCell) {
-	w.GetBaseWidget().Bounds = RectWith(gc.X, gc.Y, gc.Width, 1)
-	c.Children.Add(w)
-}
-
 func (w ContainerWidget) RenderTo(m MarkupBuilder) {
 
 	desc := `ContainerWidget ` + w.IdSummary()
@@ -66,9 +61,15 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder) {
 	}
 }
 
-func (w ContainerWidget) layoutChildWidgets() {
+func (w ContainerWidget) LayoutChildren(manager WidgetManager) {
 	pr := PrIf(true)
-	pr("layoutChildWidgets:", INDENT, w)
+	pr("LayoutChildren:", INDENT, w)
+
+	Todo("try to avoid having Layout call back to manager, adding additional children, etc")
+	// If current row is only partially complete, add space to its end
+	if w.NextCellLocation().X != 0 {
+		manager.Spanx().AddHorzSpace()
+	}
 
 	w.propagateGrowFlags()
 	pr("number of children:", w.Children.Size())
@@ -87,10 +88,57 @@ func (w ContainerWidget) layoutChildWidgets() {
 			if cell.X != gridX || cell.Y != gridY {
 				continue
 			}
-			widget := cell.Widget
-			w.AddChild(widget, cell)
+			wg := cell.Widget
+			wg.GetBaseWidget().Bounds = RectWith(cell.X, cell.Y, cell.Width, 1)
 		}
 	}
+}
+
+func (m ContainerWidget) AddChild(c Widget, manager WidgetManager) {
+	Todo("do we need to expose lots of fields of WidgetManager here?")
+	m.Children.Add(c)
+
+	pr := PrIf(true)
+
+	pr("adding widget to container:", INDENT, m)
+
+	Todo("can we simplify things by not having a separate Cell object for the grid?")
+	cell := NewGridCell()
+	cell.Widget = c
+	Todo("does a cell need to have a widget pointer?")
+	nextGridCellLocation := m.NextCellLocation()
+	cell.X = nextGridCellLocation.X
+	cell.Y = nextGridCellLocation.Y
+
+	// determine location and size, in cells, of component
+	cols := 1
+	if manager.mSpanXCount != 0 {
+		remainingCols := m.NumColumns() - cell.X
+		if manager.mSpanXCount < 0 {
+			cols = remainingCols
+		} else {
+			if manager.mSpanXCount > remainingCols {
+				BadState("requested span of ", manager.mSpanXCount, " yet only ", remainingCols, " remain")
+			}
+			cols = manager.mSpanXCount
+		}
+	}
+	cell.Width = cols
+
+	cell.GrowX = manager.mGrowXFlag
+	cell.GrowY = manager.mGrowYFlag
+
+	// If any of the spanned columns have 'grow' flag set, set it for this component
+	for i := cell.X; i < cell.X+cell.Width; i++ {
+		colSize := m.ColumnSizes[i]
+		cell.GrowX = MaxInt(cell.GrowX, colSize)
+	}
+
+	// "paint" the cells this view occupies by storing a copy of the entry in each cell
+	for i := 0; i < cols; i++ {
+		m.AddCell(cell)
+	}
+
 }
 
 func (g ContainerWidget) String() string {
@@ -172,7 +220,7 @@ func (g ContainerWidget) cells() *Array[GridCell] {
 }
 
 func (g ContainerWidget) propagateGrowFlags() {
-
+	Todo("PropagateGrowFlags can no doubt be simplified")
 	cs := g.cells().Size()
 	var colGrowFlags = make([]int, cs)
 	var rowGrowFlags = make([]int, cs)

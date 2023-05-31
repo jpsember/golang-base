@@ -12,6 +12,8 @@ type Widget interface {
 	ReadValue() JSEntity
 	RenderTo(m MarkupBuilder)
 	GetBaseWidget() BaseWidget
+	AddChild(c Widget, manager WidgetManager)
+	LayoutChildren(manager WidgetManager)
 }
 
 // The simplest concrete Widget implementation
@@ -33,6 +35,14 @@ func (w BaseWidget) WriteValue(v JSEntity) {
 func (w BaseWidget) ReadValue() JSEntity {
 	NotImplemented("ReadValue")
 	return JBoolFalse
+}
+
+func (w BaseWidget) AddChild(c Widget, manager WidgetManager) {
+	NotSupported("AddChild not supported")
+}
+
+func (w BaseWidget) LayoutChildren(manager WidgetManager) {
+	NotSupported("LayoutChildren not supported")
 }
 
 func (w BaseWidget) IdSummary() string {
