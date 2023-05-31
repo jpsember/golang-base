@@ -18,11 +18,6 @@ func NewInputWidget(id string, size int) InputWidget {
 
 func (w InputWidget) RenderTo(m MarkupBuilder) {
 	desc := `InputWidget ` + w.IdSummary()
-	m.A(`<input type="text" value="`)
-	m.A(desc)
-	m.A(`" onchange="onChange('`)
-	m.A(w.Id)
-	m.A(`')">`)
-	m.Cr()
-	//m.OpenHtml(`input type="text" value="`+desc+`"`, desc)
+	m.HtmlComment("Have onChange send the id of the widget with the text back to the server")
+	m.A(`<input type="text" id=`).Quoted(w.Id).A(` value=`).Quoted(desc).A(` onchange=`).Quoted(`jsVal('` + w.Id + `')">`).Cr()
 }

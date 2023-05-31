@@ -85,8 +85,11 @@ function ajax(id) {
   xhttp.send();
 }
 
-function onChange(id) {
-	alert("onChange, id: '"+id+"'");
+// An onChange event has occurred within an input field; 
+// send result back to server 
+function jsVal(id) {
+    var textValue = $('#'+id).val();
+	alert("onChange, id: '"+id+"' value:"+textValue);
 }
 
 </script>

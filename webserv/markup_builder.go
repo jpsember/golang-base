@@ -21,6 +21,10 @@ func NewMarkupBuilder() MarkupBuilder {
 	return &v
 }
 
+func (m MarkupBuilder) Quoted(text string) MarkupBuilder {
+	return m.A(Quoted(text))
+}
+
 func (m MarkupBuilder) A(text string) MarkupBuilder {
 	if m.crRequest != 0 {
 		if m.crRequest == 1 {
@@ -43,7 +47,7 @@ func (m MarkupBuilder) Pr(message ...any) MarkupBuilder {
 func (b MarkupBuilder) HtmlComment(messages ...any) MarkupBuilder {
 	b.A(`<!-- `)
 	b.Pr(messages...)
-	b.A("-->")
+	b.A(` -->`)
 	b.Cr()
 	return b
 }
@@ -53,12 +57,6 @@ func (b MarkupBuilder) doIndent() {
 	b.indented = true
 }
 
-// func (b MarkupBuilder) NewLine() MarkupBuilder {
-//
-//		if !b.atStartOfLine {
-//			b.Cr()
-//		}
-//	}
 func (b MarkupBuilder) OpenHtml(tag string, comment string) MarkupBuilder {
 	CheckState(b.indent < 100, "too many indents")
 
