@@ -89,19 +89,17 @@ function ajax(id) {
 // An onChange event has occurred within an input field; 
 // send result back to server 
 function jsVal(id) {
-    var textValue = $('#'+id).val();
+	var qid = '#' + id
+    var textValue = $(qid).val();
 	var xhttp = new XMLHttpRequest();
-	// Can I omit the https...animalaid.org?
-	var url = new URL('https://animalaid.org/ajax');
-	url.searchParams.set('w', id);
-	url.searchParams.set('v', textValue);
+	var addr = window.location.href.split('?')[0];
+	var url = new URL(addr + '/ajax');
+	url.searchParams.set('w', id);           // The widget id
+	url.searchParams.set('v', textValue);	 // The new value
 	xhttp.onreadystatechange = function() {
-		console.log("onreadystatechange, readyState:"+this.readyState+" status: "+this.status+" responseText:"+this.responseText+" id:"+id);
     	if (this.readyState == 4 && this.status == 200) {
-			var elem = document.getElementById(id);
-			console.log("elem:",elem);
-			// Can't use innerhtml, as we need to change the element with the id
-     		elem.replaceWith(this.responseText);
+			// console.log("html for "+id+" : "+$(qid).html())
+			$(qid).replaceWith(this.responseText);
     	}
   	};
   	xhttp.open('GET', url);

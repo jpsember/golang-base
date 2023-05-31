@@ -210,7 +210,6 @@ func (g ContainerWidget) checkValidRow(y int) int {
 
 func (g ContainerWidget) cellAt(x int, y int) GridCell {
 	i := g.checkValidRow(y)*g.numColumns() + g.checkValidColumn(x)
-	Pr("cell at", x, y, i)
 	return g.cells.Get(i)
 }
 
