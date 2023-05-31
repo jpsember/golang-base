@@ -8,23 +8,20 @@ import (
 // A concrete Widget that can contain others
 type ContainerWidgetObj struct {
 	BaseWidgetObj
-	Children *Array[Widget]
-
-	mDebugContext string
-	mCells        *Array[GridCell]
-	ColumnSizes   []int
-
-	mCachedNextCellLocation IPoint
-	mNextCellKnown          bool
+	children               *Array[Widget]
+	cells                  *Array[GridCell]
+	columnSizes            []int
+	cachedNextCellLocation IPoint
+	nextCellKnown          bool
 }
 
 type ContainerWidget = *ContainerWidgetObj
 
-func NewContainerWidget(context string) ContainerWidget {
+func NewContainerWidget(columnSizes []int) ContainerWidget {
 	w := ContainerWidgetObj{
-		Children:      NewArray[Widget](),
-		mDebugContext: context,
-		mCells:        NewArray[GridCell](),
+		children:    NewArray[Widget](),
+		cells:       NewArray[GridCell](),
+		columnSizes: columnSizes,
 	}
 	return &w
 }
@@ -34,11 +31,11 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder) {
 	desc := `ContainerWidget ` + w.IdSummary()
 	m.OpenHtml(`p`, desc).A(desc).CloseHtml(`p`, ``)
 
-	if w.Children.NonEmpty() {
+	if w.children.NonEmpty() {
 		// We will assume all child views are in grid order
 		// We will also assume that they define some number of rows, where each row is completely full
 		prevRect := RectWith(-1, -1, 0, 0)
-		for _, child := range w.Children.Array() {
+		for _, child := range w.children.Array() {
 			bw := child.GetBaseWidget()
 			b := &bw.Bounds
 			CheckArg(b.IsValid())
@@ -67,15 +64,15 @@ func (w ContainerWidget) LayoutChildren(manager WidgetManager) {
 
 	Todo("try to avoid having Layout call back to manager, adding additional children, etc")
 	// If current row is only partially complete, add space to its end
-	if w.NextCellLocation().X != 0 {
+	if w.nextCellLocation().X != 0 {
 		manager.Spanx().AddHorzSpace()
 	}
 
 	w.propagateGrowFlags()
-	pr("number of children:", w.Children.Size())
+	pr("number of children:", w.children.Size())
 
-	gridWidth := w.NumColumns()
-	gridHeight := w.NumRows()
+	gridWidth := w.numColumns()
+	gridHeight := w.numRows()
 
 	for gridY := 0; gridY < gridHeight; gridY++ {
 		for gridX := 0; gridX < gridWidth; gridX++ {
@@ -95,8 +92,7 @@ func (w ContainerWidget) LayoutChildren(manager WidgetManager) {
 }
 
 func (m ContainerWidget) AddChild(c Widget, manager WidgetManager) {
-	Todo("do we need to expose lots of fields of WidgetManager here?")
-	m.Children.Add(c)
+	m.children.Add(c)
 
 	pr := PrIf(true)
 
@@ -106,37 +102,37 @@ func (m ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	cell := NewGridCell()
 	cell.Widget = c
 	Todo("does a cell need to have a widget pointer?")
-	nextGridCellLocation := m.NextCellLocation()
+	nextGridCellLocation := m.nextCellLocation()
 	cell.X = nextGridCellLocation.X
 	cell.Y = nextGridCellLocation.Y
 
 	// determine location and size, in cells, of component
 	cols := 1
-	if manager.mSpanXCount != 0 {
-		remainingCols := m.NumColumns() - cell.X
-		if manager.mSpanXCount < 0 {
+	if manager.SpanXCount != 0 {
+		remainingCols := m.numColumns() - cell.X
+		if manager.SpanXCount < 0 {
 			cols = remainingCols
 		} else {
-			if manager.mSpanXCount > remainingCols {
-				BadState("requested span of ", manager.mSpanXCount, " yet only ", remainingCols, " remain")
+			if manager.SpanXCount > remainingCols {
+				BadState("requested span of ", manager.SpanXCount, " yet only ", remainingCols, " remain")
 			}
-			cols = manager.mSpanXCount
+			cols = manager.SpanXCount
 		}
 	}
 	cell.Width = cols
 
-	cell.GrowX = manager.mGrowXFlag
-	cell.GrowY = manager.mGrowYFlag
+	cell.GrowX = manager.GrowXWeight
+	cell.GrowY = manager.GrowYWeight
 
 	// If any of the spanned columns have 'grow' flag set, set it for this component
 	for i := cell.X; i < cell.X+cell.Width; i++ {
-		colSize := m.ColumnSizes[i]
+		colSize := m.columnSizes[i]
 		cell.GrowX = MaxInt(cell.GrowX, colSize)
 	}
 
 	// "paint" the cells this view occupies by storing a copy of the entry in each cell
 	for i := 0; i < cols; i++ {
-		m.AddCell(cell)
+		m.addCell(cell)
 	}
 
 }
@@ -144,44 +140,39 @@ func (m ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 func (g ContainerWidget) String() string {
 	m := NewJSMap()
 	m.Put("", "ContainerWidget")
-	m.Put("context", g.mDebugContext)
-	m.Put("# cells", g.mCells.Size())
-	m.Put("ColumnSizes", JSListWith(g.ColumnSizes))
+	m.Put("# cells", g.cells.Size())
+	m.Put("ColumnSizes", JSListWith(g.columnSizes))
 	return m.String()
 }
 
-func (g ContainerWidget) DebugContext() string {
-	return g.mDebugContext
+func (g ContainerWidget) numColumns() int {
+	return len(g.columnSizes)
 }
 
-func (g ContainerWidget) NumColumns() int {
-	return len(g.ColumnSizes)
-}
-
-func (g ContainerWidget) NextCellLocation() IPoint {
-	if !g.mNextCellKnown {
+func (g ContainerWidget) nextCellLocation() IPoint {
+	if !g.nextCellKnown {
 		x := 0
 		y := 0
-		if g.mCells.NonEmpty() {
+		if g.cells.NonEmpty() {
 
-			lastCell := g.mCells.Last()
+			lastCell := g.cells.Last()
 
 			x = lastCell.X + lastCell.Width
 			y = lastCell.Y
-			CheckState(x <= g.NumColumns())
-			if x == g.NumColumns() {
+			CheckState(x <= g.numColumns())
+			if x == g.numColumns() {
 				x = 0
 				y += 1
 			}
 		}
-		g.mCachedNextCellLocation = IPointWith(x, y)
-		g.mNextCellKnown = true
+		g.cachedNextCellLocation = IPointWith(x, y)
+		g.nextCellKnown = true
 	}
-	return g.mCachedNextCellLocation
+	return g.cachedNextCellLocation
 }
 
-func (g ContainerWidget) NumRows() int {
-	nextLoc := g.NextCellLocation()
+func (g ContainerWidget) numRows() int {
+	nextLoc := g.nextCellLocation()
 	y := nextLoc.Y
 	if nextLoc.X > 0 {
 		y++
@@ -190,42 +181,35 @@ func (g ContainerWidget) NumRows() int {
 }
 
 func (g ContainerWidget) checkValidColumn(x int) int {
-	if x < 0 || x >= g.NumColumns() {
+	if x < 0 || x >= g.numColumns() {
 		BadArg("not a valid column:", x)
 	}
 	return x
 }
 
 func (g ContainerWidget) checkValidRow(y int) int {
-	if y < 0 || y >= g.NumRows() {
+	if y < 0 || y >= g.numRows() {
 		BadArg("not a valid row:", y)
 	}
 	return y
 }
 
 func (g ContainerWidget) cellAt(x int, y int) GridCell {
-	return g.mCells.Get(g.checkValidRow(y)*g.NumColumns() + g.checkValidColumn(x))
+	return g.cells.Get(g.checkValidRow(y)*g.numColumns() + g.checkValidColumn(x))
 }
 
-func (g ContainerWidget) AddCell(cell GridCell) {
-	g.mCells.Add(cell)
-	g.mNextCellKnown = false
-}
-
-/**
- * Get list of cells... must be considered READ ONLY
- */
-func (g ContainerWidget) cells() *Array[GridCell] {
-	return g.mCells
+func (g ContainerWidget) addCell(cell GridCell) {
+	g.cells.Add(cell)
+	g.nextCellKnown = false
 }
 
 func (g ContainerWidget) propagateGrowFlags() {
 	Todo("PropagateGrowFlags can no doubt be simplified")
-	cs := g.cells().Size()
+	cs := g.cells.Size()
 	var colGrowFlags = make([]int, cs)
 	var rowGrowFlags = make([]int, cs)
 
-	for _, cell := range g.cells().Array() {
+	for _, cell := range g.cells.Array() {
 		if cell.IsEmpty() {
 			continue
 		}
@@ -246,7 +230,7 @@ func (g ContainerWidget) propagateGrowFlags() {
 	}
 
 	// Now propagate grow flags from bit sets back to individual cells
-	for _, cell := range g.cells().Array() {
+	for _, cell := range g.cells.Array() {
 
 		if cell.IsEmpty() {
 			continue

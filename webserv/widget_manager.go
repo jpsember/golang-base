@@ -13,9 +13,9 @@ type WidgetManagerObj struct {
 	pendingColumnWeights []int
 	// Note: this was a sorted map in the Java code
 	widgetMap                   map[string]Widget
-	mSpanXCount                 int
-	mGrowXFlag                  int
-	mGrowYFlag                  int
+	SpanXCount                  int
+	GrowXWeight                 int
+	GrowYWeight                 int
 	mPendingSize                int
 	mPendingAlignment           int
 	mPendingGravity             int
@@ -235,7 +235,7 @@ const (
  * Make next component added occupy remaining columns in its row
  */
 func (m WidgetManager) Spanx() WidgetManager {
-	m.mSpanXCount = -1
+	m.SpanXCount = -1
 	return m
 }
 
@@ -244,7 +244,7 @@ func (m WidgetManager) Spanx() WidgetManager {
  */
 func (m WidgetManager) SpanxCount(count int) WidgetManager {
 	CheckArg(count > 0)
-	m.mSpanXCount = count
+	m.SpanXCount = count
 	return m
 }
 
@@ -290,7 +290,7 @@ func (m WidgetManager) GrowY() WidgetManager {
  * less than this value)
  */
 func (m WidgetManager) GrowXBy(weight int) WidgetManager {
-	m.mGrowXFlag = MaxInt(m.mGrowXFlag, weight)
+	m.GrowXWeight = MaxInt(m.GrowXWeight, weight)
 	return m
 }
 
@@ -299,7 +299,7 @@ func (m WidgetManager) GrowXBy(weight int) WidgetManager {
  * less than this value)
  */
 func (m WidgetManager) GrowYBy(weight int) WidgetManager {
-	m.mGrowYFlag = MaxInt(m.mGrowYFlag, weight)
+	m.GrowYWeight = MaxInt(m.GrowYWeight, weight)
 	return m
 }
 
@@ -496,9 +496,9 @@ func (m WidgetManager) clearPendingComponentFields() {
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
 
 	m.pendingColumnWeights = nil
-	m.mSpanXCount = 0
-	m.mGrowXFlag = 0
-	m.mGrowYFlag = 0
+	m.SpanXCount = 0
+	m.GrowXWeight = 0
+	m.GrowYWeight = 0
 	m.mPendingSize = SIZE_DEFAULT
 	m.mPendingAlignment = ALIGNMENT_DEFAULT
 	m.mPendingGravity = 0
@@ -563,14 +563,12 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
  */
 func (m WidgetManager) openFor(debugContext string) Widget {
 	m.Log("openFor:", debugContext)
-	widget := NewContainerWidget(debugContext)
-	{
-		if m.pendingColumnWeights == nil {
-			m.Columns("x")
-		}
-		widget.ColumnSizes = m.pendingColumnWeights
-		m.pendingColumnWeights = nil
+
+	if m.pendingColumnWeights == nil {
+		m.Columns("x")
 	}
+	widget := NewContainerWidget(m.pendingColumnWeights)
+	m.pendingColumnWeights = nil
 	m.Log("Adding container widget")
 	m.Add(widget)
 	m.parentStack.Add(widget)
@@ -663,47 +661,6 @@ func (m WidgetManager) AddHorzSpace() WidgetManager {
 //  return m
 //}
 
-func (m WidgetManager) addWidgetToParent(widget Widget, grid ContainerWidget) {
-	m.Log("adding widget to container, grid:", INDENT, grid)
-
-	Todo("Replace with widget.AddChild, which not all widgets support")
-
-	cell := NewGridCell()
-	cell.Widget = widget
-	nextGridCellLocation := grid.NextCellLocation()
-	cell.X = nextGridCellLocation.X
-	cell.Y = nextGridCellLocation.Y
-
-	// determine location and size, in cells, of component
-	cols := 1
-	if m.mSpanXCount != 0 {
-		remainingCols := grid.NumColumns() - cell.X
-		if m.mSpanXCount < 0 {
-			cols = remainingCols
-		} else {
-			if m.mSpanXCount > remainingCols {
-				BadState("requested span of ", m.mSpanXCount, " yet only ", remainingCols, " remain")
-			}
-			cols = m.mSpanXCount
-		}
-	}
-	cell.Width = cols
-
-	cell.GrowX = m.mGrowXFlag
-	cell.GrowY = m.mGrowYFlag
-
-	// If any of the spanned columns have 'grow' flag set, set it for this component
-	for i := cell.X; i < cell.X+cell.Width; i++ {
-		colSize := grid.ColumnSizes[i]
-		cell.GrowX = MaxInt(cell.GrowX, colSize)
-	}
-
-	// "paint" the cells this view occupies by storing a copy of the entry in each cell
-	for i := 0; i < cols; i++ {
-		grid.AddCell(cell)
-	}
-}
-
 //func (m WidgetManager) AddButton ( id string) WidgetManager {
 //  ButtonWidget button = new ButtonWidget(consumePendingListener(), id, consumePendingLabel(true));
 //  return add(button);
@@ -734,4 +691,3 @@ func (m WidgetManager) AddLabel(id string) WidgetManager {
 //  ComboBoxWidget c = new ComboBoxWidget(consumePendingListener(), id, mComboChoices);
 //  return add(c);
 //}
-
