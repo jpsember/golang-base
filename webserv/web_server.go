@@ -54,7 +54,7 @@ func WebServerDemo() {
 func (oper *SampleOper) Perform(app *App) {
 	var insecure = app.CmdLineArgs().Get("insecure")
 	if insecure {
-		oper.doHttp()
+		Halt("insecure no longer supported")
 	} else {
 		oper.doHttps()
 	}
@@ -92,6 +92,7 @@ func (oper *SampleOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 // A handler such as this must be thread safe!
 func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
+	// These are a pain in the ass
 	if req.RequestURI == "/favicon.ico" {
 		return
 	}
@@ -101,68 +102,12 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	resource := req.RequestURI[1:]
 
 	if resource == "" {
-		Alert("experimenting with widgets")
 		oper.processViewRequest(w, req) // This seems to do what we want
-		return
+	} else if strings.HasPrefix(resource, "ajax") {
+		oper.sendAjaxMarkup(w, req)
+	} else {
+		Pr("unsupported request:", INDENT, req.RequestURI)
 	}
-	if resource != "" {
-
-		if strings.HasPrefix(resource, "ajax") {
-			oper.sendAjaxMarkup(w, req)
-			return
-		}
-
-		if Alert("experimenting with widgets") {
-			oper.processViewRequest(w, req) // This seems to do what we want
-			return
-		}
-
-		if resource == "view" {
-			oper.processViewRequest(w, req)
-		}
-
-		if resource == "robot" {
-			oper.sendResponseMarkup(w, req, "Hi, Robot")
-			return
-		}
-
-		if resource == "upload" {
-			oper.handleUpload(w, req, resource)
-			return
-		}
-		oper.handleResourceRequest(w, req, resource)
-		return
-	}
-
-	// Create a buffer to accumulate the response text
-
-	sb := NewMarkupBuilder()
-	oper.writeHeader(sb)
-
-	sb.Pr("Request received at:", time.Now().Format(time.ANSIC), CR)
-	sb.Pr("URI:", req.RequestURI, CR)
-
-	var session = oper.determineSession(w, req, true)
-
-	sb.Pr("session:", session.Id)
-
-	sb.A(`<p>Here is a picture: <img src=picture.jpg alt="Picture"></p>`)
-
-	if oper.uploadedFile != "" {
-		sb.Pr(`<p>Here is a recently uploaded image: <img src=recent.jpg></p>`, CR)
-	}
-	sb.A(`<p>Click on the "Choose File" button to upload a file:</p>
-
-<form action="upload" enctype="multipart/form-data" method="post">
-    <input type="file" name="file" id="file">
-    <input type="submit">
-</form>
-`)
-
-	sb.Pr(`<div id="div1"><h2>Let AJAX Change This Text</h2></div><button onclick="ajax('div1')">Get External Content</button>`)
-	sb.Pr(`<div id="div2"><h2>Another independent element</h2></div><button onclick="ajax('div2')">Button 2</button>`)
-
-	oper.writeFooter(w, sb)
 }
 
 // Send a simple web page back with a message
@@ -218,17 +163,6 @@ func (oper *SampleOper) handler() func(http.ResponseWriter, *http.Request) {
 
 // ------------------------------------------------------------------------------------
 
-func (oper *SampleOper) doHttp() {
-	http.HandleFunc("/", oper.handler())
-	Pr("Type:", INDENT, "curl -sL http://localhost:8090/hello")
-	err := http.ListenAndServe(":8090", nil)
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
-}
-
-// ------------------------------------------------------------------------------------
-
 func (oper *SampleOper) doHttps() {
 
 	var url = "animalaid.org"
@@ -253,7 +187,6 @@ func (oper *SampleOper) doHttps() {
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
-
 }
 
 func (oper *SampleOper) handleResourceRequest(w http.ResponseWriter, req *http.Request, resource string) {
