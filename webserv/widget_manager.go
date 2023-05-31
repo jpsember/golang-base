@@ -32,12 +32,12 @@ type WidgetManagerObj struct {
 	mPendingDefaultFloatValue   float64
 	mPendingDefaultIntValue     int
 
-	parentStack *Array[Widget]
+	parentStack *Array[ContainerWidget]
 }
 
 func NewWidgetManager() WidgetManager {
 	w := WidgetManagerObj{
-		parentStack: NewArray[Widget](),
+		parentStack: NewArray[ContainerWidget](),
 		widgetMap:   make(map[string]Widget),
 	}
 	w.SetName("WidgetManager")
@@ -168,6 +168,12 @@ func (m WidgetManager) Vf(id string) float64 {
 func (m WidgetManager) SetF(id string, v float64) float64 {
 	m.Get(id).WriteValue(JFloat(v))
 	return v
+}
+
+func (m WidgetManager) EndRow() WidgetManager {
+	w := m.parentStack.Last()
+	w.EndRow(m)
+	return m
 }
 
 // ------------------------------------------------------------------------------------
@@ -603,12 +609,13 @@ func (m WidgetManager) finish() WidgetManager {
 	return m
 }
 
-//func (m WidgetManager)  AddText(id string ) WidgetManager {
-//  TextWidget t = new TextWidget(consumePendingListener(), id, consumePendingStringDefaultValue(),
-//      mLineCount, mEditableFlag, mPendingSize, mPendingMonospaced, mPendingMinWidthEm, mPendingMinHeightEm);
-//  consumeTooltip(t);
-//  return m.add(t);
-//}
+func (m WidgetManager) AddText(id string) WidgetManager {
+	t := NewInputWidget(id, m.mPendingSize)
+	//TextWidget t = new TextWidget(consumePendingListener(), id, consumePendingStringDefaultValue(),
+	//    mLineCount, mEditableFlag, mPendingSize, mPendingMonospaced, mPendingMinWidthEm, mPendingMinHeightEm);
+	//consumeTooltip(t);
+	return m.Add(t)
+}
 
 //func (m WidgetManager)  AddHeader(text string ) WidgetManager {
 //  m.spanx();

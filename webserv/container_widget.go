@@ -49,7 +49,8 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder) {
 				m.Cr()
 			}
 			prevRect = *b
-			m.OpenHtml(`div class="col-sm-`+IntToString(b.Size.W)+`"`, `child`)
+			Todo("base widths on a 12-column scale")
+			m.OpenHtml(`div class="col-sm-`+IntToString(b.Size.W*4)+`"`, `child`)
 			child.RenderTo(m)
 			m.CloseHtml(`div`, `child`)
 		}
@@ -58,7 +59,15 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder) {
 	}
 }
 
+func (w ContainerWidget) EndRow(manager WidgetManager) {
+	if w.nextCellLocation().X != 0 {
+		manager.Spanx().AddHorzSpace()
+		w.nextCellKnown = false
+	}
+}
+
 func (w ContainerWidget) LayoutChildren(manager WidgetManager) {
+	Todo("cells need refactoring, padding with empty if not full")
 	pr := PrIf(true)
 	pr("LayoutChildren:", INDENT, w)
 
@@ -74,6 +83,7 @@ func (w ContainerWidget) LayoutChildren(manager WidgetManager) {
 	gridWidth := w.numColumns()
 	gridHeight := w.numRows()
 
+	pr("grid size:", gridWidth, gridHeight)
 	for gridY := 0; gridY < gridHeight; gridY++ {
 		for gridX := 0; gridX < gridWidth; gridX++ {
 			cell := w.cellAt(gridX, gridY)
@@ -106,10 +116,13 @@ func (m ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	cell.X = nextGridCellLocation.X
 	cell.Y = nextGridCellLocation.Y
 
+	pr("determine loc, size in cells; SpanXCount:", manager.SpanXCount)
 	// determine location and size, in cells, of component
 	cols := 1
 	if manager.SpanXCount != 0 {
 		remainingCols := m.numColumns() - cell.X
+		pr("num columns:", m.numColumns())
+		pr("remaining cols:", remainingCols)
 		if manager.SpanXCount < 0 {
 			cols = remainingCols
 		} else {
@@ -130,6 +143,7 @@ func (m ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 		cell.GrowX = MaxInt(cell.GrowX, colSize)
 	}
 
+	pr("cell width:", cell.Width)
 	// "paint" the cells this view occupies by storing a copy of the entry in each cell
 	for i := 0; i < cols; i++ {
 		m.addCell(cell)
@@ -195,11 +209,14 @@ func (g ContainerWidget) checkValidRow(y int) int {
 }
 
 func (g ContainerWidget) cellAt(x int, y int) GridCell {
-	return g.cells.Get(g.checkValidRow(y)*g.numColumns() + g.checkValidColumn(x))
+	i := g.checkValidRow(y)*g.numColumns() + g.checkValidColumn(x)
+	Pr("cell at", x, y, i)
+	return g.cells.Get(i)
 }
 
 func (g ContainerWidget) addCell(cell GridCell) {
 	g.cells.Add(cell)
+	Pr("addCell, size now:", g.cells.Size())
 	g.nextCellKnown = false
 }
 

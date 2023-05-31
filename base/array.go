@@ -9,7 +9,6 @@ type Array[T any] struct {
 }
 
 func NewArray[T any]() *Array[T] {
-	Todo("Can I use a type alias?")
 	m := new(Array[T])
 	// Make a slice that has length zero, but whose underlying array has a capacity of 10
 	m.wrappedArray = make([]T, 0, 10)

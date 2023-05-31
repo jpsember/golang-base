@@ -85,6 +85,10 @@ function ajax(id) {
   xhttp.send();
 }
 
+function onChange(id) {
+	alert("onChange, id: '"+id+"'");
+}
+
 </script>
 </head>
 `)
@@ -373,6 +377,10 @@ func (oper *SampleOper) constructPageWidget(sess Session) {
 	m.AddLabel("x51")
 	m.AddLabel("x52")
 	m.AddLabel("x53")
+
+	m.AddLabel("x54")
+	m.AddText("zebra")
+	m.AddLabel("x56")
 
 	m.close()
 
