@@ -21,6 +21,7 @@ type SampleOper struct {
 	appRoot      Path
 	resources    Path
 	uploadedFile Path
+	headerMarkup string
 }
 
 func (oper *SampleOper) UserCommand() string {
@@ -59,56 +60,22 @@ func (oper *SampleOper) Perform(app *App) {
 	}
 }
 
-func (oper *SampleOper) writeHeader(bp MarkupBuilder) {
-	bp.A(`
-<!DOCTYPE html>
-<html lang="en">
-<head>
-
-<title>Example</title>
-
-<script src="https://code.jquery.com/jquery-1.12.4.min.js" integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ=" crossorigin="anonymous"></script>
-
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-<script>
-
-function ajax(id) {
-  var xhttp = new XMLHttpRequest();
-  xhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-     document.getElementById(id).innerHTML = this.responseText;
-    }
-  };
-  xhttp.open("GET", "ajax", true);
-  xhttp.send();
-}
-
-// An onChange event has occurred within an input field; 
-// send result back to server 
-function jsVal(id) {
-	var qid = '#' + id
-    var textValue = $(qid).val();
-	var xhttp = new XMLHttpRequest();
-	var addr = window.location.href.split('?')[0];
-	var url = new URL(addr + '/ajax');
-	url.searchParams.set('w', id);           // The widget id
-	url.searchParams.set('v', textValue);	 // The new value
-	xhttp.onreadystatechange = function() {
-    	if (this.readyState == 4 && this.status == 200) {
-			// console.log("html for "+id+" : "+$(qid).html())
-			$(qid).replaceWith(this.responseText);
-    	}
-  	};
-  	xhttp.open('GET', url);
-	xhttp.send();
-}
-
-</script>
-</head>
+func (oper *SampleOper) getHeaderMarkup() string {
+	if oper.headerMarkup == "" {
+		s := strings.Builder{}
+		s.WriteString(oper.resources.JoinM("header.html").ReadStringM())
+		s.WriteString(oper.resources.JoinM("base.js").ReadStringM())
+		s.WriteString(`
+</script>                                                                      +.                                                                               
+</head>                                                                        +.                                                                               
 `)
+		oper.headerMarkup = s.String()
+	}
+	return oper.headerMarkup
+}
+
+func (oper *SampleOper) writeHeader(bp MarkupBuilder) {
+	bp.A(oper.getHeaderMarkup())
 	bp.OpenHtml("body", "").Br()
 	bp.OpenHtml(`div class="container-fluid"`, "body")
 }

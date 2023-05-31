@@ -52,10 +52,19 @@ func AscendToDirectoryContainingFileM(startDir Path, seekFile string) Path {
 	return pth
 }
 
-func (path Path) ReadStringIfExistsM(defaultContent string) string {
-	a, err := path.ReadStringIfExists(defaultContent)
+func (path Path) ReadString() (content string, err error) {
+	var bytes []byte
+	bytes, err = path.ReadBytes()
+	if err == nil {
+		content = string(bytes)
+	}
+	return content, err
+}
+
+func (path Path) ReadStringM() string {
+	content, err := path.ReadString()
 	CheckOkWithSkip(1, err)
-	return a
+	return content
 }
 
 func (path Path) ReadStringIfExists(defaultContent string) (content string, err error) {
@@ -69,6 +78,12 @@ func (path Path) ReadStringIfExists(defaultContent string) (content string, err 
 		content = defaultContent
 	}
 	return content, err
+}
+
+func (path Path) ReadStringIfExistsM(defaultContent string) string {
+	content, err := path.ReadStringIfExists(defaultContent)
+	CheckOkWithSkip(1, err)
+	return content
 }
 
 //// Deprecated: use Path type
