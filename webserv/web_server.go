@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -89,7 +90,22 @@ function ajax(id) {
 // send result back to server 
 function jsVal(id) {
     var textValue = $('#'+id).val();
-	alert("onChange, id: '"+id+"' value:"+textValue);
+	var xhttp = new XMLHttpRequest();
+	// Can I omit the https...animalaid.org?
+	var url = new URL('https://animalaid.org/ajax');
+	url.searchParams.set('w', id);
+	url.searchParams.set('v', textValue);
+	xhttp.onreadystatechange = function() {
+		console.log("onreadystatechange, readyState:"+this.readyState+" status: "+this.status+" responseText:"+this.responseText+" id:"+id);
+    	if (this.readyState == 4 && this.status == 200) {
+			var elem = document.getElementById(id);
+			console.log("elem:",elem);
+			// Can't use innerhtml, as we need to change the element with the id
+     		elem.replaceWith(this.responseText);
+    	}
+  	};
+  	xhttp.open('GET', url);
+	xhttp.send();
 }
 
 </script>
@@ -115,18 +131,29 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if Alert("experimenting with widgets") {
+	Pr("handler, request:", req.RequestURI)
+
+	resource := req.RequestURI[1:]
+
+	if resource == "" {
+		Alert("experimenting with widgets")
 		oper.processViewRequest(w, req) // This seems to do what we want
 		return
 	}
-	resource := req.RequestURI[1:]
 	if resource != "" {
+
+		if strings.HasPrefix(resource, "ajax") {
+			oper.sendAjaxMarkup(w, req)
+			return
+		}
+
+		if Alert("experimenting with widgets") {
+			oper.processViewRequest(w, req) // This seems to do what we want
+			return
+		}
 
 		if resource == "view" {
 			oper.processViewRequest(w, req)
-		}
-		if resource == "ajax" {
-			oper.sendAjaxMarkup(w, req)
 		}
 
 		if resource == "robot" {
@@ -354,6 +381,7 @@ func (oper *SampleOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request)
 	sb := NewBasePrinter()
 	sb.Pr(`<h3> This was changed via an AJAX call without using JQuery at ` +
 		time.Now().Format(time.ANSIC) + `</h3>`)
+	Pr("sending markup back to Ajax caller:", INDENT, sb.String())
 	w.Write([]byte(sb.String()))
 }
 
