@@ -16,12 +16,12 @@ import (
 // Define an app with a single operation
 
 type SampleOper struct {
-	insecure     bool
-	sessionMap   SessionManager
-	appRoot      Path
-	resources    Path
-	uploadedFile Path
-	headerMarkup string
+	insecure       bool
+	sessionManager SessionManager
+	appRoot        Path
+	resources      Path
+	uploadedFile   Path
+	headerMarkup   string
 }
 
 func (oper *SampleOper) UserCommand() string {
@@ -51,7 +51,7 @@ func WebServerDemo() {
 }
 
 func (oper *SampleOper) Perform(app *App) {
-	oper.sessionMap = BuildFileSystemSessionMap()
+	oper.sessionManager = BuildFileSystemSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
 	var insecure = app.CmdLineArgs().Get("insecure")
@@ -130,7 +130,7 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 	sb.Pr("Request received at:", time.Now().Format(time.ANSIC), CR)
 	sb.Pr("URI:", req.RequestURI, CR)
 
-	var session = oper.determineSession(w, req, true)
+	var session = DetermineSession(oper.sessionManager, w, req, true)
 
 	sb.Pr("session:", session.Id)
 
@@ -166,36 +166,6 @@ func (oper *SampleOper) sendResponseMarkup(w http.ResponseWriter, req *http.Requ
 	oper.writeFooter(w, sb)
 	Todo("Have an HTML string class that handles escaping")
 	w.Write([]byte(sb.String()))
-}
-
-func (oper *SampleOper) determineSession(w http.ResponseWriter, req *http.Request, createIfNone bool) Session {
-
-	const sessionCookieName = "session_cookie"
-
-	// Determine what session this is, by examining cookies
-	var session Session
-	cookies := req.Cookies()
-	for _, c := range cookies {
-		if c.Name == sessionCookieName {
-			sessionId := c.Value
-			session = oper.sessionMap.FindSession(sessionId)
-		}
-		if session != nil {
-			break
-		}
-	}
-
-	// If no session was found, create one, and send a cookie
-	if session == nil && createIfNone {
-		session = oper.sessionMap.CreateSession()
-		cookie := &http.Cookie{
-			Name:   sessionCookieName,
-			Value:  session.Id,
-			MaxAge: 1200, // 20 minutes
-		}
-		http.SetCookie(w, cookie)
-	}
-	return session
 }
 
 func (oper *SampleOper) handler() func(http.ResponseWriter, *http.Request) {
@@ -265,7 +235,7 @@ func (oper *SampleOper) handleResourceRequest(w http.ResponseWriter, req *http.R
 func (oper *SampleOper) handleUpload(w http.ResponseWriter, r *http.Request, resource string) {
 
 	// If there is no session, do nothing
-	var session = oper.determineSession(w, r, false)
+	var session = DetermineSession(oper.sessionManager, w, r, false)
 	if session == nil {
 		oper.sendResponseMarkup(w, r, "no session, sorry")
 		return
@@ -339,9 +309,39 @@ func (oper *SampleOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request)
 
 func (oper *SampleOper) processViewRequest(w http.ResponseWriter, req *http.Request) {
 	sb := NewMarkupBuilder()
-	sess := oper.determineSession(w, req, true)
+	sess := DetermineSession(oper.sessionManager, w, req, true)
 	oper.writeHeader(sb)
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
 	sess.PageWidget.RenderTo(sb)
 	oper.writeFooter(w, sb)
+}
+
+func DetermineSession(manager SessionManager, w http.ResponseWriter, req *http.Request, createIfNone bool) Session {
+
+	const sessionCookieName = "session_cookie"
+
+	// Determine what session this is, by examining cookies
+	var session Session
+	cookies := req.Cookies()
+	for _, c := range cookies {
+		if c.Name == sessionCookieName {
+			sessionId := c.Value
+			session = manager.FindSession(sessionId)
+		}
+		if session != nil {
+			break
+		}
+	}
+
+	// If no session was found, create one, and send a cookie
+	if session == nil && createIfNone {
+		session = manager.CreateSession()
+		cookie := &http.Cookie{
+			Name:   sessionCookieName,
+			Value:  session.Id,
+			MaxAge: 1200, // 20 minutes
+		}
+		http.SetCookie(w, cookie)
+	}
+	return session
 }

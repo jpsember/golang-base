@@ -11,18 +11,18 @@ import (
 )
 
 type AjaxOper struct {
-	sessionMap   SessionManager
-	appRoot      Path
-	resources    Path
-	headerMarkup string
+	sessioinManager SessionManager
+	appRoot         Path
+	resources       Path
+	headerMarkup    string
 }
 
 func (oper *AjaxOper) UserCommand() string {
-	return "sample"
+	return "widgets"
 }
 
 func (oper *AjaxOper) GetHelp(bp *BasePrinter) {
-	bp.Pr("Demonstrates a web server")
+	bp.Pr("Demonstrates a web server with AJAX manipulating Widget UI elements")
 }
 
 func (oper *AjaxOper) ProcessArgs(c *CmdLineArgs) {
@@ -30,7 +30,7 @@ func (oper *AjaxOper) ProcessArgs(c *CmdLineArgs) {
 
 func (oper *AjaxOper) Perform(app *App) {
 
-	oper.sessionMap = BuildFileSystemSessionMap()
+	oper.sessioinManager = BuildFileSystemSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
 
@@ -38,10 +38,7 @@ func (oper *AjaxOper) Perform(app *App) {
 		s := strings.Builder{}
 		s.WriteString(oper.resources.JoinM("header.html").ReadStringM())
 		s.WriteString(oper.resources.JoinM("base.js").ReadStringM())
-		s.WriteString(`
-</script>                                                                      +.                                                                               
-</head>                                                                        +.                                                                               
-`)
+		s.WriteString("</script>\n</head>\n")
 		oper.headerMarkup = s.String()
 	}
 
@@ -62,21 +59,6 @@ func (oper *AjaxOper) Perform(app *App) {
 
 }
 
-func (oper *AjaxOper) writeHeader(bp MarkupBuilder) {
-	bp.A(oper.headerMarkup)
-	bp.OpenHtml("body", "").Br()
-	bp.OpenHtml(`div class="container-fluid"`, "body")
-}
-
-// Write footer markup, then write the page to the response
-func (oper *AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
-	bp.CloseHtml("div", "body")
-	bp.Br().CloseHtml("body", "")
-	bp.A(`</html>`).Cr()
-	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(bp.String()))
-}
-
 // A handler such as this must be thread safe!
 func (oper *AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 
@@ -89,48 +71,19 @@ func (oper *AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	resource := req.RequestURI[1:]
 
-	if resource == "" {
-		oper.processFullPageRequest(w, req)
-		return
-	}
-
+	// If the request is "ajax?...", it is an Ajax request.
 	if strings.HasPrefix(resource, "ajax?") {
-		sess := oper.determineSession(w, req, false)
-		if sess != nil {
-			oper.sendAjaxMarkup(w, req)
+		sess := DetermineSession(oper.sessioinManager, w, req, false)
+		// Ignore if there is no session
+		if sess == nil {
+			return
 		}
+		oper.sendAjaxMarkup(w, req)
 		return
 	}
-}
 
-func (oper *AjaxOper) determineSession(w http.ResponseWriter, req *http.Request, createIfNone bool) Session {
-
-	const sessionCookieName = "session_cookie"
-
-	// Determine what session this is, by examining cookies
-	var session Session
-	cookies := req.Cookies()
-	for _, c := range cookies {
-		if c.Name == sessionCookieName {
-			sessionId := c.Value
-			session = oper.sessionMap.FindSession(sessionId)
-		}
-		if session != nil {
-			break
-		}
-	}
-
-	// If no session was found, create one, and send a cookie
-	if session == nil && createIfNone {
-		session = oper.sessionMap.CreateSession()
-		cookie := &http.Cookie{
-			Name:   sessionCookieName,
-			Value:  session.Id,
-			MaxAge: 1200, // 20 minutes
-		}
-		http.SetCookie(w, cookie)
-	}
-	return session
+	// Otherwise, assume a full page refresh
+	oper.processFullPageRequest(w, req)
 }
 
 func (oper *AjaxOper) handler() func(http.ResponseWriter, *http.Request) {
@@ -148,15 +101,32 @@ func (oper *AjaxOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
 }
 
 func (oper *AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Request) {
-	sb := NewMarkupBuilder()
-	sess := oper.determineSession(w, req, true)
+	// Construct a session if none found, and a widget for a full webpage
+	sess := DetermineSession(oper.sessioinManager, w, req, true)
 	if sess.PageWidget == nil {
 		oper.constructPageWidget(sess)
 	}
+	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
 	sess.PageWidget.RenderTo(sb)
 	oper.writeFooter(w, sb)
+}
+
+// Generate the biolerplate header and scripts markup
+func (oper *AjaxOper) writeHeader(bp MarkupBuilder) {
+	bp.A(oper.headerMarkup)
+	bp.OpenHtml("body", "").Br()
+	bp.OpenHtml(`div class="container-fluid"`, "body")
+}
+
+// Generate the boilerplate footer markup, then write the page to the response
+func (oper *AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
+	bp.CloseHtml("div", "body")
+	bp.Br().CloseHtml("body", "")
+	bp.A(`</html>`).Cr()
+	w.Header().Set("Content-Type", "text/html")
+	w.Write([]byte(bp.String()))
 }
 
 // Assign a widget heirarchy to a session
