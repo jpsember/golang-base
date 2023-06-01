@@ -36,25 +36,27 @@ func (oper *SampleOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func WebServerDemo() {
-	var oper = &SampleOper{}
-	oper.sessionMap = BuildFileSystemSessionMap()
-
-	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
-	oper.resources = oper.appRoot.JoinM("resources")
-
 	var app = NewApp()
 	app.SetName("WebServer")
 	app.Version = "1.0"
 	app.CmdLineArgs().Add("insecure").Desc("insecure (http) mode")
-	app.RegisterOper(oper)
+
+	if false {
+		app.RegisterOper(&SampleOper{})
+	} else {
+		app.RegisterOper(&AjaxOper{})
+	}
 	//app.SetTestArgs("--insecure")
 	app.Start()
 }
 
 func (oper *SampleOper) Perform(app *App) {
+	oper.sessionMap = BuildFileSystemSessionMap()
+	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
+	oper.resources = oper.appRoot.JoinM("resources")
 	var insecure = app.CmdLineArgs().Get("insecure")
 	if insecure {
-		Halt("insecure no longer supported")
+		oper.doHttp()
 	} else {
 		oper.doHttps()
 	}
@@ -101,13 +103,54 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	resource := req.RequestURI[1:]
 
-	if resource == "" {
-		oper.processViewRequest(w, req) // This seems to do what we want
-	} else if strings.HasPrefix(resource, "ajax") {
-		oper.sendAjaxMarkup(w, req)
-	} else {
-		Pr("unsupported request:", INDENT, req.RequestURI)
+	if resource != "" {
+
+		if resource == "view" {
+			oper.processViewRequest(w, req)
+		}
+
+		if resource == "robot" {
+			oper.sendResponseMarkup(w, req, "Hi, Robot")
+			return
+		}
+
+		if resource == "upload" {
+			oper.handleUpload(w, req, resource)
+			return
+		}
+		oper.handleResourceRequest(w, req, resource)
+		return
 	}
+
+	// Create a buffer to accumulate the response text
+
+	sb := NewMarkupBuilder()
+	oper.writeHeader(sb)
+
+	sb.Pr("Request received at:", time.Now().Format(time.ANSIC), CR)
+	sb.Pr("URI:", req.RequestURI, CR)
+
+	var session = oper.determineSession(w, req, true)
+
+	sb.Pr("session:", session.Id)
+
+	sb.A(`<p>Here is a picture: <img src=picture.jpg alt="Picture"></p>`)
+
+	if oper.uploadedFile != "" {
+		sb.Pr(`<p>Here is a recently uploaded image: <img src=recent.jpg></p>`, CR)
+	}
+	sb.A(`<p>Click on the "Choose File" button to upload a file:</p>
+
+<form action="upload" enctype="multipart/form-data" method="post">
+    <input type="file" name="file" id="file">
+    <input type="submit">
+</form>
+`)
+
+	sb.Pr(`<div id="div1"><h2>Let AJAX Change This Text</h2></div><button onclick="ajax('div1')">Get External Content</button>`)
+	sb.Pr(`<div id="div2"><h2>Another independent element</h2></div><button onclick="ajax('div2')">Button 2</button>`)
+
+	oper.writeFooter(w, sb)
 }
 
 // Send a simple web page back with a message
@@ -158,6 +201,17 @@ func (oper *SampleOper) determineSession(w http.ResponseWriter, req *http.Reques
 func (oper *SampleOper) handler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		oper.handle(w, req)
+	}
+}
+
+// ------------------------------------------------------------------------------------
+
+func (oper *SampleOper) doHttp() {
+	http.HandleFunc("/", oper.handler())
+	Pr("Type:", INDENT, "curl -sL http://localhost:8090/hello")
+	err := http.ListenAndServe(":8090", nil)
+	if err != nil {
+		log.Fatal("ListenAndServe: ", err)
 	}
 }
 
@@ -286,32 +340,8 @@ func (oper *SampleOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request)
 func (oper *SampleOper) processViewRequest(w http.ResponseWriter, req *http.Request) {
 	sb := NewMarkupBuilder()
 	sess := oper.determineSession(w, req, true)
-	if sess.PageWidget == nil {
-		oper.constructPageWidget(sess)
-	}
-
 	oper.writeHeader(sb)
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
 	sess.PageWidget.RenderTo(sb)
 	oper.writeFooter(w, sb)
-}
-
-// Assign a widget heirarchy to a session
-func (oper *SampleOper) constructPageWidget(sess Session) {
-	m := NewWidgetManager()
-	m.SetVerbose(true)
-
-	m.Columns("..x")
-	widget := m.openFor("main container")
-	m.AddLabel("x51")
-	m.AddLabel("x52")
-	m.AddLabel("x53")
-
-	m.AddLabel("x54")
-	m.AddText("zebra")
-	m.AddLabel("x56")
-
-	m.close()
-
-	sess.PageWidget = widget
 }

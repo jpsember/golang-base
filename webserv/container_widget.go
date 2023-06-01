@@ -68,7 +68,7 @@ func (w ContainerWidget) EndRow(manager WidgetManager) {
 
 func (w ContainerWidget) LayoutChildren(manager WidgetManager) {
 	Todo("cells need refactoring, padding with empty if not full")
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("LayoutChildren:", INDENT, w)
 
 	Todo("try to avoid having Layout call back to manager, adding additional children, etc")
