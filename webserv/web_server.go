@@ -44,7 +44,7 @@ func WebServerDemo() {
 	if false {
 		app.RegisterOper(&SampleOper{})
 	} else {
-		app.RegisterOper(&AjaxOper{})
+		app.RegisterOper(&AjaxOperStruct{})
 	}
 	//app.SetTestArgs("--insecure")
 	app.Start()

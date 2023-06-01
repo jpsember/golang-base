@@ -9,23 +9,25 @@ import (
 	"sync"
 )
 
-type Session = *UserSession
+type Session = *SessionStruct
+
+type SessionStruct struct {
+	Id string
+	// widget representing the entire page; nil if not constructed yet
+	PageWidget Widget
+	// Lock for making request handling thread safe; we synchronize a particular session's requests
+	Mutex sync.RWMutex
+}
+
+func NewSession() Session {
+	s := SessionStruct{}
+	return &s
+}
 
 func (s Session) ToJson() *JSMap {
 	m := NewJSMap()
 	m.Put("id", s.Id)
 	return m
-}
-
-type UserSession struct {
-	Id string
-	// widget representing the entire page; nil if not constructed yet
-	PageWidget Widget
-}
-
-func NewSession() Session {
-	s := UserSession{}
-	return &s
 }
 
 func ParseSession(source JSEntity) Session {

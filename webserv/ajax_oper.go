@@ -10,25 +10,26 @@ import (
 	"time"
 )
 
-type AjaxOper struct {
+type AjaxOperStruct struct {
 	sessioinManager SessionManager
 	appRoot         Path
 	resources       Path
 	headerMarkup    string
 }
+type AjaxOper = *AjaxOperStruct
 
-func (oper *AjaxOper) UserCommand() string {
+func (oper AjaxOper) UserCommand() string {
 	return "widgets"
 }
 
-func (oper *AjaxOper) GetHelp(bp *BasePrinter) {
+func (oper AjaxOper) GetHelp(bp *BasePrinter) {
 	bp.Pr("Demonstrates a web server with AJAX manipulating Widget UI elements")
 }
 
-func (oper *AjaxOper) ProcessArgs(c *CmdLineArgs) {
+func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 }
 
-func (oper *AjaxOper) Perform(app *App) {
+func (oper AjaxOper) Perform(app *App) {
 
 	oper.sessioinManager = BuildFileSystemSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
@@ -60,7 +61,7 @@ func (oper *AjaxOper) Perform(app *App) {
 }
 
 // A handler such as this must be thread safe!
-func (oper *AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
+func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	// These are a pain in the ass
 	if req.RequestURI == "/favicon.ico" {
@@ -78,6 +79,8 @@ func (oper *AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		if sess == nil {
 			return
 		}
+		sess.Mutex.Lock()
+		defer sess.Mutex.Unlock()
 		oper.sendAjaxMarkup(w, req)
 		return
 	}
@@ -86,13 +89,13 @@ func (oper *AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 	oper.processFullPageRequest(w, req)
 }
 
-func (oper *AjaxOper) handler() func(http.ResponseWriter, *http.Request) {
+func (oper AjaxOper) handler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		oper.handle(w, req)
 	}
 }
 
-func (oper *AjaxOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
+func (oper AjaxOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
 	sb := NewBasePrinter()
 	sb.Pr(`<h3> This was changed via an AJAX call without using JQuery at ` +
 		time.Now().Format(time.ANSIC) + `</h3>`)
@@ -100,9 +103,11 @@ func (oper *AjaxOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
 	w.Write([]byte(sb.String()))
 }
 
-func (oper *AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Request) {
+func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Request) {
 	// Construct a session if none found, and a widget for a full webpage
 	sess := DetermineSession(oper.sessioinManager, w, req, true)
+	sess.Mutex.Lock()
+	defer sess.Mutex.Unlock()
 	if sess.PageWidget == nil {
 		oper.constructPageWidget(sess)
 	}
@@ -114,14 +119,14 @@ func (oper *AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Re
 }
 
 // Generate the biolerplate header and scripts markup
-func (oper *AjaxOper) writeHeader(bp MarkupBuilder) {
+func (oper AjaxOper) writeHeader(bp MarkupBuilder) {
 	bp.A(oper.headerMarkup)
 	bp.OpenHtml("body", "").Br()
 	bp.OpenHtml(`div class="container-fluid"`, "body")
 }
 
 // Generate the boilerplate footer markup, then write the page to the response
-func (oper *AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
+func (oper AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 	bp.CloseHtml("div", "body")
 	bp.Br().CloseHtml("body", "")
 	bp.A(`</html>`).Cr()
@@ -130,7 +135,7 @@ func (oper *AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 }
 
 // Assign a widget heirarchy to a session
-func (oper *AjaxOper) constructPageWidget(sess Session) {
+func (oper AjaxOper) constructPageWidget(sess Session) {
 	m := NewWidgetManager()
 	m.SetVerbose(true)
 
