@@ -14,7 +14,6 @@ type AjaxOper struct {
 	sessionMap   SessionManager
 	appRoot      Path
 	resources    Path
-	uploadedFile Path
 	headerMarkup string
 }
 
@@ -35,6 +34,17 @@ func (oper *AjaxOper) Perform(app *App) {
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
 
+	{
+		s := strings.Builder{}
+		s.WriteString(oper.resources.JoinM("header.html").ReadStringM())
+		s.WriteString(oper.resources.JoinM("base.js").ReadStringM())
+		s.WriteString(`
+</script>                                                                      +.                                                                               
+</head>                                                                        +.                                                                               
+`)
+		oper.headerMarkup = s.String()
+	}
+
 	var url = "animalaid.org"
 
 	var keyDir = oper.appRoot.JoinM("https_keys")
@@ -52,22 +62,8 @@ func (oper *AjaxOper) Perform(app *App) {
 
 }
 
-func (oper *AjaxOper) getHeaderMarkup() string {
-	if oper.headerMarkup == "" {
-		s := strings.Builder{}
-		s.WriteString(oper.resources.JoinM("header.html").ReadStringM())
-		s.WriteString(oper.resources.JoinM("base.js").ReadStringM())
-		s.WriteString(`
-</script>                                                                      +.                                                                               
-</head>                                                                        +.                                                                               
-`)
-		oper.headerMarkup = s.String()
-	}
-	return oper.headerMarkup
-}
-
 func (oper *AjaxOper) writeHeader(bp MarkupBuilder) {
-	bp.A(oper.getHeaderMarkup())
+	bp.A(oper.headerMarkup)
 	bp.OpenHtml("body", "").Br()
 	bp.OpenHtml(`div class="container-fluid"`, "body")
 }
@@ -98,9 +94,11 @@ func (oper *AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	Todo("how to parse out ajax?")
-	if strings.HasPrefix(resource, "ajax") {
-		oper.sendAjaxMarkup(w, req)
+	if strings.HasPrefix(resource, "ajax?") {
+		sess := oper.determineSession(w, req, false)
+		if sess != nil {
+			oper.sendAjaxMarkup(w, req)
+		}
 		return
 	}
 }
