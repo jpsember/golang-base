@@ -8,31 +8,32 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
-type JSMap struct {
+type JSMapStruct struct {
 	wrappedMap map[string]JSEntity
 }
+type JSMap = *JSMapStruct
 
 //---------------------------------------------------------------------------
 // JSEntity interface
 //---------------------------------------------------------------------------
 
-func (v *JSMap) ToInteger() int64 {
+func (v JSMap) ToInteger() int64 {
 	panic("Not supported")
 }
 
-func (v *JSMap) ToFloat() float64 {
+func (v JSMap) ToFloat() float64 {
 	panic("Not supported")
 }
 
-func (v *JSMap) ToString() string {
-	panic("The ToString() method is not supported for JSMap")
+func (v JSMap) ToString() string {
+	panic("The ToString() method is not supported for JSMapStruct")
 }
 
-func (v *JSMap) ToBool() bool {
+func (v JSMap) ToBool() bool {
 	panic("Not supported")
 }
 
-func (m *JSMap) PrintTo(context *JSONPrinter) {
+func (m JSMap) PrintTo(context *JSONPrinter) {
 	var s = context.StringBuilder
 	if context.Pretty {
 		m.prettyPrintWithIndent(context)
@@ -52,7 +53,7 @@ func (m *JSMap) PrintTo(context *JSONPrinter) {
 	}
 }
 
-func (m *JSMap) prettyPrintWithIndent(context *JSONPrinter) {
+func (m JSMap) prettyPrintWithIndent(context *JSONPrinter) {
 	var s = context.StringBuilder
 	context.PushIndentAdjust(2)
 
@@ -116,31 +117,31 @@ func (m *JSMap) prettyPrintWithIndent(context *JSONPrinter) {
 
 //-----------------------------------------------------------------
 
-// Factory constructor.  Do *not* construct via JSMap().
-func NewJSMap() *JSMap {
-	var m = new(JSMap)
+// Factory constructor.  Do *not* construct via JSMapStruct().
+func NewJSMap() *JSMapStruct {
+	var m = new(JSMapStruct)
 	m.wrappedMap = make(map[string]JSEntity)
 	return m
 }
 
 // Implements the fmt.Stringer interface.  By default, we perform
-// a pretty print of the JSMap.  This simplifies a lot of things.
-func (m *JSMap) String() string {
+// a pretty print of the JSMapStruct.  This simplifies a lot of things.
+func (m JSMap) String() string {
 	return PrintJSEntity(m, true)
 }
 
-func (m *JSMap) Put(key string, value any) *JSMap {
+func (m JSMap) Put(key string, value any) *JSMapStruct {
 	m.wrappedMap[key] = ToJSEntity(value)
 	return m
 }
 
-func (m *JSMap) PutNumbered(value any) *JSMap {
+func (m JSMap) PutNumbered(value any) *JSMapStruct {
 	var numKeys = len(m.wrappedMap)
 	var key = fmt.Sprintf("%3d", numKeys)
 	return m.Put(key, value)
 }
 
-func (p *JSONParser) ParseMap() (*JSMap, error) {
+func (p *JSONParser) ParseMap() (*JSMapStruct, error) {
 	p.adjustNest(1)
 	var ourMap = make(map[string]JSEntity)
 	p.ReadExpectedByte('{')
@@ -162,7 +163,7 @@ func (p *JSONParser) ParseMap() (*JSMap, error) {
 		commaExpected = true
 	}
 	p.adjustNest(-1)
-	var jsMap *JSMap
+	var jsMap *JSMapStruct
 	if p.Error == nil {
 		jsMap = NewJSMap()
 		jsMap.wrappedMap = ourMap
@@ -170,34 +171,34 @@ func (p *JSONParser) ParseMap() (*JSMap, error) {
 	return jsMap, p.Error
 }
 
-func (this *JSMap) GetMap(key string) *JSMap {
+func (this *JSMapStruct) GetMap(key string) *JSMapStruct {
 	var val = this.wrappedMap[key]
-	return val.(*JSMap)
+	return val.(*JSMapStruct)
 }
 
-func (this *JSMap) OptMap(key string) *JSMap {
+func (this *JSMapStruct) OptMap(key string) *JSMapStruct {
 	CheckNotNil(key, "nil key for OptMap")
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return nil
 	}
-	return val.(*JSMap)
+	return val.(*JSMapStruct)
 }
 
-func (this *JSMap) OptMapOrEmpty(key string) *JSMap {
+func (this *JSMapStruct) OptMapOrEmpty(key string) *JSMapStruct {
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return NewJSMap()
 	}
-	return val.(*JSMap)
+	return val.(*JSMapStruct)
 }
 
-func (this *JSMap) GetList(key string) *JSList {
+func (this *JSMapStruct) GetList(key string) *JSList {
 	var val = this.wrappedMap[key]
 	return val.(*JSList)
 }
 
-func (this *JSMap) OptList(key string) *JSList {
+func (this *JSMapStruct) OptList(key string) *JSList {
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return nil
@@ -205,7 +206,7 @@ func (this *JSMap) OptList(key string) *JSList {
 	return val.(*JSList)
 }
 
-func (this *JSMap) OptListOrEmpty(key string) *JSList {
+func (this *JSMapStruct) OptListOrEmpty(key string) *JSList {
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return NewJSList()
@@ -213,12 +214,12 @@ func (this *JSMap) OptListOrEmpty(key string) *JSList {
 	return val.(*JSList)
 }
 
-func (this *JSMap) GetString(key string) string {
+func (this *JSMapStruct) GetString(key string) string {
 	var val = this.wrappedMap[key]
 	return (val.(JSEntity)).ToString()
 }
 
-func (this *JSMap) OptString(key string, defaultValue string) string {
+func (this *JSMapStruct) OptString(key string, defaultValue string) string {
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return defaultValue
@@ -226,12 +227,12 @@ func (this *JSMap) OptString(key string, defaultValue string) string {
 	return (val.(JSEntity)).ToString()
 }
 
-func (this *JSMap) GetInt32(key string) int32 {
+func (this *JSMapStruct) GetInt32(key string) int32 {
 	var val = this.wrappedMap[key]
 	return int32((val.(JSEntity)).ToInteger())
 }
 
-func (this *JSMap) OptInt32(key string, defaultValue int32) int32 {
+func (this *JSMapStruct) OptInt32(key string, defaultValue int32) int32 {
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return defaultValue
@@ -239,7 +240,7 @@ func (this *JSMap) OptInt32(key string, defaultValue int32) int32 {
 	return int32((val.(JSEntity)).ToInteger())
 }
 
-func (this *JSMap) OptFloat32(key string, defaultValue float32) float32 {
+func (this *JSMapStruct) OptFloat32(key string, defaultValue float32) float32 {
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return defaultValue
@@ -247,7 +248,7 @@ func (this *JSMap) OptFloat32(key string, defaultValue float32) float32 {
 	return float32((val.(JSEntity)).ToFloat())
 }
 
-func (this *JSMap) OptFloat64(key string, defaultValue float64) float64 {
+func (this *JSMapStruct) OptFloat64(key string, defaultValue float64) float64 {
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return defaultValue
@@ -255,23 +256,23 @@ func (this *JSMap) OptFloat64(key string, defaultValue float64) float64 {
 	return float64((val.(JSEntity)).ToFloat())
 }
 
-func (this *JSMap) GetInt64(key string) int64 {
+func (this *JSMapStruct) GetInt64(key string) int64 {
 	var val = this.wrappedMap[key]
 	return int64((val.(JSEntity)).ToInteger())
 }
-func (this *JSMap) OptInt64(key string, defaultValue int) int64 {
+func (this *JSMapStruct) OptInt64(key string, defaultValue int) int64 {
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return int64(defaultValue)
 	}
 	return int64((val.(JSEntity)).ToInteger())
 }
-func (this *JSMap) GetBool(key string) bool {
+func (this *JSMapStruct) GetBool(key string) bool {
 	var val = this.wrappedMap[key]
 	return (val.(JSEntity)).ToBool()
 }
 
-func (this *JSMap) OptBool(key string, defaultValue bool) bool {
+func (this *JSMapStruct) OptBool(key string, defaultValue bool) bool {
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return defaultValue
@@ -280,22 +281,22 @@ func (this *JSMap) OptBool(key string, defaultValue bool) bool {
 }
 
 // If a key/value pair exists, return the value
-func (jsmap *JSMap) OptAny(key string) JSEntity {
+func (jsmap *JSMapStruct) OptAny(key string) JSEntity {
 	return jsmap.wrappedMap[key]
 }
 
-func JSMapFromString(content string) (*JSMap, error) {
+func JSMapFromString(content string) (*JSMapStruct, error) {
 	var p JSONParser
 	p.WithText(content)
 	return p.ParseMap()
 }
 
-func JSMapFromStringM(content string) *JSMap {
+func JSMapFromStringM(content string) *JSMapStruct {
 	var result, err = JSMapFromString(content)
 	CheckOk(err)
 	return result
 }
 
-func (jsmap *JSMap) WrappedMap() map[string]JSEntity {
+func (jsmap *JSMapStruct) WrappedMap() map[string]JSEntity {
 	return jsmap.wrappedMap
 }

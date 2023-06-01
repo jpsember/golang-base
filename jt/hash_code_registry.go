@@ -14,7 +14,7 @@ var mutex sync.RWMutex
 
 type HashCodeRegistry struct {
 	Key                string
-	Map                *JSMap
+	Map                *JSMapStruct
 	registryFileCached Path
 	unitTestDirCached  Path
 	InvalidateOldHash  bool

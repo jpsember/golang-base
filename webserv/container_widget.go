@@ -26,7 +26,7 @@ func NewContainerWidget(columnSizes []int) ContainerWidget {
 	return &w
 }
 
-func (w ContainerWidget) RenderTo(m MarkupBuilder) {
+func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	desc := `ContainerWidget ` + w.IdSummary()
 	m.OpenHtml(`p`, desc).A(desc).CloseHtml(`p`, ``)
@@ -51,7 +51,7 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder) {
 			prevRect = *b
 			Todo("base widths on a 12-column scale")
 			m.OpenHtml(`div class="col-sm-`+IntToString(b.Size.W*4)+`"`, `child`)
-			child.RenderTo(m)
+			child.RenderTo(m, state)
 			m.CloseHtml(`div`, `child`)
 		}
 		m.CloseHtml("div", "row")

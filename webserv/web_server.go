@@ -310,9 +310,11 @@ func (oper *SampleOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request)
 func (oper *SampleOper) processViewRequest(w http.ResponseWriter, req *http.Request) {
 	sb := NewMarkupBuilder()
 	sess := DetermineSession(oper.sessionManager, w, req, true)
+	sess.Mutex.Lock()
+	defer sess.Mutex.Unlock()
 	oper.writeHeader(sb)
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
-	sess.PageWidget.RenderTo(sb)
+	sess.PageWidget.RenderTo(sb, sess.State)
 	oper.writeFooter(w, sb)
 }
 

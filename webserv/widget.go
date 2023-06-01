@@ -10,7 +10,7 @@ type Widget interface {
 	GetId() string
 	WriteValue(v JSEntity)
 	ReadValue() JSEntity
-	RenderTo(m MarkupBuilder)
+	RenderTo(m MarkupBuilder, state JSMap)
 	GetBaseWidget() BaseWidget
 	AddChild(c Widget, manager WidgetManager)
 	LayoutChildren(manager WidgetManager)
@@ -59,7 +59,7 @@ func (w BaseWidget) GetId() string {
 	return w.Id
 }
 
-func (w BaseWidget) RenderTo(m MarkupBuilder) {
+func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A("BaseWidget, id: ")
 	m.A(w.Id)
 }

@@ -17,21 +17,26 @@ type SessionStruct struct {
 	PageWidget Widget
 	// Lock for making request handling thread safe; we synchronize a particular session's requests
 	Mutex sync.RWMutex
+	// JSMap containing widget values, other user session state
+	State JSMap
 }
 
 func NewSession() Session {
-	s := SessionStruct{}
+	s := SessionStruct{
+		State: NewJSMap(),
+	}
+	Todo("Restore user session from filesystem/database")
 	return &s
 }
 
-func (s Session) ToJson() *JSMap {
+func (s Session) ToJson() *JSMapStruct {
 	m := NewJSMap()
 	m.Put("id", s.Id)
 	return m
 }
 
 func ParseSession(source JSEntity) Session {
-	var s = source.(*JSMap)
+	var s = source.(*JSMapStruct)
 	var n = NewSession()
 	n.Id = s.OptString("id", "")
 	return n
@@ -96,4 +101,9 @@ func (s *inMemorySessionMap) CreateSession() Session {
 	s.sessionMap[b.Id] = b
 	s.lock.Unlock()
 	return b
+}
+
+// Get a string value from session state map
+func WidgetStringValue(state JSMap, id string) string {
+	return state.OptString(id, "")
 }

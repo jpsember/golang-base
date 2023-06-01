@@ -310,7 +310,7 @@ func (a *App) compileDataArgs() {
 		pr("...read from", argsFile, ":", INDENT, operArgs)
 	}
 
-	var js = operArgs.ToJson().(*JSMap)
+	var js = operArgs.ToJson().(*JSMapStruct)
 
 	// While a next arg exists, and matches one of the keys in the args map,
 	// parse a key/value pair as an override

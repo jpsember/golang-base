@@ -114,7 +114,7 @@ func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Req
 	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
-	sess.PageWidget.RenderTo(sb)
+	sess.PageWidget.RenderTo(sb, sess.State)
 	oper.writeFooter(w, sb)
 }
 

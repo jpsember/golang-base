@@ -71,7 +71,7 @@ func (m WidgetManager) find(id string) Widget {
  * Set widgets' values. Used to restore app widgets to a previously saved
  * state
  */
-func (m WidgetManager) SetWidgetValues(js *JSMap) {
+func (m WidgetManager) SetWidgetValues(js *JSMapStruct) {
 	for id, val := range js.WrappedMap() {
 		if m.Exists(id) {
 			m.Get(id).WriteValue(val)
@@ -83,7 +83,7 @@ func (m WidgetManager) SetWidgetValues(js *JSMap) {
  * Read widgets' values. Doesn't include widgets that have no ids, or whose
  * ids start with "."
  */
-func (m WidgetManager) ReadWidgetValues() *JSMap {
+func (m WidgetManager) ReadWidgetValues() *JSMapStruct {
 	mp := NewJSMap()
 
 	for id, w := range m.widgetMap {

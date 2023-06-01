@@ -165,7 +165,7 @@ func (j *J) AssertMessage(message ...any) {
 
 var hasher = fnv.New32a()
 
-func HashOfJSMap(jsonMap *JSMap) int32 {
+func HashOfJSMap(jsonMap *JSMapStruct) int32 {
 	return HashOfString(PrintJSEntity(jsonMap, false))
 }
 
@@ -196,7 +196,7 @@ func (j *J) AssertGenerated() {
 	registry.SaveTestResults()
 }
 
-func dirSummary(dir Path) *JSMap {
+func dirSummary(dir Path) *JSMapStruct {
 	var jsMap = NewJSMap()
 
 	var w = NewDirWalk(dir).WithRecurse()
@@ -208,7 +208,7 @@ func dirSummary(dir Path) *JSMap {
 		value = "?"
 		if ent.IsDir() {
 			var subdirSummary = dirSummary(dir.JoinM(filename))
-			Todo("have JSMap.size or empty method")
+			Todo("have JSMapStruct.size or empty method")
 			value = subdirSummary
 		} else {
 			bytes, err := dir.JoinM(filename).ReadBytes()
