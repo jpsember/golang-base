@@ -15,6 +15,9 @@ type Widget interface {
 	AddChild(c Widget, manager WidgetManager)
 	LayoutChildren(manager WidgetManager)
 	GetChildren() []Widget
+
+	// Attempt to parse value received from client, and process accordingly
+	ReceiveValue(sess Session, value string)
 }
 
 // The simplest concrete Widget implementation
@@ -44,6 +47,10 @@ func (w BaseWidget) AddChild(c Widget, manager WidgetManager) {
 
 func (w BaseWidget) LayoutChildren(manager WidgetManager) {
 	NotSupported("LayoutChildren not supported")
+}
+
+func (w BaseWidget) ReceiveValue(sess Session, value string) {
+	Pr("Ignoring ReceiveValue for widget:", w.Id, "value:", Quoted(value))
 }
 
 var emptyWidgetList = make([]Widget, 0)

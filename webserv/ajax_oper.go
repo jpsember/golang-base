@@ -77,40 +77,63 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	Pr("url path:", url.Path)
-	if url.Path == "ajax" {
-		
-	}
-	resource := req.RequestURI[1:]
-
-	const ajaxPrefix = "ajax?"
-
-	// If the request is "ajax?...", it is an Ajax request.
-	if strings.HasPrefix(resource, ajaxPrefix) {
-		clientMessage := strings.TrimPrefix(resource, ajaxPrefix)
+	if url.Path == "/ajax" {
 		sess := DetermineSession(oper.sessionManager, w, req, false)
 		// Ignore if there is no session
 		if sess == nil {
 			return
 		}
+		query := url.Query()
+		Pr("query:", query)
+
 		sess.Mutex.Lock()
 		defer sess.Mutex.Unlock()
 
-		processClientMessage(sess, clientMessage)
-		// Mark some widgets for repainting
-
-		//sess.Repaint(WidgetIdPage)
-		//sess.Repaint("zebra")
-
-		oper.sendAjaxMarkup(sess, w, req)
-		return
+		processClientMessage(sess, query)
 	}
 
 	// Otherwise, assume a full page refresh
 	oper.processFullPageRequest(w, req)
 }
 
-func processClientMessage(sess Session, message string) {
-	Pr("processClientMessage:", INDENT, message)
+const clientKeyWidget = "w"
+const clientKeyValue = "v"
+
+func processClientMessage(sess Session, values url.Values) {
+	Pr("processClientMessage:", INDENT, values)
+	problem := ""
+	for {
+		strings, ok := values[clientKeyWidget]
+		if !ok {
+			problem = "no widget key"
+			break
+		}
+
+		if len(strings) != 1 {
+			problem = "wrong number of widget ids"
+			break
+		}
+		widgetId := strings[0]
+
+		widget, ok := sess.WidgetMap[widgetId]
+		if !ok {
+			problem = "no widget found with id: " + widgetId
+			break
+		}
+
+		values, ok := values[clientKeyValue]
+		if len(values) != 1 {
+			problem = "wrong number of widget values"
+			break
+		}
+
+		widget.ReceiveValue(sess, values[0])
+		break
+	}
+	if problem != "" {
+		Pr("Problem processing client message:", INDENT, problem)
+		Pr("Client message:", INDENT, values)
+	}
 }
 
 func (oper AjaxOper) handler() func(http.ResponseWriter, *http.Request) {
