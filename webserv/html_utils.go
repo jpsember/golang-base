@@ -1,7 +1,6 @@
 package webserv
 
 import (
-	. "github.com/jpsember/golang-base/base"
 	"html"
 )
 
@@ -24,8 +23,6 @@ func EscapedHtml(markup string) HtmlString {
 func (h HtmlString) String() string {
 	if !h.escapedGenerated {
 		h.escaped = html.EscapeString(h.Source)
-		Pr("orig:", h.Source)
-		Pr("escaped:", h.escaped)
 		h.escapedGenerated = true
 	}
 	return h.escaped

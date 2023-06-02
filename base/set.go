@@ -38,3 +38,11 @@ func (set *Set[KEY]) Slice() []KEY {
 	}
 	return arr.Array()
 }
+
+func (set *Set[KEY]) Size() int {
+	return len(set.wrappedMap)
+}
+
+func (set *Set[KEY]) WrappedMap() map[KEY]bool {
+	return set.wrappedMap
+}

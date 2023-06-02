@@ -27,6 +27,10 @@ func NewContainerWidget(id string, columnSizes []int) ContainerWidget {
 	return &w
 }
 
+func (w ContainerWidget) GetChildren() []Widget {
+	return w.children.Array()
+}
+
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	desc := `ContainerWidget ` + w.IdSummary()

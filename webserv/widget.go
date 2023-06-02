@@ -14,6 +14,7 @@ type Widget interface {
 	GetBaseWidget() BaseWidget
 	AddChild(c Widget, manager WidgetManager)
 	LayoutChildren(manager WidgetManager)
+	GetChildren() []Widget
 }
 
 // The simplest concrete Widget implementation
@@ -43,6 +44,12 @@ func (w BaseWidget) AddChild(c Widget, manager WidgetManager) {
 
 func (w BaseWidget) LayoutChildren(manager WidgetManager) {
 	NotSupported("LayoutChildren not supported")
+}
+
+var emptyWidgetList = make([]Widget, 0)
+
+func (w BaseWidget) GetChildren() []Widget {
+	return emptyWidgetList
 }
 
 func (w BaseWidget) IdSummary() string {

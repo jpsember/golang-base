@@ -4,6 +4,7 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
+	. "github.com/jpsember/golang-base/json"
 	"log"
 	"net/http"
 	"strings"
@@ -83,9 +84,10 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		defer sess.Mutex.Unlock()
 
 		// Mark some widgets for repainting
-		sess.Repaint(WidgetIdPage)
+		//sess.Repaint(WidgetIdPage)
+		sess.Repaint("zebra")
 
-		oper.sendAjaxMarkup(w, req)
+		oper.sendAjaxMarkup(sess, w, req)
 		return
 	}
 
@@ -99,15 +101,63 @@ func (oper AjaxOper) handler() func(http.ResponseWriter, *http.Request) {
 	}
 }
 
-func (oper AjaxOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
+func (oper AjaxOper) sendAjaxMarkup(session Session, w http.ResponseWriter, req *http.Request) {
+
+	jsmap := NewJSMap()
+
+	// TODO: there might be a more efficient way to do the repainting
 
 	// Determine which widgets need repainting
+	if session.repaintMap.Size() != 0 {
+
+		// refmap will be the map sent to the client with the widgets
+
+		refmap := NewJSMap()
+		jsmap.Put("w", refmap)
+
+		painted := NewSet[string]()
+
+		for k, _ := range session.repaintMap.WrappedMap() {
+			w := session.WidgetMap[k]
+			addSubtree(painted, w)
+		}
+
+		// Do a depth first search of the widget map, sending widgets that have been marked for painting
+		stack := NewArray[string]()
+		stack.Add(session.PageWidget.GetId())
+		for stack.NonEmpty() {
+			widgetId := stack.Pop()
+			widget := session.WidgetMap[widgetId]
+			if painted.Contains(widgetId) {
+				m := NewMarkupBuilder()
+				widget.RenderTo(m, session.State)
+				refmap.Put(widgetId, m.String())
+			}
+			for _, child := range widget.GetChildren() {
+				stack.Add(child.GetId())
+			}
+		}
+
+		Halt("sending widget markup:", INDENT, refmap)
+	}
 
 	sb := NewBasePrinter()
 	sb.Pr(`<h3> This was changed via an AJAX call without using JQuery at ` +
 		time.Now().Format(time.ANSIC) + `</h3>`)
 	Pr("sending markup back to Ajax caller:", INDENT, sb.String())
 	w.Write([]byte(sb.String()))
+}
+
+func addSubtree(target *Set[string], w Widget) {
+	id := w.GetId()
+	// If we've already added this to the list, do nothing
+	if target.Contains(id) {
+		return
+	}
+	target.Add(id)
+	for _, c := range w.GetChildren() {
+		addSubtree(target, c)
+	}
 }
 
 func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Request) {
