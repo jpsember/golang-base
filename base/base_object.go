@@ -50,6 +50,11 @@ func (obj *BaseObject) SetVerbose(verbose bool) {
 	obj.verbose = verbose
 }
 
+func (obj *BaseObject) AlertVerbose() {
+	AlertWithSkip(1, "Setting verbosity for:", obj.Name())
+	obj.SetVerbose(true)
+}
+
 func (obj *BaseObject) Verbose() bool {
 	return obj.verbose
 }

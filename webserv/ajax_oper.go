@@ -4,7 +4,6 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
-	. "github.com/jpsember/golang-base/json"
 	"log"
 	"net/http"
 	"net/url"
@@ -64,19 +63,21 @@ func (oper AjaxOper) Perform(app *App) {
 // A handler such as this must be thread safe!
 func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 
+	pr := PrIf(false)
+
 	// These are a pain in the ass
 	if req.RequestURI == "/favicon.ico" {
 		return
 	}
 
-	Pr("handler, request:", req.RequestURI)
+	pr("handler, request:", req.RequestURI)
 
 	url, err := url.Parse(req.RequestURI)
 	if err != nil {
 		Pr("Error parsing RequestURI:", Quoted(req.RequestURI), INDENT, err)
 		return
 	}
-	Pr("url path:", url.Path)
+	pr("url path:", url.Path)
 	if url.Path == "/ajax" {
 		sess := DetermineSession(oper.sessionManager, w, req, false)
 		// Ignore if there is no session
@@ -89,7 +90,8 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		sess.Mutex.Lock()
 		defer sess.Mutex.Unlock()
 
-		processClientMessage(sess, query)
+		Todo("put reponsewriter, request in session for convenience?")
+		processClientMessage(sess, query, w, req)
 	}
 
 	// Otherwise, assume a full page refresh
@@ -99,11 +101,11 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 const clientKeyWidget = "w"
 const clientKeyValue = "v"
 
-func processClientMessage(sess Session, values url.Values) {
-	Pr("processClientMessage:", INDENT, values)
+func processClientMessage(sess Session, urlValues url.Values, w http.ResponseWriter, req *http.Request) {
+	Pr("processClientMessage:", INDENT, urlValues)
 	problem := ""
 	for {
-		strings, ok := values[clientKeyWidget]
+		strings, ok := urlValues[clientKeyWidget]
 		if !ok {
 			problem = "no widget key"
 			break
@@ -121,7 +123,7 @@ func processClientMessage(sess Session, values url.Values) {
 			break
 		}
 
-		values, ok := values[clientKeyValue]
+		values, ok := urlValues[clientKeyValue]
 		if !ok {
 			problem = "No values found for widget with id: " + widgetId
 			break
@@ -134,12 +136,16 @@ func processClientMessage(sess Session, values url.Values) {
 		}
 
 		c := MakeClientValue(values)
+		Pr("============== calling listener with values:", values)
 		listener(sess, widget, c)
+
+		Todo("allow listener to set problem in session")
+		sess.sendAjaxMarkup(w, req)
 		break
 	}
 	if problem != "" {
 		Pr("Problem processing client message:", INDENT, problem)
-		Pr("Client message:", INDENT, values)
+		Pr("Client message:", INDENT, urlValues)
 	}
 }
 
@@ -147,53 +153,6 @@ func (oper AjaxOper) handler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		oper.handle(w, req)
 	}
-}
-
-func (oper AjaxOper) sendAjaxMarkup(session Session, w http.ResponseWriter, req *http.Request) {
-
-	jsmap := NewJSMap()
-
-	// TODO: there might be a more efficient way to do the repainting
-
-	// Determine which widgets need repainting
-	if session.repaintMap.Size() != 0 {
-
-		// refmap will be the map sent to the client with the widgets
-
-		refmap := NewJSMap()
-		jsmap.Put("w", refmap)
-
-		painted := NewSet[string]()
-
-		for k, _ := range session.repaintMap.WrappedMap() {
-			w := session.WidgetMap[k]
-			addSubtree(painted, w)
-		}
-
-		// Do a depth first search of the widget map, sending widgets that have been marked for painting
-		stack := NewArray[string]()
-		stack.Add(session.PageWidget.GetId())
-		for stack.NonEmpty() {
-			widgetId := stack.Pop()
-			widget := session.WidgetMap[widgetId]
-			if painted.Contains(widgetId) {
-				m := NewMarkupBuilder()
-				widget.RenderTo(m, session.State)
-				refmap.Put(widgetId, m.String())
-			}
-			for _, child := range widget.GetChildren() {
-				stack.Add(child.GetId())
-			}
-		}
-
-		//Halt("sending widget markup:", INDENT, refmap)
-	}
-
-	Todo("have a JSMap (and JSList) CompactString method")
-	content := PrintJSEntity(jsmap, false)
-
-	Pr("sending markup back to Ajax caller:", INDENT, content)
-	w.Write([]byte(content))
 }
 
 func addSubtree(target *Set[string], w Widget) {
@@ -244,10 +203,12 @@ const WidgetIdPage = "page"
 // Assign a widget heirarchy to a session
 func (oper AjaxOper) constructPageWidget(sess Session) {
 	m := NewWidgetManager()
-	m.SetVerbose(true)
+	//m.AlertVerbose()
 
 	m.Columns("..x")
 	widget := m.openFor(WidgetIdPage, "main container")
+
+	m.Listener(birdListener)
 	m.AddText("bird")
 	m.AddLabel("x52")
 	m.AddLabel("x53")
@@ -260,6 +221,22 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	sess.PageWidget = widget
 	sess.WidgetMap = m.widgetMap
+}
+
+func birdListener(sess any, widget Widget, value ClientValue) {
+	Todo("can we have sessions produce listener functions with appropriate handling of sess any?")
+	s := sess.(Session)
+
+	newVal := value.GetString()
+	if !value.Ok() {
+		Pr("value was not ok")
+		return
+	}
+
+	s.State.Put(widget.GetId(), newVal+"<<added for fun")
+	Pr("state map now:", INDENT, s.State)
+	Pr("repainting widget")
+	s.Repaint(widget.GetId())
 }
 
 //

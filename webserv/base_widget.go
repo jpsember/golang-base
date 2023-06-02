@@ -5,7 +5,7 @@ import (
 	. "github.com/jpsember/golang-base/json"
 )
 
-type WidgetListener func(sess Session, widget Widget, value ClientValue)
+type WidgetListener func(sess any, widget Widget, value ClientValue)
 
 // The simplest concrete Widget implementation
 type BaseWidgetObj struct {

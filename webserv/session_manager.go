@@ -6,6 +6,7 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/json"
 	"io"
+	"net/http"
 	"sync"
 )
 
@@ -118,4 +119,51 @@ func (s *inMemorySessionMap) CreateSession() Session {
 // Get a string value from session state map
 func WidgetStringValue(state JSMap, id string) string {
 	return state.OptString(id, "")
+}
+
+func (s Session) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
+
+	jsmap := NewJSMap()
+
+	// TODO: there might be a more efficient way to do the repainting
+
+	// Determine which widgets need repainting
+	if s.repaintMap.Size() != 0 {
+
+		// refmap will be the map sent to the client with the widgets
+
+		refmap := NewJSMap()
+		jsmap.Put("w", refmap)
+
+		painted := NewSet[string]()
+
+		for k, _ := range s.repaintMap.WrappedMap() {
+			w := s.WidgetMap[k]
+			addSubtree(painted, w)
+		}
+
+		// Do a depth first search of the widget map, sending widgets that have been marked for painting
+		stack := NewArray[string]()
+		stack.Add(s.PageWidget.GetId())
+		for stack.NonEmpty() {
+			widgetId := stack.Pop()
+			widget := s.WidgetMap[widgetId]
+			if painted.Contains(widgetId) {
+				m := NewMarkupBuilder()
+				widget.RenderTo(m, s.State)
+				refmap.Put(widgetId, m.String())
+			}
+			for _, child := range widget.GetChildren() {
+				stack.Add(child.GetId())
+			}
+		}
+
+		//Halt("sending widget markup:", INDENT, refmap)
+	}
+
+	Todo("have a JSMap (and JSList) CompactString method")
+	content := PrintJSEntity(jsmap, false)
+
+	Pr("sending markup back to Ajax caller:", INDENT, content)
+	w.Write([]byte(content))
 }

@@ -109,7 +109,7 @@ func (w ContainerWidget) LayoutChildren(manager WidgetManager) {
 func (m ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	m.children.Add(c)
 
-	pr := PrIf(true)
+	pr := PrIf(false)
 
 	pr("adding widget to container:", INDENT, m)
 
@@ -220,7 +220,6 @@ func (g ContainerWidget) cellAt(x int, y int) GridCell {
 
 func (g ContainerWidget) addCell(cell GridCell) {
 	g.cells.Add(cell)
-	Pr("addCell, size now:", g.cells.Size())
 	g.nextCellKnown = false
 }
 
