@@ -7,14 +7,15 @@ import (
 	. "github.com/jpsember/golang-base/json"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
 type AjaxOperStruct struct {
-	sessioinManager SessionManager
-	appRoot         Path
-	resources       Path
-	headerMarkup    string
+	sessionManager SessionManager
+	appRoot        Path
+	resources      Path
+	headerMarkup   string
 }
 type AjaxOper = *AjaxOperStruct
 
@@ -31,7 +32,7 @@ func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 
 func (oper AjaxOper) Perform(app *App) {
 
-	oper.sessioinManager = BuildFileSystemSessionMap()
+	oper.sessionManager = BuildFileSystemSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
 
@@ -70,11 +71,23 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	Pr("handler, request:", req.RequestURI)
 
+	url, err := url.Parse(req.RequestURI)
+	if err != nil {
+		Pr("Error parsing RequestURI:", Quoted(req.RequestURI), INDENT, err)
+		return
+	}
+	Pr("url path:", url.Path)
+	if url.Path == "ajax" {
+		
+	}
 	resource := req.RequestURI[1:]
 
+	const ajaxPrefix = "ajax?"
+
 	// If the request is "ajax?...", it is an Ajax request.
-	if strings.HasPrefix(resource, "ajax?") {
-		sess := DetermineSession(oper.sessioinManager, w, req, false)
+	if strings.HasPrefix(resource, ajaxPrefix) {
+		clientMessage := strings.TrimPrefix(resource, ajaxPrefix)
+		sess := DetermineSession(oper.sessionManager, w, req, false)
 		// Ignore if there is no session
 		if sess == nil {
 			return
@@ -82,10 +95,11 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		sess.Mutex.Lock()
 		defer sess.Mutex.Unlock()
 
+		processClientMessage(sess, clientMessage)
 		// Mark some widgets for repainting
 
 		//sess.Repaint(WidgetIdPage)
-		sess.Repaint("zebra")
+		//sess.Repaint("zebra")
 
 		oper.sendAjaxMarkup(sess, w, req)
 		return
@@ -93,6 +107,10 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	// Otherwise, assume a full page refresh
 	oper.processFullPageRequest(w, req)
+}
+
+func processClientMessage(sess Session, message string) {
+	Pr("processClientMessage:", INDENT, message)
 }
 
 func (oper AjaxOper) handler() func(http.ResponseWriter, *http.Request) {
@@ -144,9 +162,6 @@ func (oper AjaxOper) sendAjaxMarkup(session Session, w http.ResponseWriter, req 
 	Todo("have a JSMap (and JSList) CompactString method")
 	content := PrintJSEntity(jsmap, false)
 
-	//sb := NewBasePrinter()
-	//sb.Pr(`<h3> This was changed via an AJAX call without using JQuery at ` +
-	//	time.Now().Format(time.ANSIC) + `</h3>`)
 	Pr("sending markup back to Ajax caller:", INDENT, content)
 	w.Write([]byte(content))
 }
@@ -165,7 +180,7 @@ func addSubtree(target *Set[string], w Widget) {
 
 func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Request) {
 	// Construct a session if none found, and a widget for a full webpage
-	sess := DetermineSession(oper.sessioinManager, w, req, true)
+	sess := DetermineSession(oper.sessionManager, w, req, true)
 	sess.Mutex.Lock()
 	defer sess.Mutex.Unlock()
 	if sess.PageWidget == nil {
