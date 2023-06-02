@@ -78,7 +78,7 @@ func (r *HashCodeRegistry) VerifyHash(testName string, currentHash int32, invali
 
 func (r *HashCodeRegistry) write() {
 	var path = r.file()
-	var content = PrintJSEntity(r.Map, true)
+	var content = r.Map.String()
 	path.WriteStringM(content)
 }
 

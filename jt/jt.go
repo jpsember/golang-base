@@ -166,7 +166,7 @@ func (j *J) AssertMessage(message ...any) {
 var hasher = fnv.New32a()
 
 func HashOfJSMap(jsonMap *JSMapStruct) int32 {
-	return HashOfString(PrintJSEntity(jsonMap, false))
+	return HashOfString(jsonMap.CompactString())
 }
 
 func HashOfString(str string) int32 {

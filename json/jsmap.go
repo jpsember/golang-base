@@ -130,7 +130,7 @@ func (m JSMap) String() string {
 	return PrintJSEntity(m, true)
 }
 
-// Convert JSList to string, without pretty printing.
+// Convert JSListStruct to string, without pretty printing.
 func (m JSMap) CompactString() string {
 	return PrintJSEntity(m, false)
 }
@@ -198,25 +198,25 @@ func (this *JSMapStruct) OptMapOrEmpty(key string) *JSMapStruct {
 	return val.(*JSMapStruct)
 }
 
-func (this *JSMapStruct) GetList(key string) *JSList {
+func (this *JSMapStruct) GetList(key string) *JSListStruct {
 	var val = this.wrappedMap[key]
-	return val.(*JSList)
+	return val.(*JSListStruct)
 }
 
-func (this *JSMapStruct) OptList(key string) *JSList {
+func (this *JSMapStruct) OptList(key string) *JSListStruct {
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return nil
 	}
-	return val.(*JSList)
+	return val.(*JSListStruct)
 }
 
-func (this *JSMapStruct) OptListOrEmpty(key string) *JSList {
+func (this *JSMapStruct) OptListOrEmpty(key string) *JSListStruct {
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return NewJSList()
 	}
-	return val.(*JSList)
+	return val.(*JSListStruct)
 }
 
 func (this *JSMapStruct) GetString(key string) string {

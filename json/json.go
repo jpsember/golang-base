@@ -8,7 +8,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------------------
-// Interface for all json values (JSMapStruct, JSList, JString, JInteger, ...)
+// Interface for all json values (JSMapStruct, JSListStruct, JString, JInteger, ...)
 // ---------------------------------------------------------------------------------------
 type JSEntity interface {
 
@@ -272,7 +272,7 @@ func ToJSEntity(value any) JSEntity {
 		val = MakeJString(v)
 	case bool:
 		val = MakeJBool(v)
-	case JSEntity: // Already a JSEntity, i.e., a JSMapStruct or JSList?
+	case JSEntity: // Already a JSEntity, i.e., a JSMapStruct or JSListStruct?
 		val = v
 	case DataClass:
 		val = v.ToJson().(JSEntity)

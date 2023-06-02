@@ -87,7 +87,7 @@ func (s *FileSystemSessionManager) flush() {
 		for k, v := range s.sessionMap {
 			jsm.Put(k, v.ToJson())
 		}
-		pth.WriteStringM(PrintJSEntity(jsm, false))
+		pth.WriteStringM(jsm.CompactString())
 		s.lastWrittenMs = time.Now().UnixMilli()
 		Pr("flushed modified session map to:", pth)
 		s.modified = false

@@ -6,30 +6,12 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
-type JSList struct {
+type JSListStruct struct {
 	wrappedList []JSEntity
 }
+type JSList = *JSListStruct
 
-// Construct a JSList from a slice of any, converting to JSEntities
-//
-//	func JSListWith(values []any) *JSList {
-//		var out = NewJSList()
-//		for _, x := range values {
-//			out.Add(x)
-//		}
-//		return out
-//	}
-//
-// // Construct a JSList from a slice of strings
-//
-//	func JSListWithStrings(values []string) *JSList {
-//		var out = NewJSList()
-//		for _, x := range values {
-//			out.Add(x)
-//		}
-//		return out
-//	}
-func JSListWith[T any](values []T) *JSList {
+func JSListWith[T any](values []T) JSList {
 	var out = NewJSList()
 	for _, x := range values {
 		out.Add(x)
@@ -41,36 +23,36 @@ func JSListWith[T any](values []T) *JSList {
 // JSEntity interface
 // ---------------------------------------------------------------------------------------
 
-func (m *JSList) ToInteger() int64 {
+func (js JSList) ToInteger() int64 {
 	panic("not supported")
 }
 
-func (m *JSList) ToFloat() float64 {
+func (js JSList) ToFloat() float64 {
 	panic("not supported")
 }
-func (m *JSList) ToString() string {
+func (js JSList) ToString() string {
 	panic("not supported")
 }
-func (m *JSList) ToBool() bool {
+func (js JSList) ToBool() bool {
 	panic("not supported")
 }
 
 // Implements the fmt.Stringer interface.  By default, we perform
-// a pretty print of the JSList.  This simplifies a lot of things.
-func (m *JSList) String() string {
-	return PrintJSEntity(m, true)
+// a pretty print of the JSListStruct.  This simplifies a lot of things.
+func (js JSList) String() string {
+	return PrintJSEntity(js, true)
 }
 
-// Convert JSList to string, without pretty printing.
-func (m *JSList) CompactString() string {
-	return PrintJSEntity(m, false)
+// Convert JSListStruct to string, without pretty printing.
+func (js JSList) CompactString() string {
+	return PrintJSEntity(js, false)
 }
 
-func (m *JSList) PrintTo(context *JSONPrinter) {
+func (js JSList) PrintTo(context *JSONPrinter) {
 	var s = context.StringBuilder
 	s.WriteByte('[')
 	var index = 0
-	for _, val := range m.wrappedList {
+	for _, val := range js.wrappedList {
 		if index != 0 {
 			s.WriteByte(',')
 		}
@@ -82,14 +64,14 @@ func (m *JSList) PrintTo(context *JSONPrinter) {
 
 // ---------------------------------------------------------------------------------------
 
-// Factory constructor.  Do *not* construct via JSList().
-func NewJSList() *JSList {
-	var m = new(JSList)
+// Factory constructor.  Do *not* construct via JSListStruct().
+func NewJSList() JSList {
+	var m = new(JSListStruct)
 	m.wrappedList = make([]JSEntity, 0, 10)
 	return m
 }
 
-func (p *JSONParser) ParseList() (*JSList, error) {
+func (p *JSONParser) ParseList() (JSList, error) {
 	p.adjustNest(1)
 	var result []JSEntity
 	p.ReadExpectedByte('[')
@@ -114,26 +96,24 @@ func (p *JSONParser) ParseList() (*JSList, error) {
 	}
 	p.skipWhitespace()
 	p.adjustNest(-1)
-	var jsList *JSList
+	var jsList JSList
 	if p.Error == nil {
-		jsList = new(JSList)
+		jsList = new(JSListStruct)
 		jsList.wrappedList = result
 	}
 	return jsList, p.Error
 }
 
-func (this *JSList) Add(value any) *JSList {
-	// Is 'this' a good convention to use?  Or self (as in Python)?
+func (js JSList) Add(value any) JSList {
 	CheckNotNil(value)
-
-	this.wrappedList = append(this.wrappedList, ToJSEntity(value))
-	return this
+	js.wrappedList = append(js.wrappedList, ToJSEntity(value))
+	return js
 }
 
-func (this *JSList) Get(index int) JSEntity {
-	return this.wrappedList[index]
+func (js JSList) Get(index int) JSEntity {
+	return js.wrappedList[index]
 }
 
-func (this *JSList) Length() int {
-	return len(this.wrappedList)
+func (js JSList) Length() int {
+	return len(js.wrappedList)
 }
