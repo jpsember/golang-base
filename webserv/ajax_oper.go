@@ -240,12 +240,16 @@ func birdListener(sess any, widget Widget, value ClientValue) {
 	s.Repaint(widget.GetId())
 }
 
-//
-//func (w InputWidget) ReceiveValue(sess Session, value string) {
-//	if Alert("Modifying value") {
-//		value += "<<<---modified"
-//	}
-//	sess.State.Put(w.Id, value)
-//	// Request a repaint of the widget
-//	sess.Repaint(w.Id)
-//}
+func zebraListener(sess any, widget Widget, value ClientValue) {
+	s := sess.(Session)
+
+	newVal := value.GetString()
+	if !value.Ok() {
+		Pr("value was not ok")
+		return
+	}
+
+	s.State.Put(widget.GetId(), newVal)
+	s.Repaint(widget.GetId())
+}
+

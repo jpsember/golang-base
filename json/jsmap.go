@@ -130,6 +130,11 @@ func (m JSMap) String() string {
 	return PrintJSEntity(m, true)
 }
 
+// Convert JSList to string, without pretty printing.
+func (m JSMap) CompactString() string {
+	return PrintJSEntity(m, false)
+}
+
 func (m JSMap) Put(key string, value any) *JSMapStruct {
 	m.wrappedMap[key] = ToJSEntity(value)
 	return m

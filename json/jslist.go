@@ -58,6 +58,11 @@ func (m *JSList) ToBool() bool {
 // Implements the fmt.Stringer interface.  By default, we perform
 // a pretty print of the JSList.  This simplifies a lot of things.
 func (m *JSList) String() string {
+	return PrintJSEntity(m, true)
+}
+
+// Convert JSList to string, without pretty printing.
+func (m *JSList) CompactString() string {
 	return PrintJSEntity(m, false)
 }
 

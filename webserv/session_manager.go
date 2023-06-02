@@ -23,7 +23,6 @@ type SessionStruct struct {
 	// Map of widgets for this session
 	WidgetMap  map[string]Widget
 	repaintMap *Set[string]
-
 	// TODO: we might want the repaintMap to be ephemeral, only alive while serving the request
 	// We also might want to have a singleton, global widget map, since the state is stored here in the session
 }
@@ -158,12 +157,9 @@ func (s Session) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
 				stack.Add(child.GetId())
 			}
 		}
-
-		//Halt("sending widget markup:", INDENT, refmap)
 	}
 
-	Todo("have a JSMap (and JSList) CompactString method")
-	content := PrintJSEntity(jsmap, false)
+	content := jsmap.CompactString()
 
 	pr("sending back to Ajax caller:", INDENT, content)
 	w.Write([]byte(content))
