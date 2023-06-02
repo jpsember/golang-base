@@ -92,10 +92,11 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 
 		Todo("put reponsewriter, request in session for convenience?")
 		processClientMessage(sess, query, w, req)
-	}
+	} else {
 
-	// Otherwise, assume a full page refresh
-	oper.processFullPageRequest(w, req)
+		// Otherwise, assume a full page refresh
+		oper.processFullPageRequest(w, req)
+	}
 }
 
 const clientKeyWidget = "w"
