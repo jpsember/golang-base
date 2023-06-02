@@ -1,17 +1,18 @@
 
 function pr() {
-	s = ""
-	for (var i = 0; i < arguments.length; i++) {
-		a = arguments[i]
-		//console.log("arg:" + a)
+	let s = ""
+	for (let i = 0; i < arguments.length; i++) {
+		let a = arguments[i]
 		const t = typeof a
-		if (t == "object") {
-			a = "\n" + JSON.stringify(a, null, 2) + "\n"
-			//console.log("changed arg to:" + a)
+			if (t == "object") {
+				a = "\n" + JSON.stringify(a, null, 2) + "\n"
+			}
+		if (i != 0) {
+			s += " "
 		}
-		s = s + " " + String(a)
+		s += String(a)
 	}
-    console.log(s.trim())
+    console.log(s)
 }
 
 function ajax(id) {
@@ -27,13 +28,14 @@ function ajax(id) {
 
 function processServerResponse(text) {
 	pr("processServerResponse:" , text)
+	if (text.length == 0) {
+		return
+	}
 	const obj = JSON.parse(text)
-	pr("received server response:", obj)
+	pr("parsed to JSON object:", obj)
 	if ('w' in obj) {
-		pr("found a 'w'")
 		const widgetMap = obj.w
 		for (const [id, markup] of Object.entries(widgetMap)) {
-			pr("attempting to replace",id,"with markup:",markup)
 			const qid = '#' + id
 			$(qid).replaceWith(markup);
 		}
@@ -44,17 +46,13 @@ function processServerResponse(text) {
 // send widget id and value back to server; process response
 function jsVal(id) {
 	const qid = '#' + id
-	pr("jsVal called with qid:",qid)
-    const textValue = $(qid).val();
+  const textValue = $(qid).val();
 	const xhttp = new XMLHttpRequest();
 	const addr = window.location.href.split('?')[0];
 	const url = new URL(addr + '/ajax');
-	url.searchParams.set('w', id);           // The widget id
+	url.searchParams.set('w', id);         // The widget id
 	url.searchParams.set('v', textValue);	 // The new value
 	xhttp.onreadystatechange = function() {
-		pr("onreadstatchange, readState:",this.readyState,"status:",this.status)
-		pr("responseText:",this.responseText)
-		pr("this:",this.toString())
     	if (this.readyState == 4 && this.status == 200) {
 			  processServerResponse(this.responseText)
     	}
