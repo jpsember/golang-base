@@ -23,17 +23,17 @@ func JSListWith[T any](values []T) JSList {
 // JSEntity interface
 // ---------------------------------------------------------------------------------------
 
-func (js JSList) ToInteger() int64 {
+func (js JSList) AsInteger() int64 {
 	panic("not supported")
 }
 
-func (js JSList) ToFloat() float64 {
+func (js JSList) AsFloat() float64 {
 	panic("not supported")
 }
-func (js JSList) ToString() string {
+func (js JSList) AsString() string {
 	panic("not supported")
 }
-func (js JSList) ToBool() bool {
+func (js JSList) AsBool() bool {
 	panic("not supported")
 }
 

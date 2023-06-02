@@ -25,5 +25,5 @@ func (g GridCell) String() string {
 	if g.Widget != nil {
 		m.Put("widget", g.Widget.GetId())
 	}
-	return m.ToString()
+	return m.AsString()
 }

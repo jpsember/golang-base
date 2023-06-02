@@ -16,17 +16,16 @@ type JSEntity interface {
 	PrintTo(context *JSONPrinter)
 
 	// Get value of an integer.
-	ToInteger() int64
+	AsInteger() int64
 
 	// Get value of a number as a float (supported for integers as well).
-	ToFloat() float64
+	AsFloat() float64
 
 	// Get value of a string.
-	// Deprecated: should be renamed to avoid confusion with String()
-	ToString() string
+	AsString() string
 
 	// Get value of a bool.
-	ToBool() bool
+	AsBool() bool
 }
 
 // This is very relevant:
@@ -54,19 +53,19 @@ func (v JString) PrintTo(context *JSONPrinter) {
 	context.WriteString(EscapedAndQuoted(string(v)))
 }
 
-func (v JString) ToInteger() int64 {
+func (v JString) AsInteger() int64 {
 	panic("Not supported")
 }
 
-func (v JString) ToFloat() float64 {
+func (v JString) AsFloat() float64 {
 	panic("Not supported")
 }
 
-func (v JString) ToString() string {
+func (v JString) AsString() string {
 	return string(v)
 }
 
-func (v JString) ToBool() bool {
+func (v JString) AsBool() bool {
 	panic("Not supported")
 }
 
@@ -82,18 +81,18 @@ func (v JInteger) PrintTo(context *JSONPrinter) {
 	context.WriteString(strconv.FormatInt(int64(v), 10))
 }
 
-func (v JInteger) ToInteger() int64 {
+func (v JInteger) AsInteger() int64 {
 	return int64(v)
 }
 
-func (v JInteger) ToFloat() float64 {
+func (v JInteger) AsFloat() float64 {
 	return float64(v)
 }
 
-func (v JInteger) ToString() string {
+func (v JInteger) AsString() string {
 	panic("Not supported")
 }
-func (v JInteger) ToBool() bool {
+func (v JInteger) AsBool() bool {
 	panic("Not supported")
 }
 
@@ -111,18 +110,18 @@ func (v JFloat) PrintTo(context *JSONPrinter) {
 	context.WriteString(text)
 }
 
-func (v JFloat) ToInteger() int64 {
+func (v JFloat) AsInteger() int64 {
 	return int64(v)
 }
 
-func (v JFloat) ToFloat() float64 {
+func (v JFloat) AsFloat() float64 {
 	return float64(v)
 }
 
-func (v JFloat) ToString() string {
+func (v JFloat) AsString() string {
 	panic("Not supported")
 }
-func (v JFloat) ToBool() bool {
+func (v JFloat) AsBool() bool {
 	panic("Not supported")
 }
 
@@ -153,18 +152,18 @@ func (v JBool) PrintTo(context *JSONPrinter) {
 	context.WriteString(text)
 }
 
-func (v JBool) ToInteger() int64 {
+func (v JBool) AsInteger() int64 {
 	panic("Not supported")
 }
 
-func (v JBool) ToFloat() float64 {
+func (v JBool) AsFloat() float64 {
 	panic("Not supported")
 }
 
-func (v JBool) ToString() string {
+func (v JBool) AsString() string {
 	panic("Not supported")
 }
-func (v JBool) ToBool() bool {
+func (v JBool) AsBool() bool {
 	return bool(v)
 }
 
@@ -179,19 +178,19 @@ func (v JNull) PrintTo(context *JSONPrinter) {
 	context.WriteString("null")
 }
 
-func (v JNull) ToInteger() int64 {
+func (v JNull) AsInteger() int64 {
 	panic("Not supported")
 }
 
-func (v JNull) ToFloat() float64 {
+func (v JNull) AsFloat() float64 {
 	panic("Not supported")
 }
 
-func (v JNull) ToString() string {
+func (v JNull) AsString() string {
 	panic("Not supported")
 }
 
-func (v JNull) ToBool() bool {
+func (v JNull) AsBool() bool {
 	panic("Not supported")
 }
 

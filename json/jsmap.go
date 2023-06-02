@@ -17,19 +17,19 @@ type JSMap = *JSMapStruct
 // JSEntity interface
 //---------------------------------------------------------------------------
 
-func (v JSMap) ToInteger() int64 {
+func (v JSMap) AsInteger() int64 {
 	panic("Not supported")
 }
 
-func (v JSMap) ToFloat() float64 {
+func (v JSMap) AsFloat() float64 {
 	panic("Not supported")
 }
 
-func (v JSMap) ToString() string {
-	panic("The ToString() method is not supported for JSMapStruct")
+func (v JSMap) AsString() string {
+	panic("The AsString() method is not supported for JSMapStruct")
 }
 
-func (v JSMap) ToBool() bool {
+func (v JSMap) AsBool() bool {
 	panic("Not supported")
 }
 
@@ -221,7 +221,7 @@ func (this *JSMapStruct) OptListOrEmpty(key string) *JSListStruct {
 
 func (this *JSMapStruct) GetString(key string) string {
 	var val = this.wrappedMap[key]
-	return (val.(JSEntity)).ToString()
+	return (val.(JSEntity)).AsString()
 }
 
 func (this *JSMapStruct) OptString(key string, defaultValue string) string {
@@ -229,12 +229,12 @@ func (this *JSMapStruct) OptString(key string, defaultValue string) string {
 	if val == nil {
 		return defaultValue
 	}
-	return (val.(JSEntity)).ToString()
+	return (val.(JSEntity)).AsString()
 }
 
 func (this *JSMapStruct) GetInt32(key string) int32 {
 	var val = this.wrappedMap[key]
-	return int32((val.(JSEntity)).ToInteger())
+	return int32((val.(JSEntity)).AsInteger())
 }
 
 func (this *JSMapStruct) OptInt32(key string, defaultValue int32) int32 {
@@ -242,7 +242,7 @@ func (this *JSMapStruct) OptInt32(key string, defaultValue int32) int32 {
 	if val == nil {
 		return defaultValue
 	}
-	return int32((val.(JSEntity)).ToInteger())
+	return int32((val.(JSEntity)).AsInteger())
 }
 
 func (this *JSMapStruct) OptFloat32(key string, defaultValue float32) float32 {
@@ -250,7 +250,7 @@ func (this *JSMapStruct) OptFloat32(key string, defaultValue float32) float32 {
 	if val == nil {
 		return defaultValue
 	}
-	return float32((val.(JSEntity)).ToFloat())
+	return float32((val.(JSEntity)).AsFloat())
 }
 
 func (this *JSMapStruct) OptFloat64(key string, defaultValue float64) float64 {
@@ -258,23 +258,23 @@ func (this *JSMapStruct) OptFloat64(key string, defaultValue float64) float64 {
 	if val == nil {
 		return defaultValue
 	}
-	return float64((val.(JSEntity)).ToFloat())
+	return float64((val.(JSEntity)).AsFloat())
 }
 
 func (this *JSMapStruct) GetInt64(key string) int64 {
 	var val = this.wrappedMap[key]
-	return int64((val.(JSEntity)).ToInteger())
+	return int64((val.(JSEntity)).AsInteger())
 }
 func (this *JSMapStruct) OptInt64(key string, defaultValue int) int64 {
 	var val = this.wrappedMap[key]
 	if val == nil {
 		return int64(defaultValue)
 	}
-	return int64((val.(JSEntity)).ToInteger())
+	return int64((val.(JSEntity)).AsInteger())
 }
 func (this *JSMapStruct) GetBool(key string) bool {
 	var val = this.wrappedMap[key]
-	return (val.(JSEntity)).ToBool()
+	return (val.(JSEntity)).AsBool()
 }
 
 func (this *JSMapStruct) OptBool(key string, defaultValue bool) bool {
@@ -282,7 +282,7 @@ func (this *JSMapStruct) OptBool(key string, defaultValue bool) bool {
 	if val == nil {
 		return defaultValue
 	}
-	return (val.(JSEntity)).ToBool()
+	return (val.(JSEntity)).AsBool()
 }
 
 // If a key/value pair exists, return the value

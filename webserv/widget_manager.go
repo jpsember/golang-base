@@ -102,7 +102,7 @@ func (m WidgetManager) ReadWidgetValues() *JSMapStruct {
  * Get value of string-valued widget
  */
 func (m WidgetManager) Vs(id string) string {
-	return m.Get(id).ReadValue().ToString()
+	return m.Get(id).ReadValue().AsString()
 }
 
 /**
@@ -119,7 +119,7 @@ func (m WidgetManager) Vb(id string) bool {
 	result := false
 	g := m.Get(id)
 	if g != nil {
-		result = g.ReadValue().ToBool()
+		result = g.ReadValue().AsBool()
 	}
 	return result
 }
@@ -144,7 +144,7 @@ func (m WidgetManager) Toggle(id string) bool {
  * Get value of integer-valued widget
  */
 func (m WidgetManager) Vi(id string) int {
-	return int(m.Get(id).ReadValue().ToInteger())
+	return int(m.Get(id).ReadValue().AsInteger())
 }
 
 /**
@@ -159,7 +159,7 @@ func (m WidgetManager) Seti(id string, v int) int {
  * Get value of float-valued widget
  */
 func (m WidgetManager) Vf(id string) float64 {
-	return m.Get(id).ReadValue().ToFloat()
+	return m.Get(id).ReadValue().AsFloat()
 }
 
 /**
