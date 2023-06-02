@@ -10,50 +10,6 @@ import (
 	"sync"
 )
 
-type Session = *SessionStruct
-
-type SessionStruct struct {
-	Id string
-	// widget representing the entire page; nil if not constructed yet
-	PageWidget Widget
-	// Lock for making request handling thread safe; we synchronize a particular session's requests
-	Mutex sync.RWMutex
-	// JSMap containing widget values, other user session state
-	State JSMap
-	// Map of widgets for this session
-	WidgetMap  map[string]Widget
-	repaintMap *Set[string]
-	// TODO: we might want the repaintMap to be ephemeral, only alive while serving the request
-	// We also might want to have a singleton, global widget map, since the state is stored here in the session
-}
-
-func NewSession() Session {
-	s := SessionStruct{
-		State:      NewJSMap(),
-		repaintMap: NewSet[string](),
-	}
-	Todo("Restore user session from filesystem/database")
-	return &s
-}
-
-func (s Session) ToJson() *JSMapStruct {
-	m := NewJSMap()
-	m.Put("id", s.Id)
-	return m
-}
-
-// Mark a widget for repainting
-func (s Session) Repaint(id string) {
-	s.repaintMap.Add(id)
-}
-
-func ParseSession(source JSEntity) Session {
-	var s = source.(*JSMapStruct)
-	var n = NewSession()
-	n.Id = s.OptString("id", "")
-	return n
-}
-
 type SessionManager interface {
 	FindSession(id string) Session
 	CreateSession() Session
@@ -164,3 +120,6 @@ func (s Session) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
 	pr("sending back to Ajax caller:", INDENT, content)
 	w.Write([]byte(content))
 }
+
+const clientKeyWidget = "w"
+const clientKeyValue = "v"

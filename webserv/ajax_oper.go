@@ -84,14 +84,11 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		if sess == nil {
 			return
 		}
-		query := url.Query()
-		Pr("query:", query)
 
 		sess.Mutex.Lock()
 		defer sess.Mutex.Unlock()
-
-		Todo("put reponsewriter, request in session for convenience?")
-		processClientMessage(sess, query, w, req)
+		sess.OpenRequest(w, req)
+		processClientMessage(sess)
 	} else {
 
 		// Otherwise, assume a full page refresh
@@ -99,54 +96,24 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-const clientKeyWidget = "w"
-const clientKeyValue = "v"
-
-func processClientMessage(sess Session, urlValues url.Values, w http.ResponseWriter, req *http.Request) {
-	Pr("processClientMessage:", INDENT, urlValues)
-	problem := ""
+func processClientMessage(sess Session) {
 	for {
-		strings, ok := urlValues[clientKeyWidget]
-		if !ok {
-			problem = "no widget key"
+		widget := sess.GetWidget()
+		if !sess.Ok() {
 			break
 		}
-
-		if len(strings) != 1 {
-			problem = "wrong number of widget ids"
-			break
-		}
-		widgetId := strings[0]
-
-		widget, ok := sess.WidgetMap[widgetId]
-		if !ok {
-			problem = "no widget found with id: " + widgetId
-			break
-		}
-
-		values, ok := urlValues[clientKeyValue]
-		if !ok {
-			problem = "No values found for widget with id: " + widgetId
-			break
-		}
-
 		listener := widget.GetBaseWidget().Listener
 		if listener == nil {
-			problem = "no listener for widget: " + widgetId
+			sess.SetProblem("no listener for id", widget.GetId())
 			break
 		}
-
-		c := MakeClientValue(values)
-		Pr("============== calling listener with values:", values)
-		listener(sess, widget, c)
-
-		Todo("allow listener to set problem in session")
-		sess.sendAjaxMarkup(w, req)
+		listener(sess, widget)
+		sess.sendAjaxMarkup(sess.responseWriter, sess.request)
 		break
 	}
+	problem := sess.GetProblem()
 	if problem != "" {
 		Pr("Problem processing client message:", INDENT, problem)
-		Pr("Client message:", INDENT, urlValues)
 	}
 }
 
@@ -215,6 +182,7 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.AddLabel("x53")
 
 	m.AddLabel("x54")
+	m.Listener(zebraListener)
 	m.AddText("zebra")
 	m.AddLabel("x56")
 
@@ -224,32 +192,26 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	sess.WidgetMap = m.widgetMap
 }
 
-func birdListener(sess any, widget Widget, value ClientValue) {
+func birdListener(sess any, widget Widget) {
 	Todo("can we have sessions produce listener functions with appropriate handling of sess any?")
 	s := sess.(Session)
 
-	newVal := value.GetString()
-	if !value.Ok() {
-		Pr("value was not ok")
+	newVal := s.GetValueString()
+	if !s.Ok() {
 		return
 	}
-
 	s.State.Put(widget.GetId(), newVal+"<<added for fun")
 	Pr("state map now:", INDENT, s.State)
 	Pr("repainting widget")
 	s.Repaint(widget.GetId())
 }
 
-func zebraListener(sess any, widget Widget, value ClientValue) {
+func zebraListener(sess any, widget Widget) {
 	s := sess.(Session)
-
-	newVal := value.GetString()
-	if !value.Ok() {
-		Pr("value was not ok")
+	newVal := s.GetValueString()
+	if !s.Ok() {
 		return
 	}
-
 	s.State.Put(widget.GetId(), newVal)
 	s.Repaint(widget.GetId())
 }
-
