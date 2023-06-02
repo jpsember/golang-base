@@ -539,8 +539,8 @@ func RandomText(rand *rand.Rand, maxLength int, withLinefeeds bool) string {
 	return strings.TrimSpace(sb.String())
 }
 
-func (m WidgetManager) open() Widget {
-	return m.openFor("<no context>")
+func (m WidgetManager) open(id string) Widget {
+	return m.openFor(id, "<no context>")
 }
 
 /**
@@ -567,13 +567,14 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 /**
  * Create a child widget and push onto stack
  */
-func (m WidgetManager) openFor(debugContext string) Widget {
+func (m WidgetManager) openFor(id string, debugContext string) Widget {
+	Todo("support ids for these containers")
 	m.Log("openFor:", debugContext)
 
 	if m.pendingColumnWeights == nil {
 		m.Columns("x")
 	}
-	widget := NewContainerWidget(m.pendingColumnWeights)
+	widget := NewContainerWidget(id, m.pendingColumnWeights)
 	m.pendingColumnWeights = nil
 	m.Log("Adding container widget")
 	m.Add(widget)

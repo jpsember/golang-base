@@ -81,6 +81,10 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		}
 		sess.Mutex.Lock()
 		defer sess.Mutex.Unlock()
+
+		// Mark some widgets for repainting
+		sess.Repaint(WidgetIdPage)
+
 		oper.sendAjaxMarkup(w, req)
 		return
 	}
@@ -96,6 +100,9 @@ func (oper AjaxOper) handler() func(http.ResponseWriter, *http.Request) {
 }
 
 func (oper AjaxOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
+
+	// Determine which widgets need repainting
+
 	sb := NewBasePrinter()
 	sb.Pr(`<h3> This was changed via an AJAX call without using JQuery at ` +
 		time.Now().Format(time.ANSIC) + `</h3>`)
@@ -134,13 +141,15 @@ func (oper AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 	w.Write([]byte(bp.String()))
 }
 
+const WidgetIdPage = "page"
+
 // Assign a widget heirarchy to a session
 func (oper AjaxOper) constructPageWidget(sess Session) {
 	m := NewWidgetManager()
 	m.SetVerbose(true)
 
 	m.Columns("..x")
-	widget := m.openFor("main container")
+	widget := m.openFor(WidgetIdPage, "main container")
 	m.AddLabel("x51")
 	m.AddLabel("x52")
 	m.AddLabel("x53")
@@ -152,4 +161,5 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.close()
 
 	sess.PageWidget = widget
+	sess.WidgetMap = m.widgetMap
 }

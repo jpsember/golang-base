@@ -17,12 +17,13 @@ type ContainerWidgetObj struct {
 
 type ContainerWidget = *ContainerWidgetObj
 
-func NewContainerWidget(columnSizes []int) ContainerWidget {
+func NewContainerWidget(id string, columnSizes []int) ContainerWidget {
 	w := ContainerWidgetObj{
 		children:    NewArray[Widget](),
 		cells:       NewArray[GridCell](),
 		columnSizes: columnSizes,
 	}
+	w.Id = id
 	return &w
 }
 

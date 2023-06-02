@@ -19,11 +19,15 @@ type SessionStruct struct {
 	Mutex sync.RWMutex
 	// JSMap containing widget values, other user session state
 	State JSMap
+	// Map of widgets for this session
+	WidgetMap  map[string]Widget
+	repaintMap *Set[string]
 }
 
 func NewSession() Session {
 	s := SessionStruct{
-		State: NewJSMap(),
+		State:      NewJSMap(),
+		repaintMap: NewSet[string](),
 	}
 	Todo("Restore user session from filesystem/database")
 	return &s
@@ -33,6 +37,11 @@ func (s Session) ToJson() *JSMapStruct {
 	m := NewJSMap()
 	m.Put("id", s.Id)
 	return m
+}
+
+// Mark a widget for repainting
+func (s Session) Repaint(id string) {
+	s.repaintMap.Add(id)
 }
 
 func ParseSession(source JSEntity) Session {
