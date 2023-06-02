@@ -122,12 +122,19 @@ func processClientMessage(sess Session, values url.Values) {
 		}
 
 		values, ok := values[clientKeyValue]
-		if len(values) != 1 {
-			problem = "wrong number of widget values"
+		if !ok {
+			problem = "No values found for widget with id: " + widgetId
 			break
 		}
 
-		widget.ReceiveValue(sess, values[0])
+		listener := widget.GetBaseWidget().Listener
+		if listener == nil {
+			problem = "no listener for widget: " + widgetId
+			break
+		}
+
+		c := MakeClientValue(values)
+		listener(sess, widget, c)
 		break
 	}
 	if problem != "" {
@@ -254,3 +261,13 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	sess.PageWidget = widget
 	sess.WidgetMap = m.widgetMap
 }
+
+//
+//func (w InputWidget) ReceiveValue(sess Session, value string) {
+//	if Alert("Modifying value") {
+//		value += "<<<---modified"
+//	}
+//	sess.State.Put(w.Id, value)
+//	// Request a repaint of the widget
+//	sess.Repaint(w.Id)
+//}

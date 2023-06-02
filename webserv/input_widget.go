@@ -1,7 +1,6 @@
 package webserv
 
 import (
-	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/json"
 )
 
@@ -31,13 +30,4 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.Quoted(`jsVal('` + w.Id + `')`)
 	m.A(`>`)
 	m.Cr()
-}
-
-func (w InputWidget) ReceiveValue(sess Session, value string) {
-	if Alert("Modifying value") {
-		value += "<<<---modified"
-	}
-	sess.State.Put(w.Id, value)
-	// Request a repaint of the widget
-	sess.Repaint(w.Id)
 }

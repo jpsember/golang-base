@@ -31,8 +31,8 @@ type WidgetManagerObj struct {
 	mPendingFloatingPointFlag   bool
 	mPendingDefaultFloatValue   float64
 	mPendingDefaultIntValue     int
-
-	parentStack *Array[ContainerWidget]
+	pendingListener             WidgetListener
+	parentStack                 *Array[ContainerWidget]
 }
 
 func NewWidgetManager() WidgetManager {
@@ -500,6 +500,7 @@ func (m WidgetManager) clearPendingComponentFields() {
 	verifyUsed(m.mPendingStringDefaultValue == "", "mPendingStringDefaultValue")
 	verifyUsed(m.mPendingLabel == "", "mPendingLabel ")
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
+	verifyUsed(m.pendingListener == nil, "pendingListener")
 
 	m.pendingColumnWeights = nil
 	m.SpanXCount = 0
@@ -612,10 +613,19 @@ func (m WidgetManager) finish() WidgetManager {
 
 func (m WidgetManager) AddText(id string) WidgetManager {
 	t := NewInputWidget(id, m.mPendingSize)
+	m.assignPendingListener(t)
 	//TextWidget t = new TextWidget(consumePendingListener(), id, consumePendingStringDefaultValue(),
 	//    mLineCount, mEditableFlag, mPendingSize, mPendingMonospaced, mPendingMinWidthEm, mPendingMinHeightEm);
 	//consumeTooltip(t);
 	return m.Add(t)
+}
+
+func (m WidgetManager) assignPendingListener(widget Widget) {
+	if m.pendingListener != nil {
+		CheckState(widget.GetBaseWidget().Listener == nil, "Widget", widget.GetId(), "already has a listener")
+		widget.GetBaseWidget().Listener = m.pendingListener
+		m.pendingListener = nil
+	}
 }
 
 //func (m WidgetManager)  AddHeader(text string ) WidgetManager {
@@ -699,3 +709,8 @@ func (m WidgetManager) AddLabel(id string) WidgetManager {
 //  ComboBoxWidget c = new ComboBoxWidget(consumePendingListener(), id, mComboChoices);
 //  return add(c);
 //}
+
+func (m WidgetManager) Listener(listener WidgetListener) WidgetManager {
+	m.pendingListener = listener
+	return m
+}
