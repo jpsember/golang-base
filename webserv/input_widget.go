@@ -1,7 +1,6 @@
 package webserv
 
 import (
-	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/json"
 )
 
@@ -23,10 +22,12 @@ func NewInputWidget(id string, size int) InputWidget {
 
 func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	value := WidgetStringValue(state, w.Id)
-
-	if value == "" {
-		Alert("changing value to something unusual")
-		value = `hello "friend"`
-	}
-	m.A(`<input type="text" id=`).Quoted(w.Id).A(` value=`).Quoted(EscapedHtml(value).String()).A(` onchange=`).Quoted(`jsVal('` + w.Id + `')`).A(`>`).Cr()
+	m.A(`<input type="text" id=`)
+	m.Quoted(w.Id)
+	m.A(` value=`)
+	m.Quoted(EscapedHtml(value).String())
+	m.A(` onchange=`)
+	m.Quoted(`jsVal('` + w.Id + `')`)
+	m.A(`>`)
+	m.Cr()
 }

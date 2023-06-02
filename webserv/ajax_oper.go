@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 )
 
 type AjaxOperStruct struct {
@@ -84,6 +83,7 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		defer sess.Mutex.Unlock()
 
 		// Mark some widgets for repainting
+
 		//sess.Repaint(WidgetIdPage)
 		sess.Repaint("zebra")
 
@@ -138,14 +138,17 @@ func (oper AjaxOper) sendAjaxMarkup(session Session, w http.ResponseWriter, req 
 			}
 		}
 
-		Halt("sending widget markup:", INDENT, refmap)
+		//Halt("sending widget markup:", INDENT, refmap)
 	}
 
-	sb := NewBasePrinter()
-	sb.Pr(`<h3> This was changed via an AJAX call without using JQuery at ` +
-		time.Now().Format(time.ANSIC) + `</h3>`)
-	Pr("sending markup back to Ajax caller:", INDENT, sb.String())
-	w.Write([]byte(sb.String()))
+	Todo("have a JSMap (and JSList) CompactString method")
+	content := PrintJSEntity(jsmap, false)
+
+	//sb := NewBasePrinter()
+	//sb.Pr(`<h3> This was changed via an AJAX call without using JQuery at ` +
+	//	time.Now().Format(time.ANSIC) + `</h3>`)
+	Pr("sending markup back to Ajax caller:", INDENT, content)
+	w.Write([]byte(content))
 }
 
 func addSubtree(target *Set[string], w Widget) {
@@ -200,7 +203,7 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	m.Columns("..x")
 	widget := m.openFor(WidgetIdPage, "main container")
-	m.AddLabel("x51")
+	m.AddText("bird")
 	m.AddLabel("x52")
 	m.AddLabel("x53")
 

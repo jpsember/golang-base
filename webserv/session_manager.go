@@ -22,6 +22,9 @@ type SessionStruct struct {
 	// Map of widgets for this session
 	WidgetMap  map[string]Widget
 	repaintMap *Set[string]
+
+	// TODO: we might want the repaintMap to be ephemeral, only alive while serving the request
+	// We also might want to have a singleton, global widget map, since the state is stored here in the session
 }
 
 func NewSession() Session {
