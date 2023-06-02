@@ -85,12 +85,13 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
+		Todo("we can move the ajax handling into the session class?")
+
 		sess.Mutex.Lock()
 		defer sess.Mutex.Unlock()
 		sess.OpenRequest(w, req)
 		processClientMessage(sess)
 	} else {
-
 		// Otherwise, assume a full page refresh
 		oper.processFullPageRequest(w, req)
 	}
