@@ -122,6 +122,7 @@ func WidgetStringValue(state JSMap, id string) string {
 }
 
 func (s Session) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
+	pr := PrIf(true)
 
 	jsmap := NewJSMap()
 
@@ -164,6 +165,6 @@ func (s Session) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
 	Todo("have a JSMap (and JSList) CompactString method")
 	content := PrintJSEntity(jsmap, false)
 
-	Pr("sending markup back to Ajax caller:", INDENT, content)
+	pr("sending back to Ajax caller:", INDENT, content)
 	w.Write([]byte(content))
 }
