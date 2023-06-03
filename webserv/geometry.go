@@ -11,6 +11,12 @@ func IPointWith(x int, y int) IPoint {
 	return IPoint{X: x, Y: y}
 }
 
+var IPointZero = IPoint{}
+
+func (p IPoint) String() string {
+	return fmt.Sprintf("[x:%v y:%v]", p.X, p.Y)
+}
+
 type Size struct {
 	W int
 	H int

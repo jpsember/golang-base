@@ -9,11 +9,9 @@ import (
 
 type WidgetManagerObj struct {
 	BaseObject
-	rand                 *rand.Rand
-	pendingColumnWeights []int
+	rand *rand.Rand
 	// Note: this was a sorted map in the Java code
-	widgetMap                   map[string]Widget
-	SpanXCount                  int
+	widgetMap map[string]Widget
 	GrowXWeight                 int
 	GrowYWeight                 int
 	mPendingSize                int
@@ -33,6 +31,8 @@ type WidgetManagerObj struct {
 	mPendingDefaultIntValue     int
 	pendingListener             WidgetListener
 	parentStack                 *Array[ContainerWidget]
+
+	pendingColumns int
 }
 
 func NewWidgetManager() WidgetManager {
@@ -170,56 +170,9 @@ func (m WidgetManager) SetF(id string, v float64) float64 {
 	return v
 }
 
-func (m WidgetManager) EndRow() WidgetManager {
-	w := m.parentStack.Last()
-	w.EndRow(m)
-	return m
-}
-
 // ------------------------------------------------------------------------------------
 
 var digitsExpr = Regexp(`^\d+$`)
-
-/**
- * <pre>
- *
- * Set the number of columns, and which ones can grow, for the next widget in
- * the hierarchy. The columns expression is a string of column expressions,
- * which may be one of:
- *
- *     "."   a column with weight zero
- *     "x"   a column with weight 100
- *     "\d+" column with integer weight
- *
- * Spaces are ignored, except to separate integer weights from each other.
- * </pre>
- */
-func (m WidgetManager) Columns(columnsExpr string) WidgetManager {
-	CheckState(m.pendingColumnWeights == nil, "previous column weights were never used")
-
-	columnSizes := NewArray[int]()
-	for _, word := range strings.Split(columnsExpr, " ") {
-		size := 0
-		if digitsExpr.MatchString(word) {
-			size = ParseIntM(word)
-			columnSizes.Add(size)
-		} else {
-			w := []byte(word)
-			for _, c := range w {
-				if c == '.' {
-					size = 0
-				} else if c == 'x' {
-					size = 100
-				} else {
-					BadArg("Can't parse columns expression:", Quoted(columnsExpr))
-				}
-				columnSizes.Add(size)
-			}
-		}
-	}
-	m.pendingColumnWeights = columnSizes.Array()
-	return m
-}
 
 const (
 	SIZE_DEFAULT = iota
@@ -236,40 +189,6 @@ const (
 	ALIGNMENT_CENTER
 	ALIGNMENT_RIGHT
 )
-
-/**
- * Make next component added occupy remaining columns in its row
- */
-func (m WidgetManager) Spanx() WidgetManager {
-	m.SpanXCount = -1
-	return m
-}
-
-/**
- * Make next component added occupy some number of columns in its row
- */
-func (m WidgetManager) SpanxCount(count int) WidgetManager {
-	CheckArg(count > 0)
-	m.SpanXCount = count
-	return m
-}
-
-/**
- * Skip a single cell
- */
-func (m WidgetManager) skip() WidgetManager {
-	Todo("skip()")
-	//m.add(m.wrap(nil))
-	return m
-}
-
-/**
- * Skip one or more cells
- */
-func (m WidgetManager) skipN(count int) WidgetManager {
-	m.SpanxCount(count)
-	return m.skip()
-}
 
 /**
  * Set pending component, and the column it occupies, as 'growable'. This can
@@ -369,6 +288,12 @@ func (m WidgetManager) center() WidgetManager {
  */
 func (m WidgetManager) Monospaced() WidgetManager {
 	m.mPendingMonospaced = true
+	return m
+}
+
+// Set number of Bootstrap columns for next widget
+func (m WidgetManager) Col(columns int) WidgetManager {
+	m.pendingColumns = columns
 	return m
 }
 
@@ -494,7 +419,6 @@ func verifyUsed(flag bool, name string) {
 
 func (m WidgetManager) clearPendingComponentFields() {
 	// If some values were not used, issue warnings
-	verifyUsed(0 == len(m.pendingColumnWeights), "pending column weights")
 	//verifyUsed(mComboChoices, "pending combo choices");
 	verifyUsed(m.mPendingDefaultIntValue == 0, "pendingDefaultIntValue")
 	verifyUsed(m.mPendingStringDefaultValue == "", "mPendingStringDefaultValue")
@@ -502,8 +426,6 @@ func (m WidgetManager) clearPendingComponentFields() {
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
 	verifyUsed(m.pendingListener == nil, "pendingListener")
 
-	m.pendingColumnWeights = nil
-	m.SpanXCount = 0
 	m.GrowXWeight = 0
 	m.GrowYWeight = 0
 	m.mPendingSize = SIZE_DEFAULT
@@ -572,11 +494,14 @@ func (m WidgetManager) openFor(id string, debugContext string) Widget {
 	Todo("support ids for these containers")
 	m.Log("openFor:", debugContext)
 
-	if m.pendingColumnWeights == nil {
-		m.Columns("x")
+	if m.pendingColumns == 0 {
+		Todo("default to previous columns?")
+		m.pendingColumns = 4
 	}
-	widget := NewContainerWidget(id, m.pendingColumnWeights)
-	m.pendingColumnWeights = nil
+
+	// the number of columns a widget is to occupy should be sent to the *parent*...
+
+	widget := NewContainerWidget(id, m)
 	m.Log("Adding container widget")
 	m.Add(widget)
 	m.parentStack.Add(widget)

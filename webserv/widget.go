@@ -15,3 +15,5 @@ type Widget interface {
 	LayoutChildren(manager WidgetManager)
 	GetChildren() []Widget
 }
+
+const MaxColumns = 12

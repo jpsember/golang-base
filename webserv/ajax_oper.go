@@ -111,7 +111,7 @@ func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Req
 func (oper AjaxOper) writeHeader(bp MarkupBuilder) {
 	bp.A(oper.headerMarkup)
 	bp.OpenHtml("body", "").Br()
-	bp.OpenHtml(`div class="container-fluid"`, "body")
+	bp.OpenHtml(`div class="container"`, "body")
 }
 
 // Generate the boilerplate footer markup, then write the page to the response
@@ -130,18 +130,28 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m := NewWidgetManager()
 	//m.AlertVerbose()
 
-	m.Columns("..x")
+	// Page occupies full 12 columns
+	m.Col(12)
 	widget := m.openFor(WidgetIdPage, "main container")
 
+	m.Col(4)
+
 	m.Listener(birdListener)
+	m.Col(6)
 	m.AddText("bird")
+	m.Col(3)
 	m.AddLabel("x52")
 	m.AddLabel("x53")
 
+	m.Col(2)
 	m.AddLabel("x54")
+	m.Col(4)
 	m.Listener(zebraListener)
 	m.AddText("zebra")
-	m.AddLabel("x56")
+	m.Col(2)
+	m.AddLabel("x57")
+	m.AddLabel("x58")
+	m.AddLabel("x59")
 
 	m.close()
 
