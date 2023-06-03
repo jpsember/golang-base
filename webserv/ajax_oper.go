@@ -50,7 +50,10 @@ func (oper AjaxOper) Perform(app *App) {
 	var keyPath = keyDir.JoinM(url + ".key")
 	Pr("URL:", INDENT, `https://`+url)
 
-	http.HandleFunc("/", oper.handler())
+	http.HandleFunc("/",
+		func(w http.ResponseWriter, req *http.Request) {
+			oper.handle(w, req)
+		})
 
 	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
 
@@ -80,49 +83,13 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 	pr("url path:", url.Path)
 	if url.Path == "/ajax" {
 		sess := DetermineSession(oper.sessionManager, w, req, false)
-		// Ignore if there is no session
-		if sess == nil {
+		if sess != nil {
+			sess.HandleAjaxRequest(w, req)
 			return
 		}
-
-		sess.StartRequest(w, req)
-		defer sess.FinishRequest()
-		processClientMessage(sess)
-	} else {
-		// Otherwise, assume a full page refresh
-		oper.processFullPageRequest(w, req)
+		// ...if no session, we fall back on a full page request
 	}
-}
-
-func processClientMessage(sess Session) {
-	widget := sess.GetWidget()
-	if !sess.Ok() {
-		return
-	}
-	listener := widget.GetBaseWidget().Listener
-	if listener == nil {
-		sess.SetProblem("no listener for id", widget.GetId())
-		return
-	}
-	listener(sess, widget)
-}
-
-func (oper AjaxOper) handler() func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, req *http.Request) {
-		oper.handle(w, req)
-	}
-}
-
-func addSubtree(target *Set[string], w Widget) {
-	id := w.GetId()
-	// If we've already added this to the list, do nothing
-	if target.Contains(id) {
-		return
-	}
-	target.Add(id)
-	for _, c := range w.GetChildren() {
-		addSubtree(target, c)
-	}
+	oper.processFullPageRequest(w, req)
 }
 
 func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Request) {

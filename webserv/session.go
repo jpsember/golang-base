@@ -48,7 +48,7 @@ func (s Session) ToJson() *JSMapStruct {
 	return m
 }
 
-// Mark a widget for repainting
+// Mark a widget for repainting.
 func (s Session) Repaint(id string) {
 	s.repaintMap.Add(id)
 }
@@ -61,7 +61,14 @@ func ParseSession(source JSEntity) Session {
 }
 
 // Prepare for serving a client request from this session's user. Acquire a lock on this session.
-func (s Session) StartRequest(w http.ResponseWriter, req *http.Request) {
+func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
+	defer s.discardRequest()
+	s.prepareRequestVars(w, req)
+	s.processClientMessage()
+	s.sendAjaxResponse()
+}
+
+func (s Session) prepareRequestVars(w http.ResponseWriter, req *http.Request) {
 	s.Mutex.Lock()
 	s.responseWriter = w
 	s.request = req
@@ -71,27 +78,25 @@ func (s Session) StartRequest(w http.ResponseWriter, req *http.Request) {
 	s.widgetIds, _ = v[clientKeyWidget]
 }
 
-// Discard state added to session to serve a request; release session lock.
-func (s Session) discardRequest() {
-	problem := s.GetProblem()
-	if problem != "" {
-		Pr("Problem processing client message:", INDENT, problem)
-	}
-	s.responseWriter = nil
-	s.request = nil
-	s.requestProblem = ""
-	s.widgetValues = nil
-	s.widgetIds = nil
-	s.Mutex.Unlock()
-}
-
-// Send Ajax response back to client, then discard the request.
-func (s Session) FinishRequest() {
-	defer s.discardRequest()
+func (s Session) processClientMessage() {
+	widget := s.GetWidget()
 	if !s.Ok() {
 		return
 	}
-	pr := PrIf(true)
+	listener := widget.GetBaseWidget().Listener
+	if listener == nil {
+		s.SetProblem("no listener for id", widget.GetId())
+		return
+	}
+	listener(s, widget)
+}
+
+// Send Ajax response back to client.
+func (s Session) sendAjaxResponse() {
+	if !s.Ok() {
+		return
+	}
+	pr := PrIf(false)
 
 	jsmap := NewJSMap()
 
@@ -131,6 +136,33 @@ func (s Session) FinishRequest() {
 
 	pr("sending back to Ajax caller:", INDENT, content)
 	s.responseWriter.Write([]byte(content))
+
+}
+
+func addSubtree(target *Set[string], w Widget) {
+	id := w.GetId()
+	// If we've already added this to the list, do nothing
+	if target.Contains(id) {
+		return
+	}
+	target.Add(id)
+	for _, c := range w.GetChildren() {
+		addSubtree(target, c)
+	}
+}
+
+// Discard state added to session to serve a request; release session lock.
+func (s Session) discardRequest() {
+	problem := s.GetProblem()
+	if problem != "" {
+		Pr("Problem processing client message:", INDENT, problem)
+	}
+	s.responseWriter = nil
+	s.request = nil
+	s.requestProblem = ""
+	s.widgetValues = nil
+	s.widgetIds = nil
+	s.Mutex.Unlock()
 }
 
 func (s Session) SetProblem(message ...any) Session {
