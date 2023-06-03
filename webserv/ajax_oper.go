@@ -85,11 +85,8 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		Todo("we can move the ajax handling into the session class?")
-
-		sess.Mutex.Lock()
-		defer sess.Mutex.Unlock()
-		sess.OpenRequest(w, req)
+		sess.StartRequest(w, req)
+		defer sess.FinishRequest()
 		processClientMessage(sess)
 	} else {
 		// Otherwise, assume a full page refresh
@@ -98,24 +95,16 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 }
 
 func processClientMessage(sess Session) {
-	for {
-		widget := sess.GetWidget()
-		if !sess.Ok() {
-			break
-		}
-		listener := widget.GetBaseWidget().Listener
-		if listener == nil {
-			sess.SetProblem("no listener for id", widget.GetId())
-			break
-		}
-		listener(sess, widget)
-		sess.sendAjaxMarkup(sess.responseWriter, sess.request)
-		break
+	widget := sess.GetWidget()
+	if !sess.Ok() {
+		return
 	}
-	problem := sess.GetProblem()
-	if problem != "" {
-		Pr("Problem processing client message:", INDENT, problem)
+	listener := widget.GetBaseWidget().Listener
+	if listener == nil {
+		sess.SetProblem("no listener for id", widget.GetId())
+		return
 	}
+	listener(sess, widget)
 }
 
 func (oper AjaxOper) handler() func(http.ResponseWriter, *http.Request) {

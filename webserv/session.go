@@ -25,8 +25,6 @@ type SessionStruct struct {
 
 	// Current request variables
 
-	//WidgetValue    ClientValue
-	//WidgetId       ClientValue
 	responseWriter http.ResponseWriter
 	request        *http.Request
 	// If nonempty, problem detected with current request
@@ -62,14 +60,77 @@ func ParseSession(source JSEntity) Session {
 	return n
 }
 
-// Prepare for serving a client request from this session's user
-func (s Session) OpenRequest(w http.ResponseWriter, req *http.Request) {
+// Prepare for serving a client request from this session's user. Acquire a lock on this session.
+func (s Session) StartRequest(w http.ResponseWriter, req *http.Request) {
+	s.Mutex.Lock()
 	s.responseWriter = w
 	s.request = req
 	s.requestProblem = ""
 	v := req.URL.Query()
 	s.widgetValues, _ = v[clientKeyValue]
 	s.widgetIds, _ = v[clientKeyWidget]
+}
+
+// Discard state added to session to serve a request; release session lock.
+func (s Session) discardRequest() {
+	problem := s.GetProblem()
+	if problem != "" {
+		Pr("Problem processing client message:", INDENT, problem)
+	}
+	s.responseWriter = nil
+	s.request = nil
+	s.requestProblem = ""
+	s.widgetValues = nil
+	s.widgetIds = nil
+	s.Mutex.Unlock()
+}
+
+// Send Ajax response back to client, then discard the request.
+func (s Session) FinishRequest() {
+	defer s.discardRequest()
+	if !s.Ok() {
+		return
+	}
+	pr := PrIf(true)
+
+	jsmap := NewJSMap()
+
+	// TODO: there might be a more efficient way to do the repainting
+
+	// Determine which widgets need repainting
+	if s.repaintMap.Size() != 0 {
+		// refmap will be the map sent to the client with the widgets
+		refmap := NewJSMap()
+		jsmap.Put("w", refmap)
+
+		painted := NewSet[string]()
+
+		for k, _ := range s.repaintMap.WrappedMap() {
+			w := s.WidgetMap[k]
+			addSubtree(painted, w)
+		}
+
+		// Do a depth first search of the widget map, sending widgets that have been marked for painting
+		stack := NewArray[string]()
+		stack.Add(s.PageWidget.GetId())
+		for stack.NonEmpty() {
+			widgetId := stack.Pop()
+			widget := s.WidgetMap[widgetId]
+			if painted.Contains(widgetId) {
+				m := NewMarkupBuilder()
+				widget.RenderTo(m, s.State)
+				refmap.Put(widgetId, m.String())
+			}
+			for _, child := range widget.GetChildren() {
+				stack.Add(child.GetId())
+			}
+		}
+	}
+
+	content := jsmap.CompactString()
+
+	pr("sending back to Ajax caller:", INDENT, content)
+	s.responseWriter.Write([]byte(content))
 }
 
 func (s Session) SetProblem(message ...any) Session {
