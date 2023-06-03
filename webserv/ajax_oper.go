@@ -5,6 +5,7 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
 	"log"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"strings"
@@ -125,6 +126,9 @@ func (oper AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 
 const WidgetIdPage = "page"
 
+var alertWidget AlertWidget
+var myRand = rand.New(rand.NewSource(1234))
+
 // Assign a widget heirarchy to a session
 func (oper AjaxOper) constructPageWidget(sess Session) {
 	m := NewWidgetManager()
@@ -133,6 +137,9 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	// Page occupies full 12 columns
 	m.Col(12)
 	widget := m.openFor(WidgetIdPage, "main container")
+
+	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
+	m.Add(alertWidget)
 
 	m.Col(4)
 
@@ -174,11 +181,20 @@ func birdListener(sess any, widget Widget) {
 }
 
 func zebraListener(sess any, widget Widget) {
+	Todo("we need to supply misc objects to the listener, e.g. to access the session *and* the oper")
+	alertWidget.Class = (alertWidget.Class + 1) % 4
+
 	s := sess.(Session)
 	newVal := s.GetValueString()
 	if !s.Ok() {
 		return
 	}
-	s.State.Put(widget.GetId(), newVal)
-	s.Repaint(widget.GetId())
+	s.State.Put(widget.GetBaseWidget().Id, newVal)
+	s.State.Put(alertWidget.Id,
+		strings.TrimSpace(s.State.OptString(alertWidget.Id, "")+" "+
+			RandomText(myRand, 55, false)))
+
+	s.Repaint(widget.GetBaseWidget().Id)
+	s.Repaint(alertWidget.Id)
+
 }

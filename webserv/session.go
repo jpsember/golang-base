@@ -96,7 +96,7 @@ func (s Session) sendAjaxResponse() {
 	if !s.Ok() {
 		return
 	}
-	pr := PrIf(false)
+	pr := PrIf(true)
 
 	jsmap := NewJSMap()
 
@@ -132,9 +132,9 @@ func (s Session) sendAjaxResponse() {
 		}
 	}
 
+	pr("sending back to Ajax caller:", INDENT, jsmap)
 	content := jsmap.CompactString()
 
-	pr("sending back to Ajax caller:", INDENT, content)
 	s.responseWriter.Write([]byte(content))
 
 }
