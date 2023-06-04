@@ -28,6 +28,7 @@ func NewCmdLineArgs() *CmdLineArgs {
 	c.namedOptionMap = make(map[string]*Option)
 	c.optionList = NewArray[string]()
 	c.extraArguments = NewArray[string]()
+	//c.AlertVerbose()
 	return c
 }
 
@@ -79,15 +80,7 @@ func (c *CmdLineArgs) Help() {
 // Process the unpacked list of options and values, assigning values to the
 // options
 func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
-
-	var pr func(message ...any)
-
-	if false {
-		pr = Pr
-	} else {
-		pr = func(message ...any) {}
-	}
-
+	pr := PrIf(c.Verbose())
 	pr("processing unpacked list of options and values")
 
 	var cursor = 0
