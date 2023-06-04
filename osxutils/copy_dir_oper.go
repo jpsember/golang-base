@@ -4,21 +4,12 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
+	. "github.com/jpsember/golang-base/gen/sample"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 )
-
-var _ = Pr
-
-//
-//func main() {
-//	app := prepareApp()
-//	addCopyDirOper(app)
-//	addExamineFilenamesOper(app)
-//	app.Start()
-//}
 
 type CopyDirOper struct {
 	BaseObject
@@ -26,6 +17,22 @@ type CopyDirOper struct {
 	sourcePath Path
 	destPath   Path
 	errCount   int
+	config     CopyDirConfig
+}
+
+// Get the default arguments
+func (oper *CopyDirOper) GetArguments() DataClass {
+	return DefaultCopyDirConfig
+}
+
+// Does an explicit arguments file have to exist, vs using the defaults?
+func (oper *CopyDirOper) ArgsFileMustExist() bool {
+	return false
+}
+
+// Accept the possibly modified arguments for later processing
+func (oper *CopyDirOper) AcceptArguments(a DataClass) {
+	oper.config = a.(CopyDirConfig)
 }
 
 func (oper *CopyDirOper) UserCommand() string {
@@ -63,14 +70,13 @@ func procPath(desc string, expr string) (Path, string) {
 func (oper *CopyDirOper) Perform(app *App) {
 	oper.SetVerbose(app.Verbose())
 
-	c := app.CmdLineArgs()
 	{
 		var operSourceDir, operDestDir Path
 		problem := ""
 		for {
-			operSourceDir, problem = procPath("Source directory", c.GetString("source"))
+			operSourceDir, problem = procPath("Source directory", oper.config.Source())
 			if problem == "" {
-				operDestDir, problem = procPath("Target directory", c.GetString("dest"))
+				operDestDir, problem = procPath("Target directory", oper.config.Dest())
 			}
 			if problem != "" {
 				break
@@ -219,8 +225,5 @@ func addCopyDirOper(app *App) {
 	var oper = &CopyDirOper{}
 	oper.ProvideName(oper)
 	app.RegisterOper(oper)
-	Todo("assume if string is empty that none was given")
-	app.CmdLineArgs(). //
-				Add("source").SetString().Desc("source directory").   //
-				Add("dest").SetString().Desc("destination directory") //
+
 }

@@ -1,0 +1,4 @@
+class {
+  string source;
+  string dest;
+}

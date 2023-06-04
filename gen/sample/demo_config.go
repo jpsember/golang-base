@@ -87,7 +87,7 @@ func (v *sDemoConfig) ToJson() any {
 }
 
 func (v *sDemoConfig) Parse(source any) DataClass {
-	var s = source.(*JSMapStruct)
+	var s = source.(JSMap)
 	var n = newDemoConfig().(*sDemoConfig)
 	n.simulate = s.OptBool("simulate", false)
 	n.name = s.OptString("name", "")
@@ -97,7 +97,7 @@ func (v *sDemoConfig) Parse(source any) DataClass {
 }
 
 func (v *sDemoConfig) String() string {
-	var x = v.ToJson().(*JSMapStruct)
+	var x = v.ToJson().(JSMap)
 	return PrintJSEntity(x, true)
 }
 
@@ -163,8 +163,8 @@ func (v DemoConfigBuilder) String() string {
 	return v.Build().String()
 }
 
-// Convenience method to parse a DemoConfig from a JSMapStruct
+// Convenience method to parse a DemoConfig from a JSMap
 func ParseDemoConfig(jsmap JSEntity) DemoConfig {
-	m := jsmap.(*JSMapStruct)
+	m := jsmap.(JSMap)
 	return DefaultDemoConfig.Parse(m).(DemoConfig)
 }

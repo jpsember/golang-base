@@ -398,11 +398,9 @@ func (a *App) compileDataArgs() {
 	// Re-parse the arguments from the (possibly modified) jsmap
 
 	operArgs = operArgs.Parse(js)
-	Pr("new oper args:", INDENT, operArgs)
+	pr("...modified arguments:", INDENT, operArgs)
 
-	a.operDataClassArgs = operArgs
-
-	Todo("is .operDataClassArgs used elsewhere?")
+	a.operDataClassArgs = operArgs // Replace the previous version, though I don't think this field is used past this point
 	oper.AcceptArguments(operArgs)
 }
 

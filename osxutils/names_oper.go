@@ -116,5 +116,4 @@ func addExamineFilenamesOper(app *App) {
 	var oper = &FilenamesOper{}
 	oper.ProvideName("names")
 	app.RegisterOper(oper)
-	//app.CmdLineArgs().Add("source").SetString().Desc("source directory") //
 }
