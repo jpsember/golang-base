@@ -89,7 +89,16 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 }
 
 func (a *App) SetTestArgs(args string) {
-	a.testArgs = strings.Split(args, " ")
+	items := strings.Split(args, " ")
+	items2 := NewArray[string]()
+	for _, k := range items {
+		k := strings.TrimSpace(k)
+		if k == "" {
+			continue
+		}
+		items2.Add(k)
+	}
+	a.testArgs = items2.Array()
 }
 
 func (a *App) RegisterOper(oper Oper) {

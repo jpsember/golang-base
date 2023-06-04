@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
@@ -13,13 +12,17 @@ import (
 
 var _ = Pr
 
-func main() {
-	cmdLineExample()
-}
+//
+//func main() {
+//	app := prepareApp()
+//	addCopyDirOper(app)
+//	addExamineFilenamesOper(app)
+//	app.Start()
+//}
 
 type CopyDirOper struct {
 	BaseObject
-	errPath    Path
+	errLog     ErrLog
 	sourcePath Path
 	destPath   Path
 	errCount   int
@@ -28,8 +31,6 @@ type CopyDirOper struct {
 func (oper *CopyDirOper) UserCommand() string {
 	return "copydir"
 }
-
-const dots = "............................................................................................................................................................................."
 
 func procPath(desc string, expr string) (Path, string) {
 	var err error
@@ -88,6 +89,8 @@ func (oper *CopyDirOper) Perform(app *App) {
 		oper.destPath = operDestDir
 	}
 
+	oper.errLog = NewErrLog(oper.destPath)
+
 	dirStack := NewArray[Path]()
 	depthStack := NewArray[int]()
 	dirStack.Add(oper.sourcePath)
@@ -99,18 +102,19 @@ func (oper *CopyDirOper) Perform(app *App) {
 	for dirStack.NonEmpty() {
 		dir := dirStack.Pop()
 		depth := depthStack.Pop()
-		oper.Log("Popped dir:", dir)
+		//oper.Log("Popped dir:", dir)
 
 		// Make target directory if it doesn't already exist
 		targetDir := NewPathM(targetPrefix + dir.String()[sourcePrefixLen:])
 		err := targetDir.MkDirs()
 		if err != nil {
-			oper.outputError(err, dir)
+			oper.errLog.Add(err, "unable to make directory", dir)
 			continue
 		}
 		dirEntries, err := os.ReadDir(dir.String())
 		if err != nil {
-			oper.outputError(err, dir)
+			oper.errLog.Add(err, "unable to read directory contents", dir)
+			continue
 		}
 
 		for _, dirEntry := range dirEntries {
@@ -121,7 +125,7 @@ func (oper *CopyDirOper) Perform(app *App) {
 			// Check if source is a symlink.  If so, skip it.
 			srcFileInfo, err := os.Lstat(sourceFile.String())
 			if err != nil {
-				oper.outputError(err, sourceFile)
+				oper.errLog.Add(err, "unable to get Lstat for", sourceFile)
 				continue
 			}
 			if srcFileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
@@ -137,8 +141,8 @@ func (oper *CopyDirOper) Perform(app *App) {
 			// If target file already exists, verify it is the same type (dir or file) as source
 			if targetFile.Exists() {
 				if sourceFile.IsDir() != targetFile.IsDir() {
-					oper.outputError(errors.New(ToString("source is not same file/dir type as target:", sourceFile.String(), INDENT,
-						"vs", targetFile.String())), dir)
+					oper.errLog.Add(err, "source is not same file/dir type as target:", sourceFile, INDENT,
+						"vs", targetFile)
 					continue
 				}
 				// If it is a file, do nothing else
@@ -152,35 +156,35 @@ func (oper *CopyDirOper) Perform(app *App) {
 				depthStack.Add(depth + 1)
 				continue
 			}
-			prefLen := 2 * depth
-			CheckState(prefLen < len(dots))
-			oper.Log(dots[0:prefLen] + " " + sourceFileSuffix)
+			oper.Log(DepthDots(depth, sourceFileSuffix))
 
 			sourceFileStat, err := os.Stat(sourceFile.String())
 			if err != nil {
-				oper.outputError(err, sourceFile)
+				oper.errLog.Add(err, "getting Stat", sourceFile)
 				continue
 			}
 			if !sourceFileStat.Mode().IsRegular() {
-				oper.outputError(errors.New("source file "+sourceFile.String()+" is not a regular file"), sourceFile)
+				oper.errLog.Add(err, "source file is not a regular file", sourceFile)
 				continue
 			}
 			err = copyFileContents(sourceFile, targetFile)
 			if err != nil {
-				oper.outputError(err, sourceFile)
+				oper.errLog.Add(err, "copying file contents", sourceFile, targetFile)
+				continue
+			}
+
+			modifiedTime := sourceFileStat.ModTime()
+			err = os.Chtimes(targetFile.String(), modifiedTime, modifiedTime)
+			if err != nil {
+				oper.errLog.Add(err, "unable to set modified time", targetFile)
 				continue
 			}
 		}
 	}
-	if oper.errCount != 0 {
-		Pr("*** Error count:", oper.errCount)
-	}
+	oper.errLog.PrintSummary()
 }
 
-// copyFileContents copies the contents of the file named src to the file named
-// by dst. The file will be created if it does not already exist. If the
-// destination file exists, all it's contents will be replaced by the contents
-// of the source file.
+// Copies file.  If destination exists, its contents will be replaced.
 func copyFileContents(srcp, dstp Path) (err error) {
 	src := srcp.String()
 	dst := dstp.String()
@@ -207,38 +211,16 @@ func copyFileContents(srcp, dstp Path) (err error) {
 	return
 }
 
-func (oper *CopyDirOper) outputError(err error, dir Path) {
-	oper.errCount++
-	errMsg := ToString("*** error copying subdirectory:", dir)
-	Pr(errMsg)
-
-	if oper.errPath.Empty() {
-		oper.errPath = NewPathM(oper.destPath.String() + "_errors")
-	}
-	f, err := os.OpenFile(oper.errPath.String(),
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	CheckOk(err, "Failed opening error file:", oper.errPath)
-	defer f.Close()
-	_, err = f.WriteString(errMsg + "\n")
-	CheckOk(err, "Failed appending to error file:", oper.errPath)
-}
-
 func (oper *CopyDirOper) GetHelp(bp *BasePrinter) {
 	bp.Pr("Copy a directory  -s <source dir> -d <dest dir>")
 }
 
-func cmdLineExample() {
+func addCopyDirOper(app *App) {
 	var oper = &CopyDirOper{}
 	oper.ProvideName(oper)
-	var app = NewApp()
-	app.SetName("copydir")
-	app.Version = "2.1.3"
 	app.RegisterOper(oper)
 	Todo("assume if string is empty that none was given")
 	app.CmdLineArgs(). //
 				Add("source").SetString().Desc("source directory").   //
 				Add("dest").SetString().Desc("destination directory") //
-	//app.SetTestArgs("--verbose --dryrun --source cmdlineapp/sample --dest cmdlineapp/output")
-	//app.SetTestArgs("--verbose --dryrun --source /Users/home/github_projects/java-webtools --dest /Users/home/Desktop/fruvious")
-	app.Start()
 }
