@@ -4,6 +4,7 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
+	. "github.com/jpsember/golang-base/gen/sample"
 	"os"
 	"strings"
 )
@@ -15,6 +16,20 @@ type FilenamesOper struct {
 	sourcePath Path
 	destPath   Path
 	errCount   int
+	config     NamesOperConfig
+	namesCount int
+}
+
+func (oper *FilenamesOper) GetArguments() DataClass {
+	return DefaultNamesOperConfig
+}
+
+func (oper *FilenamesOper) ArgsFileMustExist() bool {
+	return false
+}
+
+func (oper *FilenamesOper) AcceptArguments(a DataClass) {
+	oper.config = a.(NamesOperConfig)
 }
 
 func (oper *FilenamesOper) UserCommand() string {
@@ -24,12 +39,11 @@ func (oper *FilenamesOper) UserCommand() string {
 func (oper *FilenamesOper) Perform(app *App) {
 	oper.SetVerbose(app.Verbose())
 
-	c := app.CmdLineArgs()
 	{
 		var operSourceDir Path
 		problem := ""
 		for {
-			operSourceDir, problem = procPath("Source directory", c.GetString("source"))
+			operSourceDir, problem = procPath("Source directory", oper.config.Source())
 			if problem != "" {
 				break
 			}
@@ -47,6 +61,7 @@ func (oper *FilenamesOper) Perform(app *App) {
 	}
 
 	oper.errLog = NewErrLog(oper.sourcePath)
+	oper.errLog.Clean = oper.config.CleanLog()
 
 	dirStack := NewArray[Path]()
 	depthStack := NewArray[int]()
@@ -58,7 +73,8 @@ func (oper *FilenamesOper) Perform(app *App) {
 	for dirStack.NonEmpty() {
 		dir := dirStack.Pop()
 		depth := depthStack.Pop()
-		//oper.Log("Popped dir:", dir)
+
+		oper.examineFilename(dir)
 
 		dirEntries, err := os.ReadDir(dir.String())
 		if err != nil {
@@ -70,6 +86,7 @@ func (oper *FilenamesOper) Perform(app *App) {
 			nm := dirEntry.Name()
 
 			sourceFile := dir.JoinM(nm)
+			oper.examineFilename(sourceFile)
 
 			// Check if source is a symlink.  If so, skip it.
 			srcFileInfo, err := os.Lstat(sourceFile.String())
@@ -109,11 +126,24 @@ func (oper *FilenamesOper) Perform(app *App) {
 }
 
 func (oper *FilenamesOper) GetHelp(bp *BasePrinter) {
-	bp.Pr("Examine filenames -s <source dir>")
+	bp.Pr("Examine filenames; source <source dir> [clean_log]")
+}
+
+var fnExpr = Regexp(`^(\w|-|\.| )+$`)
+
+func (oper *FilenamesOper) examineFilename(p Path) {
+	oper.namesCount++
+	base := p.Base()
+	if fnExpr.MatchString(base) {
+		return
+	}
+	oper.errLog.Add(Warning, "strange characters:", Quoted(base), "in", p)
 }
 
 func addExamineFilenamesOper(app *App) {
 	var oper = &FilenamesOper{}
 	oper.ProvideName("names")
-	app.RegisterOper(oper)
+	app.RegisterOper(AssertJsonOper(oper))
+	app.SetTestArgs("names  source osxutils/sample clean_log  ")
+	//app.SetTestArgs("names -g  ")
 }

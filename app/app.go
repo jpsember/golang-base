@@ -101,6 +101,18 @@ func (a *App) SetTestArgs(args string) {
 	a.testArgs = items2.Array()
 }
 
+func AssertJsonOper(oper Oper) OperWithJsonArgs {
+	result, ok := oper.(OperWithJsonArgs)
+	CheckArg(ok, "oper does not support OperWithJsonArgs interface:", oper)
+	return result
+}
+
+func AssertCmdLineOper(oper Oper) OperWithCmdLineArgs {
+	result, ok := oper.(OperWithCmdLineArgs)
+	CheckArg(ok, "oper does not support OperWithCmdLineArgs interface:", oper)
+	return result
+}
+
 func (a *App) RegisterOper(oper Oper) {
 	key := oper.UserCommand()
 	_, ok := a.operMap[key]
@@ -186,6 +198,9 @@ func (a *App) auxStart() {
 	pr("calling processArgs")
 	a.processArgs()
 	if a.error() {
+		return
+	}
+	if a.genArgsFlag {
 		return
 	}
 	var unusedArgs = c.UnusedExtraArgs()

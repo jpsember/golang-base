@@ -12,10 +12,6 @@ func main() {
 	app := prepareApp()
 	addCopyDirOper(app)
 	addExamineFilenamesOper(app)
-
-	//app.SetTestArgs("names --verbose --source osxutils/sample   ")
-	//app.SetTestArgs("copydir --verbose  source osxutils/sample dest osxutils/output   ")
-
 	app.Start()
 }
 

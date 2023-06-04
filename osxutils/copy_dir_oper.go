@@ -96,6 +96,7 @@ func (oper *CopyDirOper) Perform(app *App) {
 	}
 
 	oper.errLog = NewErrLog(oper.destPath)
+	oper.errLog.Clean = oper.config.CleanLog()
 
 	dirStack := NewArray[Path]()
 	depthStack := NewArray[int]()
@@ -218,12 +219,11 @@ func copyFileContents(srcp, dstp Path) (err error) {
 }
 
 func (oper *CopyDirOper) GetHelp(bp *BasePrinter) {
-	bp.Pr("Copy a directory  -s <source dir> -d <dest dir>")
+	bp.Pr("Copy a directory; source <source dir> dest <dest dir> [clean_log]")
 }
 
 func addCopyDirOper(app *App) {
 	var oper = &CopyDirOper{}
 	oper.ProvideName(oper)
-	app.RegisterOper(oper)
-
+	app.RegisterOper(AssertJsonOper(oper))
 }

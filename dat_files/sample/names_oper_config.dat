@@ -1,5 +1,4 @@
 class {
   string source;
-  string dest;
   bool clean_log;
 }

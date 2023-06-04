@@ -12,6 +12,7 @@ type ErrLogStruct struct {
 	path      Path
 	Errors    int
 	Warnings  int
+	Clean     bool
 }
 
 type ErrLog = *ErrLogStruct
@@ -36,8 +37,12 @@ func (log ErrLog) Add(err error, messages ...any) error {
 	Pr(errMsg)
 
 	if log.path.Empty() {
-		log.path = NewPathM(log.ownerPath.String() + "_errors")
+		log.path = NewPathM(log.ownerPath.String() + "_errors.txt")
+		if log.Clean && log.path.Exists() {
+			log.path.DeleteFileM()
+		}
 	}
+
 	f, err := os.OpenFile(log.path.String(),
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	CheckOk(err, "Failed opening error file:", log.path)
