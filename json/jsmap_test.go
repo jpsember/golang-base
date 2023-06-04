@@ -26,7 +26,7 @@ func TestJSMapPrettyPrint(t *testing.T) {
 
 	j.SetVerbose()
 
-	var jsmap = JSMapFromString(text1)
+	var jsmap = JSMapFromStringM(text1)
 	var s = jsmap.String()
 
 	j.GenerateMessage(s)
@@ -38,7 +38,8 @@ func TestPrintJSMapToString(t *testing.T) {
 
 	var p JSONParser
 	p.WithText(text1)
-	var jsmap = p.ParseMap()
+	var jsmap, e = p.ParseMap()
+	CheckOk(e)
 
 	var s = ToString(jsmap)
 
@@ -119,4 +120,14 @@ func corrupt(j *jt.J, s string) string {
 	var c = CopyOfBytes(b)
 	c[i] = newBytes[k]
 	return string(c)
+}
+
+func TestEscapes(t *testing.T) {
+	j := jt.New(t)
+	s := `{"":"^(\\w|-|\\.|\\x20|'|\\(|\\)|,)+$"}`
+	var p JSONParser
+	p.WithText(s)
+	var jsmap, e = p.ParseMap()
+	CheckOk(e)
+	j.AssertMessage(jsmap)
 }

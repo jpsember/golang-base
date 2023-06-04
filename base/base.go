@@ -120,7 +120,7 @@ func BadState(message ...any) {
 
 func CheckState(valid bool, message ...any) {
 	if !valid {
-		panic("*** Invalid state! (" + CallerLocation(3) + ") " + ToString(message...))
+		panic("*** Invalid state! (" + CallerLocation(2) + ") " + ToString(message...))
 	}
 }
 

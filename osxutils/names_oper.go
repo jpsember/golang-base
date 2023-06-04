@@ -32,7 +32,6 @@ func (oper *FilenamesOper) ArgsFileMustExist() bool {
 
 func (oper *FilenamesOper) AcceptArguments(a DataClass) {
 	oper.config = a.(NamesConfig)
-	Halt("accepted:", oper.config)
 }
 
 func (oper *FilenamesOper) UserCommand() string {

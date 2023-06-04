@@ -329,9 +329,8 @@ func (a *App) compileDataArgs() {
 				return
 			}
 		}
-
-		operArgs = operArgs.Parse(argsFile.ReadStringIfExistsM("{}"))
-		pr("...read from", argsFile, ":", INDENT, operArgs)
+		argsJSMap := JSMapFromFileIfExistsM(argsFile)
+		operArgs = operArgs.Parse(argsJSMap)
 	}
 
 	var js = operArgs.ToJson().(*JSMapStruct)

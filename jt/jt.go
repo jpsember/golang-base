@@ -49,7 +49,7 @@ func New(t testing.TB) *J {
 
 	return &J{
 		TB:       t,
-		Filename: determineUnittestFilename(CallerLocation(3)),
+		Filename: determineUnittestFilename(CallerLocation(1)),
 		verbose:  testNumber == 1,
 	}
 }
@@ -60,7 +60,7 @@ func New(t testing.TB) *J {
 func Newz(t testing.TB) *J {
 	return &J{
 		TB:                t,
-		Filename:          determineUnittestFilename(CallerLocation(3)),
+		Filename:          determineUnittestFilename(CallerLocation(1)),
 		InvalidateOldHash: true,
 		verbose:           true,
 	}

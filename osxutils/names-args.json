@@ -1,0 +1,7 @@
+{    "clean_log" : false,
+           "log" : "problems.txt",
+  "max_problems" : 100,
+  "pattern" : "^(\\w|-|\\.|\\x20|'|\\(|\\)|,)+$",
+       "source" : "/Volumes/T7/jeff_copy",
+
+}

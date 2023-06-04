@@ -57,7 +57,6 @@ func (p *JSONParser) hasProblem() bool {
 }
 
 func (p *JSONParser) fail(message ...any) {
-
 	if p.Error != nil {
 		return
 	}
@@ -100,7 +99,7 @@ func (p *JSONParser) skipWhitespace() bool {
 		if c == '/' {
 			j++
 			if j == length || mSourceChars[j] != '/' {
-				p.fail()
+				p.fail("problem skipping whitespace, expected '/'")
 				return false
 			}
 			j++
@@ -121,10 +120,16 @@ func (p *JSONParser) skipWhitespace() bool {
 
 // Read an expected character and any following whitespace.
 func (p *JSONParser) ReadExpectedByte(expected byte) {
+	p.ReadExpectedByteWithoutSkipWsAfter(expected)
+	if !p.hasProblem() {
+		p.skipWhitespace()
+	}
+}
+
+// Read an expected character
+func (p *JSONParser) ReadExpectedByteWithoutSkipWsAfter(expected byte) {
 	if p.read() != expected {
 		p.fail("expected '" + string(expected) + "'")
-	} else {
-		p.skipWhitespace()
 	}
 }
 
@@ -144,7 +149,7 @@ func (p *JSONParser) readString() string {
 	// Todo("probably doesn't deal with utf-8 properly?")
 	var w strings.Builder
 
-	p.ReadExpectedByte('"')
+	p.ReadExpectedByteWithoutSkipWsAfter('"')
 
 	for !p.hasProblem() {
 		var c = p.read()
@@ -173,7 +178,7 @@ func (p *JSONParser) readString() string {
 			p.fail("Unicode not yet supported")
 			//     w.append((char) ((readHex() << 12) | (readHex() << 8) | (readHex() << 4) | readHex()));
 		default:
-			p.fail()
+			p.fail("unsupported escape sequence:", c)
 		}
 	}
 	p.skipWhitespace()
