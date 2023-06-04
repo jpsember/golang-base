@@ -122,6 +122,7 @@ func (oper AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 	bp.A(`</html>`).Cr()
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(bp.String()))
+	Todo("use single quotes where possible for html/javascript things to avoid excessive escaping in ajax json")
 }
 
 const WidgetIdPage = "page"
