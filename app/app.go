@@ -81,7 +81,6 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 		sb.WriteString("\n")
 	}
 
-	Todo("need to print command line args to help somehow")
 	if a.hasMultipleOperations() {
 		sb.WriteString("\nApp arguments:")
 	}

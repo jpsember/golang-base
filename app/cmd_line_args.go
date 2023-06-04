@@ -73,8 +73,52 @@ func (c *CmdLineArgs) Help() {
 	if c.helpShown {
 		return
 	}
+
+	sb := strings.Builder{}
+	sb.WriteString("\n")
+	if c.banner != "" {
+		sb.WriteString(c.banner)
+		sb.WriteString("\n")
+	}
+	longestPhrase1Length := 0
+	phrases := NewArray[string]()
+	for _, key := range c.optionList.Array() {
+		opt := c.namedOptionMap[key]
+		sb2 := strings.Builder{}
+		sb2.WriteString("--" + opt.LongName + ", -" + opt.ShortName)
+		typeStr := ""
+		switch opt.Type {
+		case Int:
+			typeStr = "<n>"
+		case Float:
+			typeStr = "<f>"
+		case Str:
+			typeStr = "<s>"
+		}
+		if typeStr != "" {
+			sb2.WriteString(" " + typeStr)
+		}
+
+		phrase1 := sb2.String()
+		phrases.Add(phrase1)
+		longestPhrase1Length = MaxInt(longestPhrase1Length, len(phrase1))
+
+		desc := opt.Description
+		phrases.Add(desc)
+	}
+	for j := 0; j < phrases.Size(); j += 2 {
+
+		phrase1 := phrases.Get(j)
+		phrase2 := phrases.Get(j + 1)
+		sb.WriteString(Spaces(longestPhrase1Length - len(phrase1)))
+		sb.WriteString(phrase1)
+		sb.WriteString(" :  ")
+		sb.WriteString(phrase2)
+		sb.WriteString("\n")
+	}
+
 	c.helpShown = true
-	fmt.Println(c.banner)
+	fmt.Println(sb.String())
 }
 
 // Process the unpacked list of options and values, assigning values to the

@@ -57,11 +57,16 @@ func CallerLocation(skipCount int) string {
 }
 
 func Die(message ...any) {
-	panic("*** Dying (" + CallerLocation(3) + ") " + ToString(message...))
+	var text = CallerLocation(3) + " *** Dying"
+	if len(message) != 0 {
+		text += ": " + ToString(message...)
+	}
+	Pr(text)
+	panic(text)
 }
 
 func Halt(message ...any) {
-	var text = "*** Halting (" + CallerLocation(3) + ")"
+	var text = CallerLocation(1) + " *** Halting"
 	if len(message) != 0 {
 		text += ": " + ToString(message...)
 	}

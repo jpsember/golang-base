@@ -13,6 +13,9 @@ var EmptyPath = Path("")
 
 // Construct a Path from a string; return error if there is a problem
 func NewPath(s string) (Path, error) {
+	if s == "" {
+		return "", Error("Path is empty")
+	}
 	var cleaned = filepath.Clean(s)
 	if cleaned != s {
 		return "", Error("Path isn't clean:", Quoted(s), "; should be:", Quoted(cleaned))

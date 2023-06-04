@@ -7,6 +7,7 @@ import (
 	. "github.com/jpsember/golang-base/files"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -21,6 +22,7 @@ type CopyDirOper struct {
 	errPath    Path
 	sourcePath Path
 	destPath   Path
+	errCount   int
 }
 
 func (oper *CopyDirOper) UserCommand() string {
@@ -28,6 +30,34 @@ func (oper *CopyDirOper) UserCommand() string {
 }
 
 const dots = "............................................................................................................................................................................."
+
+func procPath(desc string, expr string) (Path, string) {
+	var err error
+	problem := ""
+	result := EmptyPath
+	for {
+		if expr == "" {
+			problem = "path is empty"
+			break
+		}
+		absPath, err := filepath.Abs(expr)
+		if err != nil {
+			break
+		}
+		result, err = NewPath(absPath)
+		if err != nil {
+			break
+		}
+		break
+	}
+	if err != nil {
+		problem = err.Error()
+	}
+	if problem != "" {
+		problem = desc + "; problem: " + problem
+	}
+	return result, problem
+}
 
 func (oper *CopyDirOper) Perform(app *App) {
 	oper.SetVerbose(app.Verbose())
@@ -37,19 +67,15 @@ func (oper *CopyDirOper) Perform(app *App) {
 		var operSourceDir, operDestDir Path
 		problem := ""
 		for {
-			if c.GetString("source") == "" || c.GetString("dest") == "" {
-				problem = "Source and dest must both be nonempty"
+			operSourceDir, problem = procPath("Source directory", c.GetString("source"))
+			if problem == "" {
+				operDestDir, problem = procPath("Target directory", c.GetString("dest"))
+			}
+			if problem != "" {
 				break
 			}
-			operSourceDir = NewPathM(c.GetString("source"))
-			operDestDir = NewPathM(c.GetString("dest"))
-
 			if !operSourceDir.IsDir() {
 				problem = "source is not a directory: " + operSourceDir.String()
-				break
-			}
-			if false && operDestDir.Exists() {
-				problem = "dest path already exists: " + operDestDir.String()
 				break
 			}
 			break
@@ -91,6 +117,16 @@ func (oper *CopyDirOper) Perform(app *App) {
 			nm := dirEntry.Name()
 
 			sourceFile := dir.JoinM(nm)
+
+			// Check if source is a symlink.  If so, skip it.
+			srcFileInfo, err := os.Lstat(sourceFile.String())
+			if err != nil {
+				oper.outputError(err, sourceFile)
+				continue
+			}
+			if srcFileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
+				continue
+			}
 
 			sfn := sourceFile.String()
 			CheckArg(strings.HasPrefix(sfn, sourceFile.String()))
@@ -136,6 +172,9 @@ func (oper *CopyDirOper) Perform(app *App) {
 			}
 		}
 	}
+	if oper.errCount != 0 {
+		Pr("*** Error count:", oper.errCount)
+	}
 }
 
 // copyFileContents copies the contents of the file named src to the file named
@@ -169,6 +208,7 @@ func copyFileContents(srcp, dstp Path) (err error) {
 }
 
 func (oper *CopyDirOper) outputError(err error, dir Path) {
+	oper.errCount++
 	errMsg := ToString("*** error copying subdirectory:", dir)
 	Pr(errMsg)
 
@@ -188,16 +228,17 @@ func (oper *CopyDirOper) GetHelp(bp *BasePrinter) {
 }
 
 func cmdLineExample() {
-	Pr(VERT_SP, DASHES, "copydir", CR, DASHES)
 	var oper = &CopyDirOper{}
 	oper.ProvideName(oper)
 	var app = NewApp()
 	app.SetName("copydir")
 	app.Version = "2.1.3"
 	app.RegisterOper(oper)
+	Todo("assume if string is empty that none was given")
 	app.CmdLineArgs(). //
 				Add("source").SetString().Desc("source directory").   //
 				Add("dest").SetString().Desc("destination directory") //
 	//app.SetTestArgs("--verbose --dryrun --source cmdlineapp/sample --dest cmdlineapp/output")
+	//app.SetTestArgs("--verbose --dryrun --source /Users/home/github_projects/java-webtools --dest /Users/home/Desktop/fruvious")
 	app.Start()
 }
