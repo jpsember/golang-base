@@ -4,22 +4,23 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
 	"os"
+	"time"
 )
 
 type ErrLogStruct struct {
 	BaseObject
-	ownerPath Path
-	path      Path
-	Errors    int
-	Warnings  int
-	Clean     bool
+	path        Path
+	pathDefined bool
+	Errors      int
+	Warnings    int
+	Clean       bool
 }
 
 type ErrLog = *ErrLogStruct
 
-func NewErrLog(ownerPath Path) ErrLog {
+func NewErrLog(outputFile string) ErrLog {
 	return &ErrLogStruct{
-		ownerPath: ownerPath,
+		path: NewPathOrEmptyM(outputFile),
 	}
 }
 
@@ -36,18 +37,30 @@ func (log ErrLog) Add(err error, messages ...any) error {
 	errMsg := "*** " + errType + ": " + ToString(messages...)
 	Pr(errMsg)
 
-	if log.path.Empty() {
-		log.path = NewPathM(log.ownerPath.String() + "_errors.txt")
-		if log.Clean && log.path.Exists() {
-			log.path.DeleteFileM()
+	starting := false
+	if !log.pathDefined {
+		if log.path.NonEmpty() {
+			if log.Clean && log.path.Exists() {
+				log.path.DeleteFileM()
+			}
 		}
+		log.pathDefined = true
+		starting = true
+	}
+	if log.path.Empty() {
+		return nil
 	}
 
+	outMsg := errMsg + "\n"
+
+	if starting {
+		outMsg = Dashes + time.Now().Format(time.ANSIC) + "\n" + Dashes + outMsg
+	}
 	f, err := os.OpenFile(log.path.String(),
 		os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	CheckOk(err, "Failed opening error file:", log.path)
 	defer f.Close()
-	_, err = f.WriteString(errMsg + "\n")
+	_, err = f.WriteString(outMsg)
 	CheckOk(err, "Failed appending to error file:", log.path)
 	return err
 }
@@ -62,4 +75,8 @@ func (log ErrLog) PrintSummary() {
 	if log.Errors+log.Warnings != 0 {
 		Pr("*** See", log.path, "for details.")
 	}
+}
+
+func (log ErrLog) IssueCount() int {
+	return log.Warnings + log.Errors
 }

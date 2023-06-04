@@ -6,6 +6,7 @@ import (
 	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/gen/sample"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -16,12 +17,13 @@ type FilenamesOper struct {
 	sourcePath Path
 	destPath   Path
 	errCount   int
-	config     NamesOperConfig
+	config     NamesConfig
 	namesCount int
+	pattern    *regexp.Regexp
 }
 
 func (oper *FilenamesOper) GetArguments() DataClass {
-	return DefaultNamesOperConfig
+	return DefaultNamesConfig
 }
 
 func (oper *FilenamesOper) ArgsFileMustExist() bool {
@@ -29,7 +31,8 @@ func (oper *FilenamesOper) ArgsFileMustExist() bool {
 }
 
 func (oper *FilenamesOper) AcceptArguments(a DataClass) {
-	oper.config = a.(NamesOperConfig)
+	oper.config = a.(NamesConfig)
+	Halt("accepted:", oper.config)
 }
 
 func (oper *FilenamesOper) UserCommand() string {
@@ -38,6 +41,8 @@ func (oper *FilenamesOper) UserCommand() string {
 
 func (oper *FilenamesOper) Perform(app *App) {
 	oper.SetVerbose(app.Verbose())
+
+	oper.pattern = Regexp(oper.config.Pattern())
 
 	{
 		var operSourceDir Path
@@ -60,7 +65,7 @@ func (oper *FilenamesOper) Perform(app *App) {
 		oper.sourcePath = operSourceDir
 	}
 
-	oper.errLog = NewErrLog(oper.sourcePath)
+	oper.errLog = NewErrLog(oper.config.Log())
 	oper.errLog.Clean = oper.config.CleanLog()
 
 	dirStack := NewArray[Path]()
@@ -71,6 +76,11 @@ func (oper *FilenamesOper) Perform(app *App) {
 	sourcePrefixLen := len(oper.sourcePath.String())
 
 	for dirStack.NonEmpty() {
+		maxIssues := oper.config.MaxProblems()
+		if maxIssues > 0 && oper.errLog.IssueCount() >= int(maxIssues) {
+			oper.errLog.Add(Warning, "Stopping since max issue count has been reached")
+			break
+		}
 		dir := dirStack.Pop()
 		depth := depthStack.Pop()
 
@@ -129,12 +139,10 @@ func (oper *FilenamesOper) GetHelp(bp *BasePrinter) {
 	bp.Pr("Examine filenames; source <source dir> [clean_log]")
 }
 
-var fnExpr = Regexp(`^(\w|-|\.| )+$`)
-
 func (oper *FilenamesOper) examineFilename(p Path) {
 	oper.namesCount++
 	base := p.Base()
-	if fnExpr.MatchString(base) {
+	if oper.pattern.MatchString(base) {
 		return
 	}
 	oper.errLog.Add(Warning, "strange characters:", Quoted(base), "in", p)
@@ -144,6 +152,5 @@ func addExamineFilenamesOper(app *App) {
 	var oper = &FilenamesOper{}
 	oper.ProvideName("names")
 	app.RegisterOper(AssertJsonOper(oper))
-	app.SetTestArgs("names  source osxutils/sample clean_log  ")
-	//app.SetTestArgs("names -g  ")
+	//app.SetTestArgs("names  source osxutils/sample clean_log  ")
 }

@@ -1,6 +1,7 @@
 class {
   string source;
-  string dest;
   bool clean_log;
   string log = "problems.txt";
+  string pattern = "^(\\w|-|\\.|\\x20|,)+$";
+  int max_problems;
 }

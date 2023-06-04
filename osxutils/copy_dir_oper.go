@@ -95,7 +95,7 @@ func (oper *CopyDirOper) Perform(app *App) {
 		oper.destPath = operDestDir
 	}
 
-	oper.errLog = NewErrLog(oper.destPath)
+	oper.errLog = NewErrLog(oper.config.Log())
 	oper.errLog.Clean = oper.config.CleanLog()
 
 	dirStack := NewArray[Path]()

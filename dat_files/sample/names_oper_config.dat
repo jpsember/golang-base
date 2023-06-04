@@ -1,4 +1,0 @@
-class {
-  string source;
-  bool clean_log;
-}
