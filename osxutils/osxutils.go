@@ -13,8 +13,8 @@ func main() {
 	addCopyDirOper(app)
 	addExamineFilenamesOper(app)
 
-	app.SetTestArgs("names --verbose --dryrun --source cmdlineapp/sample   ")
-	app.SetTestArgs("copydir --verbose  --source cmdlineapp/sample --dest cmdlineapp/output   ")
+	app.SetTestArgs("names --verbose --dryrun --source osxutils/sample   ")
+	app.SetTestArgs("copydir --verbose  --source osxutils/sample --dest osxutils/output   ")
 
 	app.Start()
 }

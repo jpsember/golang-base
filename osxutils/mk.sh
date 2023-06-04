@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
 set -eu
 
-go build -o copydir
+go build
+#-o osxutils
