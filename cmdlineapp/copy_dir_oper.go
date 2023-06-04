@@ -184,7 +184,7 @@ func (oper *CopyDirOper) outputError(err error, dir Path) {
 }
 
 func (oper *CopyDirOper) GetHelp(bp *BasePrinter) {
-	bp.Pr("Copy a directory")
+	bp.Pr("Copy a directory  -s <source dir> -d <dest dir>")
 }
 
 func cmdLineExample() {
@@ -192,12 +192,12 @@ func cmdLineExample() {
 	var oper = &CopyDirOper{}
 	oper.ProvideName(oper)
 	var app = NewApp()
-	app.SetName("copy_dir")
+	app.SetName("copydir")
 	app.Version = "2.1.3"
 	app.RegisterOper(oper)
 	app.CmdLineArgs(). //
-				Add("source").SetString().Desc("source directory"). //
-				Add("dest").SetString().Desc("target directory")    //
-	app.SetTestArgs("--verbose --dryrun --source cmdlineapp/sample --dest cmdlineapp/output")
+				Add("source").SetString().Desc("source directory").   //
+				Add("dest").SetString().Desc("destination directory") //
+	//app.SetTestArgs("--verbose --dryrun --source cmdlineapp/sample --dest cmdlineapp/output")
 	app.Start()
 }
