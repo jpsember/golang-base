@@ -96,6 +96,9 @@ func (oper *FilenamesOper) Perform(app *App) {
 	rootInfo := NewDirInfo(oper.sourcePath, nil)
 
 	oper.processDir(rootInfo)
+	Pr(Dashes)
+	oper.printDiskUsage(rootInfo)
+	Pr(Dashes)
 	oper.errLog.PrintSummary()
 }
 
@@ -153,6 +156,7 @@ func (oper *FilenamesOper) processDir(dirInfo DirInfo) {
 
 		if sourceFile.IsDir() {
 			child := NewDirInfo(sourceFile, dirInfo)
+			dirInfo.Children.Add(child)
 			oper.processDir(child)
 			continue
 		}
@@ -176,8 +180,6 @@ func (oper *FilenamesOper) processDir(dirInfo DirInfo) {
 	for _, ch := range dirInfo.Children.Array() {
 		dirInfo.DiskUsage += ch.DiskUsage
 	}
-
-	Pr(DirSizeExpr(dirInfo.DiskUsage), ":", oper.relativePath(dirInfo.Path))
 }
 
 const (
@@ -278,6 +280,16 @@ func (oper *FilenamesOper) highlightStrangeCharacters(str string) string {
 		}
 	}
 	return Quoted(sb.String() + "<<<" + sbPost.String())
+}
+
+func (oper *FilenamesOper) printDiskUsage(dirInfo DirInfo) {
+	Pr(Spaces(dirInfo.Depth*4), DirSizeExpr(dirInfo.DiskUsage), ":", dirInfo.Path.Base())
+	if dirInfo.Depth >= int(oper.config.Depth()) {
+		return
+	}
+	for _, ch := range dirInfo.Children.Array() {
+		oper.printDiskUsage(ch)
+	}
 }
 
 func addExamineFilenamesOper(app *App) {

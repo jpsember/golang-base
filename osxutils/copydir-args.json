@@ -1,6 +1,6 @@
 {        "clean_log" : false,
               "dest" : "output",
                "log" : "problems.txt",
-  "retain_microsoft" : false,
+  "retain_microsoft" : true,
             "source" : "sample"
 }

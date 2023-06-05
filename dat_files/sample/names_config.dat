@@ -6,4 +6,5 @@ class {
   int max_problems;
   enum MicrosoftOpt microsoft;
   bool verbose_problems;
+  int depth = 255; // Max depth to show directory summary to
 }
