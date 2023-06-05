@@ -40,6 +40,7 @@ func (oper *FilenamesOper) UserCommand() string {
 }
 
 func (oper *FilenamesOper) Perform(app *App) {
+	Todo("Option to rename files, e.g. trimming whitespace, changing dashes")
 	oper.SetVerbose(app.Verbose())
 	oper.pattern = Regexp(oper.config.Pattern())
 	{
