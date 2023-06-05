@@ -39,9 +39,23 @@ func (oper *FilenamesOper) UserCommand() string {
 }
 
 func (oper *FilenamesOper) Perform(app *App) {
+
 	oper.SetVerbose(app.Verbose())
 
 	oper.pattern = Regexp(oper.config.Pattern())
+
+	//s := "abc?hij"
+	//sz := len(s)
+	//flaw := 3
+	//for i := 0; i < flaw; i++ {
+	//	for j := flaw; j < sz; j++ {
+	//		t := s[i : j+1]
+	//		k := oper.highlightStrangeCharacters(t)
+	//		Pr("i:", i, Quoted(t), len(t), "k:", k)
+	//		Pr(t[:k] + ">>>" + t[k:])
+	//	}
+	//}
+	//Halt()
 
 	{
 		var operSourceDir Path
@@ -138,13 +152,78 @@ func (oper *FilenamesOper) GetHelp(bp *BasePrinter) {
 	bp.Pr("Examine filenames; source <source dir> [clean_log]")
 }
 
+var windowsTempPattern = Regexp(`^~\$`)
+
 func (oper *FilenamesOper) examineFilename(p Path) {
 	oper.namesCount++
 	base := p.Base()
+
+	// See https://en.wikipedia.org/wiki/Tilde
+	if windowsTempPattern.MatchString(base) {
+		switch oper.config.Microsoft() {
+		default:
+			Die("unsupported option:", oper.config.Microsoft())
+		case Ignore:
+			return
+		case Warn:
+			if oper.config.VerboseProblems() {
+				oper.errLog.Add(Warning, "temporary Word file:", Quoted(base), "in", p)
+			} else {
+				oper.errLog.Add(Warning, "Word:", Quoted(base))
+			}
+		}
+		return
+	}
+
 	if oper.pattern.MatchString(base) {
 		return
 	}
-	oper.errLog.Add(Warning, "strange characters:", Quoted(base), "in", p)
+	//var summary string
+	summary := oper.highlightStrangeCharacters(base) + " -- " + Quoted(base)
+	//if hlPos < 0 || hlPos >= len(base) {
+	//	summary = ToString("Unknown! hlpos:", hlPos, "base:", base)
+	//} else {
+	//	txt := base[0:hlPos] + "![" + base[hlPos:hlPos+1] + "]"
+	//	if hlPos+1 < len(base) {
+	//		txt += base[hlPos+1:]
+	//	}
+	//	summary = Quoted(txt)
+	//}
+	if oper.config.VerboseProblems() {
+		oper.errLog.Add(Warning, "strange characters:", summary, "in", p)
+	} else {
+		oper.errLog.Add(Warning, "Chars:", summary)
+	}
+}
+
+func (oper *FilenamesOper) highlightStrangeCharacters(str string) string {
+	//str = "...unknown?.."
+	pr := PrIf(false)
+
+	x := len(str)
+	pr("find flaw in:", Quoted(str), "Length:", x)
+	low := 0
+	high := x
+	inf := 10
+	for low != high {
+		i := (low + high) / 2
+		pref := str[0:i]
+		pr("low", low, "high", high, "i", i, "substring:", Quoted(pref))
+		if i == 0 || oper.pattern.MatchString(pref) {
+			low = i + 1
+			pr("match, low now", low)
+		} else {
+			high = i
+			pr("no match, high now", i)
+		}
+		inf--
+		CheckState(inf != 0)
+	}
+	pref := str[0:low]
+	pr("substring:", Quoted(pref))
+
+	j := low - 1
+	return Quoted(str[0:j] + ">>>" + str[:j])
 }
 
 func addExamineFilenamesOper(app *App) {

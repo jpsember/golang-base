@@ -1,12 +1,10 @@
 package data
 
-// Is fmt import appearing as expected?
-
 import (
 	"fmt"
-	"strings"
-
+	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/json"
+	"strings"
 )
 
 type EnumInfo struct {
@@ -22,13 +20,14 @@ func NewEnumInfo(enumNames string) *EnumInfo {
 		var value = uint32(id)
 		m.EnumIds[name] = value
 	}
+	Pr("generated enum names:", m.EnumIds)
 	return m
 }
 
 func (info *EnumInfo) String() string {
 	var m = NewJSMap()
 	m.Put("", "EnumInfo")
-	m.Put("names", JSListWithMisc(info.EnumNames))
+	m.Put("names", JSListWith(info.EnumNames))
 
 	var m2 = NewJSMap()
 	for k, v := range info.EnumIds {
