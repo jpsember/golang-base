@@ -39,24 +39,8 @@ func (oper *FilenamesOper) UserCommand() string {
 }
 
 func (oper *FilenamesOper) Perform(app *App) {
-
 	oper.SetVerbose(app.Verbose())
-
 	oper.pattern = Regexp(oper.config.Pattern())
-
-	//s := "abc?hij"
-	//sz := len(s)
-	//flaw := 3
-	//for i := 0; i < flaw; i++ {
-	//	for j := flaw; j < sz; j++ {
-	//		t := s[i : j+1]
-	//		k := oper.highlightStrangeCharacters(t)
-	//		Pr("i:", i, Quoted(t), len(t), "k:", k)
-	//		Pr(t[:k] + ">>>" + t[k:])
-	//	}
-	//}
-	//Halt()
-
 	{
 		var operSourceDir Path
 		problem := ""
@@ -178,17 +162,7 @@ func (oper *FilenamesOper) examineFilename(p Path) {
 	if oper.pattern.MatchString(base) {
 		return
 	}
-	//var summary string
-	summary := oper.highlightStrangeCharacters(base) + " -- " + Quoted(base)
-	//if hlPos < 0 || hlPos >= len(base) {
-	//	summary = ToString("Unknown! hlpos:", hlPos, "base:", base)
-	//} else {
-	//	txt := base[0:hlPos] + "![" + base[hlPos:hlPos+1] + "]"
-	//	if hlPos+1 < len(base) {
-	//		txt += base[hlPos+1:]
-	//	}
-	//	summary = Quoted(txt)
-	//}
+	summary := oper.highlightStrangeCharacters(base)
 	if oper.config.VerboseProblems() {
 		oper.errLog.Add(Warning, "strange characters:", summary, "in", p)
 	} else {
@@ -197,33 +171,19 @@ func (oper *FilenamesOper) examineFilename(p Path) {
 }
 
 func (oper *FilenamesOper) highlightStrangeCharacters(str string) string {
-	//str = "...unknown?.."
-	pr := PrIf(false)
-
-	x := len(str)
-	pr("find flaw in:", Quoted(str), "Length:", x)
-	low := 0
-	high := x
-	inf := 10
-	for low != high {
-		i := (low + high) / 2
-		pref := str[0:i]
-		pr("low", low, "high", high, "i", i, "substring:", Quoted(pref))
-		if i == 0 || oper.pattern.MatchString(pref) {
-			low = i + 1
-			pr("match, low now", low)
-		} else {
-			high = i
-			pr("no match, high now", i)
+	// I was doing a binary search, but I found out that due to utf-8, some chars (runes)
+	// are different lengths; so just build up the substring from the left until we find the problem
+	sb := strings.Builder{}
+	var prob string
+	for _, ch := range str {
+		sb.WriteRune(ch)
+		prob = sb.String()
+		if !oper.pattern.MatchString(prob) {
+			break
 		}
-		inf--
-		CheckState(inf != 0)
 	}
-	pref := str[0:low]
-	pr("substring:", Quoted(pref))
-
-	j := low - 1
-	return Quoted(str[0:j] + ">>>" + str[:j])
+	j := len(prob)
+	return Quoted(str[0:j] + "<<<" + str[:j])
 }
 
 func addExamineFilenamesOper(app *App) {
