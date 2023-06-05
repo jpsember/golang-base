@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/files"
@@ -12,33 +13,35 @@ import (
 
 type FilenamesOper struct {
 	BaseObject
-	errLog     ErrLog
-	errPath    Path
-	sourcePath Path
-	destPath   Path
-	errCount   int
-	config     NamesConfig
-	namesCount int
-	pattern    *regexp.Regexp
-	deleteFlag bool
+	errLog          ErrLog
+	errPath         Path
+	sourcePath      Path
+	destPath        Path
+	errCount        int
+	config          NamesConfig
+	namesCount      int
+	pattern         *regexp.Regexp
+	deleteFlag      bool
+	sourcePrefixLen int
+	quitting        bool
 }
 
 type DirInfoStruct struct {
-	Parent    *DirInfoStruct
 	Path      Path
 	Depth     int
 	DiskUsage int64
+	Children  *Array[DirInfo]
 }
 
 type DirInfo = *DirInfoStruct
 
 func NewDirInfo(path Path, parent *DirInfoStruct) DirInfo {
 	s := DirInfoStruct{
-		Path:  path,
-		Depth: 0,
+		Path:     path,
+		Depth:    0,
+		Children: NewArray[DirInfo](),
 	}
 	if parent != nil {
-		s.Parent = parent
 		s.Depth = parent.Depth + 1
 	}
 	return &s
@@ -85,83 +88,121 @@ func (oper *FilenamesOper) Perform(app *App) {
 		oper.sourcePath = operSourceDir
 	}
 
+	oper.sourcePrefixLen = len(oper.sourcePath.Parent().String()) + 1 // add 1 for separator
+
 	oper.errLog = NewErrLog(oper.config.Log())
 	oper.errLog.Clean = oper.config.CleanLog()
 
 	rootInfo := NewDirInfo(oper.sourcePath, nil)
-	dirStack := NewArray[DirInfo]()
-	dirStack.Add(rootInfo)
 
-	sourcePrefixLen := len(oper.sourcePath.String())
-
-	for dirStack.NonEmpty() {
-		maxIssues := oper.config.MaxProblems()
-		if maxIssues > 0 && oper.errLog.IssueCount() >= int(maxIssues) {
-			oper.errLog.Add(Warning, "Stopping since max issue count has been reached")
-			break
-		}
-		dirInfo := dirStack.Pop()
-		dir := dirInfo.Path
-
-		oper.examineFilename(dir)
-		if oper.processDeleteFlag(dir) {
-			continue
-		}
-		dirEntries, err := os.ReadDir(dir.String())
-		if err != nil {
-			oper.errLog.Add(err, "unable to ReadDir", dir)
-			continue
-		}
-
-		for _, dirEntry := range dirEntries {
-			nm := dirEntry.Name()
-
-			sourceFile := dir.JoinM(nm)
-			oper.examineFilename(sourceFile)
-			if oper.processDeleteFlag(sourceFile) {
-				continue
-			}
-
-			// Check if source is a symlink.  If so, skip it.
-			srcFileInfo, err := os.Lstat(sourceFile.String())
-			if err != nil {
-				oper.errLog.Add(err, "unable to Lstat", sourceFile)
-				continue
-			}
-			if srcFileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
-				oper.errLog.Add(Warning, "Found symlink:", sourceFile)
-				continue
-			}
-
-			sourceFileSuffix := sourceFile.String()[sourcePrefixLen:]
-
-			if sourceFile.IsDir() {
-				dirStack.Add(NewDirInfo(sourceFile, dirInfo))
-				continue
-			}
-
-			oper.Log(DepthDots(dirInfo.Depth, sourceFileSuffix))
-
-			stat, err := os.Stat(sourceFile.String())
-			if err != nil {
-				oper.errLog.Add(err, "unable to Stat", sourceFile)
-				continue
-			}
-			if !stat.Mode().IsRegular() {
-				oper.errLog.Add(err, "file is not a regular file", sourceFile)
-				continue
-			}
-
-			dirInfo.DiskUsage += stat.Size()
-		}
-
-		Pr(dirInfo.DiskUsage, ":", dirInfo.Path)
-		// Propagate the now-completed directory information to its parent
-		if dirInfo.Parent != nil {
-			dirInfo.Parent.DiskUsage += dirInfo.DiskUsage
-		}
-	}
+	oper.processDir(rootInfo)
 	oper.errLog.PrintSummary()
+}
+
+func (oper *FilenamesOper) relativePath(path Path) string {
+	x := path.String()
+	if len(x) < oper.sourcePrefixLen {
+		BadArg("relativePath argument:", path, "less than source", oper.sourcePath)
+	}
+	return x[oper.sourcePrefixLen:]
+}
+
+func (oper *FilenamesOper) processDir(dirInfo DirInfo) {
+	if oper.quitting {
+		return
+	}
+
+	maxIssues := oper.config.MaxProblems()
+	if maxIssues > 0 && oper.errLog.IssueCount() >= int(maxIssues) {
+		oper.quitting = true
+		oper.errLog.Add(Warning, "Stopping since max issue count has been reached")
+		return
+	}
+
+	dir := dirInfo.Path
+
+	oper.examineFilename(dir)
+	if oper.processDeleteFlag(dir) {
+		return
+	}
+	dirEntries, err := os.ReadDir(dir.String())
+	if err != nil {
+		oper.errLog.Add(err, "unable to ReadDir", dir)
+		return
+	}
+
+	for _, dirEntry := range dirEntries {
+		nm := dirEntry.Name()
+
+		sourceFile := dir.JoinM(nm)
+		oper.examineFilename(sourceFile)
+		if oper.processDeleteFlag(sourceFile) {
+			continue
+		}
+
+		// Check if source is a symlink.  If so, skip it.
+		srcFileInfo, err := os.Lstat(sourceFile.String())
+		if err != nil {
+			oper.errLog.Add(err, "unable to Lstat", sourceFile)
+			continue
+		}
+		if srcFileInfo.Mode()&os.ModeSymlink == os.ModeSymlink {
+			oper.errLog.Add(Warning, "Found symlink:", sourceFile)
+			continue
+		}
+
+		if sourceFile.IsDir() {
+			child := NewDirInfo(sourceFile, dirInfo)
+			oper.processDir(child)
+			continue
+		}
+
+		sourceFileSuffix := oper.relativePath(sourceFile)
+		oper.Log(DepthDots(dirInfo.Depth, sourceFileSuffix))
+
+		stat, err := os.Stat(sourceFile.String())
+		if err != nil {
+			oper.errLog.Add(err, "unable to Stat", sourceFile)
+			continue
+		}
+		if !stat.Mode().IsRegular() {
+			oper.errLog.Add(err, "file is not a regular file", sourceFile)
+			continue
+		}
+
+		dirInfo.DiskUsage += stat.Size()
+	}
+
+	for _, ch := range dirInfo.Children.Array() {
+		dirInfo.DiskUsage += ch.DiskUsage
+	}
+
+	Pr(DirSizeExpr(dirInfo.DiskUsage), ":", oper.relativePath(dirInfo.Path))
+}
+
+const (
+	_        = iota // ignore first value by assigning to blank identifier
+	KB int64 = 1 << (10 * iota)
+	MB
+	GB
+	TB
+)
+
+func DirSizeExpr(size int64) string {
+	var pref string
+	var chunk int64
+	if size >= GB/4 {
+		pref = "Gb"
+		chunk = GB
+	} else if size >= MB/4 {
+		pref = "Mb"
+		chunk = MB
+	} else {
+		pref = "Kb"
+		chunk = KB
+	}
+	amt := float64(size) / float64(chunk)
+	return fmt.Sprintf("%5.1f %v", amt, pref)
 }
 
 func (oper *FilenamesOper) processDeleteFlag(path Path) bool {
@@ -243,5 +284,4 @@ func addExamineFilenamesOper(app *App) {
 	var oper = &FilenamesOper{}
 	oper.ProvideName("names")
 	app.RegisterOper(AssertJsonOper(oper))
-	//app.SetTestArgs("names  source osxutils/sample clean_log  ")
 }
