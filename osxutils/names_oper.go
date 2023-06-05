@@ -24,9 +24,10 @@ type FilenamesOper struct {
 }
 
 type DirInfoStruct struct {
-	Path   Path
-	Depth  int
-	Parent *DirInfoStruct
+	Parent    *DirInfoStruct
+	Path      Path
+	Depth     int
+	DiskUsage int64
 }
 
 type DirInfo = *DirInfoStruct
@@ -132,8 +133,6 @@ func (oper *FilenamesOper) Perform(app *App) {
 				continue
 			}
 
-			sfn := sourceFile.String()
-			CheckArg(strings.HasPrefix(sfn, sourceFile.String()))
 			sourceFileSuffix := sourceFile.String()[sourcePrefixLen:]
 
 			if sourceFile.IsDir() {
@@ -143,15 +142,23 @@ func (oper *FilenamesOper) Perform(app *App) {
 
 			oper.Log(DepthDots(dirInfo.Depth, sourceFileSuffix))
 
-			sourceFileStat, err := os.Stat(sourceFile.String())
+			stat, err := os.Stat(sourceFile.String())
 			if err != nil {
 				oper.errLog.Add(err, "unable to Stat", sourceFile)
 				continue
 			}
-			if !sourceFileStat.Mode().IsRegular() {
+			if !stat.Mode().IsRegular() {
 				oper.errLog.Add(err, "file is not a regular file", sourceFile)
 				continue
 			}
+
+			dirInfo.DiskUsage += stat.Size()
+		}
+
+		Pr(dirInfo.DiskUsage, ":", dirInfo.Path)
+		// Propagate the now-completed directory information to its parent
+		if dirInfo.Parent != nil {
+			dirInfo.Parent.DiskUsage += dirInfo.DiskUsage
 		}
 	}
 	oper.errLog.PrintSummary()
