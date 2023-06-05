@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 type CopyDirOper struct {
@@ -141,8 +140,12 @@ func (oper *CopyDirOper) Perform(app *App) {
 				continue
 			}
 
-			sfn := sourceFile.String()
-			CheckArg(strings.HasPrefix(sfn, sourceFile.String()))
+			if windowsTempPattern.MatchString(sourceFile.Base()) {
+				if !oper.config.RetainMicrosoft() {
+					oper.errLog.Add(Warning, "skipping Word backup file", sourceFile)
+					continue
+				}
+			}
 
 			sourceFileSuffix := sourceFile.String()[sourcePrefixLen:]
 			targetFile := NewPathM(targetPrefix + sourceFileSuffix)
