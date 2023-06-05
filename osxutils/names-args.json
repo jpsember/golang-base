@@ -3,6 +3,7 @@
   //"max_problems" : 100,
    //"verbose_problems" : true,
   "pattern" : "^(\\w|-|\\.|\\x20|,|\\(|\\)|\\+|&|\\$|:|'|#|\\[|\\]|=|!|;|@)+$",
-       "source" : "/Volumes/T7/jeff_copy",
-  //"microsoft" : "warn",
+       //"source" : "/Volumes/T7/jeff_copy",
+  "source" : "sample",
+   "microsoft" : "delete",
 }

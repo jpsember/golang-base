@@ -20,6 +20,7 @@ type FilenamesOper struct {
 	config     NamesConfig
 	namesCount int
 	pattern    *regexp.Regexp
+	deleteFlag bool
 }
 
 func (oper *FilenamesOper) GetArguments() DataClass {
@@ -81,8 +82,8 @@ func (oper *FilenamesOper) Perform(app *App) {
 		dir := dirStack.Pop()
 		depth := depthStack.Pop()
 
-		wasDeleted := oper.examineFilename(dir)
-		if wasDeleted {
+		oper.examineFilename(dir)
+		if oper.processDeleteFlag(dir) {
 			continue
 		}
 		dirEntries, err := os.ReadDir(dir.String())
@@ -96,7 +97,7 @@ func (oper *FilenamesOper) Perform(app *App) {
 
 			sourceFile := dir.JoinM(nm)
 			oper.examineFilename(sourceFile)
-			if wasDeleted {
+			if oper.processDeleteFlag(sourceFile) {
 				continue
 			}
 
@@ -137,14 +138,26 @@ func (oper *FilenamesOper) Perform(app *App) {
 	oper.errLog.PrintSummary()
 }
 
+func (oper *FilenamesOper) processDeleteFlag(path Path) bool {
+	result := oper.deleteFlag
+	if result {
+		if path.IsDir() {
+			path.DeleteDirectoryM("~$")
+		} else {
+			path.DeleteFileM()
+		}
+	}
+	return result
+}
+
 func (oper *FilenamesOper) GetHelp(bp *BasePrinter) {
 	bp.Pr("Examine filenames; source <source dir> [clean_log]")
 }
 
 var windowsTempPattern = Regexp(`^~\$`)
 
-// Returns true if file has been deleted
-func (oper *FilenamesOper) examineFilename(p Path) bool {
+func (oper *FilenamesOper) examineFilename(p Path) {
+	oper.deleteFlag = false
 	oper.namesCount++
 	base := p.Base()
 
@@ -154,7 +167,7 @@ func (oper *FilenamesOper) examineFilename(p Path) bool {
 		default:
 			Die("unsupported option:", oper.config.Microsoft())
 		case Ignore:
-			return false
+			break
 		case Warn:
 			if oper.config.VerboseProblems() {
 				oper.errLog.Add(Warning, "temporary Word file:", Quoted(base), "in", p)
@@ -163,9 +176,9 @@ func (oper *FilenamesOper) examineFilename(p Path) bool {
 			}
 		case Delete:
 			oper.errLog.Add(Warning, "Deleting Word:", Quoted(base))
-			return true
+			oper.deleteFlag = true
 		}
-		return false
+		return
 	}
 
 	if !oper.pattern.MatchString(base) {
@@ -176,7 +189,6 @@ func (oper *FilenamesOper) examineFilename(p Path) bool {
 			oper.errLog.Add(Warning, "Chars:", summary)
 		}
 	}
-	return false
 }
 
 func (oper *FilenamesOper) highlightStrangeCharacters(str string) string {
