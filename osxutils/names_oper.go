@@ -23,6 +23,26 @@ type FilenamesOper struct {
 	deleteFlag bool
 }
 
+type DirInfoStruct struct {
+	Path   Path
+	Depth  int
+	Parent *DirInfoStruct
+}
+
+type DirInfo = *DirInfoStruct
+
+func NewDirInfo(path Path, parent *DirInfoStruct) DirInfo {
+	s := DirInfoStruct{
+		Path:  path,
+		Depth: 0,
+	}
+	if parent != nil {
+		s.Parent = parent
+		s.Depth = parent.Depth + 1
+	}
+	return &s
+}
+
 func (oper *FilenamesOper) GetArguments() DataClass {
 	return DefaultNamesConfig
 }
@@ -67,10 +87,9 @@ func (oper *FilenamesOper) Perform(app *App) {
 	oper.errLog = NewErrLog(oper.config.Log())
 	oper.errLog.Clean = oper.config.CleanLog()
 
-	dirStack := NewArray[Path]()
-	depthStack := NewArray[int]()
-	dirStack.Add(oper.sourcePath)
-	depthStack.Add(0)
+	rootInfo := NewDirInfo(oper.sourcePath, nil)
+	dirStack := NewArray[DirInfo]()
+	dirStack.Add(rootInfo)
 
 	sourcePrefixLen := len(oper.sourcePath.String())
 
@@ -80,8 +99,8 @@ func (oper *FilenamesOper) Perform(app *App) {
 			oper.errLog.Add(Warning, "Stopping since max issue count has been reached")
 			break
 		}
-		dir := dirStack.Pop()
-		depth := depthStack.Pop()
+		dirInfo := dirStack.Pop()
+		dir := dirInfo.Path
 
 		oper.examineFilename(dir)
 		if oper.processDeleteFlag(dir) {
@@ -118,12 +137,11 @@ func (oper *FilenamesOper) Perform(app *App) {
 			sourceFileSuffix := sourceFile.String()[sourcePrefixLen:]
 
 			if sourceFile.IsDir() {
-				dirStack.Add(sourceFile)
-				depthStack.Add(depth + 1)
+				dirStack.Add(NewDirInfo(sourceFile, dirInfo))
 				continue
 			}
 
-			oper.Log(DepthDots(depth, sourceFileSuffix))
+			oper.Log(DepthDots(dirInfo.Depth, sourceFileSuffix))
 
 			sourceFileStat, err := os.Stat(sourceFile.String())
 			if err != nil {

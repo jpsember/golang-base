@@ -43,6 +43,7 @@ const (
 	ClArgDryrun   = "dryrun"
 	ClArgGenArgs  = "gen-args"
 	ClArgArgsFile = "args"
+	ClIDE         = "ide"
 )
 
 func (a *App) CmdLineArgs() *CmdLineArgs {
@@ -54,6 +55,7 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 	a.cmdLineArgs = ca
 
 	ca.WithBanner("!!! please add a banner !!!")
+	ca.Add(ClIDE).Desc("Running within IDE").ShortName("I")
 	ca.Add(ClArgDryrun).Desc("Dry run")
 	ca.Add(ClArgVerbose).Desc("Verbose messages").ShortName("v")
 	ca.Add(ClArgVersion).Desc("Display version number").ShortName("n")
@@ -156,6 +158,11 @@ func (a *App) auxStart() {
 	c.Parse(args)
 	if a.handleCmdLineArgsError() {
 		return
+	}
+
+	if c.Get(ClIDE) {
+		// Clear the console
+		fmt.Print("\033c")
 	}
 
 	// If we showed the help, exit
