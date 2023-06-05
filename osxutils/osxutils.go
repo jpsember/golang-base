@@ -17,7 +17,7 @@ func main() {
 
 func prepareApp() *App {
 	var app = NewApp()
-	app.SetName("osutils")
+	app.SetName("osxutils")
 	app.Version = "1.1.0"
 	return app
 }

@@ -174,16 +174,22 @@ func (oper *FilenamesOper) highlightStrangeCharacters(str string) string {
 	// I was doing a binary search, but I found out that due to utf-8, some chars (runes)
 	// are different lengths; so just build up the substring from the left until we find the problem
 	sb := strings.Builder{}
-	var prob string
+	sbPost := strings.Builder{}
+
+	problemFound := false
+	prob := ""
 	for _, ch := range str {
-		sb.WriteRune(ch)
-		prob = sb.String()
-		if !oper.pattern.MatchString(prob) {
-			break
+		if !problemFound {
+			sb.WriteRune(ch)
+			prob = sb.String()
+			if !oper.pattern.MatchString(prob) {
+				problemFound = true
+			}
+		} else {
+			sbPost.WriteRune(ch)
 		}
 	}
-	j := len(prob)
-	return Quoted(str[0:j] + "<<<" + str[:j])
+	return Quoted(sb.String() + "<<<" + sbPost.String())
 }
 
 func addExamineFilenamesOper(app *App) {

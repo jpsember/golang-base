@@ -1,0 +1,6 @@
+{        "clean_log" : false,
+              "dest" : "output",
+               "log" : "problems.txt",
+  "retain_microsoft" : false,
+            "source" : "sample"
+}

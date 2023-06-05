@@ -18,6 +18,7 @@ type CopyDirOper struct {
 	destPath   Path
 	errCount   int
 	config     CopyDirConfig
+	verifyTs   int
 }
 
 // Get the default arguments
@@ -67,6 +68,8 @@ func procPath(desc string, expr string) (Path, string) {
 	return result, problem
 }
 
+const timestampApproxEqualMs = 1500
+
 func (oper *CopyDirOper) Perform(app *App) {
 	oper.SetVerbose(app.Verbose())
 
@@ -109,7 +112,6 @@ func (oper *CopyDirOper) Perform(app *App) {
 	for dirStack.NonEmpty() {
 		dir := dirStack.Pop()
 		depth := depthStack.Pop()
-		//oper.Log("Popped dir:", dir)
 
 		// Make target directory if it doesn't already exist
 		targetDir := NewPathM(targetPrefix + dir.String()[sourcePrefixLen:])
@@ -145,17 +147,15 @@ func (oper *CopyDirOper) Perform(app *App) {
 			sourceFileSuffix := sourceFile.String()[sourcePrefixLen:]
 			targetFile := NewPathM(targetPrefix + sourceFileSuffix)
 
+			targetFileExists := targetFile.Exists()
 			// If target file already exists, verify it is the same type (dir or file) as source
-			if targetFile.Exists() {
+			if targetFileExists {
 				if sourceFile.IsDir() != targetFile.IsDir() {
 					oper.errLog.Add(err, "source is not same file/dir type as target:", sourceFile, INDENT,
 						"vs", targetFile)
 					continue
 				}
-				// If it is a file, do nothing else
-				if !sourceFile.IsDir() {
-					continue
-				}
+
 			}
 
 			if sourceFile.IsDir() {
@@ -163,7 +163,6 @@ func (oper *CopyDirOper) Perform(app *App) {
 				depthStack.Add(depth + 1)
 				continue
 			}
-			oper.Log(DepthDots(depth, sourceFileSuffix))
 
 			sourceFileStat, err := os.Stat(sourceFile.String())
 			if err != nil {
@@ -174,21 +173,61 @@ func (oper *CopyDirOper) Perform(app *App) {
 				oper.errLog.Add(err, "source file is not a regular file", sourceFile)
 				continue
 			}
+
+			modifiedTime := sourceFileStat.ModTime()
+
+			action := "copying"
+
+			if targetFileExists {
+				// Only continue if source is newer
+				targetFileStat, err := os.Stat(targetFile.String())
+				if err != nil {
+					oper.errLog.Add(err, "getting Stat", targetFile)
+					continue
+				}
+
+				sourceEpochMs := modifiedTime.UnixMilli()
+				targetTime := targetFileStat.ModTime()
+				targetEpochMs := targetTime.UnixMilli()
+				// There might be a slight roundoff error with the timestamps
+				if targetEpochMs+timestampApproxEqualMs >= sourceEpochMs {
+					continue
+				}
+				action = "updating"
+			}
+
+			oper.Log(DepthDots(depth, action, sourceFileSuffix))
+
 			err = copyFileContents(sourceFile, targetFile)
 			if err != nil {
-				oper.errLog.Add(err, "copying file contents", sourceFile, targetFile)
+				oper.errLog.Add(err, action, "file contents", sourceFile, targetFile)
 				continue
 			}
 
-			modifiedTime := sourceFileStat.ModTime()
 			err = os.Chtimes(targetFile.String(), modifiedTime, modifiedTime)
 			if err != nil {
 				oper.errLog.Add(err, "unable to set modified time", targetFile)
 				continue
 			}
+
+			if oper.verifyTs < 10 {
+				oper.verifyTs++
+				targetFileStat, err := os.Stat(targetFile.String())
+				CheckOk(err, targetFile)
+				newTargetTime := targetFileStat.ModTime()
+				diff := newTargetTime.UnixMilli() - modifiedTime.UnixMilli()
+				CheckArg(Abs(diff) <= timestampApproxEqualMs, "target time still different")
+			}
 		}
 	}
 	oper.errLog.PrintSummary()
+}
+
+func Abs(x int64) int64 {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
 
 // Copies file.  If destination exists, its contents will be replaced.

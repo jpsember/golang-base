@@ -2,7 +2,6 @@ package data
 
 import (
 	"fmt"
-	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/json"
 	"strings"
 )
@@ -20,7 +19,6 @@ func NewEnumInfo(enumNames string) *EnumInfo {
 		var value = uint32(id)
 		m.EnumIds[name] = value
 	}
-	Pr("generated enum names:", m.EnumIds)
 	return m
 }
 

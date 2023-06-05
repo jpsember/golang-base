@@ -188,6 +188,15 @@ func (a *App) auxStart() {
 		CheckNotNil(a.operDataClassArgs, "No arguments returned by oper")
 		a.genArgsFlag = c.Get(ClArgGenArgs)
 		var path = NewPathOrEmptyM(c.GetString(ClArgArgsFile))
+
+		if path.Empty() {
+			// Look for a default args file, <opername>-args.json
+			defaultArgsPath := NewPathM(a.oper.UserCommand() + "-args.json")
+			if defaultArgsPath.Exists() {
+				path = defaultArgsPath
+			}
+		}
+
 		if path.NonEmpty() {
 			path.EnsureExists("args file")
 		}
@@ -301,7 +310,7 @@ func (a *App) compileDataArgs() {
 
 	// Start with default arguments
 	var operArgs = a.operDataClassArgs
-	pr("...default arguments:", INDENT, operArgs)
+	//pr("...default arguments:", INDENT, operArgs)
 
 	// Replace with args file, if there was one
 	if a.argsFile.NonEmpty() {
@@ -412,7 +421,7 @@ func (a *App) compileDataArgs() {
 	// Re-parse the arguments from the (possibly modified) jsmap
 
 	operArgs = operArgs.Parse(js)
-	pr("...modified arguments:", INDENT, operArgs)
+	//pr("...modified arguments:", INDENT, operArgs)
 
 	a.operDataClassArgs = operArgs // Replace the previous version, though I don't think this field is used past this point
 	oper.AcceptArguments(operArgs)
