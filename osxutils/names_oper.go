@@ -81,8 +81,10 @@ func (oper *FilenamesOper) Perform(app *App) {
 		dir := dirStack.Pop()
 		depth := depthStack.Pop()
 
-		oper.examineFilename(dir)
-
+		wasDeleted := oper.examineFilename(dir)
+		if wasDeleted {
+			continue
+		}
 		dirEntries, err := os.ReadDir(dir.String())
 		if err != nil {
 			oper.errLog.Add(err, "unable to ReadDir", dir)
@@ -94,6 +96,9 @@ func (oper *FilenamesOper) Perform(app *App) {
 
 			sourceFile := dir.JoinM(nm)
 			oper.examineFilename(sourceFile)
+			if wasDeleted {
+				continue
+			}
 
 			// Check if source is a symlink.  If so, skip it.
 			srcFileInfo, err := os.Lstat(sourceFile.String())
@@ -138,7 +143,8 @@ func (oper *FilenamesOper) GetHelp(bp *BasePrinter) {
 
 var windowsTempPattern = Regexp(`^~\$`)
 
-func (oper *FilenamesOper) examineFilename(p Path) {
+// Returns true if file has been deleted
+func (oper *FilenamesOper) examineFilename(p Path) bool {
 	oper.namesCount++
 	base := p.Base()
 
@@ -148,26 +154,29 @@ func (oper *FilenamesOper) examineFilename(p Path) {
 		default:
 			Die("unsupported option:", oper.config.Microsoft())
 		case Ignore:
-			return
+			return false
 		case Warn:
 			if oper.config.VerboseProblems() {
 				oper.errLog.Add(Warning, "temporary Word file:", Quoted(base), "in", p)
 			} else {
 				oper.errLog.Add(Warning, "Word:", Quoted(base))
 			}
+		case Delete:
+			oper.errLog.Add(Warning, "Deleting Word:", Quoted(base))
+			return true
 		}
-		return
+		return false
 	}
 
-	if oper.pattern.MatchString(base) {
-		return
+	if !oper.pattern.MatchString(base) {
+		summary := oper.highlightStrangeCharacters(base)
+		if oper.config.VerboseProblems() {
+			oper.errLog.Add(Warning, "strange characters:", summary, "in", p)
+		} else {
+			oper.errLog.Add(Warning, "Chars:", summary)
+		}
 	}
-	summary := oper.highlightStrangeCharacters(base)
-	if oper.config.VerboseProblems() {
-		oper.errLog.Add(Warning, "strange characters:", summary, "in", p)
-	} else {
-		oper.errLog.Add(Warning, "Chars:", summary)
-	}
+	return false
 }
 
 func (oper *FilenamesOper) highlightStrangeCharacters(str string) string {
