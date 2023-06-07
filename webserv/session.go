@@ -11,6 +11,10 @@ type Session = *SessionStruct
 
 type SessionStruct struct {
 	Id string
+
+	// For storing an application Oper, for example
+	AppData any
+
 	// widget representing the entire page; nil if not constructed yet
 	PageWidget Widget
 	// Lock for making request handling thread safe; we synchronize a particular session's requests

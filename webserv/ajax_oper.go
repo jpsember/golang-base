@@ -98,6 +98,11 @@ func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Req
 	sess := DetermineSession(oper.sessionManager, w, req, true)
 	sess.Mutex.Lock()
 	defer sess.Mutex.Unlock()
+	// If this is a new session, store our operation within it
+	if sess.AppData == nil {
+		sess.AppData = oper
+	}
+
 	if sess.PageWidget == nil {
 		oper.constructPageWidget(sess)
 	}
@@ -129,6 +134,10 @@ const WidgetIdPage = "page"
 
 var alertWidget AlertWidget
 var myRand = rand.New(rand.NewSource(1234))
+
+func GetOperFromSession(session Session) AjaxOper {
+	return session.AppData.(AjaxOper)
+}
 
 // Assign a widget heirarchy to a session
 func (oper AjaxOper) constructPageWidget(sess Session) {
@@ -182,7 +191,6 @@ func birdListener(sess any, widget Widget) {
 }
 
 func zebraListener(sess any, widget Widget) {
-	Todo("we need to supply misc objects to the listener, e.g. to access the session *and* the oper")
 	alertWidget.Class = (alertWidget.Class + 1) % 4
 
 	s := sess.(Session)
@@ -197,5 +205,4 @@ func zebraListener(sess any, widget Widget) {
 
 	s.Repaint(widget.GetBaseWidget().Id)
 	s.Repaint(alertWidget.Id)
-
 }
