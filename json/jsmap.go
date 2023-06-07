@@ -2,8 +2,6 @@ package json
 
 import (
 	"fmt"
-	//. "github.com/jpsember/golang-base/files"
-	"sort"
 
 	. "github.com/jpsember/golang-base/base"
 )
@@ -17,19 +15,19 @@ type JSMap = *JSMapStruct
 // JSEntity interface
 //---------------------------------------------------------------------------
 
-func (v JSMap) AsInteger() int64 {
+func (m JSMap) AsInteger() int64 {
 	panic("Not supported")
 }
 
-func (v JSMap) AsFloat() float64 {
+func (m JSMap) AsFloat() float64 {
 	panic("Not supported")
 }
 
-func (v JSMap) AsString() string {
+func (m JSMap) AsString() string {
 	panic("The AsString() method is not supported for JSMapStruct")
 }
 
-func (v JSMap) AsBool() bool {
+func (m JSMap) AsBool() bool {
 	panic("Not supported")
 }
 
@@ -54,31 +52,27 @@ func (m JSMap) PrintTo(context *JSONPrinter) {
 }
 
 func (m JSMap) prettyPrintWithIndent(context *JSONPrinter) {
-	var s = context.StringBuilder
 	context.PushIndentAdjust(2)
-
 	w := m.wrappedMap
-	sortedKeysList := make([]string, 0, len(w))
-	for k := range w {
-		sortedKeysList = append(sortedKeysList, k)
-	}
-	sort.Strings(sortedKeysList)
+	entries := m.Entries()
 
 	// Create a corresponding list of keys in escaped form, suitable for printing
 
 	escapedKeysList := make([]string, 0, len(w))
-	for _, k := range sortedKeysList {
-		var k2 = Escaped(k)
-		escapedKeysList = append(escapedKeysList, k2)
+	for _, entry := range entries {
+		escapedKeysList = append(escapedKeysList, Escaped(entry.Key))
 	}
 
+	var s = context.StringBuilder
 	s.WriteString("{ ")
+
 	var longestKeyLength = 0
 	for _, str := range escapedKeysList {
 		longestKeyLength = MaxInt(longestKeyLength, len(str))
 	}
 
-	for i, keyStr := range sortedKeysList {
+	for i, entry := range entries {
+		var value = entry.Value
 		var escKeyStr = escapedKeysList[i]
 		var effectiveKeyLength = MinInt(longestKeyLength, len(escKeyStr))
 		var keyIndent = longestKeyLength
@@ -100,13 +94,12 @@ func (m JSMap) prettyPrintWithIndent(context *JSONPrinter) {
 			s.WriteString("\n")
 			s.WriteString(Spaces(context.Indent()))
 		}
-		var value = w[keyStr]
 
 		value.PrintTo(context)
 		context.PopIndent()
 	}
 	context.PopIndent()
-	if len(sortedKeysList) >= 2 {
+	if len(entries) >= 2 {
 		s.WriteString("\n")
 		s.WriteString(Spaces(context.Indent()))
 	} else {
@@ -176,109 +169,109 @@ func (p *JSONParser) ParseMap() (*JSMapStruct, error) {
 	return jsMap, p.Error
 }
 
-func (this *JSMapStruct) GetMap(key string) *JSMapStruct {
-	var val = this.wrappedMap[key]
+func (m JSMap) GetMap(key string) *JSMapStruct {
+	var val = m.wrappedMap[key]
 	return val.(*JSMapStruct)
 }
 
-func (this *JSMapStruct) OptMap(key string) *JSMapStruct {
+func (m JSMap) OptMap(key string) *JSMapStruct {
 	CheckNotNil(key, "nil key for OptMap")
-	var val = this.wrappedMap[key]
+	var val = m.wrappedMap[key]
 	if val == nil {
 		return nil
 	}
 	return val.(*JSMapStruct)
 }
 
-func (this *JSMapStruct) OptMapOrEmpty(key string) *JSMapStruct {
-	var val = this.wrappedMap[key]
+func (m JSMap) OptMapOrEmpty(key string) *JSMapStruct {
+	var val = m.wrappedMap[key]
 	if val == nil {
 		return NewJSMap()
 	}
-	return val.(*JSMapStruct)
+	return val.(JSMap)
 }
 
-func (this *JSMapStruct) GetList(key string) *JSListStruct {
-	var val = this.wrappedMap[key]
+func (m JSMap) GetList(key string) *JSListStruct {
+	var val = m.wrappedMap[key]
 	return val.(*JSListStruct)
 }
 
-func (this *JSMapStruct) OptList(key string) *JSListStruct {
-	var val = this.wrappedMap[key]
+func (m JSMap) OptList(key string) *JSListStruct {
+	var val = m.wrappedMap[key]
 	if val == nil {
 		return nil
 	}
 	return val.(*JSListStruct)
 }
 
-func (this *JSMapStruct) OptListOrEmpty(key string) *JSListStruct {
-	var val = this.wrappedMap[key]
+func (m JSMap) OptListOrEmpty(key string) *JSListStruct {
+	var val = m.wrappedMap[key]
 	if val == nil {
 		return NewJSList()
 	}
 	return val.(*JSListStruct)
 }
 
-func (this *JSMapStruct) GetString(key string) string {
-	var val = this.wrappedMap[key]
+func (m JSMap) GetString(key string) string {
+	var val = m.wrappedMap[key]
 	return (val.(JSEntity)).AsString()
 }
 
-func (this *JSMapStruct) OptString(key string, defaultValue string) string {
-	var val = this.wrappedMap[key]
+func (m JSMap) OptString(key string, defaultValue string) string {
+	var val = m.wrappedMap[key]
 	if val == nil {
 		return defaultValue
 	}
 	return (val.(JSEntity)).AsString()
 }
 
-func (this *JSMapStruct) GetInt32(key string) int32 {
-	var val = this.wrappedMap[key]
+func (m JSMap) GetInt32(key string) int32 {
+	var val = m.wrappedMap[key]
 	return int32((val.(JSEntity)).AsInteger())
 }
 
-func (this *JSMapStruct) OptInt32(key string, defaultValue int32) int32 {
-	var val = this.wrappedMap[key]
+func (m JSMap) OptInt32(key string, defaultValue int32) int32 {
+	var val = m.wrappedMap[key]
 	if val == nil {
 		return defaultValue
 	}
 	return int32((val.(JSEntity)).AsInteger())
 }
 
-func (this *JSMapStruct) OptFloat32(key string, defaultValue float32) float32 {
-	var val = this.wrappedMap[key]
+func (m JSMap) OptFloat32(key string, defaultValue float32) float32 {
+	var val = m.wrappedMap[key]
 	if val == nil {
 		return defaultValue
 	}
 	return float32((val.(JSEntity)).AsFloat())
 }
 
-func (this *JSMapStruct) OptFloat64(key string, defaultValue float64) float64 {
-	var val = this.wrappedMap[key]
+func (m JSMap) OptFloat64(key string, defaultValue float64) float64 {
+	var val = m.wrappedMap[key]
 	if val == nil {
 		return defaultValue
 	}
 	return float64((val.(JSEntity)).AsFloat())
 }
 
-func (this *JSMapStruct) GetInt64(key string) int64 {
-	var val = this.wrappedMap[key]
+func (m JSMap) GetInt64(key string) int64 {
+	var val = m.wrappedMap[key]
 	return int64((val.(JSEntity)).AsInteger())
 }
-func (this *JSMapStruct) OptInt64(key string, defaultValue int) int64 {
-	var val = this.wrappedMap[key]
+func (m JSMap) OptInt64(key string, defaultValue int) int64 {
+	var val = m.wrappedMap[key]
 	if val == nil {
 		return int64(defaultValue)
 	}
 	return int64((val.(JSEntity)).AsInteger())
 }
-func (this *JSMapStruct) GetBool(key string) bool {
-	var val = this.wrappedMap[key]
+func (m JSMap) GetBool(key string) bool {
+	var val = m.wrappedMap[key]
 	return (val.(JSEntity)).AsBool()
 }
 
-func (this *JSMapStruct) OptBool(key string, defaultValue bool) bool {
-	var val = this.wrappedMap[key]
+func (m JSMap) OptBool(key string, defaultValue bool) bool {
+	var val = m.wrappedMap[key]
 	if val == nil {
 		return defaultValue
 	}
@@ -286,30 +279,30 @@ func (this *JSMapStruct) OptBool(key string, defaultValue bool) bool {
 }
 
 // If a key/value pair exists, return the value
-func (jsmap *JSMapStruct) OptAny(key string) JSEntity {
-	return jsmap.wrappedMap[key]
+func (m JSMap) OptAny(key string) JSEntity {
+	return m.wrappedMap[key]
 }
 
-func JSMapFromString(content string) (*JSMapStruct, error) {
+func JSMapFromString(content string) (JSMap, error) {
 	var p JSONParser
 	p.WithText(content)
 	return p.ParseMap()
 }
 
-func JSMapFromStringM(content string) *JSMapStruct {
+func JSMapFromStringM(content string) JSMap {
 	var result, err = JSMapFromString(content)
 	CheckOk(err)
 	return result
 }
 
-func (jsmap *JSMapStruct) WrappedMap() map[string]JSEntity {
-	return jsmap.wrappedMap
+func (m JSMap) WrappedMap() map[string]JSEntity {
+	return m.wrappedMap
 }
 
 // Get an ordered list of keys for the JSMap
-func (jsmap JSMap) OrderedKeys() []string {
+func (m JSMap) OrderedKeys() []string {
 	arr := NewArray[string]()
-	for k := range jsmap.wrappedMap {
+	for k := range m.wrappedMap {
 		arr.Add(k)
 	}
 	arr.Sort()
@@ -322,12 +315,12 @@ type JSMapEntry struct {
 }
 
 // Get an ordered list of entries for the JSMap, sorted by key
-func (jsmap JSMap) Entries() []JSMapEntry {
+func (m JSMap) Entries() []JSMapEntry {
 	arr := NewArray[JSMapEntry]()
-	for _, k := range jsmap.OrderedKeys() {
+	for _, k := range m.OrderedKeys() {
 		arr.Add(JSMapEntry{
 			Key:   k,
-			Value: jsmap.wrappedMap[k],
+			Value: m.wrappedMap[k],
 		})
 	}
 	return arr.Array()
