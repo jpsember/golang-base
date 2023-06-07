@@ -192,7 +192,7 @@ func HashOfBytes(b []byte) int32 {
 // Construct hash of generated directory, and verify it has the expected value.
 func (j *J) AssertGenerated() {
 
-	var jsonMap = dirSummary(j.GetTestResultsDir())
+	var jsonMap = DirSummary(j.GetTestResultsDir())
 	var currentHash = HashOfJSMap(jsonMap)
 	var registry = j.registry()
 
@@ -205,7 +205,7 @@ func (j *J) AssertGenerated() {
 	registry.SaveTestResults()
 }
 
-func dirSummary(dir Path) *JSMapStruct {
+func DirSummary(dir Path) JSMap {
 	var jsMap = NewJSMap()
 	var w = NewDirWalk(dir).WithDirNames()
 	for _, ent := range w.Files() {
@@ -214,7 +214,7 @@ func dirSummary(dir Path) *JSMapStruct {
 
 		value = "?"
 		if ent.IsDir() {
-			var subdirSummary = dirSummary(dir.JoinM(filename))
+			var subdirSummary = DirSummary(dir.JoinM(filename))
 			value = subdirSummary
 		} else {
 			bytes, err := dir.JoinM(filename).ReadBytes()
