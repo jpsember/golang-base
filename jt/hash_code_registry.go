@@ -64,19 +64,15 @@ func (r *HashCodeRegistry) unitTestDirectory() Path {
 }
 
 func (r *HashCodeRegistry) VerifyHash(testName string, currentHash int32, invalidateOldHash bool) bool {
-	pr := PrIf(true)
 	var expectedHash = r.Map.OptInt32(testName, 0)
-	pr("VerifyHash,", testName, "current", currentHash, "expected", expectedHash, "invalidateOld", invalidateOldHash)
 	if expectedHash == 0 || invalidateOldHash {
 		// Don't let other threads modify or write the map
 		mutex.Lock()
-		pr("storing current hash in map")
 		r.Map.Put(testName, currentHash)
 		r.write()
 		mutex.Unlock()
 		expectedHash = currentHash
 	}
-	pr("returning current", currentHash, "== expected", expectedHash, currentHash == expectedHash)
 	return currentHash == expectedHash
 }
 
