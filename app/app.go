@@ -21,7 +21,7 @@ type App struct {
 	cmdLineArgs     *CmdLineArgs
 
 	dryRun              bool
-	testArgs            []string
+	testArgs            *Array[string]
 	genArgsFlag         bool
 	argsFile            Path
 	operDataClassArgs   DataClass
@@ -93,17 +93,20 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 	return ca
 }
 
-func (a *App) SetTestArgs(args string) {
+// Parse a string of arguments separated by whitespace, and add to a list of test arguments
+func (a *App) AddTestArgs(args string) *App {
+	if a.testArgs == nil {
+		a.testArgs = NewArray[string]()
+	}
 	items := strings.Split(args, " ")
-	items2 := NewArray[string]()
 	for _, k := range items {
 		k := strings.TrimSpace(k)
 		if k == "" {
 			continue
 		}
-		items2.Add(k)
+		a.testArgs.Add(k)
 	}
-	a.testArgs = items2.Array()
+	return a
 }
 
 func AssertJsonOper(oper Oper) OperWithJsonArgs {
@@ -145,7 +148,7 @@ func (a *App) auxStart() {
 	args := os.Args[1:]
 
 	if a.testArgs != nil {
-		args = a.testArgs
+		args = a.testArgs.Array()
 	}
 
 	var ordered = NewArray[string]()
