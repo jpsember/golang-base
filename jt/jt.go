@@ -2,6 +2,7 @@ package jt
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/data"
 	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/json"
 	"hash/fnv"
@@ -104,7 +105,7 @@ func (j *J) GetUnitTestDir() Path {
 	return j.unitTestDir
 }
 
-func (j *J) GeneratedDir() Path {
+func (j *J) getGeneratedDir() Path {
 	if j.generatedDir.Empty() {
 		var genDir = j.GetUnitTestDir().JoinM("generated")
 		genDir.MkDirsM()
@@ -115,7 +116,7 @@ func (j *J) GeneratedDir() Path {
 
 func (j *J) GetTestResultsDir() Path {
 	if j.testResultsDir.Empty() {
-		var dir = j.GeneratedDir().JoinM(j.Filename + "/" + j.BaseName())
+		var dir = j.getGeneratedDir().JoinM(j.Filename + "/" + j.BaseName())
 		// Delete any existing contents of this directory
 		// Make sure it contains '/generated/' (pretty sure it does) to avoid crazy deletion
 		err := dir.RemakeDir("/generated/")
@@ -315,4 +316,32 @@ func (j *J) Rand() *rand.Rand {
 		j.rand = rand.New(rand.NewSource(int64(j.randSeed)))
 	}
 	return j.rand
+}
+
+// Generate a directory structure based upon a JSMap script.  The target argument, if not an absolute directory,
+// is assumed to be relative to the test's results directory.
+// The jsmap has keys representing files or directories.  If the value is a string, it generates a random text file;
+// and if it is a jsmap, it generates a directory recursively.
+func (j *J) generateSubdirs(target Path, jsmap JSMap) {
+	var dir Path
+	if target.IsAbs() {
+		dir = target
+	} else {
+		dir = j.GetTestResultsDir().JoinM(target.String())
+	}
+	j.auxGenDir(dir, jsmap)
+}
+
+func (j *J) auxGenDir(dir Path, jsmap JSMap) {
+	dir.MkDirsM()
+	for key, val := range jsmap.WrappedMap() {
+		s, ok := val.(JSMap)
+		if ok {
+			j.auxGenDir(dir.JoinM(key), s)
+		} else {
+			targ := dir.JoinM(key)
+			text := data.RandomText(j.Rand(), 1000, true)
+			targ.WriteStringM(text)
+		}
+	}
 }

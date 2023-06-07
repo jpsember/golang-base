@@ -11,7 +11,7 @@ type WidgetManagerObj struct {
 	BaseObject
 	rand *rand.Rand
 	// Note: this was a sorted map in the Java code
-	widgetMap map[string]Widget
+	widgetMap                   map[string]Widget
 	GrowXWeight                 int
 	GrowYWeight                 int
 	mPendingSize                int
@@ -441,25 +441,6 @@ func (m WidgetManager) clearPendingComponentFields() {
 	m.mPendingStringDefaultValue = ""
 	m.mPendingLabel = ""
 	m.mPendingFloatingPointFlag = false
-}
-
-func RandomText(rand *rand.Rand, maxLength int, withLinefeeds bool) string {
-
-	sample := "orhxxidfusuytelrcfdlordburswfxzjfjllppdsywgswkvukrammvxvsjzqwplxcpkoekiznlgsgjfonlugreiqvtvpjgrqotzu"
-
-	sb := strings.Builder{}
-	length := MinInt(maxLength, rand.Intn(maxLength+2))
-	for sb.Len() < length {
-		wordSize := rand.Intn(8) + 2
-		if withLinefeeds && rand.Intn(4) == 0 {
-			sb.WriteByte('\n')
-		} else {
-			sb.WriteByte(' ')
-		}
-		c := rand.Intn(len(sample) - wordSize)
-		sb.WriteString(sample[c : c+wordSize])
-	}
-	return strings.TrimSpace(sb.String())
 }
 
 func (m WidgetManager) open(id string) Widget {

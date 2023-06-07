@@ -187,3 +187,8 @@ func (path Path) EnsureExists(message ...any) {
 		BadArg(JoinLists([]any{"File doesn't exist:", path, ";"}, message))
 	}
 }
+
+func (path Path) IsAbs() bool {
+	path.CheckNonEmptyWithSkip(1)
+	return filepath.IsAbs(path.String())
+}

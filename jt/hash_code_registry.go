@@ -28,13 +28,14 @@ type HashCodeRegistry struct {
 // Must be thread safe
 func (j *J) registry() *HashCodeRegistry {
 	var key = j.Filename
+	mutex.RLock()
 	var registry = sClassesMap[key]
+	mutex.RUnlock()
 	if registry == nil {
 		registry = new(HashCodeRegistry)
 		registry.UnitTest = j
 		registry.Key = key
 
-		Todo("I think I need to lock the mutex for reading as well")
 		// Don't let other threads modify the map while we are modifying it or creating the registry's jsmap
 		mutex.Lock()
 		sClassesMap[key] = registry
