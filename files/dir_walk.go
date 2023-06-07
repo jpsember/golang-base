@@ -33,12 +33,12 @@ func NewDirWalk(directory Path) *DirWalk {
 	w.startDirectory = directory.CheckNonEmptyWithSkip(1)
 	w.filePatterns = newPatternCollection()
 	w.dirPatterns = newPatternCollection()
-	w.OmitNames(defaultOmitPrefixes...)
+	w.OmitNames(defaultOmitExprs...)
 	return w
 }
 
-var defaultOmitPrefixes = []string{
-	"_SKIP_", "_OLD_",
+var defaultOmitExprs = []string{
+	`.DS_Store`,
 }
 
 // Include directory names in the returned file list.  Normally,
