@@ -334,7 +334,9 @@ func (j *J) GenerateSubdirs(target Path, jsmap JSMap) {
 
 func (j *J) auxGenDir(dir Path, jsmap JSMap) {
 	dir.MkDirsM()
-	for key, val := range jsmap.WrappedMap() {
+	for _, entry := range jsmap.Entries() {
+		key := entry.Key
+		val := entry.Value
 		s, ok := val.(JSMap)
 		if ok {
 			j.auxGenDir(dir.JoinM(key), s)

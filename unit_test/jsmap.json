@@ -3,7 +3,7 @@
            "TestBadInput3" : 4592,
              "TestCopyDir" : 5877,
              "TestEscapes" : 2266,
-         "TestGenerateDir" : 3601,
+         "TestGenerateDir" : 1603,
     "TestJSMapPrettyPrint" : 1227,
   "TestPrintJSMapToString" : 1227
 }

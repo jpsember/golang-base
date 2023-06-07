@@ -305,3 +305,30 @@ func JSMapFromStringM(content string) *JSMapStruct {
 func (jsmap *JSMapStruct) WrappedMap() map[string]JSEntity {
 	return jsmap.wrappedMap
 }
+
+// Get an ordered list of keys for the JSMap
+func (jsmap JSMap) OrderedKeys() []string {
+	arr := NewArray[string]()
+	for k := range jsmap.wrappedMap {
+		arr.Add(k)
+	}
+	arr.Sort()
+	return arr.Array()
+}
+
+type JSMapEntry struct {
+	Key   string
+	Value JSEntity
+}
+
+// Get an ordered list of entries for the JSMap, sorted by key
+func (jsmap JSMap) Entries() []JSMapEntry {
+	arr := NewArray[JSMapEntry]()
+	for _, k := range jsmap.OrderedKeys() {
+		arr.Add(JSMapEntry{
+			Key:   k,
+			Value: jsmap.wrappedMap[k],
+		})
+	}
+	return arr.Array()
+}
