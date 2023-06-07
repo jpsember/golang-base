@@ -1,8 +1,0 @@
-{    "clean_log" : false,
-           "log" : "problems.txt",
-  "max_problems" : 0,
-   "verbose_problems" : false,
-  "pattern" : "^(\\w|-|\\.|\\x20|,|\\(|\\)|\\+|&|\\$|:|'|#|\\[|\\]|=|!|;|@)+$",
-      "source" : "/Volumes/T7/jeff_copy",
-   "microsoft" : "delete",
-}
