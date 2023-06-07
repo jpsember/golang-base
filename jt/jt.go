@@ -73,6 +73,7 @@ type J struct {
 	testResultsDir    Path
 	unitTestDir       Path
 	moduleDir         Path
+	generatedDir      Path
 	baseNameCached    string
 	InvalidateOldHash bool
 	rand              *rand.Rand
@@ -103,11 +104,18 @@ func (j *J) GetUnitTestDir() Path {
 	return j.unitTestDir
 }
 
-func (j *J) GetTestResultsDir() Path {
-	if j.testResultsDir.Empty() {
+func (j *J) GeneratedDir() Path {
+	if j.generatedDir.Empty() {
 		var genDir = j.GetUnitTestDir().JoinM("generated")
 		genDir.MkDirsM()
-		var dir = genDir.JoinM(j.Filename + "/" + j.BaseName())
+		j.generatedDir = genDir
+	}
+	return j.generatedDir
+}
+
+func (j *J) GetTestResultsDir() Path {
+	if j.testResultsDir.Empty() {
+		var dir = j.GeneratedDir().JoinM(j.Filename + "/" + j.BaseName())
 		// Delete any existing contents of this directory
 		// Make sure it contains '/generated/' (pretty sure it does) to avoid crazy deletion
 		err := dir.RemakeDir("/generated/")
@@ -198,17 +206,14 @@ func (j *J) AssertGenerated() {
 
 func dirSummary(dir Path) *JSMapStruct {
 	var jsMap = NewJSMap()
-
-	var w = NewDirWalk(dir).WithRecurse()
+	var w = NewDirWalk(dir).WithDirNames()
 	for _, ent := range w.Files() {
-
 		var filename = ent.Base()
 		var value any
 
 		value = "?"
 		if ent.IsDir() {
 			var subdirSummary = dirSummary(dir.JoinM(filename))
-			Todo("have JSMapStruct.size or empty method")
 			value = subdirSummary
 		} else {
 			bytes, err := dir.JoinM(filename).ReadBytes()

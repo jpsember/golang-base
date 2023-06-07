@@ -1,6 +1,7 @@
 {          "TestBadInput1" : 6097,
            "TestBadInput2" : 4511,
            "TestBadInput3" : 4592,
+             "TestCopyDir" : 5877,
              "TestEscapes" : 2266,
     "TestJSMapPrettyPrint" : 1227,
   "TestPrintJSMapToString" : 1227

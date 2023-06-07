@@ -159,12 +159,11 @@ func (w *DirWalk) Files() []Path {
 		for !stack.IsEmpty() {
 			var dir = stack.Pop()
 			if dir != w.startDirectory {
-				if !w.withRecurse {
-					continue
-				}
-
 				if w.includeDirs {
 					lst = append(lst, dir)
+				}
+				if !w.withRecurse {
+					continue
 				}
 			}
 

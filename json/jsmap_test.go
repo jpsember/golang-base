@@ -6,6 +6,7 @@ import (
 	"testing" // We still need to import the standard testing package
 
 	. "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/json"
 	"github.com/jpsember/golang-base/jt"
 )
@@ -130,4 +131,37 @@ func TestEscapes(t *testing.T) {
 	var jsmap, e = p.ParseMap()
 	CheckOk(e)
 	j.AssertMessage(jsmap)
+}
+
+var tree1 = `
+{"a.txt" : "",
+ "b.txt" : "",
+ "c"     : {"d.txt":"", "e.txt":"", "f" : {"g.txt" : ""}},
+}
+`
+
+func TestCopyDir(t *testing.T) {
+	j := jt.New(t)
+	//j.SetVerbose()
+	var jsmap = JSMapFromStringM(tree1)
+	generateSubdirs(j, jsmap)
+	j.AssertGenerated()
+}
+
+func generateSubdirs(j *jt.J, jsmap JSMap) {
+	dir := j.GetTestResultsDir().JoinM("source")
+	auxGenDir(j, dir, jsmap)
+}
+
+func auxGenDir(j *jt.J, dir Path, jsmap JSMap) {
+	dir.MkDirsM()
+	for key, val := range jsmap.WrappedMap() {
+		s, ok := val.(JSMap)
+		if ok {
+			auxGenDir(j, dir.JoinM(key), s)
+		} else {
+			targ := dir.JoinM(key)
+			targ.WriteStringM("This is " + key)
+		}
+	}
 }
