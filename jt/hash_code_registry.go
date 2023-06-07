@@ -64,7 +64,7 @@ func (r *HashCodeRegistry) unitTestDirectory() Path {
 }
 
 func (r *HashCodeRegistry) VerifyHash(testName string, currentHash int32, invalidateOldHash bool) bool {
-	pr := PrIf(false)
+	pr := PrIf(true)
 	var expectedHash = r.Map.OptInt32(testName, 0)
 	pr("VerifyHash,", testName, "current", currentHash, "expected", expectedHash, "invalidateOld", invalidateOldHash)
 	if expectedHash == 0 || invalidateOldHash {
