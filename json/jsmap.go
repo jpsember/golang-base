@@ -36,16 +36,16 @@ func (m JSMap) PrintTo(context *JSONPrinter) {
 	if context.Pretty {
 		m.prettyPrintWithIndent(context)
 	} else {
+		entries := m.Entries()
 		s.WriteByte('{')
-		var index = 0
-		for key, val := range m.wrappedMap {
+		for index, entry := range entries {
 			if index != 0 {
 				s.WriteByte(',')
 			}
 			index++
-			s.WriteString(EscapedAndQuoted(key))
+			s.WriteString(EscapedAndQuoted(entry.Key))
 			s.WriteByte(':')
-			val.PrintTo(context)
+			entry.Value.PrintTo(context)
 		}
 		s.WriteByte('}')
 	}
