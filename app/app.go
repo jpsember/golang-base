@@ -109,6 +109,10 @@ func (a *App) AddTestArgs(args string) *App {
 	return a
 }
 
+func (a *App) HasTestArgs() bool {
+	return a.testArgs != nil
+}
+
 func AssertJsonOper(oper Oper) OperWithJsonArgs {
 	result, ok := oper.(OperWithJsonArgs)
 	CheckArg(ok, "oper does not support OperWithJsonArgs interface:", oper)
