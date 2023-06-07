@@ -322,7 +322,7 @@ func (j *J) Rand() *rand.Rand {
 // is assumed to be relative to the test's results directory.
 // The jsmap has keys representing files or directories.  If the value is a string, it generates a random text file;
 // and if it is a jsmap, it generates a directory recursively.
-func (j *J) generateSubdirs(target Path, jsmap JSMap) {
+func (j *J) GenerateSubdirs(target Path, jsmap JSMap) {
 	var dir Path
 	if target.IsAbs() {
 		dir = target
