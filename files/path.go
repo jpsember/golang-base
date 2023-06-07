@@ -192,3 +192,19 @@ func (path Path) IsAbs() bool {
 	path.CheckNonEmptyWithSkip(1)
 	return filepath.IsAbs(path.String())
 }
+
+func (path Path) GetAbs() (Path, error) {
+	path.CheckNonEmptyWithSkip(1)
+	pth, err := filepath.Abs(path.String())
+	result := EmptyPath
+	if err == nil {
+		result, err = NewPath(pth)
+	}
+	return result, err
+}
+
+func (path Path) GetAbsM() Path {
+	result, err := path.GetAbs()
+	CheckOkWithSkip(1, err)
+	return result
+}

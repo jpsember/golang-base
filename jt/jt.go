@@ -201,6 +201,7 @@ func (j *J) AssertGenerated() {
 		Pr(summary)
 		j.showDiffs()
 		j.Fail()
+		return
 	}
 	registry.SaveTestResults()
 }
