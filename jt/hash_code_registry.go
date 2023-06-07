@@ -17,7 +17,6 @@ type HashCodeRegistry struct {
 	Map                *JSMapStruct
 	registryFileCached Path
 	unitTestDirCached  Path
-	InvalidateOldHash  bool
 	UnitTest           *J
 	referenceDirCached Path
 	UnitTestName       string
@@ -96,10 +95,9 @@ var sClassesMap = make(map[string]*HashCodeRegistry)
  * value (or no previous value exists).
  */
 func (r *HashCodeRegistry) SaveTestResults() {
-
 	// If we're going to replace the hash in any case, delete any existing reference directory,
 	// since its old contents may correspond to an older hash code
-	if r.InvalidateOldHash {
+	if r.UnitTest.InvalidateOldHash {
 		r.referenceDir().DeleteDirectoryM("/generated/")
 	}
 

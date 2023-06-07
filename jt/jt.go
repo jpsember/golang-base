@@ -340,7 +340,7 @@ func (j *J) auxGenDir(dir Path, jsmap JSMap) {
 			j.auxGenDir(dir.JoinM(key), s)
 		} else {
 			targ := dir.JoinM(key)
-			text := data.RandomText(j.Rand(), 1000, true)
+			text := data.RandomText(j.Rand(), 80, false) + "\n"
 			targ.WriteStringM(text)
 		}
 	}

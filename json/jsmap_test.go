@@ -132,9 +132,18 @@ func TestEscapes(t *testing.T) {
 	j.AssertMessage(jsmap)
 }
 
-var tree1 = `
+func TestGenerateDir(t *testing.T) {
+	j := jt.New(t)
+
+	const tree1 = `
 {"a.txt" : "",
  "b.txt" : "",
  "c"     : {"d.txt":"", "e.txt":"", "f" : {"g.txt" : ""}},
 }
 `
+
+	var jsmap = JSMapFromStringM(tree1)
+	j.GenerateSubdirs("source", jsmap)
+
+	j.AssertGenerated()
+}
