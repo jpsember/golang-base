@@ -86,21 +86,6 @@ func (path Path) ReadStringIfExistsM(defaultContent string) string {
 	return content
 }
 
-//// Deprecated: use Path type
-//func ReadStringIfExists(file string, defaultContent string) (content string, err error) {
-//	Todo("have a special type for File, to avoid confusion with strings, and to support paths etc")
-//	if Exists(file) {
-//		var bytes []byte
-//		bytes, err = ReadBytes(file)
-//		if err == nil {
-//			content = string(bytes)
-//		}
-//	} else {
-//		content = defaultContent
-//	}
-//	return content, err
-//}
-
 // Deprecated: use Path type
 func ReadBytes(path string) (content []byte, err error) {
 	return os.ReadFile(path)

@@ -29,6 +29,7 @@ type App struct {
 	operWithJsonArgs    OperWithJsonArgs
 	operWithCmdLineArgs OperWithCmdLineArgs
 	oper                Oper
+	startDir            Path
 }
 
 func NewApp() *App {
@@ -44,6 +45,7 @@ const (
 	ClArgGenArgs  = "gen-args"
 	ClArgArgsFile = "args"
 	ClIDE         = "ide"
+	ClStartDir    = "startdir"
 )
 
 func (a *App) CmdLineArgs() *CmdLineArgs {
@@ -61,6 +63,7 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 	ca.Add(ClArgVersion).Desc("Display version number").ShortName("n")
 	ca.Add(ClArgGenArgs).Desc("Generate args for operation")
 	ca.Add(ClArgArgsFile).SetString().Desc("Specify arguments file (json)")
+	ca.Add(ClStartDir).SetString().Desc("Directory to start within").ShortName("S")
 
 	sb := strings.Builder{}
 	sb.WriteString(a.Name())
@@ -143,7 +146,6 @@ func (a *App) auxStart() {
 
 	if a.testArgs != nil {
 		args = a.testArgs
-		Pr("Using test args:", args)
 	}
 
 	var ordered = NewArray[string]()
@@ -206,6 +208,9 @@ func (a *App) auxStart() {
 
 		if path.NonEmpty() {
 			path.EnsureExists("args file")
+
+			// If no explicit start directory was given, use the directory containing the arguments
+			a.SpecifyStartDir(path.Parent())
 		}
 		a.argsFile = path
 		pr("args file:", path)
@@ -226,6 +231,21 @@ func (a *App) auxStart() {
 	}
 	pr("calling oper.Perform")
 	a.oper.Perform(a)
+}
+
+// TODO: this can probably be private
+func (a *App) SpecifyStartDir(path Path) {
+	if a.startDir.NonEmpty() {
+		return
+	}
+	a.startDir = path.CheckNonEmptyWithSkip(1)
+}
+
+func (a *App) StartDir() Path {
+	if a.startDir.Empty() {
+		a.startDir = CurrentDirectory()
+	}
+	return a.startDir
 }
 
 func (a *App) handleCmdLineArgsError() bool {
