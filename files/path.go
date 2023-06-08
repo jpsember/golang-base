@@ -57,21 +57,21 @@ func (path Path) Join(s string) (Path, error) {
 	return NewPath(j)
 }
 
-// Join path to a relative path (Path)
-func (path Path) JoinString(s Path) (Path, error) {
-	return path.Join(string(s))
-}
-
-// Join path to a relative path (Path)
-func (path Path) JoinStringM(s Path) Path {
-	return path.JoinM(string(s))
-}
-
 // Join path to a relative path (string); panic if error
 func (path Path) JoinM(s string) Path {
 	j, e := path.Join(s)
 	CheckOkWithSkip(1, e)
 	return j
+}
+
+// Join path to a relative path (Path)
+func (path Path) JoinPath(other Path) (Path, error) {
+	return path.Join(string(other))
+}
+
+// Join path to a relative path (Path)
+func (path Path) JoinPathM(other Path) Path {
+	return path.JoinM(string(other))
 }
 
 // Get string representation of path
