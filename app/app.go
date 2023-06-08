@@ -215,9 +215,9 @@ func (a *App) auxStart() {
 
 		if path.NonEmpty() {
 			path.EnsureExists("args file")
-
 			// If no explicit start directory was given, use the directory containing the arguments
-			a.SpecifyStartDir(path.Parent())
+			// Convert to an absolute path before, to ensure a parent directory is known
+			a.SpecifyStartDir(path.GetAbsM().Parent())
 		}
 		a.argsFile = path
 		pr("args file:", path)
