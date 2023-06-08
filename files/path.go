@@ -223,7 +223,7 @@ func (path Path) GetAbsFrom(defaultParentDir Path) (Path, error) {
 	var err error
 	result := path
 	if !path.IsAbs() {
-		result, err = defaultParentDir.JoinString(path)
+		result, err = defaultParentDir.JoinPath(path)
 	}
 	return result, err
 }
