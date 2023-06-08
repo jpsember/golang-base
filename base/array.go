@@ -44,8 +44,37 @@ func (array *Array[T]) NonEmpty() bool {
 	return !array.IsEmpty()
 }
 
+func (array *Array[T]) First() T {
+	return array.Get(0)
+}
+
 func (array *Array[T]) Last() T {
 	return array.Get(array.Size() - 1)
+}
+
+// Remove a contiguous sequence of elements; adjust arguments into range, and do nothing if appropriate.
+func (array *Array[T]) Remove(start int, count int) {
+	w := array.wrappedArray
+	end := start + count
+	x := len(w)
+	start = Clamp(start, 0, x)
+	end = Clamp(end, start, x)
+	if start < end {
+		m := w[0:start]
+		m = append(m, w[end:x]...)
+		array.wrappedArray = m
+	}
+}
+
+// Remove all elements at or beyond a particular position; adjust arguments
+// into range, and do nothing if appropriate.
+func (array *Array[T]) RemoveAllButFirstN(n int) {
+	array.Remove(n, array.Size())
+}
+
+// Remove all elements except the last n, doing nothing if there are <= n elements.
+func (array *Array[T]) RemoveAllButLastN(n int) {
+	array.Remove(0, array.Size()-n)
 }
 
 func (array *Array[T]) Append(items ...T) {

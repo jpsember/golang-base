@@ -224,6 +224,16 @@ func Spaces(count int) string {
 	return SPACES + Spaces(count-len(SPACES))
 }
 
+func Clamp(value, min, max int) int {
+	if value < min {
+		return min
+	}
+	if value > max {
+		return max
+	}
+	return value
+}
+
 func MaxInt(a, b int) int {
 	if a > b {
 		return a
