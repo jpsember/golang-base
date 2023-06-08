@@ -57,6 +57,16 @@ func (path Path) Join(s string) (Path, error) {
 	return NewPath(j)
 }
 
+// Join path to a relative path (Path)
+func (path Path) JoinString(s Path) (Path, error) {
+	return path.Join(string(s))
+}
+
+// Join path to a relative path (Path)
+func (path Path) JoinStringM(s Path) Path {
+	return path.JoinM(string(s))
+}
+
 // Join path to a relative path (string); panic if error
 func (path Path) JoinM(s string) Path {
 	j, e := path.Join(s)
@@ -205,6 +215,21 @@ func (path Path) GetAbs() (Path, error) {
 
 func (path Path) GetAbsM() Path {
 	result, err := path.GetAbs()
+	CheckOkWithSkip(1, err)
+	return result
+}
+
+func (path Path) GetAbsFrom(defaultParentDir Path) (Path, error) {
+	var err error
+	result := path
+	if !path.IsAbs() {
+		result, err = defaultParentDir.JoinString(path)
+	}
+	return result, err
+}
+
+func (path Path) GetAbsFromM(defaultParentDir Path) Path {
+	result, err := path.GetAbsFrom(defaultParentDir)
 	CheckOkWithSkip(1, err)
 	return result
 }
