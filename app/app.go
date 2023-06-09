@@ -273,7 +273,6 @@ func (a *App) StartDir() Path {
 		}
 		a.SpecifyStartDir(pth)
 	}
-	fmt.Println("getting start dir:", a.startDir)
 	return a.startDir
 }
 
