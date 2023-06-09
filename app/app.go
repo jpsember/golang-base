@@ -141,7 +141,9 @@ func (a *App) hasMultipleOperations() bool {
 }
 
 func (a *App) Start() {
+	fmt.Println("aux start")
 	a.auxStart()
+	fmt.Println("error:", a.error(), a.errorMessage)
 	if a.error() {
 		fmt.Fprintln(os.Stderr, "*** "+ToString(a.errorMessage...))
 		os.Exit(1)
@@ -159,15 +161,19 @@ func (a *App) auxStart() {
 	for k := range a.operMap {
 		ordered.Add(k)
 	}
-
+	fmt.Println("auxStart 164")
 	err := ordered.Sort()
 	CheckOk(err)
 
 	var c = a.CmdLineArgs()
+	fmt.Println("parsing")
 	c.Parse(args)
+	fmt.Println("done parsing")
+
 	if a.handleCmdLineArgsError() {
 		return
 	}
+	fmt.Println("no err")
 
 	if c.Get(ClIDE) {
 		// Clear the console
