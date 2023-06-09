@@ -251,12 +251,22 @@ func (a *App) SpecifyStartDir(path Path) {
 	if a.startDir.NonEmpty() {
 		return
 	}
+	if path.String() == "/" {
+		BadArg("start dir is system root:", path)
+	}
 	a.startDir = path.CheckNonEmptyWithSkip(1)
 }
 
 func (a *App) StartDir() Path {
 	if a.startDir.Empty() {
-		a.startDir = CurrentDirectory()
+		var pth Path
+		startDir := a.CmdLineArgs().GetString(ClStartDir)
+		if startDir != "" {
+			pth = NewPathM(startDir)
+		} else {
+			pth = CurrentDirectory()
+		}
+		a.SpecifyStartDir(pth)
 	}
 	return a.startDir
 }
