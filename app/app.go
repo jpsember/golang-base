@@ -248,6 +248,8 @@ func (a *App) auxStart() {
 
 // TODO: this can probably be private
 func (a *App) SpecifyStartDir(path Path) {
+	fmt.Println("SpecifyStartDir:", path, "currently:", a.startDir)
+
 	if a.startDir.NonEmpty() {
 		return
 	}
@@ -260,7 +262,10 @@ func (a *App) SpecifyStartDir(path Path) {
 func (a *App) StartDir() Path {
 	if a.startDir.Empty() {
 		var pth Path
+		fmt.Println("trying to get start dir from cmdlineargs")
+		fmt.Print("args:", a.CmdLineArgs())
 		startDir := a.CmdLineArgs().GetString(ClStartDir)
+		fmt.Print("startDir:", startDir)
 		if startDir != "" {
 			pth = NewPathM(startDir)
 		} else {
@@ -268,6 +273,7 @@ func (a *App) StartDir() Path {
 		}
 		a.SpecifyStartDir(pth)
 	}
+	fmt.Println("getting start dir:", a.startDir)
 	return a.startDir
 }
 
