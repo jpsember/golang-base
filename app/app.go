@@ -141,9 +141,7 @@ func (a *App) hasMultipleOperations() bool {
 }
 
 func (a *App) Start() {
-	fmt.Println("aux start")
 	a.auxStart()
-	fmt.Println("error:", a.error(), a.errorMessage)
 	if a.error() {
 		fmt.Fprintln(os.Stderr, "*** "+ToString(a.errorMessage...))
 		os.Exit(1)
@@ -161,19 +159,15 @@ func (a *App) auxStart() {
 	for k := range a.operMap {
 		ordered.Add(k)
 	}
-	fmt.Println("auxStart 164")
+
 	err := ordered.Sort()
 	CheckOk(err)
 
 	var c = a.CmdLineArgs()
-	fmt.Println("parsing")
 	c.Parse(args)
-	fmt.Println("done parsing")
-
 	if a.handleCmdLineArgsError() {
 		return
 	}
-	fmt.Println("no err")
 
 	if c.Get(ClIDE) {
 		// Clear the console
@@ -248,8 +242,6 @@ func (a *App) auxStart() {
 
 // TODO: this can probably be private
 func (a *App) SpecifyStartDir(path Path) {
-	fmt.Println("SpecifyStartDir:", path, "currently:", a.startDir)
-
 	if a.startDir.NonEmpty() {
 		return
 	}
@@ -262,10 +254,7 @@ func (a *App) SpecifyStartDir(path Path) {
 func (a *App) StartDir() Path {
 	if a.startDir.Empty() {
 		var pth Path
-		fmt.Println("trying to get start dir from cmdlineargs")
-		fmt.Print("args:", a.CmdLineArgs())
 		startDir := a.CmdLineArgs().GetString(ClStartDir)
-		fmt.Print("startDir:", startDir)
 		if startDir != "" {
 			pth = NewPathM(startDir)
 		} else {

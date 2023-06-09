@@ -282,7 +282,6 @@ func (c *CmdLineArgs) chooseShortNames() {
 	for _, key := range c.optionList.Array() {
 		c.opt = c.namedOptionMap[key]
 
-		fmt.Println("clarg key:", key, "opt:", c.opt.Type)
 		j := 0
 		// If option has prefix "no", it's probably 'noXXX', so avoid
 		// deriving short name from 'n' or 'o'
