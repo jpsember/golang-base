@@ -1,4 +1,4 @@
-package fullpagedemo
+package main
 
 import (
 	"bufio"
@@ -14,18 +14,18 @@ import (
 	"time"
 )
 
-func WebServerDemo() {
+func main() {
 	var app = NewApp()
-	app.SetName("WebServer")
+	app.SetName("nonajax_demo")
 	app.Version = "1.0"
 	app.CmdLineArgs().Add("insecure").Desc("insecure (http) mode")
-	app.RegisterOper(&SampleOper{})
+	app.RegisterOper(&NonAjaxOperStruct{})
 	app.Start()
 }
 
 // Define an app with a single operation
 
-type SampleOper struct {
+type NonAjaxOperStruct struct {
 	insecure       bool
 	sessionManager SessionManager
 	appRoot        Path
@@ -34,18 +34,20 @@ type SampleOper struct {
 	headerMarkup   string
 }
 
-func (oper *SampleOper) UserCommand() string {
+type NonAjaxOper = *NonAjaxOperStruct
+
+func (oper NonAjaxOper) UserCommand() string {
 	return "sample"
 }
 
-func (oper *SampleOper) GetHelp(bp *BasePrinter) {
+func (oper NonAjaxOper) GetHelp(bp *BasePrinter) {
 	bp.Pr("Demonstrates a web server")
 }
 
-func (oper *SampleOper) ProcessArgs(c *CmdLineArgs) {
+func (oper NonAjaxOper) ProcessArgs(c *CmdLineArgs) {
 }
 
-func (oper *SampleOper) Perform(app *App) {
+func (oper NonAjaxOper) Perform(app *App) {
 	oper.sessionManager = BuildFileSystemSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
@@ -57,7 +59,7 @@ func (oper *SampleOper) Perform(app *App) {
 	}
 }
 
-func (oper *SampleOper) getHeaderMarkup() string {
+func (oper NonAjaxOper) getHeaderMarkup() string {
 	if oper.headerMarkup == "" {
 		s := strings.Builder{}
 		s.WriteString(oper.resources.JoinM("header.html").ReadStringM())
@@ -71,14 +73,14 @@ func (oper *SampleOper) getHeaderMarkup() string {
 	return oper.headerMarkup
 }
 
-func (oper *SampleOper) writeHeader(bp MarkupBuilder) {
+func (oper NonAjaxOper) writeHeader(bp MarkupBuilder) {
 	bp.A(oper.getHeaderMarkup())
 	bp.OpenHtml("body", "").Br()
 	bp.OpenHtml(`div class="container-fluid"`, "body")
 }
 
 // Write footer markup, then write the page to the response
-func (oper *SampleOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
+func (oper NonAjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 	bp.CloseHtml("div", "body")
 	bp.Br().CloseHtml("body", "")
 	bp.A(`</html>`).Cr()
@@ -87,7 +89,7 @@ func (oper *SampleOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 }
 
 // A handler such as this must be thread safe!
-func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
+func (oper NonAjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	// These are a pain in the ass
 	if req.RequestURI == "/favicon.ico" {
@@ -149,7 +151,7 @@ func (oper *SampleOper) handle(w http.ResponseWriter, req *http.Request) {
 }
 
 // Send a simple web page back with a message
-func (oper *SampleOper) sendResponseMarkup(w http.ResponseWriter, req *http.Request, content string) {
+func (oper NonAjaxOper) sendResponseMarkup(w http.ResponseWriter, req *http.Request, content string) {
 	sb := NewMarkupBuilder()
 
 	oper.writeHeader(sb)
@@ -163,7 +165,7 @@ func (oper *SampleOper) sendResponseMarkup(w http.ResponseWriter, req *http.Requ
 	w.Write([]byte(sb.String()))
 }
 
-func (oper *SampleOper) handler() func(http.ResponseWriter, *http.Request) {
+func (oper NonAjaxOper) handler() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, req *http.Request) {
 		oper.handle(w, req)
 	}
@@ -171,7 +173,7 @@ func (oper *SampleOper) handler() func(http.ResponseWriter, *http.Request) {
 
 // ------------------------------------------------------------------------------------
 
-func (oper *SampleOper) doHttp() {
+func (oper NonAjaxOper) doHttp() {
 	http.HandleFunc("/", oper.handler())
 	Pr("Type:", INDENT, "curl -sL http://localhost:8090/hello")
 	err := http.ListenAndServe(":8090", nil)
@@ -182,7 +184,7 @@ func (oper *SampleOper) doHttp() {
 
 // ------------------------------------------------------------------------------------
 
-func (oper *SampleOper) doHttps() {
+func (oper NonAjaxOper) doHttps() {
 
 	var url = "animalaid.org"
 
@@ -208,7 +210,7 @@ func (oper *SampleOper) doHttps() {
 	}
 }
 
-func (oper *SampleOper) handleResourceRequest(w http.ResponseWriter, req *http.Request, resource string) {
+func (oper NonAjaxOper) handleResourceRequest(w http.ResponseWriter, req *http.Request, resource string) {
 	if resource == "picture.jpg" {
 		picPath := oper.resources.JoinM("picture.jpg")
 		content := picPath.ReadBytesM()
@@ -227,7 +229,7 @@ func (oper *SampleOper) handleResourceRequest(w http.ResponseWriter, req *http.R
 	}
 }
 
-func (oper *SampleOper) handleUpload(w http.ResponseWriter, r *http.Request, resource string) {
+func (oper NonAjaxOper) handleUpload(w http.ResponseWriter, r *http.Request, resource string) {
 
 	// If there is no session, do nothing
 	var session = DetermineSession(oper.sessionManager, w, r, false)
@@ -294,7 +296,7 @@ func (oper *SampleOper) handleUpload(w http.ResponseWriter, r *http.Request, res
 	oper.sendResponseMarkup(w, r, "Successfully uploaded: "+newPath.String())
 }
 
-func (oper *SampleOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
+func (oper NonAjaxOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request) {
 	sb := NewBasePrinter()
 	sb.Pr(`<h3> This was changed via an AJAX call without using JQuery at ` +
 		time.Now().Format(time.ANSIC) + `</h3>`)
@@ -302,7 +304,7 @@ func (oper *SampleOper) sendAjaxMarkup(w http.ResponseWriter, req *http.Request)
 	w.Write([]byte(sb.String()))
 }
 
-func (oper *SampleOper) processViewRequest(w http.ResponseWriter, req *http.Request) {
+func (oper NonAjaxOper) processViewRequest(w http.ResponseWriter, req *http.Request) {
 	sb := NewMarkupBuilder()
 	sess := DetermineSession(oper.sessionManager, w, req, true)
 	sess.Mutex.Lock()
