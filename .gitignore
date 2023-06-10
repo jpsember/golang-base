@@ -1,15 +1,13 @@
 # goland related
 .idea
 
-
 unit_test/generated
 
-# Executable
-demo/demo
+# Executables
+cmd/*_demo
 
 webserv/cache
 
 # Generated data classes
 gen
 
-sample.html
