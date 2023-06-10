@@ -4,17 +4,11 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/gen/sample"
-	"github.com/jpsember/golang-base/webdemo"
 )
 
 var _ = Pr
 
 func main() {
-
-	if true {
-		webdemo.WebServerDemo()
-		return
-	}
 
 	jsonExample()
 
