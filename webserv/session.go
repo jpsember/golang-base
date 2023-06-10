@@ -21,9 +21,12 @@ type SessionStruct struct {
 	Mutex sync.RWMutex
 	// JSMap containing widget values, other user session state
 	State JSMap
+
 	// Map of widgets for this session
-	WidgetMap  map[string]Widget
-	repaintMap *Set[string]
+	//WidgetMap map[string]Widget
+
+	widgetManager WidgetManager
+	repaintMap    *Set[string]
 	// TODO: we might want the repaintMap to be ephemeral, only alive while serving the request
 	// We also might want to have a singleton, global widget map, since the state is stored here in the session
 
@@ -44,6 +47,20 @@ func NewSession() Session {
 	}
 	Todo("Restore user session from filesystem/database")
 	return &s
+}
+
+// Get WidgetManager for this session, creating one if necessary
+func (s Session) WidgetManager() WidgetManager {
+	if s.widgetManager == nil {
+		s.widgetManager = NewWidgetManager()
+		//sess.WidgetMap = m.widgetMap
+	}
+	return s.widgetManager
+}
+
+// Get widget map from the WidgetManager.
+func (s Session) widgetMap() WidgetMap {
+	return s.WidgetManager().widgetMap
 }
 
 func (s Session) ToJson() *JSMapStruct {
@@ -102,6 +119,7 @@ func (s Session) sendAjaxResponse() {
 	}
 	pr := PrIf(true)
 
+	wm := s.widgetMap()
 	jsmap := NewJSMap()
 
 	// TODO: there might be a more efficient way to do the repainting
@@ -115,7 +133,7 @@ func (s Session) sendAjaxResponse() {
 		painted := NewSet[string]()
 
 		for k, _ := range s.repaintMap.WrappedMap() {
-			w := s.WidgetMap[k]
+			w := wm[k]
 			addSubtree(painted, w)
 		}
 
@@ -124,7 +142,7 @@ func (s Session) sendAjaxResponse() {
 		stack.Add(s.PageWidget.GetId())
 		for stack.NonEmpty() {
 			widgetId := stack.Pop()
-			widget := s.WidgetMap[widgetId]
+			widget := wm[widgetId]
 			if painted.Contains(widgetId) {
 				m := NewMarkupBuilder()
 				widget.RenderTo(m, s.State)
@@ -205,7 +223,7 @@ func (s Session) GetValueString() string {
 func (s Session) GetWidget() Widget {
 	widgetId := s.GetWidgetId()
 	if s.Ok() {
-		widget, ok := s.WidgetMap[widgetId]
+		widget, ok := s.widgetMap()[widgetId]
 		if ok {
 			return widget
 		}

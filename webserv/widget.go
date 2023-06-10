@@ -16,4 +16,6 @@ type Widget interface {
 	GetChildren() []Widget
 }
 
+type WidgetMap = map[string]Widget
+
 const MaxColumns = 12

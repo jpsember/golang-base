@@ -67,7 +67,7 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	prevPoint := IPointWith(0, -1)
 	for index, child := range w.children.Array() {
 		cell := w.cells.Get(index)
-		// If this cell lies in a row below the current, close the current and start a new one
+		// If this cell lies in a row below the current, Close the current and start a new one
 		if cell.Location.Y > prevPoint.Y {
 			if prevPoint.Y >= 0 {
 				m.CloseHtml("div", "end of row")

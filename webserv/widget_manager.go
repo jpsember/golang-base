@@ -9,9 +9,8 @@ import (
 
 type WidgetManagerObj struct {
 	BaseObject
-	rand *rand.Rand
-	// Note: this was a sorted map in the Java code
-	widgetMap                   map[string]Widget
+	rand                        *rand.Rand
+	widgetMap                   WidgetMap
 	GrowXWeight                 int
 	GrowYWeight                 int
 	mPendingSize                int
@@ -443,8 +442,8 @@ func (m WidgetManager) clearPendingComponentFields() {
 	m.mPendingFloatingPointFlag = false
 }
 
-func (m WidgetManager) open(id string) Widget {
-	return m.openFor(id, "<no context>")
+func (m WidgetManager) Open(id string) Widget {
+	return m.OpenFor(id, "<no context>")
 }
 
 /**
@@ -471,7 +470,7 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 /**
  * Create a child widget and push onto stack
  */
-func (m WidgetManager) openFor(id string, debugContext string) Widget {
+func (m WidgetManager) OpenFor(id string, debugContext string) Widget {
 	Todo("support ids for these containers")
 	m.Log("openFor:", debugContext)
 
@@ -493,15 +492,15 @@ func (m WidgetManager) openFor(id string, debugContext string) Widget {
 /**
  * Pop view from the stack
  */
-func (m WidgetManager) close() WidgetManager {
-	return m.closeFor("<no context>")
+func (m WidgetManager) Close() WidgetManager {
+	return m.CloseFor("<no context>")
 }
 
 /**
  * Pop view from the stack
  */
-func (m WidgetManager) closeFor(debugContext string) WidgetManager {
-	m.Log("close", debugContext)
+func (m WidgetManager) CloseFor(debugContext string) WidgetManager {
+	m.Log("Close", debugContext)
 	parent := m.parentStack.Pop()
 	//m.EndRow()
 	parent.LayoutChildren(m)

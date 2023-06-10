@@ -4,7 +4,7 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/gen/sample"
-	"github.com/jpsember/golang-base/webserv"
+	"github.com/jpsember/golang-base/webdemo"
 )
 
 var _ = Pr
@@ -12,7 +12,7 @@ var _ = Pr
 func main() {
 
 	if true {
-		webserv.WebServerDemo()
+		webdemo.WebServerDemo()
 		return
 	}
 
@@ -64,7 +64,7 @@ func jsonExample() {
 				Add("debugging").Desc("perform extra tests"). //
 				Add("speed").SetInt().Add("jumping")
 	app.RegisterOper(oper)
-	app.SetTestArgs("-d --speed 42 --verbose --dryrun target 18 simulate")
+	app.AddTestArgs("-d --speed 42 --verbose --dryrun target 18 simulate")
 	app.Start()
 }
 
@@ -116,6 +116,6 @@ func cmdLineExample() {
 	app.CmdLineArgs(). //
 				Add("debugging").Desc("perform extra tests"). //
 				Add("speed").SetInt().Add("jumping")          //
-	app.SetTestArgs("--verbose --dryrun height compact compact zebra height compact --help")
+	app.AddTestArgs("--verbose --dryrun height compact compact zebra height compact --help")
 	app.Start()
 }
