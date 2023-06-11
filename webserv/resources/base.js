@@ -1,6 +1,42 @@
 function warning() {
-    // TODO: this isn't doing quite what I want
-    pr(...["*** WARNING:",console.trace()].concat(arguments))
+    _alert("WARNING",_argsToArray(arguments))
+}
+
+function todo() {
+    _alert("TODO",_argsToArray(arguments))
+}
+
+function _alert(type, args) {
+    var x = ["***",type + ";", where(2), ":"].concat(args)
+    pr(...x)
+}
+
+function _argsToArray(x) {
+    const args = [];
+    for (let i = 0; i < x.length; i++) {
+        args[i] = x[i];
+    }
+    return args
+}
+
+function var_info(x) {
+    return typeof(x) + ': "'+String(x)+'"'
+}
+
+function where(skip) {
+    if (skip == undefined) {
+        skip = 0
+    }
+    skip += 2
+    var err = new Error();
+    const lines = err.stack.split("\n")
+    var x = lines[skip]
+    if (x == null) {
+        x = "<unknown location>"
+    } else {
+        x = x.replace(/^\s*at\s*/,"")
+    }
+    return x
 }
 
 function pr() {
@@ -19,35 +55,16 @@ function pr() {
     console.log(s)
 }
 
-function ajax(id) {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-            elem = document.getElementById(id);
-            if (elem == null) {
-              warning("can't find element with id:",id);
-              return;
-            }
-            elem.innerHTML = this.responseText;
-            warning("changed innerHTML of elem with id:",id)
-            pr("changed innerHTML...")
-        }
-    };
-    xhttp.open("GET", "ajax", true);
-    xhttp.send();
-}
-
 function processServerResponse(text) {
-    pr("processServerResponse:", text)
     if (text.length == 0) {
         return
     }
     const obj = JSON.parse(text)
-    pr("parsed to JSON object:", obj)
+    pr("processServerResponse, as JSON:", obj)
     if ('w' in obj) {
         const widgetMap = obj.w
         for (const [id, markup] of Object.entries(widgetMap)) {
-            elem = document.getElementById(id);
+            const elem = document.getElementById(id);
             if (elem == null) {
               warning("can't find element with id:",id);
               continue;

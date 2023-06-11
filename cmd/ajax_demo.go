@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -197,7 +198,7 @@ func birdListener(sess any, widget Widget) {
 	if !s.Ok() {
 		return
 	}
-	s.State.Put(widget.GetId(), newVal+"<<added for fun")
+	s.State.Put(widget.GetId(), newVal+" at "+time.Now().Format(time.ANSIC))
 	Pr("state map now:", INDENT, s.State)
 	Pr("repainting widget")
 	s.Repaint(widget.GetId())
