@@ -21,7 +21,6 @@ func main() {
 	app.CmdLineArgs().Add("insecure").Desc("insecure (http) mode")
 
 	app.RegisterOper(&AjaxOperStruct{})
-	//app.SetTestArgs("--insecure")
 	app.Start()
 }
 
@@ -199,8 +198,8 @@ func birdListener(sess any, widget Widget) {
 		return
 	}
 	s.State.Put(widget.GetId(), newVal+" at "+time.Now().Format(time.ANSIC))
-	Pr("state map now:", INDENT, s.State)
-	Pr("repainting widget")
+	//Pr("state map now:", INDENT, s.State)
+	//Pr("repainting widget")
 	s.Repaint(widget.GetId())
 }
 

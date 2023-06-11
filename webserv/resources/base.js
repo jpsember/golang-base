@@ -7,7 +7,7 @@ function todo() {
 }
 
 function _alert(type, args) {
-    var x = ["***",type + ";", where(2), ":"].concat(args)
+    const x = ["***",type + ";", where(2), ":"].concat(args)
     pr(...x)
 }
 
@@ -28,9 +28,9 @@ function where(skip) {
         skip = 0
     }
     skip += 2
-    var err = new Error();
+    const err = new Error();
     const lines = err.stack.split("\n")
-    var x = lines[skip]
+    let x = lines[skip]
     if (x == null) {
         x = "<unknown location>"
     } else {
@@ -60,7 +60,6 @@ function processServerResponse(text) {
         return
     }
     const obj = JSON.parse(text)
-    pr("processServerResponse, as JSON:", obj)
     if ('w' in obj) {
         const widgetMap = obj.w
         for (const [id, markup] of Object.entries(widgetMap)) {
@@ -69,6 +68,7 @@ function processServerResponse(text) {
               warning("can't find element with id:",id);
               continue;
             }
+            pr("replacing outerHTML for widget with id:",id)
             elem.outerHTML = markup;
         }
     }
@@ -79,7 +79,7 @@ function processServerResponse(text) {
 function jsVal(id) {
     // see https://tobiasahlin.com/blog/move-from-jquery-to-vanilla-javascript
     // to add back in some useful jquery functions
-    x = document.getElementById(id);
+    const x = document.getElementById(id);
     const textValue = x.value;
     const xhttp = new XMLHttpRequest();
     const addr = window.location.href.split('?')[0];

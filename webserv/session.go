@@ -117,7 +117,7 @@ func (s Session) sendAjaxResponse() {
 	if !s.Ok() {
 		return
 	}
-	pr := PrIf(true)
+	pr := PrIf(false)
 
 	wm := s.widgetMap()
 	jsmap := NewJSMap()
