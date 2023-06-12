@@ -190,9 +190,8 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 }
 
 func birdListener(sess any, widget Widget) {
-	Todo("can we have sessions produce listener functions with appropriate handling of sess any?")
+	// Todo("can we have sessions produce listener functions with appropriate handling of sess any?")
 	s := sess.(Session)
-
 	newVal := s.GetValueString()
 	if !s.Ok() {
 		return
@@ -200,22 +199,25 @@ func birdListener(sess any, widget Widget) {
 	s.State.Put(widget.GetId(), newVal+" at "+time.Now().Format(time.ANSIC))
 	//Pr("state map now:", INDENT, s.State)
 	//Pr("repainting widget")
-	s.Repaint(widget.GetId())
+	s.Repaint(widget)
 }
 
 func zebraListener(sess any, widget Widget) {
 	alertWidget.Class = (alertWidget.Class + 1) % 4
 
 	s := sess.(Session)
+
+	// Get the requested new value for the widget
 	newVal := s.GetValueString()
 	if !s.Ok() {
 		return
 	}
+
+	// Store this as the new value for this widget within the session state map
 	s.State.Put(widget.GetBaseWidget().Id, newVal)
 	s.State.Put(alertWidget.Id,
 		strings.TrimSpace(s.State.OptString(alertWidget.Id, "")+" "+
 			data.RandomText(myRand, 55, false)))
-
-	s.Repaint(widget.GetBaseWidget().Id)
-	s.Repaint(alertWidget.Id)
+	s.Repaint(widget.GetBaseWidget())
+	s.Repaint(alertWidget)
 }

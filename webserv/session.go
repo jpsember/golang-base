@@ -22,16 +22,10 @@ type SessionStruct struct {
 	// JSMap containing widget values, other user session state
 	State JSMap
 
-	// Map of widgets for this session
-	//WidgetMap map[string]Widget
-
 	widgetManager WidgetManager
-	repaintMap    *Set[string]
-	// TODO: we might want the repaintMap to be ephemeral, only alive while serving the request
-	// We also might want to have a singleton, global widget map, since the state is stored here in the session
+	repaintSet *Set[string]
 
 	// Current request variables
-
 	responseWriter http.ResponseWriter
 	request        *http.Request
 	// If nonempty, problem detected with current request
@@ -42,8 +36,7 @@ type SessionStruct struct {
 
 func NewSession() Session {
 	s := SessionStruct{
-		State:      NewJSMap(),
-		repaintMap: NewSet[string](),
+		State: NewJSMap(),
 	}
 	Todo("Restore user session from filesystem/database")
 	return &s
@@ -53,7 +46,6 @@ func NewSession() Session {
 func (s Session) WidgetManager() WidgetManager {
 	if s.widgetManager == nil {
 		s.widgetManager = NewWidgetManager()
-		//sess.WidgetMap = m.widgetMap
 	}
 	return s.widgetManager
 }
@@ -70,9 +62,56 @@ func (s Session) ToJson() *JSMapStruct {
 }
 
 // Mark a widget for repainting.
-func (s Session) Repaint(id string) {
-	s.repaintMap.Add(id)
+func (s Session) Repaint(w Widget) {
+	pr := PrIf(true)
+
+	id := w.GetId()
+
+	// There are two repaint-related variables for each widget:
+	//  a) dirty:      the widget needs repainting
+	//  b) dirtyBelow  some widget within the widget's subtree needs repainting
+	//
+	// If widget's dirty flag is already set, return.  Otherwise:
+	//
+	// Set every widget in the subtree as dirty
+	// Mark all ancestors (parent, parent's parent, etc) as dirtyBelow
+	//
+	val, exists := s.repaintMap[id]
+	pr("repaint widget", id, "value:", val, "exists:", exists)
+	if exists {
+		return
+	}
+	pr("marking as DIRTY")
+	s.repaintMap[id] = REPAINT_DIRTY
+	s.markDescendentsDirtyBelow(w)
+	s.markAncestorsDirtyAbove(w)
 }
+
+func (s Session) markAncestorsDirtyAbove(w Widget) {
+	pr := PrIf(true)
+	pr("marking descendents dirty below", w.GetId())
+	for _, c := range w.GetChildren() {
+		id := c.GetId()
+		_, exists := s.repaintMap[id]
+		if !exists {
+			pr("marking child as dirty below:", id)
+
+func (s Session) markDescendentsDirtyBelow(w Widget) {
+	pr := PrIf(true)
+	pr("marking descendents dirty below", w.GetId())
+	for _, c := range w.GetChildren() {
+		id := c.GetId()
+		_, exists := s.repaintMap[id]
+		if !exists {
+			pr("marking child as dirty below:", id)
+			s.repaintMap[id] = REPAINT_DIRTY_BELOW
+			s.markDescendentsDirtyBelow(w)
+		}
+	}
+}
+
+const REPAINT_DIRTY = 1 << 0
+const REPAINT_DIRTY_BELOW = 1 << 1
 
 func ParseSession(source JSEntity) Session {
 	var s = source.(*JSMapStruct)
@@ -84,22 +123,31 @@ func ParseSession(source JSEntity) Session {
 // Prepare for serving a client request from this session's user. Acquire a lock on this session.
 func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 	defer s.discardRequest()
-	s.prepareRequestVars(w, req)
+	s.Mutex.Lock()
+	s.responseWriter = w
+	s.request = req
+	s.repaintMap = make(map[string]byte)
+	s.requestProblem = ""
+	s.parseAjaxRequest(req)
 	s.processClientMessage()
 	s.sendAjaxResponse()
 }
 
-func (s Session) prepareRequestVars(w http.ResponseWriter, req *http.Request) {
-	s.Mutex.Lock()
-	s.responseWriter = w
-	s.request = req
-	s.requestProblem = ""
+func (s Session) parseAjaxRequest(req *http.Request) {
+	// At present, the ajax request parameters are of the form
+	//  /ajax?w=<widget id>&v=<widget value>
+	//
 	v := req.URL.Query()
+	// A url can contain multiple values for a parameter, though we
+	// will expected just one.
 	s.widgetValues, _ = v[clientKeyValue]
 	s.widgetIds, _ = v[clientKeyWidget]
 }
 
 func (s Session) processClientMessage() {
+	// At present, we will assume that the request consists of a single widget id, and perhaps a single value
+	// for that widget
+	//
 	widget := s.GetWidget()
 	if !s.Ok() {
 		return
@@ -112,53 +160,73 @@ func (s Session) processClientMessage() {
 	listener(s, widget)
 }
 
+func (s Session) processRepaintFlags(w Widget, refmap JSMap) {
+	id := w.GetId()
+	pr := PrIf(true)
+	pr("processRepaintFlags for widget:", id)
+	repaintCode, found := s.repaintMap[id]
+	if !found {
+		pr("...no repaint necessary")
+		return
+	}
+	pr("...repaint flag:", repaintCode)
+	if repaintCode == REPAINT_DIRTY {
+		pr("...repainting this one")
+		m := NewMarkupBuilder()
+		w.RenderTo(m, s.State)
+		refmap.Put(w.GetId(), m.String())
+	}
+	for _, c := range w.GetChildren() {
+		pr("...processing child of", id)
+		s.processRepaintFlags(c, refmap)
+	}
+}
+
 // Send Ajax response back to client.
 func (s Session) sendAjaxResponse() {
 	if !s.Ok() {
 		return
 	}
-	pr := PrIf(false)
+	pr := PrIf(true)
 
-	wm := s.widgetMap()
 	jsmap := NewJSMap()
 
-	// TODO: there might be a more efficient way to do the repainting
+	// refmap will be the map sent to the client with the widgets
+	refmap := NewJSMap()
 
-	// Determine which widgets need repainting
-	if s.repaintMap.Size() != 0 {
-		// refmap will be the map sent to the client with the widgets
-		refmap := NewJSMap()
-		jsmap.Put("w", refmap)
-
-		painted := NewSet[string]()
-
-		for k, _ := range s.repaintMap.WrappedMap() {
-			w := wm[k]
-			addSubtree(painted, w)
-		}
-
-		// Do a depth first search of the widget map, sending widgets that have been marked for painting
-		stack := NewArray[string]()
-		stack.Add(s.PageWidget.GetId())
-		for stack.NonEmpty() {
-			widgetId := stack.Pop()
-			widget := wm[widgetId]
-			if painted.Contains(widgetId) {
-				m := NewMarkupBuilder()
-				widget.RenderTo(m, s.State)
-				refmap.Put(widgetId, m.String())
-			}
-			for _, child := range widget.GetChildren() {
-				stack.Add(child.GetId())
-			}
-		}
-	}
+	s.processRepaintFlags(s.PageWidget, refmap)
+	//// Determine which widgets need repainting
+	//if s.repaintMap.Size() != 0 {
+	//	jsmap.Put("w", refmap)
+	//
+	//	painted := NewSet[string]()
+	//
+	//	for k, _ := range s.repaintMap.WrappedMap() {
+	//		w := wm[k]
+	//		addSubtree(painted, w)
+	//	}
+	//
+	//	// Do a depth first search of the widget map, sending widgets that have been marked for painting
+	//	stack := NewArray[string]()
+	//	stack.Add(s.PageWidget.GetId())
+	//	for stack.NonEmpty() {
+	//		widgetId := stack.Pop()
+	//		widget := wm[widgetId]
+	//		if painted.Contains(widgetId) {
+	//			m := NewMarkupBuilder()
+	//			widget.RenderTo(m, s.State)
+	//			refmap.Put(widgetId, m.String())
+	//		}
+	//		for _, child := range widget.GetChildren() {
+	//			stack.Add(child.GetId())
+	//		}
+	//	}
+	//}
 
 	pr("sending back to Ajax caller:", INDENT, jsmap)
 	content := jsmap.CompactString()
 
 	s.responseWriter.Write([]byte(content))
-
 }
 
 func addSubtree(target *Set[string], w Widget) {
@@ -184,6 +252,9 @@ func (s Session) discardRequest() {
 	s.requestProblem = ""
 	s.widgetValues = nil
 	s.widgetIds = nil
+	// Empty the map
+	Pr("discarding request, clearing repaintMap")
+	//s.repaintMap = nil
 	s.Mutex.Unlock()
 }
 
