@@ -12,6 +12,7 @@ func NewSet[KEY comparable]() *Set[KEY] {
 	return m
 }
 
+// Add element to set.  Return true if it was not already in the set.
 func (set *Set[KEY]) Add(value KEY) bool {
 	found := set.Contains(value)
 	if !found {

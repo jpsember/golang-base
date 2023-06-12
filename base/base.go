@@ -224,6 +224,20 @@ func Spaces(count int) string {
 	return SPACES + Spaces(count-len(SPACES))
 }
 
+const dotsString = ".........................................................................................................."
+const dotsStringLength = len(dotsString)
+
+// Get string of zero or more periods; if count < 0, returns empty string.
+func Dots(count int) string {
+	if count < 0 {
+		count = 0
+	}
+	if count <= dotsStringLength {
+		return dotsString[0:count]
+	}
+	return dotsString + Dots(count-dotsStringLength)
+}
+
 func Clamp(value, min, max int) int {
 	if value < min {
 		return min

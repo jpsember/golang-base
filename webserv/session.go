@@ -23,7 +23,7 @@ type SessionStruct struct {
 	State JSMap
 
 	widgetManager WidgetManager
-	repaintSet *Set[string]
+	repaintSet    *Set[string]
 
 	// Current request variables
 	responseWriter http.ResponseWriter
@@ -63,55 +63,13 @@ func (s Session) ToJson() *JSMapStruct {
 
 // Mark a widget for repainting.
 func (s Session) Repaint(w Widget) {
-	pr := PrIf(true)
-
+	pr := PrIf(debRepaint)
 	id := w.GetId()
-
-	// There are two repaint-related variables for each widget:
-	//  a) dirty:      the widget needs repainting
-	//  b) dirtyBelow  some widget within the widget's subtree needs repainting
-	//
-	// If widget's dirty flag is already set, return.  Otherwise:
-	//
-	// Set every widget in the subtree as dirty
-	// Mark all ancestors (parent, parent's parent, etc) as dirtyBelow
-	//
-	val, exists := s.repaintMap[id]
-	pr("repaint widget", id, "value:", val, "exists:", exists)
-	if exists {
-		return
-	}
-	pr("marking as DIRTY")
-	s.repaintMap[id] = REPAINT_DIRTY
-	s.markDescendentsDirtyBelow(w)
-	s.markAncestorsDirtyAbove(w)
-}
-
-func (s Session) markAncestorsDirtyAbove(w Widget) {
-	pr := PrIf(true)
-	pr("marking descendents dirty below", w.GetId())
-	for _, c := range w.GetChildren() {
-		id := c.GetId()
-		_, exists := s.repaintMap[id]
-		if !exists {
-			pr("marking child as dirty below:", id)
-
-func (s Session) markDescendentsDirtyBelow(w Widget) {
-	pr := PrIf(true)
-	pr("marking descendents dirty below", w.GetId())
-	for _, c := range w.GetChildren() {
-		id := c.GetId()
-		_, exists := s.repaintMap[id]
-		if !exists {
-			pr("marking child as dirty below:", id)
-			s.repaintMap[id] = REPAINT_DIRTY_BELOW
-			s.markDescendentsDirtyBelow(w)
-		}
+	pr("Repaint:", id)
+	if s.repaintSet.Add(id) {
+		pr("...adding to set")
 	}
 }
-
-const REPAINT_DIRTY = 1 << 0
-const REPAINT_DIRTY_BELOW = 1 << 1
 
 func ParseSession(source JSEntity) Session {
 	var s = source.(*JSMapStruct)
@@ -126,7 +84,7 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 	s.Mutex.Lock()
 	s.responseWriter = w
 	s.request = req
-	s.repaintMap = make(map[string]byte)
+	s.repaintSet = NewSet[string]()
 	s.requestProblem = ""
 	s.parseAjaxRequest(req)
 	s.processClientMessage()
@@ -160,85 +118,52 @@ func (s Session) processClientMessage() {
 	listener(s, widget)
 }
 
-func (s Session) processRepaintFlags(w Widget, refmap JSMap) {
+func (s Session) processRepaintFlags(debugDepth int, w Widget, refmap JSMap, repaint bool) {
 	id := w.GetId()
-	pr := PrIf(true)
-	pr("processRepaintFlags for widget:", id)
-	repaintCode, found := s.repaintMap[id]
-	if !found {
-		pr("...no repaint necessary")
-		return
+	pr := PrIf(debRepaint)
+	pr(Dots(debugDepth*4)+IntToString(debugDepth), "repaint, flag:", repaint, "id:", id)
+
+	if !repaint {
+		if s.repaintSet.Contains(id) {
+			repaint = true
+			pr(Dots(debugDepth*4), "repaint flag was set; repainting entire subtree")
+		}
 	}
-	pr("...repaint flag:", repaintCode)
-	if repaintCode == REPAINT_DIRTY {
-		pr("...repainting this one")
+
+	if repaint {
 		m := NewMarkupBuilder()
 		w.RenderTo(m, s.State)
 		refmap.Put(w.GetId(), m.String())
 	}
+
 	for _, c := range w.GetChildren() {
-		pr("...processing child of", id)
-		s.processRepaintFlags(c, refmap)
+		s.processRepaintFlags(1+debugDepth, c, refmap, repaint)
 	}
 }
+
+const respKeyWidgetsToRefresh = "w"
+
+var debRepaint = Alert("debRepaint")
 
 // Send Ajax response back to client.
 func (s Session) sendAjaxResponse() {
 	if !s.Ok() {
 		return
 	}
-	pr := PrIf(true)
+	pr := PrIf(debRepaint)
 
 	jsmap := NewJSMap()
 
 	// refmap will be the map sent to the client with the widgets
 	refmap := NewJSMap()
 
-	s.processRepaintFlags(s.PageWidget, refmap)
-	//// Determine which widgets need repainting
-	//if s.repaintMap.Size() != 0 {
-	//	jsmap.Put("w", refmap)
-	//
-	//	painted := NewSet[string]()
-	//
-	//	for k, _ := range s.repaintMap.WrappedMap() {
-	//		w := wm[k]
-	//		addSubtree(painted, w)
-	//	}
-	//
-	//	// Do a depth first search of the widget map, sending widgets that have been marked for painting
-	//	stack := NewArray[string]()
-	//	stack.Add(s.PageWidget.GetId())
-	//	for stack.NonEmpty() {
-	//		widgetId := stack.Pop()
-	//		widget := wm[widgetId]
-	//		if painted.Contains(widgetId) {
-	//			m := NewMarkupBuilder()
-	//			widget.RenderTo(m, s.State)
-	//			refmap.Put(widgetId, m.String())
-	//		}
-	//		for _, child := range widget.GetChildren() {
-	//			stack.Add(child.GetId())
-	//		}
-	//	}
-	//}
+	s.processRepaintFlags(0, s.PageWidget, refmap, false)
 
+	jsmap.Put(respKeyWidgetsToRefresh, refmap)
 	pr("sending back to Ajax caller:", INDENT, jsmap)
 	content := jsmap.CompactString()
 
 	s.responseWriter.Write([]byte(content))
-}
-
-func addSubtree(target *Set[string], w Widget) {
-	id := w.GetId()
-	// If we've already added this to the list, do nothing
-	if target.Contains(id) {
-		return
-	}
-	target.Add(id)
-	for _, c := range w.GetChildren() {
-		addSubtree(target, c)
-	}
 }
 
 // Discard state added to session to serve a request; release session lock.
@@ -252,9 +177,7 @@ func (s Session) discardRequest() {
 	s.requestProblem = ""
 	s.widgetValues = nil
 	s.widgetIds = nil
-	// Empty the map
-	Pr("discarding request, clearing repaintMap")
-	//s.repaintMap = nil
+	s.repaintSet = nil
 	s.Mutex.Unlock()
 }
 
