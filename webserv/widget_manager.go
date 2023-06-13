@@ -471,7 +471,6 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
  * Create a child widget and push onto stack
  */
 func (m WidgetManager) OpenFor(id string, debugContext string) Widget {
-	Todo("support ids for these containers")
 	m.Log("openFor:", debugContext)
 
 	if m.pendingColumns == 0 {

@@ -20,7 +20,9 @@ func main() {
 	app.Version = "1.0"
 	app.CmdLineArgs().Add("insecure").Desc("insecure (http) mode")
 
-	app.RegisterOper(&AjaxOperStruct{})
+	app.RegisterOper(&AjaxOperStruct{
+		//FullWidth: true,
+	})
 	app.Start()
 }
 
@@ -29,6 +31,7 @@ type AjaxOperStruct struct {
 	appRoot        Path
 	resources      Path
 	headerMarkup   string
+	FullWidth      bool // If true, page occupies full width of screen
 }
 type AjaxOper = *AjaxOperStruct
 
@@ -130,7 +133,11 @@ func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Req
 func (oper AjaxOper) writeHeader(bp MarkupBuilder) {
 	bp.A(oper.headerMarkup)
 	bp.OpenHtml("body", "").Br()
-	bp.OpenHtml(`div class="container"`, "body")
+	containerClass := "container"
+	if oper.FullWidth {
+		containerClass = "container-fluid"
+	}
+	bp.OpenHtml(`div class='`+containerClass+`'`, "body")
 }
 
 // Generate the boilerplate footer markup, then write the page to the response
@@ -140,7 +147,6 @@ func (oper AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 	bp.A(`</html>`).Cr()
 	w.Header().Set("Content-Type", "text/html")
 	w.Write([]byte(bp.String()))
-	Todo("use single quotes where possible for html/javascript things to avoid excessive escaping in ajax json")
 }
 
 const WidgetIdPage = "page"

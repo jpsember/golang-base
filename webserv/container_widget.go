@@ -62,8 +62,7 @@ func (m ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	desc := `ContainerWidget ` + w.IdSummary()
-	m.OpenHtml(`p`, desc).A(desc).CloseHtml(`p`, ``)
-
+	m.OpenHtml(`div class='col-sm-`+IntToString(w.columns)+`' id='`+w.Id+`'`, desc)
 	prevPoint := IPointWith(0, -1)
 	for index, child := range w.children.Array() {
 		cell := w.cells.Get(index)
@@ -73,7 +72,7 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 				m.CloseHtml("div", "end of row")
 			}
 			m.Br()
-			m.OpenHtml(`div class="row"`, `start of row`)
+			m.OpenHtml(`div class='row'`, `start of row`)
 			m.Cr()
 			prevPoint = IPointWith(0, cell.Location.Y)
 		}
@@ -81,12 +80,12 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		// If cell lies to right of current, add space
 		spaceColumns := cell.Location.X - prevPoint.X
 		if spaceColumns > 0 {
-			m.OpenHtml(`div class="col-sm-`+IntToString(spaceColumns)+`"`, `spacer`)
+			m.OpenHtml(`div class='col-sm-`+IntToString(spaceColumns)+`'`, `spacer`)
 			child.RenderTo(m, state)
 			m.CloseHtml(`div`, `spacer`)
 		}
 
-		m.OpenHtml(`div class="col-sm-`+IntToString(cell.Width)+`"`, `child`)
+		m.OpenHtml(`div class='col-sm-`+IntToString(cell.Width)+`'`, `child`)
 		child.RenderTo(m, state)
 		m.CloseHtml(`div`, `child`)
 		prevPoint = IPointWith(cell.Location.X+cell.Width, cell.Location.Y)
@@ -95,6 +94,7 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		m.CloseHtml("div", "row")
 		m.Br()
 	}
+	m.CloseHtml(`div`, desc)
 }
 
 func (w ContainerWidget) LayoutChildren(manager WidgetManager) {
