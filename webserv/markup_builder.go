@@ -5,13 +5,14 @@ import (
 	"strings"
 )
 
-// A builder for constructing htlm markup
+// A builder for constructing html markup
 
 type MarkupBuilderObj struct {
 	strings.Builder
-	indent    int
-	indented  bool
-	crRequest int
+	indent       int
+	indented     bool
+	crRequest    int
+	omitComments bool
 }
 
 type MarkupBuilder = *MarkupBuilderObj
@@ -59,7 +60,7 @@ func (b MarkupBuilder) doIndent() {
 
 func (b MarkupBuilder) OpenHtml(tag string, comment string) MarkupBuilder {
 	CheckState(b.indent < 100, "too many indents")
-
+	comment = b.commentFilter(comment)
 	b.A("<")
 	b.A(tag)
 	b.A(">")
@@ -79,6 +80,7 @@ func (b MarkupBuilder) CloseHtml(tag string, comment string) MarkupBuilder {
 	b.Cr()
 	b.A("</")
 	b.A(tag)
+	comment = b.commentFilter(comment)
 	if comment != "" {
 		b.A("> <!-- ")
 		b.A(comment)
@@ -97,6 +99,17 @@ func (b MarkupBuilder) Cr() MarkupBuilder {
 func (b MarkupBuilder) Br() MarkupBuilder {
 	b.crRequest = 2
 	return b
+}
+
+func (b MarkupBuilder) Comments(flag bool) {
+	b.omitComments = !flag
+}
+
+func (b MarkupBuilder) commentFilter(comment string) string {
+	if b.omitComments {
+		return ""
+	}
+	return comment
 }
 
 func WrapWithinComment(text string) string {

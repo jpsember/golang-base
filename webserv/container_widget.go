@@ -61,6 +61,7 @@ func (m ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 }
 
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
+	m.Comments(false)
 	desc := `ContainerWidget ` + w.IdSummary()
 	m.OpenHtml(`div class='col-sm-`+IntToString(w.columns)+`' id='`+w.Id+`'`, desc)
 	prevPoint := IPointWith(0, -1)
@@ -95,6 +96,7 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		m.Br()
 	}
 	m.CloseHtml(`div`, desc)
+	m.Comments(true)
 }
 
 func (w ContainerWidget) LayoutChildren(manager WidgetManager) {

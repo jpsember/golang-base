@@ -22,6 +22,7 @@ func main() {
 
 	app.RegisterOper(&AjaxOperStruct{
 		//FullWidth: true,
+		TopPadding: 5,
 	})
 	app.Start()
 }
@@ -32,6 +33,7 @@ type AjaxOperStruct struct {
 	resources      Path
 	headerMarkup   string
 	FullWidth      bool // If true, page occupies full width of screen
+	TopPadding     int  // If nonzero, adds padding to top of page
 }
 type AjaxOper = *AjaxOperStruct
 
@@ -117,6 +119,8 @@ func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Req
 	// If this is a new session, store our operation within it
 	if sess.AppData == nil {
 		sess.AppData = oper
+		sess.State.Put("header_text", "This is ajax_demo.go").
+			Put("header_text_2b", "8 columns").Put("header_text_3", "4 columns")
 	}
 
 	if sess.PageWidget == nil {
@@ -137,12 +141,15 @@ func (oper AjaxOper) writeHeader(bp MarkupBuilder) {
 	if oper.FullWidth {
 		containerClass = "container-fluid"
 	}
-	bp.OpenHtml(`div class='`+containerClass+`'`, "body")
+	if oper.TopPadding != 0 {
+		containerClass += "  pt-" + IntToString(oper.TopPadding)
+	}
+	bp.OpenHtml(`div class='`+containerClass+`'`, "page container")
 }
 
 // Generate the boilerplate footer markup, then write the page to the response
 func (oper AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
-	bp.CloseHtml("div", "body")
+	bp.CloseHtml("div", "page container")
 	bp.Br().CloseHtml("body", "")
 	bp.A(`</html>`).Cr()
 	w.Header().Set("Content-Type", "text/html")
@@ -170,21 +177,27 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	m.Add(alertWidget)
 
+	m.Add(NewHeadingWidget("header_text", 1))
+
+	m.Col(8)
+	Todo("have widgetmanager methods instead of calling NewHeadingWidget directly")
+	m.Add(NewHeadingWidget("header_text_2", 2))
 	m.Col(4)
+	m.Add(NewHeadingWidget("header_text_3", 2))
 
+	m.Col(8)
 	m.Listener(birdListener)
-	m.Col(6)
 	m.AddText("bird")
-	m.Col(3)
+	m.Col(4)
 	m.AddLabel("x52")
-	m.AddLabel("x53")
 
-	m.Col(2)
+	m.Col(8)
 	m.AddLabel("x54")
 	m.Col(4)
 	m.Listener(zebraListener)
 	m.AddText("zebra")
-	m.Col(2)
+
+	m.Col(4)
 	m.AddLabel("x57")
 	m.AddLabel("x58")
 	m.AddLabel("x59")

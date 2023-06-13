@@ -217,6 +217,10 @@ func (m JSMap) GetString(key string) string {
 	return (val.(JSEntity)).AsString()
 }
 
+func (m JSMap) HasKey(key string) bool {
+	return HasKey(m.wrappedMap, key)
+}
+
 func (m JSMap) OptString(key string, defaultValue string) string {
 	var val = m.wrappedMap[key]
 	if val == nil {

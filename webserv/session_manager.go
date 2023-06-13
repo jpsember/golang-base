@@ -72,7 +72,10 @@ func (s *inMemorySessionMap) CreateSession() Session {
 
 // Get a string value from session state map
 func WidgetStringValue(state JSMap, id string) string {
-	return state.OptString(id, "")
+	if !state.HasKey(id) {
+		return "??? #" + id + " ???"
+	}
+	return state.GetString(id)
 }
 
 const clientKeyWidget = "w"
