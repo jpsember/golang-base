@@ -3,6 +3,7 @@ package files
 import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/json"
+	"io"
 	"os"
 	"strings"
 )
@@ -116,4 +117,41 @@ func JSMapFromFileIfExistsM(file Path) *JSMapStruct {
 	var result, err = JSMapFromFileIfExists(file)
 	CheckOkWithSkip(1, err)
 	return result
+}
+
+// Copies file.  If destination exists, its contents will be replaced.
+func CopyFile(sourcePath Path, destPath Path) (err error) {
+	src := sourcePath.String()
+	dst := destPath.String()
+
+	in, err := os.Open(src)
+	if err != nil {
+		return
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+	defer func() {
+		cerr := out.Close()
+		if err == nil {
+			err = cerr
+		}
+	}()
+	if _, err = io.Copy(out, in); err != nil {
+		return
+	}
+	err = out.Sync()
+	return
+}
+
+func FindProjectDirM() Path {
+	var path, err = FindProjectDir()
+	CheckOkWithSkip(1, err, "can't find project directory")
+	return path
+}
+
+func FindProjectDir() (Path, error) {
+	return AscendToDirectoryContainingFile("", "project_config")
 }
