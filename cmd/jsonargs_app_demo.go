@@ -51,6 +51,6 @@ func main() {
 				Add("debugging").Desc("perform extra tests"). //
 				Add("speed").SetInt().Add("jumping")
 	app.RegisterOper(oper)
-	app.AddTestArgs("-d --speed 42 --verbose --dryrun target 18 simulate")
+	app.AddTestArgs("-d --speed 42 --verbose --dryrun target 18 simulate -g")
 	app.Start()
 }

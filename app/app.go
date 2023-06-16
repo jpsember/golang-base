@@ -61,7 +61,7 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 	ca.Add(ClArgDryrun).Desc("Dry run")
 	ca.Add(ClArgVerbose).Desc("Verbose messages").ShortName("v")
 	ca.Add(ClArgVersion).Desc("Display version number").ShortName("n")
-	ca.Add(ClArgGenArgs).Desc("Generate args for operation")
+	ca.Add(ClArgGenArgs).Desc("Generate args for operation").ShortName("g")
 	ca.Add(ClArgArgsFile).SetString().Desc("Specify arguments file (json)")
 	ca.Add(ClStartDir).SetString().Desc("Directory to start within").ShortName("S")
 
@@ -200,6 +200,7 @@ func (a *App) auxStart() {
 	}
 
 	if a.operWithJsonArgs != nil {
+
 		a.operDataClassArgs = a.operWithJsonArgs.GetArguments()
 		CheckNotNil(a.operDataClassArgs, "No arguments returned by oper")
 		a.genArgsFlag = c.Get(ClArgGenArgs)

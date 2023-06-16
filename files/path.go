@@ -98,7 +98,8 @@ func (path Path) CheckNonEmptyWithSkip(skip int) Path {
 func (path Path) Parent() Path {
 	path.CheckNonEmptyWithSkip(1)
 	var s = filepath.Dir(string(path))
-	if s == "." {
+	if s == "." || s == "/" {
+		Todo("need to distinguish between root path and empty path")
 		return EmptyPath
 	}
 	return Path(s)

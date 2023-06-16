@@ -71,3 +71,7 @@ func TestIncludePrefixes(t *testing.T) {
 	w.ForDirs().OmitNamesWithSubstrings("harl")
 	assertWalk(j, w)
 }
+
+func TestAscendToDirectoryContainingFile(t *testing.T) {
+	AscendToDirectoryContainingFile(EmptyPath, "hello")
+}
