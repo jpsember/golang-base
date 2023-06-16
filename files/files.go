@@ -124,12 +124,27 @@ func CurrentDirectory() Path {
 	return NewPathM(path)
 }
 
-func JSMapFromFileIfExists(file Path) (*JSMapStruct, error) {
+func JSMapFromFile(file Path) (JSMap, error) {
+	var result JSMap
+	content, err := file.ReadString()
+	if err == nil {
+		result, err = JSMapFromString(content)
+	}
+	return result, err
+}
+
+func JSMapFromFileM(file Path) JSMap {
+	var result, err = JSMapFromFile(file)
+	CheckOkWithSkip(1, err)
+	return result
+}
+
+func JSMapFromFileIfExists(file Path) (JSMap, error) {
 	var content, _ = file.ReadStringIfExists("{}")
 	return JSMapFromString(content)
 }
 
-func JSMapFromFileIfExistsM(file Path) *JSMapStruct {
+func JSMapFromFileIfExistsM(file Path) JSMap {
 	var result, err = JSMapFromFileIfExists(file)
 	CheckOkWithSkip(1, err)
 	return result
