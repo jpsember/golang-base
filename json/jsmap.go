@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	. "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/files"
 )
 
 type JSMapStruct struct {
@@ -295,6 +296,21 @@ func JSMapFromString(content string) (JSMap, error) {
 
 func JSMapFromStringM(content string) JSMap {
 	var result, err = JSMapFromString(content)
+	CheckOk(err)
+	return result
+}
+
+func JSMapFromFile(path Path) (JSMap, error) {
+	var result JSMap
+	content, err := path.ReadString()
+	if err == nil {
+		result, err = JSMapFromString(content)
+	}
+	return result, err
+}
+
+func JSMapFromFileM(path Path) JSMap {
+	result, err := JSMapFromFile(path)
 	CheckOk(err)
 	return result
 }
