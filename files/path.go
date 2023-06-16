@@ -155,6 +155,10 @@ func (path Path) RemakeDir(substring string) error {
 	return err
 }
 
+func (path Path) RemakeDirM(substring string) {
+	CheckOkWithSkip(1, path.RemakeDir(substring))
+}
+
 func (path Path) DeleteDirectory(substring string) error {
 	CheckArg(!path.Empty())
 	if len(substring) < 5 || !strings.Contains(string(path), substring) {
