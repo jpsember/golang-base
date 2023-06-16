@@ -5,24 +5,7 @@ import (
 	. "github.com/jpsember/golang-base/json"
 	"io"
 	"os"
-	"strings"
 )
-
-// Deprecated: use Path type
-// Delete a directory.  For safety, the path must contain a particular substring.
-func DeleteDir(path string, substring string) error {
-	CheckArg(len(substring) >= 5, "substring is too short:", Quoted(substring))
-	CheckArg(strings.Contains(path, substring), "path", Quoted(path), "doesn't contain substring", Quoted(substring))
-	return os.RemoveAll(path)
-}
-
-// Deprecated: use Path type
-// Write string to file
-// Panics if error occurs
-func WriteString(path string, content string) {
-	var err = os.WriteFile(path, []byte(content), 0644)
-	CheckOk(err, "Failed to write string to path:", path)
-}
 
 func AscendToDirectoryContainingFile(startDir Path, seekFile string) (Path, error) {
 	CheckArg(NonEmpty(seekFile))
