@@ -110,6 +110,14 @@ func (path Path) ReadBytesM() (content []byte) {
 	return bytes
 }
 
+func (path Path) Chmod(mode os.FileMode) error {
+	return os.Chmod(path.String(), mode)
+}
+
+func (path Path) ChmodM(mode os.FileMode) {
+	CheckOk(path.Chmod(mode))
+}
+
 func CurrentDirectory() Path {
 	path, err := os.Getwd()
 	CheckOk(err)
