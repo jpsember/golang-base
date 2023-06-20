@@ -10,8 +10,24 @@ import (
 
 // adapted from https://medium.com/insiderengineering/aes-encryption-and-decryption-in-golang-php-and-both-with-full-codes-ceb598a34f41
 
+func main() {
+	var oper = &EncryptOper{}
+	oper.ProvideName(oper)
+	var app = NewApp()
+	app.SetName("encrypt_demo")
+	app.Version = "2.1.3"
+	app.RegisterOper(oper)
+	app.CmdLineArgs(). //
+				Add("debugging").Desc("perform extra tests")
+	app.AddTestArgs("--verbose")
+	app.Start()
+}
+
 type EncryptOper struct {
 	BaseObject
+	key     []byte
+	iv      []byte
+	Message string
 }
 
 func (oper *EncryptOper) UserCommand() string {
@@ -22,7 +38,25 @@ func (oper *EncryptOper) Perform(app *App) {
 	oper.SetVerbose(true)
 	pr := oper.Log
 	pr("this is EncryptOper.perform")
-	exp()
+
+	oper.key = []byte("my32digitkey12345678901234567890")
+	oper.iv = []byte("my16digitIvKey12")
+	oper.Message = "Hello, World!"
+
+	Pr("Message  :", oper.Message)
+	bytes := []byte(oper.Message)
+	Pr("Input    :", bytes)
+
+	encrypted, err := oper.GetAESEncryptedBytes(bytes)
+	CheckOk(err)
+
+	Pr("Encrypted:", encrypted)
+
+	decrypted, err := oper.GetAESDecryptedBytes(encrypted)
+	CheckOk(err)
+
+	Pr("Decrypted:", decrypted)
+	Pr("Message  :", string(decrypted))
 }
 
 func (oper *EncryptOper) GetHelp(bp *BasePrinter) {
@@ -39,48 +73,10 @@ func (oper *EncryptOper) ProcessArgs(c *CmdLineArgs) {
 	}
 }
 
-func main() {
-	var oper = &EncryptOper{}
-	oper.ProvideName(oper)
-	var app = NewApp()
-	app.SetName("encrypt_demo")
-	app.Version = "2.1.3"
-	app.RegisterOper(oper)
-	app.CmdLineArgs(). //
-				Add("debugging").Desc("perform extra tests")
-	app.AddTestArgs("--verbose")
-	app.Start()
-}
-
-func stringToBytes(str string) []byte {
-	return []byte(str)
-}
-
-func exp() {
-	plainText := "Hello, World!"
-
-	Pr("Message  :", plainText)
-	bytes := stringToBytes(plainText)
-	Pr("Input    :", bytes)
-
-	encrypted, err := GetAESEncryptedBytes(bytes)
-	CheckOk(err)
-
-	Pr("Encrypted:", encrypted)
-
-	decrypted, err := GetAESDecryptedBytes(encrypted)
-	CheckOk(err)
-
-	Pr("Decrypted:", decrypted)
-	Pr("Message  :", string(decrypted))
-}
-
 // GetAESDecrypted decrypts given text in AES 256 CBC
-func GetAESDecryptedBytes(ciphertext []byte) ([]byte, error) {
-	key := "my32digitkey12345678901234567890"
-	iv := "my16digitIvKey12"
+func (oper *EncryptOper) GetAESDecryptedBytes(ciphertext []byte) ([]byte, error) {
 
-	block, err := aes.NewCipher([]byte(key))
+	block, err := aes.NewCipher(oper.key)
 
 	if err != nil {
 		return nil, err
@@ -88,7 +84,7 @@ func GetAESDecryptedBytes(ciphertext []byte) ([]byte, error) {
 
 	CheckArg(len(ciphertext)%aes.BlockSize == 0)
 
-	mode := cipher.NewCBCDecrypter(block, []byte(iv))
+	mode := cipher.NewCBCDecrypter(block, oper.iv)
 	mode.CryptBlocks(ciphertext, ciphertext)
 	ciphertext = PKCS5UnPadding(ciphertext)
 
@@ -103,9 +99,7 @@ func PKCS5UnPadding(src []byte) []byte {
 	return src[:(length - unpadding)]
 }
 
-func GetAESEncryptedBytes(sourceBytes []byte) ([]byte, error) {
-	key := "my32digitkey12345678901234567890"
-	iv := "my16digitIvKey12"
+func (oper *EncryptOper) GetAESEncryptedBytes(sourceBytes []byte) ([]byte, error) {
 
 	var plainTextBlock []byte
 	length := len(sourceBytes)
@@ -119,11 +113,11 @@ func GetAESEncryptedBytes(sourceBytes []byte) ([]byte, error) {
 	}
 
 	copy(plainTextBlock, sourceBytes)
-	block, err := aes.NewCipher([]byte(key))
+	block, err := aes.NewCipher(oper.key)
 	CheckOk(err)
 
 	ciphertext := make([]byte, len(plainTextBlock))
-	mode := cipher.NewCBCEncrypter(block, []byte(iv))
+	mode := cipher.NewCBCEncrypter(block, oper.iv)
 	mode.CryptBlocks(ciphertext, plainTextBlock)
 
 	Pr("encrypted:", ciphertext)
