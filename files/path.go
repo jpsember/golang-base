@@ -11,6 +11,17 @@ type Path string
 
 var EmptyPath = Path("")
 
+var homeDir = EmptyPath
+
+func HomeDirM() Path {
+	if homeDir.Empty() {
+		p, err := os.UserHomeDir()
+		CheckOkWithSkip(1, err)
+		homeDir = NewPathM(p)
+	}
+	return homeDir
+}
+
 // Construct a Path from a string; return error if there is a problem
 func NewPath(s string) (Path, error) {
 	if s == "" {

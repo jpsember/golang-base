@@ -377,6 +377,7 @@ func processPrintEffect(v PrintEffect, b *BasePrinter) {
 	case OUTDENT:
 		b.Outdent()
 	case DASHES:
+		b.Cr()
 		b.AppendString(Dashes)
 	case VERT_SP:
 		b.Cr()
