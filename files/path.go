@@ -124,13 +124,23 @@ func (path Path) Empty() bool {
 
 // Write string to file
 func (path Path) WriteString(content string) error {
-	path.CheckNonEmptyWithSkip(1)
-	return os.WriteFile(string(path), []byte(content), 0644)
+	return path.WriteBytes([]byte(content))
 }
 
 // Write string to file; panic if error
 func (path Path) WriteStringM(content string) {
 	CheckOkWithSkip(1, path.WriteString(content))
+}
+
+// Write bytes to file
+func (path Path) WriteBytes(content []byte) error {
+	path.CheckNonEmptyWithSkip(1)
+	return os.WriteFile(string(path), content, 0644)
+}
+
+// Write string to file; panic if error
+func (path Path) WriteBytesM(content []byte) {
+	CheckOkWithSkip(1, path.WriteBytes(content))
 }
 
 // Get the filename denoted by (nonempty) path
