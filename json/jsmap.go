@@ -1,8 +1,8 @@
 package json
 
 import (
-	"encoding/base64"
 	"fmt"
+	"github.com/jpsember/golang-base/data"
 
 	. "github.com/jpsember/golang-base/base"
 )
@@ -265,22 +265,7 @@ func (m JSMap) OptBytes(key string, defaultValue []byte) []byte {
 	if val == nil {
 		return defaultValue
 	}
-	// If it's a string, it's a base64 encoded list
-	if s, ok := val.(JString); ok {
-		str := s.AsString()
-		result, err := base64.URLEncoding.DecodeString(str)
-		CheckOkWithSkip(1, err)
-		return result
-	}
-	if lst, ok := val.(JSList); ok {
-		result := make([]byte, lst.Length())
-		for i, v := range lst.wrappedList {
-			result[i] = byte(v.AsInteger())
-		}
-		return result
-	}
-	BadArg("unexpected value for", key, ":", INDENT, val)
-	return nil
+	return data.DecodeBase64Maybe(val)
 }
 
 func (m JSMap) OptFloat32(key string, defaultValue float32) float32 {
