@@ -1,6 +1,7 @@
 package json
 
 import (
+	"encoding/base64"
 	"fmt"
 
 	. "github.com/jpsember/golang-base/base"
@@ -240,6 +241,46 @@ func (m JSMap) OptInt32(key string, defaultValue int32) int32 {
 		return defaultValue
 	}
 	return int32((val.(JSEntity)).AsInteger())
+}
+
+// Deprecated.. Use OptByte instead.
+func (m JSMap) OptInt8(key string, defaultValue int8) int8 {
+	var val = m.wrappedMap[key]
+	if val == nil {
+		return defaultValue
+	}
+	return int8((val.(JSEntity)).AsInteger())
+}
+
+func (m JSMap) OptByte(key string, defaultValue byte) byte {
+	var val = m.wrappedMap[key]
+	if val == nil {
+		return defaultValue
+	}
+	return byte((val.(JSEntity)).AsInteger())
+}
+
+func (m JSMap) OptBytes(key string, defaultValue []byte) []byte {
+	var val = m.wrappedMap[key]
+	if val == nil {
+		return defaultValue
+	}
+	// If it's a string, it's a base64 encoded list
+	if s, ok := val.(JString); ok {
+		str := s.AsString()
+		result, err := base64.URLEncoding.DecodeString(str)
+		CheckOkWithSkip(1, err)
+		return result
+	}
+	if lst, ok := val.(JSList); ok {
+		result := make([]byte, lst.Length())
+		for i, v := range lst.wrappedList {
+			result[i] = byte(v.AsInteger())
+		}
+		return result
+	}
+	BadArg("unexpected value for", key, ":", INDENT, val)
+	return nil
 }
 
 func (m JSMap) OptFloat32(key string, defaultValue float32) float32 {

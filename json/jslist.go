@@ -117,3 +117,12 @@ func (js JSList) Get(index int) JSEntity {
 func (js JSList) Length() int {
 	return len(js.wrappedList)
 }
+
+func (js JSList) AsByteArray() []byte {
+	w := js.wrappedList
+	res := make([]byte, len(w))
+	for i, v := range w {
+		res[i] = byte(v.AsInteger())
+	}
+	return res
+}

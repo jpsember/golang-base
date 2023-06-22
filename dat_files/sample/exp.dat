@@ -1,0 +1,5 @@
+class {
+  int x;
+  byte b;
+  *byte ba;
+}
