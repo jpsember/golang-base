@@ -2,8 +2,6 @@ package json
 
 import (
 	"fmt"
-	"github.com/jpsember/golang-base/data"
-
 	. "github.com/jpsember/golang-base/base"
 )
 
@@ -265,7 +263,7 @@ func (m JSMap) OptBytes(key string, defaultValue []byte) []byte {
 	if val == nil {
 		return defaultValue
 	}
-	return data.DecodeBase64Maybe(val)
+	return DecodeBase64Maybe(val)
 }
 
 func (m JSMap) OptFloat32(key string, defaultValue float32) float32 {
