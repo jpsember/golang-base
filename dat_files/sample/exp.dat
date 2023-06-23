@@ -1,5 +1,6 @@
 class {
-  int x;
-  byte b;
-  *byte ba;
+
+    int q = 42;
+ // map string string m;
+   map string string n = {"a" : "aaa", "b" : "bbb" };
 }

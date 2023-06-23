@@ -4,6 +4,7 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/data"
+	"github.com/jpsember/golang-base/gen/sample"
 )
 
 func main() {
@@ -54,6 +55,15 @@ func (oper *EncryptOper) Perform(app *App) {
 
 	Pr("Decrypted:", decrypted)
 	Pr("Message  :", string(decrypted))
+
+	h := sample.DefaultExp
+	Pr(h)
+	j := h.ToBuilder()
+	j.SetN(map[string]string{
+		"alpha": "bravo",
+	})
+	Pr(j)
+	Pr(h)
 }
 
 func (oper *EncryptOper) GetHelp(bp *BasePrinter) {

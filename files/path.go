@@ -22,6 +22,24 @@ func HomeDirM() Path {
 	return homeDir
 }
 
+func TempFile(prefix string) (Path, error) {
+	if prefix == "" {
+		prefix = "jefftemp_*"
+	}
+	path := EmptyPath
+	f, err := os.CreateTemp("", prefix)
+	if err != nil {
+		path, err = NewPath(f.Name())
+	}
+	return path, err
+}
+
+func TempFileM(prefix string) Path {
+	result, err := TempFile(prefix)
+	CheckOkWithSkip(2, err)
+	return result
+}
+
 // Construct a Path from a string; return error if there is a problem
 func NewPath(s string) (Path, error) {
 	if s == "" {
