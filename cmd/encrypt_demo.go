@@ -4,6 +4,7 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/data"
+	. "github.com/jpsember/golang-base/files"
 	"github.com/jpsember/golang-base/gen/sample"
 )
 
@@ -28,6 +29,10 @@ func (oper *EncryptOper) UserCommand() string {
 }
 
 func (oper *EncryptOper) Perform(app *App) {
+
+	pth := NewPathM("a/b/c")
+	pth.ReadBytesM()
+
 	oper.SetVerbose(true)
 	pr := oper.Log
 

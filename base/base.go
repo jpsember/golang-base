@@ -17,6 +17,7 @@ var Dashes = "------------------------------------------------------------------
 // Return location of current program as a string.
 // Relies on debug.Stack() being available.
 // Returns source filename (without its path) and the line number, e.g., "foo.go:78".
+// A skipCount of zero returns the immediate caller's location.
 func CallerLocation(skipCount int) string {
 	var db = false
 
@@ -57,61 +58,54 @@ func CallerLocation(skipCount int) string {
 }
 
 func Die(message ...any) {
-	var text = CallerLocation(3) + " *** Dying"
-	if len(message) != 0 {
-		text += ": " + ToString(message...)
-	}
-	Pr(text)
-	panic(text)
+	auxPanic(1, "Dying", message...)
 }
 
 func Halt(message ...any) {
-	var text = CallerLocation(1) + " *** Halting"
-	if len(message) != 0 {
-		text += ": " + ToString(message...)
+	text := preparePanicMessage(1, "Halting", message)
+	if !strings.Contains(text, TestPanicSubstring) {
+		Pr(text)
+		os.Exit(1)
+	} else {
+		TestPanicMessageLog.WriteString(text + "\n")
 	}
-	Pr(text)
-	os.Exit(1)
 }
 
 //goland:noinspection GoUnusedExportedFunction
 func NotSupported(message ...any) {
-	panic("*** Not supported (" + CallerLocation(3) + ") " + ToString(message...))
+	auxPanic(1, "Not supported", message...)
 }
 
 //goland:noinspection GoUnusedExportedFunction
 func NotImplemented(message ...any) {
-	panic("*** Not implemented (" + CallerLocation(3) + ") " + ToString(message...))
+	auxPanic(1, "Not implemented", message...)
 }
 
 func CheckNotNil(value any, message ...any) any {
 	if value == nil {
-		str := "*** Argument is nil (" + CallerLocation(3) + ") "
-		if len(message) != 0 {
-			str = str + "; \n" + ToString(message...)
-		}
-		panic(str)
+		auxPanic(1, "Argument is nil", message...)
 	}
 	return value
 }
 
 func CheckArg(valid bool, message ...any) bool {
 	if !valid {
-		BadArgWithSkip(3, message...)
+		BadArgWithSkip(1, message...)
 	}
 	return valid
 }
 
+// A skip count of 0 reports the immediate caller's location
 func BadArgWithSkip(skipCount int, message ...any) {
-	panic("*** Bad argument!  (" + CallerLocation(skipCount+1) + ") " + ToString(message...))
+	auxPanic(skipCount+1, "Bad argument", message...)
 }
 
 func BadArg(message ...any) {
-	BadArgWithSkip(4, message...)
+	BadArgWithSkip(1, message...)
 }
 
 func BadStateWithSkip(skipCount int, message ...any) {
-	panic("*** Bad state!  (" + CallerLocation(skipCount+1) + ") " + ToString(message...))
+	auxPanic(skipCount+1, "Bad state", message...)
 }
 
 func BadState(message ...any) {
@@ -120,29 +114,43 @@ func BadState(message ...any) {
 
 func CheckState(valid bool, message ...any) {
 	if !valid {
-		panic("*** Invalid state! (" + CallerLocation(2) + ") " + ToString(message...))
+		auxPanic(1, "Invalid state", message...)
 	}
 }
 
+func preparePanicMessage(skipCount int, prefix string, message ...any) string {
+	return "*** " + prefix + "! (" + CallerLocation(skipCount+1) + ") " + ToString(message...)
+}
+
+func auxPanic(skipCount int, prefix string, message ...any) {
+	msg := preparePanicMessage(skipCount+1, prefix, message)
+	if !strings.Contains(msg, TestPanicSubstring) {
+		Pr(msg)
+		panic(msg)
+	} else {
+		TestPanicMessageLog.WriteString(msg + "\n")
+	}
+}
+
+var TestPanicMessageLog = strings.Builder{}
+
 // Panic if an error code is nonzero.
 func CheckOk(err error, message ...any) {
-	CheckOkWithSkip(2, err, message...)
+	CheckOkWithSkip(1, err, message...)
 }
+
+const TestPanicSubstring = "!~~~~~!"
 
 // Panic if an error code is nonzero.
 func CheckOkWithSkip(skipCount int, err error, message ...any) {
 	if err != nil {
-		panic("*** Error returned: (" + CallerLocation(3+skipCount) + ") " + err.Error() + "; " + ToString(message...))
+		auxPanic(skipCount+1, "Error returned", JoinElementToList(err.Error(), message)...)
 	}
 }
 
 func CheckNil(result any, message ...any) {
 	if result != nil {
-		str := "*** Result is not nil! (" + CallerLocation(3) + ") " + ToString(result)
-		if len(message) != 0 {
-			str = str + "; \n" + ToString(message...)
-		}
-		panic(str)
+		auxPanic(1, "Result is not nil", JoinElementToList(ToString(result)+"; \n", message)...)
 	}
 }
 
@@ -168,7 +176,7 @@ func Info(arg any) string {
 func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any) {
 	if !debugLocMap[key] {
 		var output strings.Builder
-		locn := CallerLocation(1 + skipCount)
+		locn := CallerLocation(skipCount + 1)
 		output.WriteString(locn)
 		output.WriteString(" ***")
 		output.WriteString(" ")
@@ -198,7 +206,7 @@ func Alert(key string, additionalMessage ...any) bool {
 // Print an Alert if an Alert with its key hasn't already been printed.
 // The key is printed, along with the additional message components
 func AlertWithSkip(skipCount int, key string, additionalMessage ...any) bool {
-	auxAlert(1+skipCount, key, "WARNING", additionalMessage...)
+	auxAlert(skipCount+1, key, "WARNING", additionalMessage...)
 	return true
 }
 
@@ -309,6 +317,10 @@ func Regexp(expr string) *regexp.Regexp {
 	CheckOk(err, "trouble compiling regexp:", Quoted(expr))
 	regexpCache.Store(expr, pat)
 	return pat
+}
+
+func JoinElementToList(obj any, list2 []any) []any {
+	return JoinLists([]any{obj}, list2)
 }
 
 func JoinLists(list1 []any, list2 []any) []any {

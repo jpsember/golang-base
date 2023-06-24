@@ -42,7 +42,7 @@ func (obj *BaseObject) ProvideName(owner any) {
 
 func (obj *BaseObject) Log(messages ...any) {
 	if obj.verbose {
-		Pr(JoinLists([]any{"[" + obj.Name() + ":]"}, messages)...)
+		Pr(JoinElementToList("["+obj.Name()+":]", messages)...)
 	}
 }
 
