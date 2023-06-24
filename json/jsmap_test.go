@@ -2,6 +2,7 @@
 package json_test
 
 import (
+	"os"
 	"strings"
 	"testing" // We still need to import the standard testing package
 
@@ -28,6 +29,13 @@ func TestPanics(t *testing.T) {
 	CheckOk(ok, s)
 
 	j.AssertMessage(TestPanicMessageLog.String())
+}
+
+func TestMain(m *testing.M) {
+	Todo("We might be able to exploit TestMain for various things...", INDENT, m)
+	code := m.Run()
+	Pr("existing TestMain with:", code)
+	os.Exit(code)
 }
 
 func TestJSMapPrettyPrint(t *testing.T) {

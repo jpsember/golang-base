@@ -119,7 +119,7 @@ func CheckState(valid bool, message ...any) {
 }
 
 func preparePanicMessage(skipCount int, prefix string, message ...any) string {
-	return "*** " + prefix + "! (" + CallerLocation(skipCount+1) + ") " + ToString(message...)
+	return CallerLocation(skipCount+1) + " *** " + prefix + "! " + ToString(message...)
 }
 
 func auxPanic(skipCount int, prefix string, message ...any) {

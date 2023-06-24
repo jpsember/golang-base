@@ -2,6 +2,7 @@ package files
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -276,4 +277,34 @@ func (path Path) GetAbsFromM(defaultParentDir Path) Path {
 	result, err := path.GetAbsFrom(defaultParentDir)
 	CheckOkWithSkip(1, err)
 	return result
+}
+
+func (path Path) Info(message ...any) JSMap {
+	m := NewJSMap()
+	m.Put("", ToString(JoinElementToList("File info;", message)...))
+	var absPath Path
+	if path.NonEmpty() {
+		content := "MISSING"
+		if path.Exists() {
+			if path.IsDir() {
+				content = "DIRECTORY"
+			} else {
+				content = "FILE"
+			}
+		}
+		if path.IsAbs() {
+			m.Put("2 name", path.Base())
+			m.Put("3 parent", path.Parent().String())
+			absPath = path
+		} else {
+			relName := path.String()
+			curr := CurrentDirectory()
+			m.Put("2 rel", relName)
+			m.Put("3 cdir", curr.String())
+			absPath = curr.JoinPathM(path)
+		}
+		m.Put("4 abs", absPath.String())
+		m.Put("1 status", content)
+	}
+	return m
 }
