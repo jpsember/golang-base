@@ -125,7 +125,6 @@ func preparePanicMessage(skipCount int, prefix string, message ...any) string {
 func auxPanic(skipCount int, prefix string, message ...any) {
 	msg := preparePanicMessage(skipCount+1, prefix, message)
 	if !strings.Contains(msg, TestPanicSubstring) {
-		Pr(msg)
 		panic(msg)
 	} else {
 		TestPanicMessageLog.WriteString(msg + "\n")
