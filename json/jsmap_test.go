@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"testing" // We still need to import the standard testing package
+	"time"
 
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/json"
@@ -174,4 +175,30 @@ func TestGenerateDir(t *testing.T) {
 	j.GenerateSubdirs("source", jsmap)
 
 	j.AssertGenerated()
+}
+
+func TestBigA(t *testing.T) {
+	j := jt.New(t)
+	perform("A", j)
+}
+func TestBigB(t *testing.T) {
+	j := jt.New(t)
+	perform("B", j)
+}
+func TestBigC(t *testing.T) {
+	j := jt.New(t)
+	perform("C", j)
+}
+func TestBigD(t *testing.T) {
+	j := jt.New(t)
+	perform("D", j)
+}
+
+func perform(id string, j *jt.J) {
+	id = "JSMap" + id
+	for i := 0; i < 5; i++ {
+		j.GenerateMessage(id, i)
+		time.Sleep(1 * time.Second)
+	}
+	j.GenerateMessage(id, "done")
 }
