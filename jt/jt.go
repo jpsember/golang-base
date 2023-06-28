@@ -164,7 +164,6 @@ func (j *J) generateMessageTo(filename string, content string) {
 	if !strings.HasSuffix(content, "\n") {
 		content += "\n"
 	}
-	Todo("I think the tests might be running in multiple threads, so our J class needs to be made threadsafe")
 	path.WriteStringM(content)
 }
 

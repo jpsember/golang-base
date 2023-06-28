@@ -2,10 +2,8 @@
 package json_test
 
 import (
-	"os"
 	"strings"
 	"testing" // We still need to import the standard testing package
-	"time"
 
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/json"
@@ -30,13 +28,6 @@ func TestPanics(t *testing.T) {
 	CheckOk(ok, s)
 
 	j.AssertMessage(TestPanicMessageLog.String())
-}
-
-func TestMain(m *testing.M) {
-	Todo("We might be able to exploit TestMain for various things...", INDENT, m)
-	code := m.Run()
-	Pr("existing TestMain with:", code)
-	os.Exit(code)
 }
 
 func TestJSMapPrettyPrint(t *testing.T) {
@@ -175,30 +166,4 @@ func TestGenerateDir(t *testing.T) {
 	j.GenerateSubdirs("source", jsmap)
 
 	j.AssertGenerated()
-}
-
-func TestBigA(t *testing.T) {
-	j := jt.New(t)
-	perform("A", j)
-}
-func TestBigB(t *testing.T) {
-	j := jt.New(t)
-	perform("B", j)
-}
-func TestBigC(t *testing.T) {
-	j := jt.New(t)
-	perform("C", j)
-}
-func TestBigD(t *testing.T) {
-	j := jt.New(t)
-	perform("D", j)
-}
-
-func perform(id string, j *jt.J) {
-	id = "JSMap" + id
-	for i := 0; i < 5; i++ {
-		j.GenerateMessage(id, i)
-		time.Sleep(1 * time.Second)
-	}
-	j.GenerateMessage(id, "done")
 }

@@ -4,6 +4,6 @@
              "TestEscapes" : 2266,
          "TestGenerateDir" : 3347,
     "TestJSMapPrettyPrint" : 1227,
-              "TestPanics" : 9494,
+              "TestPanics" : 6533,
   "TestPrintJSMapToString" : 1227
 }

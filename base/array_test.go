@@ -4,7 +4,6 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	"github.com/jpsember/golang-base/jt"
 	"testing"
-	"time"
 )
 
 var _ = Pr
@@ -55,29 +54,4 @@ func TestSort(t *testing.T) {
 	a.Sort()
 
 	j.AssertMessage(a)
-}
-
-func TestBigA(t *testing.T) {
-	j := jt.New(t)
-	perform("A", j)
-}
-func TestBigB(t *testing.T) {
-	j := jt.New(t)
-	perform("B", j)
-}
-func TestBigC(t *testing.T) {
-	j := jt.New(t)
-	perform("C", j)
-}
-func TestBigD(t *testing.T) {
-	j := jt.New(t)
-	perform("D", j)
-}
-
-func perform(id string, j *jt.J) {
-	for i := 0; i < 5; i++ {
-		j.GenerateMessage(id, i)
-		time.Sleep(1 * time.Second)
-	}
-	j.GenerateMessage(id, "done")
 }
