@@ -11,3 +11,4 @@ webserv/cache
 # Generated data classes
 gen
 
+.go_flags.json

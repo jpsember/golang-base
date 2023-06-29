@@ -19,7 +19,11 @@ func (oper *JumpOper) Perform(app *App) {
 	pr := oper.Log
 	pr("this is JumpOper.perform")
 	Alert("this is a standard alert", "jello", 42)
-	Alert("!this is a low priority alert", "jello", 42)
+	for x := 0; x < 7; x++ {
+		j := IntToString(x)
+		Alert(j+"alert priority "+j, j)
+	}
+
 	Pr("goodbye")
 }
 

@@ -165,5 +165,13 @@ func FindProjectDirM() Path {
 }
 
 func FindProjectDir() (Path, error) {
-	return AscendToDirectoryContainingFile("", "project_config")
+	if !cachedProjectDirFlag {
+		cachedProjectDir, cachedProjectDirErr = AscendToDirectoryContainingFile("", "project_config")
+		cachedProjectDirFlag = true
+	}
+	return cachedProjectDir, cachedProjectDirErr
 }
+
+var cachedProjectDirFlag bool
+var cachedProjectDir Path
+var cachedProjectDirErr error

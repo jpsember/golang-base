@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 var Dashes = "------------------------------------------------------------------------------------------\n"
@@ -179,15 +180,19 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	debugLock.Lock()
 	value := debugLocMap.Add(key)
 	debugLock.Unlock()
-	Pr("auxAlert, value for key", key, "was", value)
 	if !value {
 		return
 	}
 
-	modifiedKey, lowPriority := extractLowPriorityFlag(key)
-	if lowPriority {
+	modifiedKey, priority := extractAlertPriority(key)
+	if priority == 0 {
+		return
+	}
+
+	an off by one err
+	if priority < numPriorities-1 {
 		debugLock.Lock()
-		flag := addLowPriorityAlertFlag(modifiedKey)
+		flag := registerPriorityAlert(modifiedKey, priority)
 		debugLock.Unlock()
 		if !flag {
 			return
@@ -206,14 +211,6 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 		output.WriteString(modifiedKey)
 	}
 	fmt.Println(output.String())
-}
-
-// Determine if key has the low priority prefix "!"; return true if so, with the prefix removed.
-func extractLowPriorityFlag(key string) (string, bool) {
-	if key[0] == '!' {
-		return key[1:], true
-	}
-	return key, false
 }
 
 func Todo(key string, message ...any) bool {
@@ -376,22 +373,81 @@ func IntToString(value int) string {
 	return strconv.Itoa(value)
 }
 
-var lowPriorityKeyFile Path
-var lowPriorityMap JSMap
+// ------------------------------------------------------------------------------------
+// Alerts with priorities
+// ------------------------------------------------------------------------------------
 
-func addLowPriorityAlertFlag(key string) bool {
-	Pr("addLowPriorityAlertFlag:", key)
-	if lowPriorityMap == nil {
-		lowPriorityKeyFile = HomeDirM().JoinM("Desktop/golang_keys.json")
-		Pr("Look for a project directory, a git repository, or the current directory, in that order, for a file named .go_flags.json")
-		lowPriorityMap = JSMapFromFileIfExistsM(lowPriorityKeyFile)
+var priorityAlertPersistPath Path
+var priorityAlertMap JSMap
+
+// Determine if key has a priority prefix, from 0: lowest to 9: highest; if so, return the priority, with the prefix removed.
+// No prefix implies highest priority
+func extractAlertPriority(key string) (string, int) {
+	var result string
+	v := int(key[0] - '0')
+	maxPri := numPriorities - 1
+	if v >= 0 && v < maxPri {
+		result = key[1:]
+	} else {
+		result = key
+		v = maxPri
 	}
-	result := !lowPriorityMap.HasKey(key)
-	if result {
-		Pr("...adding key:", key, "to low priority map")
-		lowPriorityMap.Put(key, true)
-		lowPriorityKeyFile.WriteStringM(lowPriorityMap.String())
-		Pr("wrote new map:", INDENT, lowPriorityMap)
+	return result, int(v)
+}
+
+const minute = 60 * 1000
+const hour = minute * 60
+
+var alertIntervals = []int64{
+	0,
+	hour * 24 * 365, //
+	hour * 24 * 31,  //
+	hour * 24 * 7,   //
+	hour * 24,       //
+	minute * 30,     //
+	minute,          //
+}
+
+const numPriorities = 7
+
+func registerPriorityAlert(key string, priority int) bool {
+	if priorityAlertMap == nil {
+
+		// Look for a project directory, a git repository, or the current directory, in that order, for a file named .go_flags.json
+
+		d, _ := FindProjectDir()
+		if d.Empty() {
+			d, _ = AscendToDirectoryContainingFile("", ".git")
+			if d.Empty() {
+				d = CurrentDirectory()
+			}
+		}
+		priorityAlertPersistPath = d.JoinM(".go_flags.json")
+		priorityAlertMap = JSMapFromFileIfExistsM(priorityAlertPersistPath)
 	}
-	return result
+
+	m := priorityAlertMap.OptMapOrEmpty(key)
+	existingPri := m.OptInt("p", -1)
+	if existingPri > priority {
+		return false
+	}
+	m.Put("p", priority)
+
+	currTime := CurrentTimeMs()
+	lastReport := m.OptLong("r", 0)
+	elapsed := currTime - lastReport
+	delay := alertIntervals[priority]
+	remaining := delay - elapsed
+	if remaining > 0 {
+		Pr("minutes delay until", key, ":", remaining/minute)
+		return false
+	}
+	m.PutLong("r", currTime)
+	priorityAlertMap.Put(key, m)
+	priorityAlertPersistPath.WriteStringM(priorityAlertMap.String())
+	return true
+}
+
+func CurrentTimeMs() int64 {
+	return int64(time.Now().Unix())
 }

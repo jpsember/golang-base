@@ -248,6 +248,10 @@ func (m JSMap) OptInt32(key string, defaultValue int32) int32 {
 	return int32((val.(JSEntity)).AsInteger())
 }
 
+func (m JSMap) OptInt(key string, defaultValue int) int {
+	return int(m.OptInt64(key, defaultValue))
+}
+
 // Deprecated.. Use OptByte instead.
 func (m JSMap) OptInt8(key string, defaultValue int8) int8 {
 	var val = m.wrappedMap[key]
@@ -359,4 +363,17 @@ func (m JSMap) Entries() []JSMapEntry {
 		})
 	}
 	return arr.Array()
+}
+
+func (m JSMap) PutLong(key string, value int64) JSMap {
+	m.wrappedMap[key] = JInteger(value)
+	return m
+}
+
+func (m JSMapStruct) OptLong(key string, defaultValue int64) int64 {
+	var val = m.wrappedMap[key]
+	if val == nil {
+		return defaultValue
+	}
+	return JSEntity(val).AsInteger()
 }
