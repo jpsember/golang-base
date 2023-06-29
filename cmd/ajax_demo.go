@@ -62,7 +62,7 @@ func (oper AjaxOper) Perform(app *App) {
 		oper.headerMarkup = s.String()
 	}
 
-	var url = "animalaid.org"
+	var url = "zebra.org"
 
 	var keyDir = oper.appRoot.JoinM("https_keys")
 	var certPath = keyDir.JoinM(url + ".crt")
@@ -180,10 +180,9 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.Add(NewHeadingWidget("header_text", 1))
 
 	m.Col(8)
-	Todo("have widgetmanager methods instead of calling NewHeadingWidget directly")
-	m.Add(NewHeadingWidget("header_text_2", 2))
+	m.Size(2).AddHeading("header_text_2")
 	m.Col(4)
-	m.Add(NewHeadingWidget("header_text_3", 2))
+	m.Size(2).AddHeading("header_text_3")
 
 	m.Col(8)
 	m.Listener(birdListener)

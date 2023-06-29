@@ -39,7 +39,7 @@ In Linux, `/etc/hosts` is a file used by the operating system to translate hostn
 
 Type:
 ```
-sudo vi /etc/hosts`
+sudo vi /etc/hosts
 ```
 (Enter your password if prompted.)
 

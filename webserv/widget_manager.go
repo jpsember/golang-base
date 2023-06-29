@@ -30,8 +30,8 @@ type WidgetManagerObj struct {
 	mPendingDefaultIntValue     int
 	pendingListener             WidgetListener
 	parentStack                 *Array[ContainerWidget]
-
-	pendingColumns int
+	pendingSize                 int
+	pendingColumns              int
 }
 
 func NewWidgetManager() WidgetManager {
@@ -282,6 +282,12 @@ func (m WidgetManager) center() WidgetManager {
 	return m.setPendingAlignment(ALIGNMENT_CENTER)
 }
 
+// Set size for next widget (what size means depends upon the widget type).
+func (m WidgetManager) Size(size int) WidgetManager {
+	m.pendingSize = 1 + size
+	return m
+}
+
 /**
  * Have next widget use a monospaced font
  */
@@ -396,6 +402,13 @@ func (m WidgetManager) ConsumePendingLabel() string {
 	return lbl
 }
 
+func (m WidgetManager) ConsumePendingSize() int {
+	CheckState(m.pendingSize > 0, "no pending Size")
+	size := m.pendingSize - 1
+	m.pendingSize = 0
+	return size
+}
+
 func (m WidgetManager) ConsumePendingStringDefaultValue() string {
 	s := m.mPendingStringDefaultValue
 	m.mPendingStringDefaultValue = ""
@@ -424,6 +437,7 @@ func (m WidgetManager) clearPendingComponentFields() {
 	verifyUsed(m.mPendingLabel == "", "mPendingLabel ")
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
 	verifyUsed(m.pendingListener == nil, "pendingListener")
+	verifyUsed(m.pendingSize == 0, "pendingSize")
 
 	m.GrowXWeight = 0
 	m.GrowYWeight = 0
@@ -521,6 +535,11 @@ func (m WidgetManager) AddText(id string) WidgetManager {
 	//TextWidget t = new TextWidget(consumePendingListener(), id, consumePendingStringDefaultValue(),
 	//    mLineCount, mEditableFlag, mPendingSize, mPendingMonospaced, mPendingMinWidthEm, mPendingMinHeightEm);
 	//consumeTooltip(t);
+	return m.Add(t)
+}
+
+func (m WidgetManager) AddHeading(id string) WidgetManager {
+	t := NewHeadingWidget(id, m.ConsumePendingSize())
 	return m.Add(t)
 }
 
