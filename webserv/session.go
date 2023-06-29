@@ -38,7 +38,7 @@ func NewSession() Session {
 	s := SessionStruct{
 		State: NewJSMap(),
 	}
-	Todo("Restore user session from filesystem/database")
+	Todo("!Restore user session from filesystem/database")
 	return &s
 }
 

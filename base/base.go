@@ -12,6 +12,22 @@ import (
 	"sync"
 )
 
+// To avoid import cycle, this is an interface to support 'low priority alert flags'.
+// This approach was inspired by https://jogendra.dev/import-cycles-in-golang-and-how-to-deal-with-them
+// (but it seems like a lot of trouble...)
+//
+type LowPriorityFlags interface {
+	AddFlag(key string) bool
+}
+
+type standardLowPriorityFlags struct{}
+
+func (p *standardLowPriorityFlags) AddFlag(key string) bool {
+	return true
+}
+
+var LowPriorityFlagsHandler LowPriorityFlags = &standardLowPriorityFlags{}
+
 var Dashes = "------------------------------------------------------------------------------------------\n"
 
 // Return location of current program as a string.
@@ -170,10 +186,28 @@ func Info(arg any) string {
 	return fmt.Sprint("Value[", arg, "],Type[", reflect.TypeOf(arg), "]")
 }
 
-// Print an Alert if an Alert with its key hasn't already been printed.
-// The key is printed, along with the additional message components
+// Print an alert if an alert with its key hasn't already been printed.
+// The key is printed, along with the additional message components.
+// If the key has a prefix '!', it is a "low priority" alert - if the key already
+// appears in a json map stored on the desktop, it does not print it.
 func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any) {
-	if !debugLocMap[key] {
+  // Acquire the lock while we test (and set) the flag in the global map
+	debugLock.Lock()
+	value := debugLocMap[key]
+	if !value {
+		debugLocMap[key] = true
+	}
+	debugLock.Unlock()
+	if !value {
+		modifiedKey, lowPriority := extractLowPriorityFlag(key)
+		if lowPriority {
+			debugLock.Lock()
+			flag := LowPriorityFlagsHandler.AddFlag(modifiedKey)
+			debugLock.Unlock()
+			if !flag {
+				return
+			}
+		}
 		var output strings.Builder
 		locn := CallerLocation(skipCount + 1)
 		output.WriteString(locn)
@@ -182,13 +216,20 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 		output.WriteString(prompt)
 		output.WriteString(": ")
 		if len(additionalMessage) != 0 {
-			output.WriteString(key + " " + ToString(additionalMessage...))
+			output.WriteString(modifiedKey + " " + ToString(additionalMessage...))
 		} else {
-			output.WriteString(key)
+			output.WriteString(modifiedKey)
 		}
 		fmt.Println(output.String())
-		debugLocMap[key] = true
 	}
+}
+
+// Determine if key has the low priority prefix "!"; return true if so, with the prefix removed.
+func extractLowPriorityFlag(key string) (string, bool) {
+	if key[0] == '!' {
+		return key[1:], true
+	}
+	return key, false
 }
 
 func Todo(key string, message ...any) bool {
@@ -210,6 +251,7 @@ func AlertWithSkip(skipCount int, key string, additionalMessage ...any) bool {
 }
 
 var debugLocMap = make(map[string]bool)
+var debugLock sync.RWMutex
 
 func Quoted(x string) string {
 	return "\"" + x + "\""
