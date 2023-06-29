@@ -13,11 +13,12 @@ var lowPriorityMap JSMap
 type filesLowPriorityFlags struct{}
 
 func init() {
-	Pr("replacing LowPriorityFlagsHandler with files version")
+	//Alert("might be better to just store a function pointer?")
 	LowPriorityFlagsHandler = &filesLowPriorityFlags{}
 }
 
 func (p *filesLowPriorityFlags) AddFlag(key string) bool {
+	//Alert("do alerts work inside init() functions?")
 	if lowPriorityMap == nil {
 		lowPriorityKeyFile = HomeDirM().JoinM("Desktop/golang_keys.json")
 		lowPriorityMap = JSMapFromFileIfExistsM(lowPriorityKeyFile)
@@ -27,6 +28,7 @@ func (p *filesLowPriorityFlags) AddFlag(key string) bool {
 		Pr("...adding key:", key, "to low priority map")
 		lowPriorityMap.Put(key, true)
 		lowPriorityKeyFile.WriteStringM(lowPriorityMap.String())
+		Pr("wrote new map:", INDENT, lowPriorityMap)
 	}
 	return result
 }

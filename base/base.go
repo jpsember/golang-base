@@ -15,7 +15,6 @@ import (
 // To avoid import cycle, this is an interface to support 'low priority alert flags'.
 // This approach was inspired by https://jogendra.dev/import-cycles-in-golang-and-how-to-deal-with-them
 // (but it seems like a lot of trouble...)
-//
 type LowPriorityFlags interface {
 	AddFlag(key string) bool
 }
@@ -191,12 +190,9 @@ func Info(arg any) string {
 // If the key has a prefix '!', it is a "low priority" alert - if the key already
 // appears in a json map stored on the desktop, it does not print it.
 func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any) {
-  // Acquire the lock while we test (and set) the flag in the global map
+	// Acquire the lock while we test (and set) the flag in the global map
 	debugLock.Lock()
-	value := debugLocMap[key]
-	if !value {
-		debugLocMap[key] = true
-	}
+	value := debugLocMap.Add(key)
 	debugLock.Unlock()
 	if !value {
 		modifiedKey, lowPriority := extractLowPriorityFlag(key)
@@ -250,7 +246,7 @@ func AlertWithSkip(skipCount int, key string, additionalMessage ...any) bool {
 	return true
 }
 
-var debugLocMap = make(map[string]bool)
+var debugLocMap = NewSet[string]()
 var debugLock sync.RWMutex
 
 func Quoted(x string) string {
