@@ -335,12 +335,10 @@ func HasKey[K comparable, V any](m map[K]V, key K) bool {
 // Generated data type interface
 // ---------------------------------------------------------------------------------------
 
-// We can include it here, because it doesn't reference any external dependencies (e.g. JSEntity)
-
 type DataClass interface {
 	fmt.Stringer
-	ToJson() any // This should return a JSEntity, to be defined elsewhere
-	Parse(source any) DataClass
+	ToJson() JSEntity
+	Parse(source JSEntity) DataClass
 }
 
 var regexpCache = &sync.Map{}

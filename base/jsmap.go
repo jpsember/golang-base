@@ -29,6 +29,14 @@ func (m JSMap) AsBool() bool {
 	panic("Not supported")
 }
 
+func (m JSMap) AsJSMap() JSMap {
+	return m
+}
+
+func (m JSMap) AsJSList() JSList {
+	panic("Not supported")
+}
+
 func (m JSMap) PrintTo(context *JSONPrinter) {
 	var s = context.StringBuilder
 	if context.Pretty {

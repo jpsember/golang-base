@@ -76,7 +76,7 @@ func (v *sDemoConfig) ToBuilder() DemoConfigBuilder {
 	return &DemoConfigBuilderObj{sDemoConfig: *v}
 }
 
-func (v *sDemoConfig) ToJson() any {
+func (v *sDemoConfig) ToJson() JSEntity {
 	var m = NewJSMap()
 	m.Put("simulate", v.simulate)
 	m.Put("name", v.name)
@@ -85,8 +85,8 @@ func (v *sDemoConfig) ToJson() any {
 	return m
 }
 
-func (v *sDemoConfig) Parse(source any) DataClass {
-	var s = source.(JSMap)
+func (v *sDemoConfig) Parse(source JSEntity) DataClass {
+	var s = source.AsJSMap()
 	var n = newDemoConfig().(*sDemoConfig)
 	n.simulate = s.OptBool("simulate", false)
 	n.name = s.OptString("name", "")
@@ -96,7 +96,7 @@ func (v *sDemoConfig) Parse(source any) DataClass {
 }
 
 func (v *sDemoConfig) String() string {
-	var x = v.ToJson().(JSMap)
+	var x = v.ToJson().AsJSMap()
 	return PrintJSEntity(x, true)
 }
 
@@ -154,7 +154,7 @@ func (v DemoConfigBuilder) ToJson() any {
 	return v.Build().ToJson()
 }
 
-func (v DemoConfigBuilder) Parse(source any) DataClass {
+func (v DemoConfigBuilder) Parse(source JSEntity) DataClass {
 	return DefaultDemoConfig.Parse(source)
 }
 
