@@ -1,7 +1,6 @@
-package data
+package base
 
 import (
-	. "github.com/jpsember/golang-base/base"
 	"math/rand"
 	"strings"
 	_ "strings"

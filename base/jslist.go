@@ -1,9 +1,7 @@
-package json
+package base
 
 import (
 	_ "strings"
-
-	. "github.com/jpsember/golang-base/base"
 )
 
 type JSListStruct struct {

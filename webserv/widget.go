@@ -1,7 +1,7 @@
 package webserv
 
 import (
-	. "github.com/jpsember/golang-base/json"
+	. "github.com/jpsember/golang-base/base"
 )
 
 // The interface that all widgets must support

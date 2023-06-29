@@ -4,7 +4,6 @@ import (
 	"bufio"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/webserv"
 	"io"
 	"log"

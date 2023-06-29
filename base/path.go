@@ -1,8 +1,6 @@
-package files
+package base
 
 import (
-	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/json"
 	"os"
 	"path/filepath"
 	"strings"

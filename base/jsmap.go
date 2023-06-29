@@ -1,8 +1,7 @@
-package json
+package base
 
 import (
 	"fmt"
-	. "github.com/jpsember/golang-base/base"
 )
 
 type JSMapStruct struct {

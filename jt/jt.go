@@ -2,9 +2,6 @@ package jt
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/data"
-	. "github.com/jpsember/golang-base/files"
-	. "github.com/jpsember/golang-base/json"
 	"hash/fnv"
 	"math/rand"
 	"os/exec"
@@ -343,7 +340,7 @@ func (j *J) auxGenDir(dir Path, jsmap JSMap) {
 			j.auxGenDir(dir.JoinM(key), s)
 		} else {
 			targ := dir.JoinM(key)
-			text := data.RandomText(j.Rand(), 80, false) + "\n"
+			text := RandomText(j.Rand(), 80, false) + "\n"
 			targ.WriteStringM(text)
 		}
 	}

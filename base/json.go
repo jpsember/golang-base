@@ -1,11 +1,9 @@
-package json
+package base
 
 import (
 	"encoding/base64"
 	"fmt"
 	"strconv"
-
-	. "github.com/jpsember/golang-base/base"
 )
 
 // ---------------------------------------------------------------------------------------

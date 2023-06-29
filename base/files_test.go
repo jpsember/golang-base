@@ -1,9 +1,7 @@
-package files_test
+package base_test
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/files"
-	. "github.com/jpsember/golang-base/json"
 	"github.com/jpsember/golang-base/jt"
 	"testing"
 )

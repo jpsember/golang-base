@@ -16,12 +16,8 @@ echo
 echo Unit tests
 echo
 go test \
- ./app/... \
  ./base/... \
- ./data/... \
- ./files/... \
- ./json/... \
+ ./app/... \
  ./jt/... \
- ./webdemo/... \
  ./webserv/...
 

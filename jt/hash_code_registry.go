@@ -2,8 +2,6 @@ package jt
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/files"
-	. "github.com/jpsember/golang-base/json"
 	"strings"
 	"sync"
 )
@@ -104,7 +102,7 @@ func (r *HashCodeRegistry) SaveTestResults() {
 	var res = r.UnitTest.GetTestResultsDir()
 
 	if !r.referenceDir().Exists() {
-    Todo("This sometimes fails due to our unit tests not being threadsafe")
+		Todo("This sometimes fails due to our unit tests not being threadsafe")
 		err := res.MoveTo(r.referenceDir())
 		CheckOk(err)
 	} else {
