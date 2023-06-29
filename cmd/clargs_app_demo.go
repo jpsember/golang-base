@@ -18,6 +18,8 @@ func (oper *JumpOper) Perform(app *App) {
 	oper.SetVerbose(true)
 	pr := oper.Log
 	pr("this is JumpOper.perform")
+	Alert("this is a standard alert", "jello", 42)
+	Alert("!this is a low priority alert", "jello", 42)
 	Pr("goodbye")
 }
 
@@ -42,6 +44,7 @@ func (oper *JumpOper) ProcessArgs(c *CmdLineArgs) {
 
 func main() {
 	Pr(VERT_SP, DASHES, "cmdLineExample", CR, DASHES)
+
 	var oper = &JumpOper{}
 	oper.ProvideName(oper)
 	var app = NewApp()
@@ -51,6 +54,6 @@ func main() {
 	app.CmdLineArgs(). //
 				Add("debugging").Desc("perform extra tests"). //
 				Add("speed").SetInt().Add("jumping")          //
-	app.AddTestArgs("--verbose --dryrun height compact compact zebra height compact --help")
+	//app.AddTestArgs("--verbose --dryrun height compact compact zebra height compact")
 	app.Start()
 }

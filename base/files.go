@@ -5,32 +5,6 @@ import (
 	"os"
 )
 
-var lowPriorityKeyFile Path
-var lowPriorityMap JSMap
-
-type filesLowPriorityFlags struct{}
-
-func init() {
-	//Alert("might be better to just store a function pointer?")
-	LowPriorityFlagsHandler = &filesLowPriorityFlags{}
-}
-
-func (p *filesLowPriorityFlags) AddFlag(key string) bool {
-	//Alert("do alerts work inside init() functions?")
-	if lowPriorityMap == nil {
-		lowPriorityKeyFile = HomeDirM().JoinM("Desktop/golang_keys.json")
-		lowPriorityMap = JSMapFromFileIfExistsM(lowPriorityKeyFile)
-	}
-	result := !lowPriorityMap.HasKey(key)
-	if result {
-		Pr("...adding key:", key, "to low priority map")
-		lowPriorityMap.Put(key, true)
-		lowPriorityKeyFile.WriteStringM(lowPriorityMap.String())
-		Pr("wrote new map:", INDENT, lowPriorityMap)
-	}
-	return result
-}
-
 func AscendToDirectoryContainingFile(startDir Path, seekFile string) (Path, error) {
 	CheckArg(NonEmpty(seekFile))
 

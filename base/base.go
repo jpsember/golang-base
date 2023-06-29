@@ -12,21 +12,6 @@ import (
 	"sync"
 )
 
-// To avoid import cycle, this is an interface to support 'low priority alert flags'.
-// This approach was inspired by https://jogendra.dev/import-cycles-in-golang-and-how-to-deal-with-them
-// (but it seems like a lot of trouble...)
-type LowPriorityFlags interface {
-	AddFlag(key string) bool
-}
-
-type standardLowPriorityFlags struct{}
-
-func (p *standardLowPriorityFlags) AddFlag(key string) bool {
-	return true
-}
-
-var LowPriorityFlagsHandler LowPriorityFlags = &standardLowPriorityFlags{}
-
 var Dashes = "------------------------------------------------------------------------------------------\n"
 
 // Return location of current program as a string.
@@ -194,30 +179,33 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	debugLock.Lock()
 	value := debugLocMap.Add(key)
 	debugLock.Unlock()
+	Pr("auxAlert, value for key", key, "was", value)
 	if !value {
-		modifiedKey, lowPriority := extractLowPriorityFlag(key)
-		if lowPriority {
-			debugLock.Lock()
-			flag := LowPriorityFlagsHandler.AddFlag(modifiedKey)
-			debugLock.Unlock()
-			if !flag {
-				return
-			}
-		}
-		var output strings.Builder
-		locn := CallerLocation(skipCount + 1)
-		output.WriteString(locn)
-		output.WriteString(" ***")
-		output.WriteString(" ")
-		output.WriteString(prompt)
-		output.WriteString(": ")
-		if len(additionalMessage) != 0 {
-			output.WriteString(modifiedKey + " " + ToString(additionalMessage...))
-		} else {
-			output.WriteString(modifiedKey)
-		}
-		fmt.Println(output.String())
+		return
 	}
+
+	modifiedKey, lowPriority := extractLowPriorityFlag(key)
+	if lowPriority {
+		debugLock.Lock()
+		flag := addLowPriorityAlertFlag(modifiedKey)
+		debugLock.Unlock()
+		if !flag {
+			return
+		}
+	}
+	var output strings.Builder
+	locn := CallerLocation(skipCount + 1)
+	output.WriteString(locn)
+	output.WriteString(" ***")
+	output.WriteString(" ")
+	output.WriteString(prompt)
+	output.WriteString(": ")
+	if len(additionalMessage) != 0 {
+		output.WriteString(modifiedKey + " " + ToString(additionalMessage...))
+	} else {
+		output.WriteString(modifiedKey)
+	}
+	fmt.Println(output.String())
 }
 
 // Determine if key has the low priority prefix "!"; return true if so, with the prefix removed.
@@ -386,4 +374,24 @@ func ParseIntM(str string) int {
 
 func IntToString(value int) string {
 	return strconv.Itoa(value)
+}
+
+var lowPriorityKeyFile Path
+var lowPriorityMap JSMap
+
+func addLowPriorityAlertFlag(key string) bool {
+	Pr("addLowPriorityAlertFlag:", key)
+	if lowPriorityMap == nil {
+		lowPriorityKeyFile = HomeDirM().JoinM("Desktop/golang_keys.json")
+		Pr("Look for a project directory, a git repository, or the current directory, in that order, for a file named .go_flags.json")
+		lowPriorityMap = JSMapFromFileIfExistsM(lowPriorityKeyFile)
+	}
+	result := !lowPriorityMap.HasKey(key)
+	if result {
+		Pr("...adding key:", key, "to low priority map")
+		lowPriorityMap.Put(key, true)
+		lowPriorityKeyFile.WriteStringM(lowPriorityMap.String())
+		Pr("wrote new map:", INDENT, lowPriorityMap)
+	}
+	return result
 }
