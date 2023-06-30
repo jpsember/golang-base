@@ -113,6 +113,12 @@ func BadState(message ...any) {
 	BadStateWithSkip(4, message...)
 }
 
+// Given a value and an error, make sure the error is nil, and return just the value
+func AssertNoError[X any](arg1 X, err error) X {
+	CheckOkWithSkip(1, err)
+	return arg1
+}
+
 func CheckState(valid bool, message ...any) {
 	if !valid {
 		auxPanic(1, "Invalid state", message...)
@@ -187,7 +193,6 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	}
 
 	info := extractAlertPriority(key)
-	Pr("extracted info for key", Quoted(key), ":", INDENT, info)
 	if info.priority == 0 {
 		return
 	}
@@ -386,64 +391,52 @@ func IntToString(value int) string {
 var priorityAlertPersistPath Path
 var priorityAlertMap JSMap
 
-func AssertNoError[X any](arg1 X, err error) X {
-	CheckOkWithSkip(1, err)
-	return arg1
-}
-
 type alertInfo struct {
 	key           string
 	priority      int
 	maxPerSession int
 }
 
-var alertPattern = AssertNoError(regexp.Compile(`^(!|\?|[01234567])?(#\d+)?(.+)$`))
+var alertPattern = AssertNoError(regexp.Compile(`^(!|\?|\d+(?:\:))?(\d+(?:\:))?(.+)$`))
 
-// Determine if key has a priority prefix.  If so, return the priority, with the prefix removed.
-// Otherwise, return -1 (show alert )
+// Parse an alert key into an alertInfo structure.
+//
+// # It expects optional prefixes of the form
+//
+// message        Print just once, every time the program is run
+// !message       Same as above
+// ?message       Never print
+// 0..9:message   If 0, never print; else, print just once, if sufficient time elapsed since last time program was run
+// !:20:message   Print first 20 times
+// ?:17:message   Never print
+// 5:22:message   Print first 22 times if sufficient time has elapsed ... but this makes no sense
 func extractAlertPriority(key string) alertInfo {
-
-	info := alertInfo{}
+	info := alertInfo{priority: -1}
 	groups := alertPattern.FindStringSubmatch(key)
-	CheckArg(groups != nil, "failed to parse alert message:", Quoted(key))
-	//if groups == nil {
-	//	info.key = key
-	//	info.priority = -1
-	//	info.maxPerSession = 1
-	//	return info
-	//}
-	//Pr("parsed", groups != nil, Quoted(key), ":", info)
+	if groups == nil {
+		BadArg("failed to parse alert message:", Quoted(key))
+	}
 
-	priStr := groups[1]
-	repStr := groups[2]
-	keyStr := groups[3]
+	priStr := strings.TrimSuffix(groups[1], ":")
+	repStr := strings.TrimSuffix(groups[2], ":")
+	info.key = strings.TrimPrefix(groups[3], ":")
 
-	//Pr("key:", key)
-	//for i, x := range groups {
-	//	Pr("group #", i, ":", Quoted(x))
-	//}
-	//Pr("groups:", groups, len(groups))
-	//Pr(Quoted(priStr), Quoted(repStr), Quoted(keyStr))
-
-	if priStr == "" {
-		info.priority = -1
-	} else {
-		ch := int(priStr[0])
-		switch ch {
+	if priStr != "" {
+		switch priStr[0] {
 		case '!':
 			info.priority = -1
 		case '0', '?':
 			info.priority = 0
 		default:
-			info.priority = ch - '0'
+			info.priority = ParseIntM(priStr)
 		}
 	}
 
 	if repStr != "" {
-		info.maxPerSession = ParseIntM(repStr[1:])
+		info.maxPerSession = ParseIntM(repStr)
 	}
 
-	info.key = keyStr
+	Pr("parsed:", Quoted(key), "to:", info)
 	return info
 }
 
@@ -519,4 +512,12 @@ func registerPriorityAlert(info alertInfo) bool {
 
 func CurrentTimeMs() int64 {
 	return int64(time.Now().Unix())
+}
+
+func init() {
+
+	Pr(extractAlertPriority("!abc"))
+	Pr(extractAlertPriority("?abc"))
+	Pr(extractAlertPriority("0:50:abc"))
+
 }
