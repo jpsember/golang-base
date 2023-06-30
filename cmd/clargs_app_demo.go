@@ -21,11 +21,17 @@ func (oper *JumpOper) Perform(app *App) {
 
 	Alert("this is a standard alert", "jello", 42)
 	Alert("0:this is a suppressed alert")
-	for x := 0; x < 7; x++ {
-		j := IntToString(x)
-		Alert(j + "#5:alert priority " + j)
-	}
 
+	for y := 0; y < 10; y++ {
+		Pr(VERT_SP, "y:", y)
+		for x := 0; x < 10; x++ {
+			j := IntToString(x)
+			Alert(j + ":alert priority " + j)
+		}
+		Alert("#10:repeat 10 times")
+		Alert("#2:repeat twice")
+		SleepMs(500)
+	}
 	Pr("goodbye")
 }
 

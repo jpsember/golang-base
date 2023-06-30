@@ -182,33 +182,34 @@ func Info(arg any) string {
 // If the key has a prefix '!', it is a "low priority" alert - if the key already
 // appears in a json map stored on the desktop, it does not print it.
 func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any) {
-	// Acquire the lock while we test (and set) the flag in the global map
+	// Acquire the lock while we test and increment the current session report count for this alert
 	debugLock.Lock()
-	value := debugLocMap.Add(key)
+	info := extractAlertInfo(key)
+	cachedInfo := debugLocMap[info.key] + 1
+	debugLocMap[info.key] = cachedInfo
 	debugLock.Unlock()
-	// If it was already in the set, we have already displayed this alert
-	// since starting the program
-	if !value {
-		return
-	}
 
-	info := extractAlertPriority(key)
+	// If we are never to print this alert, exit now
 	if info.priority == 0 {
 		return
 	}
 
+	// If there's a multi-session priority value, process it
+	//
 	if info.priority > 0 {
 		debugLock.Lock()
-		flag := registerPriorityAlert(info)
+		flag := processAlertForMultipleSessions(info)
 		debugLock.Unlock()
 		if !flag {
 			return
 		}
+	} else {
+		// If we've exceeded the max per session count, exit now
+		if cachedInfo > info.maxPerSession {
+			return
+		}
 	}
 
-	if info.maxPerSession != 0 {
-		Pr("not supported, max per session")
-	}
 	var output strings.Builder
 	locn := CallerLocation(skipCount + 1)
 	output.WriteString(locn)
@@ -242,7 +243,7 @@ func AlertWithSkip(skipCount int, key string, additionalMessage ...any) bool {
 	return true
 }
 
-var debugLocMap = NewSet[string]()
+var debugLocMap = make(map[string]int)
 var debugLock sync.RWMutex
 
 func Quoted(x string) string {
@@ -397,46 +398,46 @@ type alertInfo struct {
 	maxPerSession int
 }
 
-var alertPattern = AssertNoError(regexp.Compile(`^(!|\?|\d+(?:\:))?(\d+(?:\:))?(.+)$`))
+var alertPattern = AssertNoError(regexp.Compile(`^(!|\?|\d+\:|\#\d+\:)?\:?(.+)$`))
 
 // Parse an alert key into an alertInfo structure.
 //
-// # It expects optional prefixes of the form
+// # Can contain an optional prefix of the form
 //
-// message        Print just once, every time the program is run
-// !message       Same as above
-// ?message       Never print
-// 0..9:message   If 0, never print; else, print just once, if sufficient time elapsed since last time program was run
-// !:20:message   Print first 20 times
-// ?:17:message   Never print
-// 5:22:message   Print first 22 times if sufficient time has elapsed ... but this makes no sense
-func extractAlertPriority(key string) alertInfo {
-	info := alertInfo{priority: -1}
+// !message       		Print once, every time the program is run
+// ?message       		Never print
+// <number>:message   	If 0, never print; else, print once, if sufficient time elapsed since last time program was run
+// #<number>            Print n times, every time program is run
+//
+// .
+func extractAlertInfo(key string) alertInfo {
+	info := alertInfo{
+		priority:      -1,
+		maxPerSession: 1,
+	}
 	groups := alertPattern.FindStringSubmatch(key)
 	if groups == nil {
 		BadArg("failed to parse alert message:", Quoted(key))
 	}
 
-	priStr := strings.TrimSuffix(groups[1], ":")
-	repStr := strings.TrimSuffix(groups[2], ":")
-	info.key = strings.TrimPrefix(groups[3], ":")
+	prefix := strings.TrimSuffix(groups[1], ":")
+	info.key = groups[2]
 
-	if priStr != "" {
-		switch priStr[0] {
+	if prefix != "" {
+		switch prefix[0] {
 		case '!':
 			info.priority = -1
-		case '0', '?':
+			info.maxPerSession = 2 ^ 31
+		case '?':
 			info.priority = 0
+			info.maxPerSession = 0
+		case '#':
+			info.maxPerSession = ParseIntM(prefix[1:])
 		default:
-			info.priority = ParseIntM(priStr)
+			info.priority = ParseIntM(prefix)
 		}
 	}
 
-	if repStr != "" {
-		info.maxPerSession = ParseIntM(repStr)
-	}
-
-	Pr("parsed:", Quoted(key), "to:", info)
 	return info
 }
 
@@ -454,7 +455,7 @@ var alertIntervals = []int64{
 	minute * 5,      // five minutes
 }
 
-func registerPriorityAlert(info alertInfo) bool {
+func processAlertForMultipleSessions(info alertInfo) bool {
 	if priorityAlertMap == nil {
 
 		// Look for a project directory, a git repository, or the current directory, in that order, for a file named .go_flags.json
@@ -482,26 +483,18 @@ func registerPriorityAlert(info alertInfo) bool {
 	m.Put("p", info.priority)
 
 	lastReport := m.OptLong("r", 0)
-	interval := alertIntervals[info.priority]
-	//Pr("interval:", interval)
+	index := MinInt(info.priority, len(alertIntervals)-1)
+	interval := alertIntervals[index]
 	if interval == 0 {
 		if lastReport != 0 {
-			Pr("alert interval is zero, not showing:", info.key)
 			return false
 		}
 	}
 	currTime := CurrentTimeMs()
 	elapsed := currTime - lastReport
-	//	Pr("elapsed:", elapsed)
-	if elapsed < 0 {
-		Pr("wtf?", INDENT, m)
-		Pr(priorityAlertMap)
-	}
-
+	CheckArg(elapsed >= 0)
 	remaining := interval - elapsed
-	//Pr("remaining:", remaining)
 	if remaining > 0 {
-		Pr("minutes delay until", info.key, ":", remaining/minute)
 		return false
 	}
 	m.Put("r", currTime)
@@ -514,10 +507,6 @@ func CurrentTimeMs() int64 {
 	return int64(time.Now().Unix())
 }
 
-func init() {
-
-	Pr(extractAlertPriority("!abc"))
-	Pr(extractAlertPriority("?abc"))
-	Pr(extractAlertPriority("0:50:abc"))
-
+func SleepMs(ms int) {
+	time.Sleep(time.Millisecond * time.Duration(ms))
 }
