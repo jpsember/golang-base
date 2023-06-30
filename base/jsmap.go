@@ -119,8 +119,7 @@ func (m JSMap) prettyPrintWithIndent(context *JSONPrinter) {
 // Factory constructor.  Do *not* construct via JSMapStruct().
 func NewJSMap() *JSMapStruct {
 	var m = new(JSMapStruct)
-	m.wrappedMap = make(map[string]JSEntity)
-	return m
+	return m.Clear()
 }
 
 // Implements the fmt.Stringer interface.  By default, we perform
@@ -365,15 +364,15 @@ func (m JSMap) Entries() []JSMapEntry {
 	return arr.Array()
 }
 
-func (m JSMap) PutLong(key string, value int64) JSMap {
-	m.wrappedMap[key] = JInteger(value)
-	return m
-}
-
-func (m JSMapStruct) OptLong(key string, defaultValue int64) int64 {
+func (m JSMap) OptLong(key string, defaultValue int64) int64 {
 	var val = m.wrappedMap[key]
 	if val == nil {
 		return defaultValue
 	}
 	return JSEntity(val).AsInteger()
+}
+
+func (m JSMap) Clear() JSMap {
+	m.wrappedMap = make(map[string]JSEntity)
+	return m
 }

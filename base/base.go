@@ -180,23 +180,29 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	debugLock.Lock()
 	value := debugLocMap.Add(key)
 	debugLock.Unlock()
+	// If it was already in the set, we have already displayed this alert
+	// since starting the program
 	if !value {
 		return
 	}
 
-	modifiedKey, priority := extractAlertPriority(key)
-	if priority == 0 {
+	info := extractAlertPriority(key)
+	Pr("extracted info for key", Quoted(key), ":", INDENT, info)
+	if info.priority == 0 {
 		return
 	}
 
-	an off by one err
-	if priority < numPriorities-1 {
+	if info.priority > 0 {
 		debugLock.Lock()
-		flag := registerPriorityAlert(modifiedKey, priority)
+		flag := registerPriorityAlert(info)
 		debugLock.Unlock()
 		if !flag {
 			return
 		}
+	}
+
+	if info.maxPerSession != 0 {
+		Pr("not supported, max per session")
 	}
 	var output strings.Builder
 	locn := CallerLocation(skipCount + 1)
@@ -206,9 +212,9 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	output.WriteString(prompt)
 	output.WriteString(": ")
 	if len(additionalMessage) != 0 {
-		output.WriteString(modifiedKey + " " + ToString(additionalMessage...))
+		output.WriteString(info.key + " " + ToString(additionalMessage...))
 	} else {
-		output.WriteString(modifiedKey)
+		output.WriteString(info.key)
 	}
 	fmt.Println(output.String())
 }
@@ -380,37 +386,82 @@ func IntToString(value int) string {
 var priorityAlertPersistPath Path
 var priorityAlertMap JSMap
 
-// Determine if key has a priority prefix, from 0: lowest to 9: highest; if so, return the priority, with the prefix removed.
-// No prefix implies highest priority
-func extractAlertPriority(key string) (string, int) {
-	var result string
-	v := int(key[0] - '0')
-	maxPri := numPriorities - 1
-	if v >= 0 && v < maxPri {
-		result = key[1:]
+func AssertNoError[X any](arg1 X, err error) X {
+	CheckOkWithSkip(1, err)
+	return arg1
+}
+
+type alertInfo struct {
+	key           string
+	priority      int
+	maxPerSession int
+}
+
+var alertPattern = AssertNoError(regexp.Compile(`^(!|\?|[01234567])?(#\d+)?(.+)$`))
+
+// Determine if key has a priority prefix.  If so, return the priority, with the prefix removed.
+// Otherwise, return -1 (show alert )
+func extractAlertPriority(key string) alertInfo {
+
+	info := alertInfo{}
+	groups := alertPattern.FindStringSubmatch(key)
+	CheckArg(groups != nil, "failed to parse alert message:", Quoted(key))
+	//if groups == nil {
+	//	info.key = key
+	//	info.priority = -1
+	//	info.maxPerSession = 1
+	//	return info
+	//}
+	//Pr("parsed", groups != nil, Quoted(key), ":", info)
+
+	priStr := groups[1]
+	repStr := groups[2]
+	keyStr := groups[3]
+
+	//Pr("key:", key)
+	//for i, x := range groups {
+	//	Pr("group #", i, ":", Quoted(x))
+	//}
+	//Pr("groups:", groups, len(groups))
+	//Pr(Quoted(priStr), Quoted(repStr), Quoted(keyStr))
+
+	if priStr == "" {
+		info.priority = -1
 	} else {
-		result = key
-		v = maxPri
+		ch := int(priStr[0])
+		switch ch {
+		case '!':
+			info.priority = -1
+		case '0', '?':
+			info.priority = 0
+		default:
+			info.priority = ch - '0'
+		}
 	}
-	return result, int(v)
+
+	if repStr != "" {
+		info.maxPerSession = ParseIntM(repStr[1:])
+	}
+
+	info.key = keyStr
+	return info
 }
 
 const minute = 60 * 1000
 const hour = minute * 60
 
 var alertIntervals = []int64{
-	0,
-	hour * 24 * 365, //
-	hour * 24 * 31,  //
-	hour * 24 * 7,   //
-	hour * 24,       //
-	minute * 30,     //
-	minute,          //
+	0,               // don't show even once
+	0,               // show only once
+	hour * 24 * 365, // repeat once per year
+	hour * 24 * 31,  // month
+	hour * 24 * 7,   // week
+	hour * 24,       // day
+	minute * 30,     // half hour
+	minute * 5,      // five minutes
 }
 
-const numPriorities = 7
-
-func registerPriorityAlert(key string, priority int) bool {
+func registerPriorityAlert(info alertInfo) bool {
 	if priorityAlertMap == nil {
 
 		// Look for a project directory, a git repository, or the current directory, in that order, for a file named .go_flags.json
@@ -424,26 +475,44 @@ func registerPriorityAlert(key string, priority int) bool {
 		}
 		priorityAlertPersistPath = d.JoinM(".go_flags.json")
 		priorityAlertMap = JSMapFromFileIfExistsM(priorityAlertPersistPath)
+		const expectedVersion = 2
+		if priorityAlertMap.OptInt("version", 0) != expectedVersion {
+			priorityAlertMap.Clear().Put("version", expectedVersion)
+		}
 	}
 
-	m := priorityAlertMap.OptMapOrEmpty(key)
+	m := priorityAlertMap.OptMapOrEmpty(info.key)
 	existingPri := m.OptInt("p", -1)
-	if existingPri > priority {
+	if existingPri > info.priority {
 		return false
 	}
-	m.Put("p", priority)
+	m.Put("p", info.priority)
 
-	currTime := CurrentTimeMs()
 	lastReport := m.OptLong("r", 0)
+	interval := alertIntervals[info.priority]
+	//Pr("interval:", interval)
+	if interval == 0 {
+		if lastReport != 0 {
+			Pr("alert interval is zero, not showing:", info.key)
+			return false
+		}
+	}
+	currTime := CurrentTimeMs()
 	elapsed := currTime - lastReport
-	delay := alertIntervals[priority]
-	remaining := delay - elapsed
+	//	Pr("elapsed:", elapsed)
+	if elapsed < 0 {
+		Pr("wtf?", INDENT, m)
+		Pr(priorityAlertMap)
+	}
+
+	remaining := interval - elapsed
+	//Pr("remaining:", remaining)
 	if remaining > 0 {
-		Pr("minutes delay until", key, ":", remaining/minute)
+		Pr("minutes delay until", info.key, ":", remaining/minute)
 		return false
 	}
-	m.PutLong("r", currTime)
-	priorityAlertMap.Put(key, m)
+	m.Put("r", currTime)
+	priorityAlertMap.Put(info.key, m)
 	priorityAlertPersistPath.WriteStringM(priorityAlertMap.String())
 	return true
 }
