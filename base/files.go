@@ -28,11 +28,10 @@ func AscendToDirectoryContainingFile(startDir Path, seekFile string) (Path, erro
 		}
 		pr("path:", path, "parent:", path.Parent())
 		path = path.Parent()
-		pr("path now:", path, "isEmpty:", path.Empty(), "emptry str:", EmptyPath.String())
+		pr("path now:", path, "isEmpty:", path.Empty(), "empty str:", EmptyPath.String())
 		if path.Empty() {
 			return path, Error("Cannot find", seekFile, "in tree containing", startDir)
 		}
-		CheckState(path.String() != "/")
 	}
 }
 

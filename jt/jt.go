@@ -203,6 +203,26 @@ func (j *J) AssertGenerated() {
 	registry.SaveTestResults()
 }
 
+func (j *J) FailWithMessage(prefix string, message ...any) {
+	Pr(JoinElementToList(prefix, message))
+	j.Fail()
+}
+
+func (j *J) AssertTrue(value bool, message ...any) bool {
+	if !value {
+		j.FailWithMessage("Expression is not true:", message...)
+	}
+	return value
+}
+
+// True asserts that the specified value is true.
+func (j *J) AssertFalse(value bool, message ...any) bool {
+	if value {
+		j.FailWithMessage("Expression is not false:", message...)
+	}
+	return value
+}
+
 func DirSummary(dir Path) JSMap {
 	var jsMap = NewJSMap()
 	var w = NewDirWalk(dir).WithDirNames()

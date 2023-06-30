@@ -51,9 +51,6 @@ func NewPath(s string) (Path, error) {
 	if strings.HasPrefix(s, "..") {
 		return "", Error("Illegal path:", Quoted(s))
 	}
-	if s == "." {
-		return "", Error("Attempt to construct empty path:", Quoted(s))
-	}
 	return Path(s), nil
 }
 
@@ -125,9 +122,9 @@ func (path Path) CheckNonEmptyWithSkip(skip int) Path {
 // Get parent of (nonempty) path; returns empty path if it has no parent
 func (path Path) Parent() Path {
 	path.CheckNonEmptyWithSkip(1)
-	var s = filepath.Dir(string(path))
-	if s == "." || s == "/" {
-		Pr("need to distinguish between root path and empty path")
+	input := string(path)
+	var s = filepath.Dir(input)
+	if s == input {
 		return EmptyPath
 	}
 	return Path(s)
@@ -143,6 +140,11 @@ func (path Path) Exists() bool {
 func (path Path) IsDir() bool {
 	fileInfo, err := os.Stat(string(path))
 	return err == nil && fileInfo.IsDir()
+}
+
+func (path Path) IsRoot() bool {
+	path.CheckNonEmptyWithSkip(1)
+	return path.String() == "/"
 }
 
 // Determine if path is empty
