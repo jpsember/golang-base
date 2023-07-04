@@ -2,7 +2,6 @@ package base
 
 import (
 	"encoding/base64"
-	"fmt"
 	"strconv"
 )
 
@@ -125,7 +124,7 @@ func MakeJFloat(value float64) JSEntity {
 
 func (v JFloat) PrintTo(context *JSONPrinter) {
 	// We could print fewer fractional digits by e.g. %.3f
-	var text = fmt.Sprintf("%f", float64(v))
+	var text = strconv.FormatFloat(float64(v), 'f', 1, 64)
 	context.WriteString(text)
 }
 

@@ -1,9 +1,5 @@
 package base
 
-import (
-	"fmt"
-)
-
 type JSMapStruct struct {
 	wrappedMap map[string]JSEntity
 }
@@ -140,7 +136,8 @@ func (m JSMap) Put(key string, value any) *JSMapStruct {
 
 func (m JSMap) PutNumbered(value any) *JSMapStruct {
 	var numKeys = len(m.wrappedMap)
-	var key = fmt.Sprintf("%3d", numKeys)
+	var key = IntToString(numKeys)
+	key = Spaces(3-len(key)) + key
 	return m.Put(key, value)
 }
 

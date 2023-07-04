@@ -173,8 +173,9 @@ func Info(arg any) string {
 	if arg == nil {
 		return "<nil>"
 	}
+
 	// Avoid calling BasePrinter for this, since it might cause endless recursion
-	return fmt.Sprint("Value[", arg, "],Type[", reflect.TypeOf(arg), "]")
+	return "Type[" + reflect.TypeOf(arg).String() + "]"
 }
 
 // Print an alert if an alert with its key hasn't already been printed.
@@ -222,7 +223,7 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	} else {
 		output.WriteString(info.key)
 	}
-	fmt.Println(output.String())
+	println(output.String())
 }
 
 func Todo(key string, message ...any) bool {
@@ -398,7 +399,7 @@ type alertInfo struct {
 	maxPerSession int
 }
 
-var alertPattern = AssertNoError(regexp.Compile(`^(!|\?|\d+\:|\#\d+\:)?\:?(.+)$`))
+var alertPattern = AssertNoError(regexp.Compile(`^(!|\?|\d+:|#\d+:)?:?(.+)$`))
 
 // Parse an alert key into an alertInfo structure.
 //

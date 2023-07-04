@@ -1,7 +1,8 @@
 package base
 
 import (
-	"fmt"
+	"errors"
+
 	"strings"
 )
 
@@ -38,5 +39,5 @@ func (info *EnumInfo) ValueOf(s string) (uint32, error) {
 	if v, found := info.EnumIds[s]; found {
 		return v, nil
 	}
-	return 0, fmt.Errorf("can't find enum with label %q", s)
+	return 0, errors.New("can't find enum with label " + s)
 }

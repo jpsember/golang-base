@@ -1,7 +1,6 @@
 package base
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -20,6 +19,10 @@ type JsonParseError struct {
 }
 
 func (e *JsonParseError) Error() string {
+	return e.prob
+}
+
+func (e *JsonParseError) String() string {
 	return e.prob
 }
 
@@ -83,8 +86,8 @@ func (p *JSONParser) fail(message ...any) {
 	}
 	var context = sb.String()
 	var msg = ToString(JoinLists([]any{
-		fmt.Sprintf("Problem parsing json, cursor: %v,", p.cursor), "context:",
-		context}, message)...)
+		ToString(
+			"Problem parsing json, cursor:", p.cursor, ", context:", context)}, message)...)
 	p.Error = &JsonParseError{prob: msg, Context: context, Cursor: p.cursor}
 }
 
@@ -208,7 +211,7 @@ func (p *JSONParser) readHexint() int {
 	result := 0
 	var c = int(p.read())
 	if c >= 'a' {
-		c -= ('a' - 'A')
+		c -= 'a' - 'A'
 	}
 	if c >= 'A' {
 		result = c - ('A') + 10

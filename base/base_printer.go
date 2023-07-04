@@ -3,14 +3,14 @@
 package base
 
 import (
-	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 )
 
 // Print arguments to standard output, using a BasePrinter.
 func Pr(messages ...any) {
-	fmt.Println(ToString(messages...))
+	println(ToString(messages...))
 }
 
 func PrIf(active bool) func(messages ...any) {
@@ -23,7 +23,6 @@ func PrIf(active bool) func(messages ...any) {
 
 // A printer that generates no output
 func PrNull(messages ...any) {
-
 }
 
 // Use a BasePrinter to format a string from an array of objects.
@@ -141,6 +140,10 @@ func (b *BasePrinter) Pr(messages ...any) *BasePrinter {
 	return b
 }
 
+type baseStringer interface {
+	String() string
+}
+
 // Append an object's string representation
 // (todo: by looking up its converter)
 func (b *BasePrinter) Append(value any) {
@@ -173,18 +176,30 @@ func (b *BasePrinter) Append(value any) {
 		b.AppendFloat(v)
 	case bool:
 		b.AppendBool(v)
+	case []interface{}:
+		{
+			println("wtf, unable to print value:", value, "type:", v)
+			b.AppendString("[")
+			for i, x := range v {
+				if i > 0 {
+					b.AppendString(" ")
+				}
+				b.Append(x)
+			}
+			b.AppendString("]")
+		}
 	case strings.Builder:
 		b.AppendString(v.String())
 	case PrintEffect:
 		processPrintEffect(v, b)
 	default:
-		q := reflect.TypeOf(v)
-		// Fall back on using fmt.Sprint()
-		if false {
-			b.AppendString("???" + q.String() + "???" + fmt.Sprint(v))
-		} else {
-			b.AppendString(fmt.Sprint(v))
+		str, ok := value.(baseStringer)
+		if ok {
+			b.AppendString(str.String())
+			return
 		}
+		q := reflect.TypeOf(v)
+		b.AppendString("???" + q.String() + "???")
 	}
 }
 
@@ -249,7 +264,7 @@ func (b *BasePrinter) AppendBool(v bool) *BasePrinter {
 
 // Append a floating point value, fixed width, without scientific notation.
 func (b *BasePrinter) AppendFloat(dblVal float64) *BasePrinter {
-	var formattedValue = fmt.Sprintf("%v ", dblVal)
+	var formattedValue = strconv.FormatFloat(dblVal, 'f', 1, 32)
 	var allZerosSuffix = ".0000 "
 	var newVal = strings.TrimSuffix(formattedValue, allZerosSuffix)
 	if newVal != formattedValue {
@@ -313,7 +328,7 @@ func (b *BasePrinter) flushLineBreak() {
 
 // Append long integer, padding to particular fixed width
 func (b *BasePrinter) formatLong(longVal int64, fixedWidth int) {
-	var digits = fmt.Sprintf("%d", AbsLong(longVal))
+	var digits = strconv.FormatInt(AbsLong(longVal), 10)
 	var paddingChars = fixedWidth - len(digits)
 	var spaces = Spaces(MaxInt(1, paddingChars))
 	var signChar string
