@@ -31,13 +31,13 @@ func determineUnittestFilename(location string) string {
 		result = s2
 		break
 	}
-	CheckState(NonEmpty(result), "failed parsing:", location)
+	CheckState(NonEmpty(result), "failed determining unit test filename for:", location)
 	return result
 }
 
 var unitTestCounter atomic.Int32
 
-func New(t testing.TB) *J {
+func auxNew(t testing.TB) *J {
 
 	// Ideally we could determine ahead of time how many unit tests are being run in the current session;
 	// but there doesn't seem to be a way to do that.  Instead, turn on verbosity iff this is the first
@@ -45,19 +45,22 @@ func New(t testing.TB) *J {
 
 	var testNumber = unitTestCounter.Add(1)
 
-	result := J{
+	return &J{
 		TB:       t,
-		Filename: determineUnittestFilename(CallerLocation(1)),
+		Filename: determineUnittestFilename(CallerLocation(2)),
 		verbose:  testNumber == 1,
 	}
-	return &result
+}
+
+func New(t testing.TB) *J {
+	return auxNew(t)
 }
 
 // Deprecated: this constructor will cause the old hash code to be thrown out
 //
 //goland:noinspection GoUnusedExportedFunction
 func Newz(t testing.TB) *J {
-	r := New(t)
+	r := auxNew(t)
 	r.verbose = true
 	r.InvalidateOldHash = true
 	return r
