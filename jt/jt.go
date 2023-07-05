@@ -81,16 +81,17 @@ func Newz(t testing.TB) *J {
 
 type J struct {
 	testing.TB
-	Filename          string
-	verbose           bool
-	testResultsDir    Path
-	unitTestDir       Path
-	moduleDir         Path
-	generatedDir      Path
-	baseNameCached    string
-	InvalidateOldHash bool
-	rand              *rand.Rand
-	randSeed          int
+	Filename           string
+	verbose            bool
+	testResultsDir     Path
+	unitTestDir        Path
+	moduleDir          Path
+	generatedDir       Path
+	baseNameCached     string
+	InvalidateOldHash  bool
+	rand               *rand.Rand
+	randSeed           int
+	referenceDirCached Path
 }
 
 func (j *J) Verbose() bool {
@@ -243,7 +244,7 @@ func DirSummary(dir Path) JSMap {
 // Display diff of generated directory and its reference version
 func (j *J) showDiffs() {
 
-	var refDir = j.registry().referenceDir(j)
+	var refDir = j.ReferenceDir()
 	if !refDir.IsDir() {
 		return
 	}
@@ -359,4 +360,13 @@ func (j *J) auxGenDir(dir Path, jsmap JSMap) {
 			targ.WriteStringM(text)
 		}
 	}
+}
+
+func (j *J) ReferenceDir() Path {
+	Todo("this should be private?")
+	if j.referenceDirCached.Empty() {
+		var g = j.GetTestResultsDir()
+		j.referenceDirCached = g.Parent().JoinM(g.Base() + "_REF")
+	}
+	return j.referenceDirCached
 }

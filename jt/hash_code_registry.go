@@ -19,7 +19,6 @@ type HashCodeRegistry struct {
 	Map                *JSMapStruct
 	registryFileCached Path
 	unitTestDirCached  Path
-	referenceDirCached Path
 }
 
 // Get registry for a test case, constructing one if necessary
@@ -100,10 +99,11 @@ var sClassesMap = make(map[string]*HashCodeRegistry)
  * value (or no previous value exists).
  */
 func (r *HashCodeRegistry) SaveTestResults(j *J) {
+	Todo("This should be a J method, not HashCodeRegistry")
 	// If we're going to replace the hash in any case, delete any existing reference directory,
 	// since its old contents may correspond to an older hash code
 	if j.InvalidateOldHash {
-		r.referenceDir(j).DeleteDirectoryM("/generated/")
+		j.ReferenceDir().DeleteDirectoryM("/generated/")
 	}
 
 	var res = j.GetTestResultsDir()
@@ -113,24 +113,15 @@ func (r *HashCodeRegistry) SaveTestResults(j *J) {
 		Pr("testName:", testName)
 	}
 
-	Pr(r.referenceDir(j).Info("SaveTestResults, reference dir"))
+	Pr(j.ReferenceDir().Info("SaveTestResults, reference dir"))
 
-	if !r.referenceDir(j).Exists() {
+	if !j.ReferenceDir().Exists() {
 		Todo("This sometimes fails due to our unit tests not being threadsafe")
-		err := res.MoveTo(r.referenceDir(j))
+		err := res.MoveTo(j.ReferenceDir())
 		CheckOk(err)
 	} else {
 		Pr(res.Info("SaveTestResults, reference dir already exists"))
 		err := res.DeleteDirectory("unit_test")
 		CheckOk(err)
 	}
-}
-
-func (r *HashCodeRegistry) referenceDir(j *J) Path {
-	Todo("reference dir, other things should be part of J")
-	if r.referenceDirCached.Empty() {
-		var g = j.GetTestResultsDir()
-		r.referenceDirCached = g.Parent().JoinM(g.Base() + "_REF")
-	}
-	return r.referenceDirCached
 }
