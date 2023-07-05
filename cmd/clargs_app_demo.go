@@ -42,6 +42,7 @@ func (oper *JumpOper) ProcessArgs(c *CmdLineArgs) {
 
 func main() {
 	Pr(VERT_SP, DASHES, "cmdLineExample", CR, DASHES)
+
 	var oper = &JumpOper{}
 	oper.ProvideName(oper)
 	var app = NewApp()
@@ -51,6 +52,6 @@ func main() {
 	app.CmdLineArgs(). //
 				Add("debugging").Desc("perform extra tests"). //
 				Add("speed").SetInt().Add("jumping")          //
-	app.AddTestArgs("--verbose --dryrun height compact compact zebra height compact --help")
+	//app.AddTestArgs("--verbose --dryrun height compact compact zebra height compact")
 	app.Start()
 }

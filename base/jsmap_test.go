@@ -1,34 +1,11 @@
-// Put the tests in a separate (but related) package, so we avoid cyclic imports of json
-package json_test
+package base_test
 
 import (
-	"strings"
-	"testing" // We still need to import the standard testing package
-
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/json"
 	"github.com/jpsember/golang-base/jt"
+	"strings"
+	"testing"
 )
-
-// Tests the proper reporting of error locations (i.e., all the 'skipCount' expressions).
-// This test is very sensitive to line numbers; if this file changes, the hash might need
-// updating.
-func TestPanics(t *testing.T) {
-	j := jt.New(t)
-
-	s := TestPanicSubstring
-	TestPanicMessageLog.Reset()
-
-	CheckArg(false, s)
-	CheckNotNil(nil, s)
-	NotImplemented(s)
-	NotSupported(s)
-	Halt(s)
-	ok := Error(s)
-	CheckOk(ok, s)
-
-	j.AssertMessage(TestPanicMessageLog.String())
-}
 
 func TestJSMapPrettyPrint(t *testing.T) {
 	j := jt.New(t) // Use Newz to regenerate hash

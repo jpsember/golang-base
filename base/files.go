@@ -1,37 +1,9 @@
-package files
+package base
 
 import (
-	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/json"
 	"io"
 	"os"
 )
-
-var lowPriorityKeyFile Path
-var lowPriorityMap JSMap
-
-type filesLowPriorityFlags struct{}
-
-func init() {
-	//Alert("might be better to just store a function pointer?")
-	LowPriorityFlagsHandler = &filesLowPriorityFlags{}
-}
-
-func (p *filesLowPriorityFlags) AddFlag(key string) bool {
-	//Alert("do alerts work inside init() functions?")
-	if lowPriorityMap == nil {
-		lowPriorityKeyFile = HomeDirM().JoinM("Desktop/golang_keys.json")
-		lowPriorityMap = JSMapFromFileIfExistsM(lowPriorityKeyFile)
-	}
-	result := !lowPriorityMap.HasKey(key)
-	if result {
-		Pr("...adding key:", key, "to low priority map")
-		lowPriorityMap.Put(key, true)
-		lowPriorityKeyFile.WriteStringM(lowPriorityMap.String())
-		Pr("wrote new map:", INDENT, lowPriorityMap)
-	}
-	return result
-}
 
 func AscendToDirectoryContainingFile(startDir Path, seekFile string) (Path, error) {
 	CheckArg(NonEmpty(seekFile))
@@ -56,11 +28,10 @@ func AscendToDirectoryContainingFile(startDir Path, seekFile string) (Path, erro
 		}
 		pr("path:", path, "parent:", path.Parent())
 		path = path.Parent()
-		pr("path now:", path, "isEmpty:", path.Empty(), "emptry str:", EmptyPath.String())
+		pr("path now:", path, "isEmpty:", path.Empty(), "empty str:", EmptyPath.String())
 		if path.Empty() {
 			return path, Error("Cannot find", seekFile, "in tree containing", startDir)
 		}
-		CheckState(path.String() != "/")
 	}
 }
 
@@ -193,5 +164,13 @@ func FindProjectDirM() Path {
 }
 
 func FindProjectDir() (Path, error) {
-	return AscendToDirectoryContainingFile("", "project_config")
+	if !cachedProjectDirFlag {
+		cachedProjectDir, cachedProjectDirErr = AscendToDirectoryContainingFile("", "project_config")
+		cachedProjectDirFlag = true
+	}
+	return cachedProjectDir, cachedProjectDirErr
 }
+
+var cachedProjectDirFlag bool
+var cachedProjectDir Path
+var cachedProjectDirErr error

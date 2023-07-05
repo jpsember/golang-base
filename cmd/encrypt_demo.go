@@ -3,8 +3,6 @@ package main
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/data"
-	. "github.com/jpsember/golang-base/files"
 	"github.com/jpsember/golang-base/gen/sample"
 )
 

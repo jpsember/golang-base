@@ -1,9 +1,7 @@
-package json
+package base
 
 import (
 	_ "strings"
-
-	. "github.com/jpsember/golang-base/base"
 )
 
 type JSListStruct struct {
@@ -30,11 +28,21 @@ func (js JSList) AsInteger() int64 {
 func (js JSList) AsFloat() float64 {
 	panic("not supported")
 }
+
 func (js JSList) AsString() string {
 	panic("not supported")
 }
+
 func (js JSList) AsBool() bool {
 	panic("not supported")
+}
+
+func (js JSList) AsJSMap() JSMap {
+	panic("not supported")
+}
+
+func (js JSList) AsJSList() JSList {
+	return js
 }
 
 // Implements the fmt.Stringer interface.  By default, we perform

@@ -1,8 +1,7 @@
-package data
+package base
 
 import (
 	"fmt"
-	. "github.com/jpsember/golang-base/json"
 	"strings"
 )
 

@@ -2,8 +2,6 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/files"
-	. "github.com/jpsember/golang-base/json"
 	"sync"
 	"time"
 )

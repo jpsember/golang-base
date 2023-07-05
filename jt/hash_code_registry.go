@@ -2,8 +2,6 @@ package jt
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/files"
-	. "github.com/jpsember/golang-base/json"
 	"strings"
 	"sync"
 )

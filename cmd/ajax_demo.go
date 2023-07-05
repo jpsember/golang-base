@@ -3,8 +3,6 @@ package main
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/data"
-	. "github.com/jpsember/golang-base/files"
 	. "github.com/jpsember/golang-base/webserv"
 	"log"
 	"math/rand"
@@ -235,7 +233,7 @@ func zebraListener(sess any, widget Widget) {
 	s.State.Put(widget.GetBaseWidget().Id, newVal)
 	s.State.Put(alertWidget.Id,
 		strings.TrimSpace(s.State.OptString(alertWidget.Id, "")+" "+
-			data.RandomText(myRand, 55, false)))
+			RandomText(myRand, 55, false)))
 	s.Repaint(widget.GetBaseWidget())
 	s.Repaint(alertWidget)
 }

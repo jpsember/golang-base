@@ -2,9 +2,6 @@ package jt
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/data"
-	. "github.com/jpsember/golang-base/files"
-	. "github.com/jpsember/golang-base/json"
 	"hash/fnv"
 	"math/rand"
 	"os/exec"
@@ -206,6 +203,26 @@ func (j *J) AssertGenerated() {
 	j.saveTestResults()
 }
 
+func (j *J) FailWithMessage(prefix string, message ...any) {
+	Pr(JoinElementToList(prefix, message))
+	j.Fail()
+}
+
+func (j *J) AssertTrue(value bool, message ...any) bool {
+	if !value {
+		j.FailWithMessage("Expression is not true:", message...)
+	}
+	return value
+}
+
+// True asserts that the specified value is true.
+func (j *J) AssertFalse(value bool, message ...any) bool {
+	if value {
+		j.FailWithMessage("Expression is not false:", message...)
+	}
+	return value
+}
+
 func DirSummary(dir Path) JSMap {
 	var jsMap = NewJSMap()
 	var w = NewDirWalk(dir).WithDirNames()
@@ -343,7 +360,7 @@ func (j *J) auxGenDir(dir Path, jsmap JSMap) {
 			j.auxGenDir(dir.JoinM(key), s)
 		} else {
 			targ := dir.JoinM(key)
-			text := data.RandomText(j.Rand(), 80, false) + "\n"
+			text := RandomText(j.Rand(), 80, false) + "\n"
 			targ.WriteStringM(text)
 		}
 	}

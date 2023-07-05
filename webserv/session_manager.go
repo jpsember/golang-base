@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/json"
 	"io"
 	"sync"
 )

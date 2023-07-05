@@ -1,10 +1,9 @@
-package files_test
+package base_test
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/files"
-	. "github.com/jpsember/golang-base/json"
 	"github.com/jpsember/golang-base/jt"
+	"strings"
 	"testing"
 )
 
@@ -16,7 +15,7 @@ func sampleDir(j *jt.J) Path {
 }
 
 func TestDirWalk(t *testing.T) {
-	j := jt.New(t) // Use Newz to regenerate hash
+	j := jt.New(t)
 	var w = sampleWalker(j)
 	w.WithRecurse()
 
@@ -73,5 +72,8 @@ func TestIncludePrefixes(t *testing.T) {
 }
 
 func TestAscendToDirectoryContainingFile(t *testing.T) {
-	AscendToDirectoryContainingFile(EmptyPath, "hello")
+	j := jt.Newz(t)
+	_, err := AscendToDirectoryContainingFile(EmptyPath, "hello")
+	j.Log("Ascend result:", err)
+	j.AssertTrue(strings.Contains(err.Error(), "Cannot find hello"))
 }

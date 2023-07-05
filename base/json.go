@@ -1,11 +1,9 @@
-package json
+package base
 
 import (
 	"encoding/base64"
 	"fmt"
 	"strconv"
-
-	. "github.com/jpsember/golang-base/base"
 )
 
 // ---------------------------------------------------------------------------------------
@@ -27,6 +25,10 @@ type JSEntity interface {
 
 	// Get value of a bool.
 	AsBool() bool
+
+	AsJSMap() JSMap
+
+	AsJSList() JSList
 }
 
 // This is very relevant:
@@ -70,6 +72,14 @@ func (v JString) AsBool() bool {
 	panic("Not supported")
 }
 
+func (v JString) AsJSMap() JSMap {
+	panic("Not supported")
+}
+
+func (v JString) AsJSList() JSList {
+	panic("Not supported")
+}
+
 // -------------------------------------------------------------------------------
 // Json type: number (integral)
 type JInteger int64
@@ -94,6 +104,14 @@ func (v JInteger) AsString() string {
 	panic("Not supported")
 }
 func (v JInteger) AsBool() bool {
+	panic("Not supported")
+}
+
+func (v JInteger) AsJSMap() JSMap {
+	panic("Not supported")
+}
+
+func (v JInteger) AsJSList() JSList {
 	panic("Not supported")
 }
 
@@ -123,6 +141,14 @@ func (v JFloat) AsString() string {
 	panic("Not supported")
 }
 func (v JFloat) AsBool() bool {
+	panic("Not supported")
+}
+
+func (v JFloat) AsJSMap() JSMap {
+	panic("Not supported")
+}
+
+func (v JFloat) AsJSList() JSList {
 	panic("Not supported")
 }
 
@@ -168,6 +194,14 @@ func (v JBool) AsBool() bool {
 	return bool(v)
 }
 
+func (v JBool) AsJSMap() JSMap {
+	panic("Not supported")
+}
+
+func (v JBool) AsJSList() JSList {
+	panic("Not supported")
+}
+
 // -------------------------------------------------------------------------------
 // Json type: null
 
@@ -192,6 +226,14 @@ func (v JNull) AsString() string {
 }
 
 func (v JNull) AsBool() bool {
+	panic("Not supported")
+}
+
+func (v JNull) AsJSMap() JSMap {
+	panic("Not supported")
+}
+
+func (v JNull) AsJSList() JSList {
 	panic("Not supported")
 }
 

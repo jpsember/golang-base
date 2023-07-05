@@ -1,7 +1,6 @@
-package files
+package base
 
 import (
-	. "github.com/jpsember/golang-base/base"
 	"os"
 	"regexp"
 )

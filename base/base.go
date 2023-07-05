@@ -10,22 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
-
-// To avoid import cycle, this is an interface to support 'low priority alert flags'.
-// This approach was inspired by https://jogendra.dev/import-cycles-in-golang-and-how-to-deal-with-them
-// (but it seems like a lot of trouble...)
-type LowPriorityFlags interface {
-	AddFlag(key string) bool
-}
-
-type standardLowPriorityFlags struct{}
-
-func (p *standardLowPriorityFlags) AddFlag(key string) bool {
-	return true
-}
-
-var LowPriorityFlagsHandler LowPriorityFlags = &standardLowPriorityFlags{}
 
 var Dashes = "------------------------------------------------------------------------------------------\n"
 
@@ -127,6 +113,12 @@ func BadState(message ...any) {
 	BadStateWithSkip(4, message...)
 }
 
+// Given a value and an error, make sure the error is nil, and return just the value
+func AssertNoError[X any](arg1 X, err error) X {
+	CheckOkWithSkip(1, err)
+	return arg1
+}
+
 func CheckState(valid bool, message ...any) {
 	if !valid {
 		auxPanic(1, "Invalid state", message...)
@@ -190,42 +182,47 @@ func Info(arg any) string {
 // If the key has a prefix '!', it is a "low priority" alert - if the key already
 // appears in a json map stored on the desktop, it does not print it.
 func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any) {
-	// Acquire the lock while we test (and set) the flag in the global map
+	// Acquire the lock while we test and increment the current session report count for this alert
 	debugLock.Lock()
-	value := debugLocMap.Add(key)
+	info := extractAlertInfo(key)
+	cachedInfo := debugLocMap[info.key] + 1
+	debugLocMap[info.key] = cachedInfo
 	debugLock.Unlock()
-	if !value {
-		modifiedKey, lowPriority := extractLowPriorityFlag(key)
-		if lowPriority {
-			debugLock.Lock()
-			flag := LowPriorityFlagsHandler.AddFlag(modifiedKey)
-			debugLock.Unlock()
-			if !flag {
-				return
-			}
-		}
-		var output strings.Builder
-		locn := CallerLocation(skipCount + 1)
-		output.WriteString(locn)
-		output.WriteString(" ***")
-		output.WriteString(" ")
-		output.WriteString(prompt)
-		output.WriteString(": ")
-		if len(additionalMessage) != 0 {
-			output.WriteString(modifiedKey + " " + ToString(additionalMessage...))
-		} else {
-			output.WriteString(modifiedKey)
-		}
-		fmt.Println(output.String())
-	}
-}
 
-// Determine if key has the low priority prefix "!"; return true if so, with the prefix removed.
-func extractLowPriorityFlag(key string) (string, bool) {
-	if key[0] == '!' {
-		return key[1:], true
+	// If we are never to print this alert, exit now
+	if info.priority == 0 {
+		return
 	}
-	return key, false
+
+	// If there's a multi-session priority value, process it
+	//
+	if info.priority > 0 {
+		debugLock.Lock()
+		flag := processAlertForMultipleSessions(info)
+		debugLock.Unlock()
+		if !flag {
+			return
+		}
+	} else {
+		// If we've exceeded the max per session count, exit now
+		if cachedInfo > info.maxPerSession {
+			return
+		}
+	}
+
+	var output strings.Builder
+	locn := CallerLocation(skipCount + 1)
+	output.WriteString(locn)
+	output.WriteString(" ***")
+	output.WriteString(" ")
+	output.WriteString(prompt)
+	output.WriteString(": ")
+	if len(additionalMessage) != 0 {
+		output.WriteString(info.key + " " + ToString(additionalMessage...))
+	} else {
+		output.WriteString(info.key)
+	}
+	fmt.Println(output.String())
 }
 
 func Todo(key string, message ...any) bool {
@@ -246,7 +243,7 @@ func AlertWithSkip(skipCount int, key string, additionalMessage ...any) bool {
 	return true
 }
 
-var debugLocMap = NewSet[string]()
+var debugLocMap = make(map[string]int)
 var debugLock sync.RWMutex
 
 func Quoted(x string) string {
@@ -335,12 +332,10 @@ func HasKey[K comparable, V any](m map[K]V, key K) bool {
 // Generated data type interface
 // ---------------------------------------------------------------------------------------
 
-// We can include it here, because it doesn't reference any external dependencies (e.g. JSEntity)
-
 type DataClass interface {
 	fmt.Stringer
-	ToJson() any // This should return a JSEntity, to be defined elsewhere
-	Parse(source any) DataClass
+	ToJson() JSEntity
+	Parse(source JSEntity) DataClass
 }
 
 var regexpCache = &sync.Map{}
@@ -388,4 +383,130 @@ func ParseIntM(str string) int {
 
 func IntToString(value int) string {
 	return strconv.Itoa(value)
+}
+
+// ------------------------------------------------------------------------------------
+// Alerts with priorities
+// ------------------------------------------------------------------------------------
+
+var priorityAlertPersistPath Path
+var priorityAlertMap JSMap
+
+type alertInfo struct {
+	key           string
+	priority      int
+	maxPerSession int
+}
+
+var alertPattern = AssertNoError(regexp.Compile(`^(!|\?|\d+\:|\#\d+\:)?\:?(.+)$`))
+
+// Parse an alert key into an alertInfo structure.
+//
+// # Can contain an optional prefix of the form
+//
+// !message       		Print once, every time the program is run
+// ?message       		Never print
+// <number>:message   	If 0, never print; else, print once, if sufficient time elapsed since last time program was run
+// #<number>            Print n times, every time program is run
+//
+// .
+func extractAlertInfo(key string) alertInfo {
+	info := alertInfo{
+		priority:      -1,
+		maxPerSession: 1,
+	}
+	groups := alertPattern.FindStringSubmatch(key)
+	if groups == nil {
+		BadArg("failed to parse alert message:", Quoted(key))
+	}
+
+	prefix := strings.TrimSuffix(groups[1], ":")
+	info.key = groups[2]
+
+	if prefix != "" {
+		switch prefix[0] {
+		case '!':
+			info.priority = -1
+			info.maxPerSession = 2 ^ 31
+		case '?':
+			info.priority = 0
+			info.maxPerSession = 0
+		case '#':
+			info.maxPerSession = ParseIntM(prefix[1:])
+		default:
+			info.priority = ParseIntM(prefix)
+		}
+	}
+
+	return info
+}
+
+const minute = 60 * 1000
+const hour = minute * 60
+
+var alertIntervals = []int64{
+	0,               // don't show even once
+	0,               // show only once
+	hour * 24 * 365, // repeat once per year
+	hour * 24 * 31,  // month
+	hour * 24 * 7,   // week
+	hour * 24,       // day
+	minute * 30,     // half hour
+	minute * 5,      // five minutes
+}
+
+func processAlertForMultipleSessions(info alertInfo) bool {
+	if priorityAlertMap == nil {
+
+		// Look for a project directory, a git repository, or the current directory, in that order, for a file named .go_flags.json
+
+		d, _ := FindProjectDir()
+		if d.Empty() {
+			d, _ = AscendToDirectoryContainingFile("", ".git")
+			if d.Empty() {
+				d = CurrentDirectory()
+			}
+		}
+		priorityAlertPersistPath = d.JoinM(".go_flags.json")
+		priorityAlertMap = JSMapFromFileIfExistsM(priorityAlertPersistPath)
+		const expectedVersion = 2
+		if priorityAlertMap.OptInt("version", 0) != expectedVersion {
+			priorityAlertMap.Clear().Put("version", expectedVersion)
+		}
+	}
+
+	m := priorityAlertMap.OptMapOrEmpty(info.key)
+	existingPri := m.OptInt("p", -1)
+	if existingPri > info.priority {
+		return false
+	}
+	m.Put("p", info.priority)
+
+	lastReport := m.OptLong("r", 0)
+	index := MinInt(info.priority, len(alertIntervals)-1)
+	interval := alertIntervals[index]
+	if interval == 0 {
+		if lastReport != 0 {
+			return false
+		}
+	}
+	currTime := CurrentTimeMs()
+	elapsed := currTime - lastReport
+	CheckArg(elapsed >= 0)
+	remaining := interval - elapsed
+	if remaining > 0 {
+		return false
+	}
+	m.Put("r", currTime)
+	priorityAlertMap.Put(info.key, m)
+	priorityAlertPersistPath.WriteStringM(priorityAlertMap.String())
+	return true
+}
+
+func CurrentTimeMs() int64 {
+	return int64(time.Now().Unix())
+}
+
+func SleepMs(ms int) {
+	time.Sleep(time.Millisecond * time.Duration(ms))
 }
