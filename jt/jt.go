@@ -53,19 +53,6 @@ func New(t testing.TB) *J {
 		Filename: determineUnittestFilename(CallerLocation(1)),
 		verbose:  testNumber == 1,
 	}
-	//Pr("Constructed new J object, filename:", result.Filename, "test name:", result.Name())
-	//Pr("t name:", t.Name())
-	//Pr("constructed for:", INDENT, t)
-	//
-	//
-	//
-	//result := J{
-	//	TB:                t,
-	//	Filename:          determineUnittestFilename(CallerLocation(1)),
-	//	InvalidateOldHash: true,
-	//	verbose:           true,
-	//}
-	Pr("Constructed J for:", t.Name(), "baseName:", result.BaseName(), "Name again:", t.Name())
 	return &result
 }
 
@@ -73,10 +60,10 @@ func New(t testing.TB) *J {
 //
 //goland:noinspection GoUnusedExportedFunction
 func Newz(t testing.TB) *J {
-	result := New(t)
-	result.verbose = true
-	result.InvalidateOldHash = true
-	return result
+	r := New(t)
+	r.verbose = true
+	r.InvalidateOldHash = true
+	return r
 }
 
 type J struct {
@@ -209,14 +196,14 @@ func (j *J) AssertGenerated() {
 	var currentHash = HashOfJSMap(jsonMap)
 	var registry = j.registry()
 
-	if !registry.VerifyHash(j, j.Name(), currentHash, j.InvalidateOldHash) {
+	if !registry.VerifyHash(j, currentHash, j.InvalidateOldHash) {
 		var summary = ToString("\nUnexpected hash value for directory contents:", CR)
 		Pr(summary)
 		j.showDiffs()
 		j.Fail()
 		return
 	}
-	registry.SaveTestResults(j)
+	j.saveTestResults()
 }
 
 func DirSummary(dir Path) JSMap {
@@ -244,7 +231,7 @@ func DirSummary(dir Path) JSMap {
 // Display diff of generated directory and its reference version
 func (j *J) showDiffs() {
 
-	var refDir = j.ReferenceDir()
+	var refDir = j.referenceDir()
 	if !refDir.IsDir() {
 		return
 	}
@@ -362,11 +349,39 @@ func (j *J) auxGenDir(dir Path, jsmap JSMap) {
 	}
 }
 
-func (j *J) ReferenceDir() Path {
-	Todo("this should be private?")
+func (j *J) referenceDir() Path {
 	if j.referenceDirCached.Empty() {
 		var g = j.GetTestResultsDir()
 		j.referenceDirCached = g.Parent().JoinM(g.Base() + "_REF")
 	}
 	return j.referenceDirCached
+}
+
+/**
+ * Called when the generated directory's hash has been successfully verified.
+ *
+ * 1) If a 'reference' copy of the directory doesn't exist, move generated
+ * directory as it; otherwise, delete the generated directory (since it is the
+ * same as the reference copy)
+ *
+ * 2) Update the hash code of the directory, if it differs from the previous
+ * value (or no previous value exists).
+ */
+func (j *J) saveTestResults() {
+
+	// If we're going to replace the hash in any case, delete any existing reference directory,
+	// since its old contents may correspond to an older hash code
+	if j.InvalidateOldHash {
+		j.referenceDir().DeleteDirectoryM("/generated/")
+	}
+
+	var res = j.GetTestResultsDir()
+
+	if !j.referenceDir().Exists() {
+		err := res.MoveTo(j.referenceDir())
+		CheckOk(err)
+	} else {
+		err := res.DeleteDirectory("unit_test")
+		CheckOk(err)
+	}
 }
