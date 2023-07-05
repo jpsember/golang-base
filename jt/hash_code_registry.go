@@ -13,13 +13,13 @@ var _ = Pr
 var mutex sync.RWMutex
 
 type HashCodeRegistry struct {
+	UnitTest           *J
+	UnitTestName       string
 	Key                string
 	Map                *JSMapStruct
 	registryFileCached Path
 	unitTestDirCached  Path
-	UnitTest           *J
 	referenceDirCached Path
-	UnitTestName       string
 }
 
 // Get registry for a test case, constructing one if necessary
@@ -27,23 +27,31 @@ type HashCodeRegistry struct {
 // Must be thread safe
 func (j *J) registry() *HashCodeRegistry {
 	var key = j.Filename
-	mutex.RLock()
+	Todo("If multiple threads are using the same registry, that's a problem")
+	mutex.Lock()
 	var registry = sClassesMap[key]
-	mutex.RUnlock()
+	if registry != nil {
+		registry.UnitTest = j
+	}
+
 	if registry == nil {
 		registry = new(HashCodeRegistry)
-		registry.UnitTest = j
 		registry.Key = key
 
 		// Don't let other threads modify the map while we are modifying it or creating the registry's jsmap
-		mutex.Lock()
+		registry.UnitTest = j
 		sClassesMap[key] = registry
 		// See if there is a file it was saved to
 		registry.Map = JSMapFromFileIfExistsM(registry.file())
-		mutex.Unlock()
 
-		registry.UnitTestName = strings.TrimPrefix(j.TB.Name(), "Test")
 	}
+
+	// Copy some values from the unit test to the registry... though this duplication has already caused one
+	// tricky bug
+	registry.UnitTest = j
+	registry.UnitTestName = strings.TrimPrefix(j.Name(), "Test")
+
+	mutex.Unlock()
 	return registry
 }
 
@@ -103,11 +111,19 @@ func (r *HashCodeRegistry) SaveTestResults() {
 
 	var res = r.UnitTest.GetTestResultsDir()
 
+	if Alert("bad names") {
+		testName := r.UnitTestName
+		Pr("testName:", testName)
+	}
+
+	Pr(r.referenceDir().Info("SaveTestResults, reference dir"))
+
 	if !r.referenceDir().Exists() {
-    Todo("This sometimes fails due to our unit tests not being threadsafe")
+		Todo("This sometimes fails due to our unit tests not being threadsafe")
 		err := res.MoveTo(r.referenceDir())
 		CheckOk(err)
 	} else {
+		Pr(res.Info("SaveTestResults, reference dir already exists"))
 		err := res.DeleteDirectory("unit_test")
 		CheckOk(err)
 	}

@@ -48,11 +48,16 @@ func New(t testing.TB) *J {
 
 	var testNumber = unitTestCounter.Add(1)
 
-	return &J{
+	result := J{
 		TB:       t,
 		Filename: determineUnittestFilename(CallerLocation(1)),
 		verbose:  testNumber == 1,
 	}
+	Pr("Constructed new J object, filename:", result.Filename, "test name:", result.Name())
+	Pr("t name:", t.Name())
+	Pr("constructed for:", INDENT, t)
+	CheckState(t.Name() == result.Name())
+	return &result
 }
 
 // Deprecated: this constructor will cause the old hash code to be thrown out
