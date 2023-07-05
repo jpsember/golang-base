@@ -426,8 +426,8 @@ func extractAlertInfo(key string) alertInfo {
 	if prefix != "" {
 		switch prefix[0] {
 		case '!':
-			info.priority = -1
-			info.maxPerSession = 2 ^ 31
+			info.priority = 3
+			info.maxPerSession = 1
 		case '?':
 			info.priority = 0
 			info.maxPerSession = 0

@@ -41,22 +41,22 @@ func (w ContainerWidget) GetChildren() []Widget {
 	return w.children.Array()
 }
 
-func (m ContainerWidget) AddChild(c Widget, manager WidgetManager) {
-	m.children.Add(c)
+func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
+	w.children.Add(c)
 	pr := PrIf(false)
-	pr("adding widget to container:", INDENT, m)
+	pr("adding widget to container:", INDENT, w)
 	cell := GridCell{
 		Width: manager.pendingColumns,
 	}
-	if m.cells.NonEmpty() {
-		c := m.cells.Last()
+	if w.cells.NonEmpty() {
+		c := w.cells.Last()
 		cell.Location = IPointWith(c.Location.X+c.Width, c.Location.Y)
 	}
 	if cell.Location.X+cell.Width > MaxColumns {
 		cell.Location = IPointWith(0, cell.Location.Y+1)
-		Todo("add support for cell heights > 1")
+		Todo("!add support for cell heights > 1")
 	}
-	m.cells.Add(cell)
+	w.cells.Add(cell)
 }
 
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
