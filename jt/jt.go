@@ -11,8 +11,6 @@ import (
 	"testing"
 )
 
-var _ = Pr
-
 func determineUnittestFilename(location string) string {
 	var result string
 	for {
@@ -37,36 +35,36 @@ func determineUnittestFilename(location string) string {
 
 var unitTestCounter atomic.Int32
 
-func auxNew(t testing.TB) *J {
+func auxNew(t testing.TB) JTest {
 
 	// Ideally we could determine ahead of time how many unit tests are being run in the current session;
 	// but there doesn't seem to be a way to do that.  Instead, turn on verbosity iff this is the first
-	// J object being constructed.
+	// JTestStruct object being constructed.
 
 	var testNumber = unitTestCounter.Add(1)
 
-	return &J{
+	return &JTestStruct{
 		TB:       t,
 		Filename: determineUnittestFilename(CallerLocation(2)),
 		verbose:  testNumber == 1,
 	}
 }
 
-func New(t testing.TB) *J {
+func New(t testing.TB) JTest {
 	return auxNew(t)
 }
 
 // Deprecated: this constructor will cause the old hash code to be thrown out
 //
 //goland:noinspection GoUnusedExportedFunction
-func Newz(t testing.TB) *J {
+func Newz(t testing.TB) JTest {
 	r := auxNew(t)
 	r.verbose = true
 	r.InvalidateOldHash = true
 	return r
 }
 
-type J struct {
+type JTestStruct struct {
 	testing.TB
 	Filename           string
 	verbose            bool
@@ -80,13 +78,14 @@ type J struct {
 	randSeed           int
 	referenceDirCached Path
 }
+type JTest = *JTestStruct
 
-func (j *J) Verbose() bool {
+func (j JTest) Verbose() bool {
 	return j.verbose
 }
 
 // Get the base name of the test, which is the name of the unit test with the suffix 'Test' removed
-func (j *J) BaseName() string {
+func (j JTest) BaseName() string {
 	if Empty(j.baseNameCached) {
 		var testName = j.TB.Name()
 		var baseName, found = strings.CutPrefix(testName, "Test")
@@ -96,7 +95,7 @@ func (j *J) BaseName() string {
 	return j.baseNameCached
 }
 
-func (j *J) GetUnitTestDir() Path {
+func (j JTest) GetUnitTestDir() Path {
 	if j.unitTestDir.Empty() {
 		var dir = j.GetModuleDir().JoinM("unit_test")
 		dir.MkDirsM()
@@ -105,7 +104,7 @@ func (j *J) GetUnitTestDir() Path {
 	return j.unitTestDir
 }
 
-func (j *J) getGeneratedDir() Path {
+func (j JTest) getGeneratedDir() Path {
 	if j.generatedDir.Empty() {
 		var genDir = j.GetUnitTestDir().JoinM("generated")
 		genDir.MkDirsM()
@@ -114,7 +113,7 @@ func (j *J) getGeneratedDir() Path {
 	return j.generatedDir
 }
 
-func (j *J) GetTestResultsDir() Path {
+func (j JTest) GetTestResultsDir() Path {
 	if j.testResultsDir.Empty() {
 		var dir = j.getGeneratedDir().JoinM(j.Filename + "/" + j.BaseName())
 		// Delete any existing contents of this directory
@@ -126,11 +125,11 @@ func (j *J) GetTestResultsDir() Path {
 	return j.testResultsDir
 }
 
-func (j *J) SetVerbose() {
+func (j JTest) SetVerbose() {
 	j.verbose = true
 }
 
-func (j *J) GetModuleDir() Path {
+func (j JTest) GetModuleDir() Path {
 	if j.moduleDir.Empty() {
 		var path, err = AscendToDirectoryContainingFile("", "go.mod")
 		CheckOk(err)
@@ -139,18 +138,18 @@ func (j *J) GetModuleDir() Path {
 	return j.moduleDir
 }
 
-func (j *J) Log(message ...any) {
+func (j JTest) Log(message ...any) {
 	if j.Verbose() {
 		Pr(message...)
 	}
 }
 
-func (j *J) GenerateMessage(message ...any) {
+func (j JTest) GenerateMessage(message ...any) {
 	var text = ToString(message...)
 	j.generateMessageTo("message.txt", text)
 }
 
-func (j *J) generateMessageTo(filename string, content string) {
+func (j JTest) generateMessageTo(filename string, content string) {
 	if j.Verbose() {
 		var q strings.Builder
 		for _, s := range strings.Split(content, "\n") {
@@ -167,7 +166,7 @@ func (j *J) generateMessageTo(filename string, content string) {
 	path.WriteStringM(content)
 }
 
-func (j *J) AssertMessage(message ...any) {
+func (j JTest) AssertMessage(message ...any) {
 	j.generateMessageTo("message.txt", ToString(message...))
 	j.AssertGenerated()
 }
@@ -190,7 +189,7 @@ func HashOfBytes(b []byte) int32 {
 }
 
 // Construct hash of generated directory, and verify it has the expected value.
-func (j *J) AssertGenerated() {
+func (j JTest) AssertGenerated() {
 
 	var jsonMap = DirSummary(j.GetTestResultsDir())
 	var currentHash = HashOfJSMap(jsonMap)
@@ -206,12 +205,12 @@ func (j *J) AssertGenerated() {
 	j.saveTestResults()
 }
 
-func (j *J) FailWithMessage(prefix string, message ...any) {
+func (j JTest) FailWithMessage(prefix string, message ...any) {
 	Pr(JoinElementToList(prefix, message))
 	j.Fail()
 }
 
-func (j *J) AssertTrue(value bool, message ...any) bool {
+func (j JTest) AssertTrue(value bool, message ...any) bool {
 	if !value {
 		j.FailWithMessage("Expression is not true:", message...)
 	}
@@ -219,7 +218,7 @@ func (j *J) AssertTrue(value bool, message ...any) bool {
 }
 
 // True asserts that the specified value is true.
-func (j *J) AssertFalse(value bool, message ...any) bool {
+func (j JTest) AssertFalse(value bool, message ...any) bool {
 	if value {
 		j.FailWithMessage("Expression is not false:", message...)
 	}
@@ -249,7 +248,7 @@ func DirSummary(dir Path) JSMap {
 }
 
 // Display diff of generated directory and its reference version
-func (j *J) showDiffs() {
+func (j JTest) showDiffs() {
 
 	var refDir = j.referenceDir()
 	if !refDir.IsDir() {
@@ -323,13 +322,13 @@ func makeSysCall(c []string) (string, error) {
 	return strout, err
 }
 
-func (j *J) Seed(seed int) *J {
+func (j JTest) Seed(seed int) JTest {
 	j.randSeed = seed
 	j.rand = nil
 	return j
 }
 
-func (j *J) Rand() *rand.Rand {
+func (j JTest) Rand() *rand.Rand {
 	if j.rand == nil {
 		if j.randSeed == 0 {
 			j.randSeed = 1965
@@ -343,7 +342,7 @@ func (j *J) Rand() *rand.Rand {
 // is assumed to be relative to the test's results directory.
 // The jsmap has keys representing files or directories.  If the value is a string, it generates a random text file;
 // and if it is a jsmap, it generates a directory recursively.
-func (j *J) GenerateSubdirs(target Path, jsmap JSMap) {
+func (j JTest) GenerateSubdirs(target Path, jsmap JSMap) {
 	var dir Path
 	if target.IsAbs() {
 		dir = target
@@ -353,7 +352,7 @@ func (j *J) GenerateSubdirs(target Path, jsmap JSMap) {
 	j.auxGenDir(dir, jsmap)
 }
 
-func (j *J) auxGenDir(dir Path, jsmap JSMap) {
+func (j JTest) auxGenDir(dir Path, jsmap JSMap) {
 	dir.MkDirsM()
 	for _, entry := range jsmap.Entries() {
 		key := entry.Key
@@ -369,7 +368,7 @@ func (j *J) auxGenDir(dir Path, jsmap JSMap) {
 	}
 }
 
-func (j *J) referenceDir() Path {
+func (j JTest) referenceDir() Path {
 	if j.referenceDirCached.Empty() {
 		var g = j.GetTestResultsDir()
 		j.referenceDirCached = g.Parent().JoinM(g.Base() + "_REF")
@@ -387,7 +386,7 @@ func (j *J) referenceDir() Path {
  * 2) Update the hash code of the directory, if it differs from the previous
  * value (or no previous value exists).
  */
-func (j *J) saveTestResults() {
+func (j JTest) saveTestResults() {
 
 	// If we're going to replace the hash in any case, delete any existing reference directory,
 	// since its old contents may correspond to an older hash code

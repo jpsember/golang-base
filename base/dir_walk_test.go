@@ -10,7 +10,7 @@ import (
 var _ = Pr
 var _ = JSFalse
 
-func sampleDir(j *jt.J) Path {
+func sampleDir(j jt.JTest) Path {
 	return j.GetUnitTestDir().JoinM("sample_dir")
 }
 
@@ -29,13 +29,13 @@ func TestDirWalk(t *testing.T) {
 	assertWalk(j, w)
 }
 
-func sampleWalker(j *jt.J) *DirWalk {
+func sampleWalker(j jt.JTest) *DirWalk {
 	var w = NewDirWalk(sampleDir(j))
 	w.SetVerbose(j.Verbose())
 	return w
 }
 
-func assertWalk(j *jt.J, w *DirWalk) {
+func assertWalk(j jt.JTest, w *DirWalk) {
 	var m = NewJSMap()
 	for _, x := range w.FilesRelative() {
 		m.PutNumbered(x.String())

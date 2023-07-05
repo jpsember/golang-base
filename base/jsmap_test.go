@@ -110,7 +110,7 @@ func TestBadInput3(t *testing.T) {
 	j.AssertMessage(p.Error)
 }
 
-func corrupt(j *jt.J, s string) string {
+func corrupt(j jt.JTest, s string) string {
 	var b = []byte(s)
 	i := j.Rand().Intn(len(b))
 	k := j.Rand().Intn(len(newBytes))

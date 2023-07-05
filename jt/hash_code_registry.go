@@ -20,7 +20,7 @@ type HashCodeRegistry struct {
 // Get registry for a test case, constructing one if necessary
 //
 // Must be thread safe
-func (j *J) registry() *HashCodeRegistry {
+func (j JTest) registry() *HashCodeRegistry {
 	var key = j.Filename
 	mutex.RLock()
 	var registry = sClassesMap[key]
@@ -38,14 +38,14 @@ func (j *J) registry() *HashCodeRegistry {
 	return registry
 }
 
-func (r *HashCodeRegistry) file(j *J) Path {
+func (r *HashCodeRegistry) file(j JTest) Path {
 	if r.registryFileCached.Empty() {
 		r.registryFileCached = r.unitTestDirectory(j).JoinM(strings.ReplaceAll(r.Key, ".", "_") + ".json")
 	}
 	return r.registryFileCached
 }
 
-func (r *HashCodeRegistry) unitTestDirectory(j *J) Path {
+func (r *HashCodeRegistry) unitTestDirectory(j JTest) Path {
 	if r.unitTestDirCached.Empty() {
 		path := j.GetModuleDir().JoinM("unit_test")
 		path.MkDirsM()
@@ -54,7 +54,7 @@ func (r *HashCodeRegistry) unitTestDirectory(j *J) Path {
 	return r.unitTestDirCached
 }
 
-func (r *HashCodeRegistry) VerifyHash(j *J, currentHash int32, invalidateOldHash bool) bool {
+func (r *HashCodeRegistry) VerifyHash(j JTest, currentHash int32, invalidateOldHash bool) bool {
 	testName := j.BaseName()
 	var expectedHash = r.Map.OptInt32(testName, 0)
 	if expectedHash == 0 || invalidateOldHash {
@@ -68,7 +68,7 @@ func (r *HashCodeRegistry) VerifyHash(j *J, currentHash int32, invalidateOldHash
 	return currentHash == expectedHash
 }
 
-func (r *HashCodeRegistry) write(j *J) {
+func (r *HashCodeRegistry) write(j JTest) {
 	var path = r.file(j)
 	var content = r.Map.String()
 	path.WriteStringM(content)
