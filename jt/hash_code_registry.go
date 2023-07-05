@@ -13,8 +13,8 @@ var _ = Pr
 var mutex sync.RWMutex
 
 type HashCodeRegistry struct {
-	UnitTest           *J
-	UnitTestName       string
+	//UnitTest           *J
+	//UnitTestName       string
 	Key                string
 	Map                *JSMapStruct
 	registryFileCached Path
@@ -30,62 +30,59 @@ func (j *J) registry() *HashCodeRegistry {
 	Todo("If multiple threads are using the same registry, that's a problem")
 	mutex.Lock()
 	var registry = sClassesMap[key]
-	if registry != nil {
-		registry.UnitTest = j
-	}
 
 	if registry == nil {
 		registry = new(HashCodeRegistry)
 		registry.Key = key
 
 		// Don't let other threads modify the map while we are modifying it or creating the registry's jsmap
-		registry.UnitTest = j
 		sClassesMap[key] = registry
 		// See if there is a file it was saved to
-		registry.Map = JSMapFromFileIfExistsM(registry.file())
+		registry.Map = JSMapFromFileIfExistsM(registry.file(j))
 
 	}
 
-	// Copy some values from the unit test to the registry... though this duplication has already caused one
-	// tricky bug
-	registry.UnitTest = j
-	registry.UnitTestName = strings.TrimPrefix(j.Name(), "Test")
+	//// Copy some values from the unit test to the registry... though this duplication has already caused one
+	//// tricky bug
+	//registry.UnitTest = j
+	//registry.UnitTestName = strings.TrimPrefix(j.Name(), "Test")
 
 	mutex.Unlock()
 	return registry
 }
 
-func (r *HashCodeRegistry) file() Path {
+func (r *HashCodeRegistry) file(j *J) Path {
 	if r.registryFileCached.Empty() {
-		r.registryFileCached = r.unitTestDirectory().JoinM(strings.ReplaceAll(r.Key, ".", "_") + ".json")
+		r.registryFileCached = r.unitTestDirectory(j).JoinM(strings.ReplaceAll(r.Key, ".", "_") + ".json")
 	}
 	return r.registryFileCached
 }
 
-func (r *HashCodeRegistry) unitTestDirectory() Path {
+func (r *HashCodeRegistry) unitTestDirectory(j *J) Path {
 	if r.unitTestDirCached.Empty() {
-		path := r.UnitTest.GetModuleDir().JoinM("unit_test")
+		path := j.GetModuleDir().JoinM("unit_test")
 		path.MkDirsM()
 		r.unitTestDirCached = path
 	}
 	return r.unitTestDirCached
 }
 
-func (r *HashCodeRegistry) VerifyHash(testName string, currentHash int32, invalidateOldHash bool) bool {
+func (r *HashCodeRegistry) VerifyHash(j *J, testName string, currentHash int32, invalidateOldHash bool) bool {
+	Todo("redundant to include testName as well as J")
 	var expectedHash = r.Map.OptInt32(testName, 0)
 	if expectedHash == 0 || invalidateOldHash {
 		// Don't let other threads modify or write the map
 		mutex.Lock()
 		r.Map.Put(testName, currentHash)
-		r.write()
+		r.write(j)
 		mutex.Unlock()
 		expectedHash = currentHash
 	}
 	return currentHash == expectedHash
 }
 
-func (r *HashCodeRegistry) write() {
-	var path = r.file()
+func (r *HashCodeRegistry) write(j *J) {
+	var path = r.file(j)
 	var content = r.Map.String()
 	path.WriteStringM(content)
 }
@@ -102,25 +99,25 @@ var sClassesMap = make(map[string]*HashCodeRegistry)
  * 2) Update the hash code of the directory, if it differs from the previous
  * value (or no previous value exists).
  */
-func (r *HashCodeRegistry) SaveTestResults() {
+func (r *HashCodeRegistry) SaveTestResults(j *J) {
 	// If we're going to replace the hash in any case, delete any existing reference directory,
 	// since its old contents may correspond to an older hash code
-	if r.UnitTest.InvalidateOldHash {
-		r.referenceDir().DeleteDirectoryM("/generated/")
+	if j.InvalidateOldHash {
+		r.referenceDir(j).DeleteDirectoryM("/generated/")
 	}
 
-	var res = r.UnitTest.GetTestResultsDir()
+	var res = j.GetTestResultsDir()
 
 	if Alert("bad names") {
-		testName := r.UnitTestName
+		testName := j.BaseName()
 		Pr("testName:", testName)
 	}
 
-	Pr(r.referenceDir().Info("SaveTestResults, reference dir"))
+	Pr(r.referenceDir(j).Info("SaveTestResults, reference dir"))
 
-	if !r.referenceDir().Exists() {
+	if !r.referenceDir(j).Exists() {
 		Todo("This sometimes fails due to our unit tests not being threadsafe")
-		err := res.MoveTo(r.referenceDir())
+		err := res.MoveTo(r.referenceDir(j))
 		CheckOk(err)
 	} else {
 		Pr(res.Info("SaveTestResults, reference dir already exists"))
@@ -129,9 +126,10 @@ func (r *HashCodeRegistry) SaveTestResults() {
 	}
 }
 
-func (r *HashCodeRegistry) referenceDir() Path {
+func (r *HashCodeRegistry) referenceDir(j *J) Path {
+	Todo("reference dir, other things should be part of J")
 	if r.referenceDirCached.Empty() {
-		var g = r.UnitTest.GetTestResultsDir()
+		var g = j.GetTestResultsDir()
 		r.referenceDirCached = g.Parent().JoinM(g.Base() + "_REF")
 	}
 	return r.referenceDirCached
