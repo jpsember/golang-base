@@ -2,7 +2,6 @@ package base
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"reflect"
 	"regexp"
@@ -334,7 +333,7 @@ func HasKey[K comparable, V any](m map[K]V, key K) bool {
 // ---------------------------------------------------------------------------------------
 
 type DataClass interface {
-	fmt.Stringer
+	String() string
 	ToJson() JSEntity
 	Parse(source JSEntity) DataClass
 }

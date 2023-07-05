@@ -46,7 +46,7 @@ func (js JSList) AsJSList() JSList {
 }
 
 // Implements the fmt.Stringer interface.  By default, we perform
-// a pretty print of the JSListStruct.  This simplifies a lot of things.
+// a pretty print of the JSList.  This simplifies a lot of things.
 func (js JSList) String() string {
 	return PrintJSEntity(js, true)
 }

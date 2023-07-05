@@ -31,13 +31,13 @@ func determineUnittestFilename(location string) string {
 		result = s2
 		break
 	}
-	CheckState(NonEmpty(result), "failed parsing:", location)
+	CheckState(NonEmpty(result), "failed determining unit test filename for:", location)
 	return result
 }
 
 var unitTestCounter atomic.Int32
 
-func New(t testing.TB) *J {
+func auxNew(t testing.TB) *J {
 
 	// Ideally we could determine ahead of time how many unit tests are being run in the current session;
 	// but there doesn't seem to be a way to do that.  Instead, turn on verbosity iff this is the first
@@ -47,35 +47,38 @@ func New(t testing.TB) *J {
 
 	return &J{
 		TB:       t,
-		Filename: determineUnittestFilename(CallerLocation(1)),
+		Filename: determineUnittestFilename(CallerLocation(2)),
 		verbose:  testNumber == 1,
 	}
+}
+
+func New(t testing.TB) *J {
+	return auxNew(t)
 }
 
 // Deprecated: this constructor will cause the old hash code to be thrown out
 //
 //goland:noinspection GoUnusedExportedFunction
 func Newz(t testing.TB) *J {
-	return &J{
-		TB:                t,
-		Filename:          determineUnittestFilename(CallerLocation(1)),
-		InvalidateOldHash: true,
-		verbose:           true,
-	}
+	r := auxNew(t)
+	r.verbose = true
+	r.InvalidateOldHash = true
+	return r
 }
 
 type J struct {
 	testing.TB
-	Filename          string
-	verbose           bool
-	testResultsDir    Path
-	unitTestDir       Path
-	moduleDir         Path
-	generatedDir      Path
-	baseNameCached    string
-	InvalidateOldHash bool
-	rand              *rand.Rand
-	randSeed          int
+	Filename           string
+	verbose            bool
+	testResultsDir     Path
+	unitTestDir        Path
+	moduleDir          Path
+	generatedDir       Path
+	baseNameCached     string
+	InvalidateOldHash  bool
+	rand               *rand.Rand
+	randSeed           int
+	referenceDirCached Path
 }
 
 func (j *J) Verbose() bool {
@@ -193,14 +196,14 @@ func (j *J) AssertGenerated() {
 	var currentHash = HashOfJSMap(jsonMap)
 	var registry = j.registry()
 
-	if !registry.VerifyHash(j.Name(), currentHash, j.InvalidateOldHash) {
+	if !registry.VerifyHash(j, currentHash, j.InvalidateOldHash) {
 		var summary = ToString("\nUnexpected hash value for directory contents:", CR)
 		Pr(summary)
 		j.showDiffs()
 		j.Fail()
 		return
 	}
-	registry.SaveTestResults()
+	j.saveTestResults()
 }
 
 func (j *J) FailWithMessage(prefix string, message ...any) {
@@ -248,7 +251,7 @@ func DirSummary(dir Path) JSMap {
 // Display diff of generated directory and its reference version
 func (j *J) showDiffs() {
 
-	var refDir = j.registry().referenceDir()
+	var refDir = j.referenceDir()
 	if !refDir.IsDir() {
 		return
 	}
@@ -363,5 +366,42 @@ func (j *J) auxGenDir(dir Path, jsmap JSMap) {
 			text := RandomText(j.Rand(), 80, false) + "\n"
 			targ.WriteStringM(text)
 		}
+	}
+}
+
+func (j *J) referenceDir() Path {
+	if j.referenceDirCached.Empty() {
+		var g = j.GetTestResultsDir()
+		j.referenceDirCached = g.Parent().JoinM(g.Base() + "_REF")
+	}
+	return j.referenceDirCached
+}
+
+/**
+ * Called when the generated directory's hash has been successfully verified.
+ *
+ * 1) If a 'reference' copy of the directory doesn't exist, move generated
+ * directory as it; otherwise, delete the generated directory (since it is the
+ * same as the reference copy)
+ *
+ * 2) Update the hash code of the directory, if it differs from the previous
+ * value (or no previous value exists).
+ */
+func (j *J) saveTestResults() {
+
+	// If we're going to replace the hash in any case, delete any existing reference directory,
+	// since its old contents may correspond to an older hash code
+	if j.InvalidateOldHash {
+		j.referenceDir().DeleteDirectoryM("/generated/")
+	}
+
+	var res = j.GetTestResultsDir()
+
+	if !j.referenceDir().Exists() {
+		err := res.MoveTo(j.referenceDir())
+		CheckOk(err)
+	} else {
+		err := res.DeleteDirectory("unit_test")
+		CheckOk(err)
 	}
 }

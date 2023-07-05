@@ -144,3 +144,12 @@ func TestGenerateDir(t *testing.T) {
 
 	j.AssertGenerated()
 }
+
+func TestBadInput4(t *testing.T) {
+	j := jt.New(t)
+	b := `{"alpha" : 42, "bravo" }`
+	var p JSONParser
+	p.WithText(b)
+	p.ParseMap()
+	j.AssertMessage(p.Error)
+}

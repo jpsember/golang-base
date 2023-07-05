@@ -1,6 +1,5 @@
-{ "TestAscendToDirectoryContainingFile" : 9584,
-                          "TestDirWalk" : 6315,
-                  "TestIncludePrefixes" : 9899,
-                        "TestSampleDir" : 6315,
-            "TestSampleDirWithDirNames" : 1799
+{               "DirWalk" : 6315,
+        "IncludePrefixes" : 9899,
+              "SampleDir" : 6315,
+  "SampleDirWithDirNames" : 1799
 }
