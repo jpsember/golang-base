@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	. "github.com/jpsember/golang-base/base"
 	"os"
 	"strconv"
@@ -141,7 +140,7 @@ func (a *App) hasMultipleOperations() bool {
 func (a *App) Start() {
 	a.auxStart()
 	if a.error() {
-		fmt.Fprintln(os.Stderr, "*** "+ToString(a.errorMessage...))
+		println("*** " + ToString(a.errorMessage...))
 		os.Exit(1)
 	}
 }
@@ -163,13 +162,14 @@ func (a *App) auxStart() {
 
 	var c = a.CmdLineArgs()
 	c.Parse(args)
+
 	if a.handleCmdLineArgsError() {
 		return
 	}
 
 	if c.Get(ClIDE) {
 		// Clear the console
-		fmt.Print("\033c")
+		println("\033c")
 	}
 
 	// If we showed the help, exit

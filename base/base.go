@@ -508,5 +508,6 @@ func CurrentTimeMs() int64 {
 }
 
 func SleepMs(ms int) {
-	time.Sleep(time.Millisecond * time.Duration(ms))
+	d := time.Millisecond * time.Duration(ms)
+	time.Sleep(d)
 }

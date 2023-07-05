@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	. "github.com/jpsember/golang-base/base"
 	"strconv"
 	"strings"
@@ -118,7 +117,7 @@ func (c *CmdLineArgs) Help() {
 	}
 
 	c.helpShown = true
-	fmt.Println(sb.String())
+	println(sb.String())
 }
 
 // Process the unpacked list of options and values, assigning values to the
