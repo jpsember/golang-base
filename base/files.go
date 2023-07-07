@@ -174,3 +174,21 @@ func FindProjectDir() (Path, error) {
 var cachedProjectDirFlag bool
 var cachedProjectDir Path
 var cachedProjectDirErr error
+
+type Closeable interface {
+	Close() error
+}
+
+func ClosePeacefully[T Closeable](c T) T {
+	if c != nil {
+		err := c.Close()
+		if err != nil {
+			Pr(CallerLocation(1), "*** Problem closing;", err)
+		}
+		// See https://stackoverflow.com/questions/70585852
+		var result T
+		c = result
+	}
+	return c
+}
+
