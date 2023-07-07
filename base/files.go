@@ -180,7 +180,7 @@ type Closeable interface {
 }
 
 func ClosePeacefully[T Closeable](c T) T {
-	if c != nil {
+	{
 		err := c.Close()
 		if err != nil {
 			Pr(CallerLocation(1), "*** Problem closing;", err)
@@ -191,4 +191,3 @@ func ClosePeacefully[T Closeable](c T) T {
 	}
 	return c
 }
-
