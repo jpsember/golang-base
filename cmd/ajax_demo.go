@@ -184,20 +184,20 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	m.Col(8)
 	m.Listener(birdListener)
-	m.AddText("bird")
+	m.AddInput("bird")
 	m.Col(4)
-	m.AddLabel("x52")
+	m.Id("x52").AddText()
 
 	m.Col(8)
-	m.AddLabel("x54")
+	m.Id("x54").AddText()
 	m.Col(4)
 	m.Listener(zebraListener)
-	m.AddText("zebra")
+	m.AddInput("zebra")
 
 	m.Col(4)
-	m.AddLabel("x57")
-	m.AddLabel("x58")
-	m.AddLabel("x59")
+	m.Id("x57").AddText()
+	m.Id("x58").AddText()
+	m.Id("x59").AddText()
 
 	m.Close()
 

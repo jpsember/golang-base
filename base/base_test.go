@@ -19,7 +19,8 @@ func TestPanics(t *testing.T) {
 	TestPanicMessageLog.Reset()
 
 	CheckArg(false, s)
-	CheckNotNil(nil, s)
+	var str *string
+	CheckNotNil(str, s)
 	NotImplemented(s)
 	NotSupported(s)
 	Halt(s)
@@ -27,4 +28,50 @@ func TestPanics(t *testing.T) {
 	CheckOk(ok, s)
 
 	j.AssertMessage(TestPanicMessageLog.String())
+}
+
+const minute = 60 * 1000
+const hour = minute * 60
+const day = hour * 24
+
+func TestReportDelays(t *testing.T) {
+	j := jt.New(t)
+
+	SetTestAlertInfoState(true)
+
+	//s := TestPanicSubstring
+	TestPanicMessageLog.Reset()
+
+	Alert("Normal message")
+	Alert("-This shouldn't appear")
+
+	TestAlertDuration = hour * 20
+	Alert("!This should not appear, less than a day")
+	TestAlertDuration = hour * 25
+	Alert("!This should appear, more than a day")
+
+	TestAlertDuration = day * 29
+	Alert("?This should not appear, less than a month")
+	TestAlertDuration = day * 32
+	Alert("?This should appear, more than a month")
+
+	for i := 0; i < 10; i++ {
+		Alert("#4 This should appear four times, #4")
+	}
+
+	for i := 0; i < 10; i++ {
+		Alert("#0 This shouldn't appear at all, #0")
+	}
+
+	f1("this is an alert without a skip")
+	f1("<1 this is an alert with a skip of 1")
+
+	TestAlertDuration = 0
+	SetTestAlertInfoState(false)
+
+	j.AssertMessage(TestPanicMessageLog.String())
+}
+
+func f1(key string) {
+	Alert(key)
 }

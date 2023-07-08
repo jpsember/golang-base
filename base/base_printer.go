@@ -15,7 +15,7 @@ func Pr(messages ...any) {
 
 func PrIf(active bool) func(messages ...any) {
 	if active {
-		AlertWithSkip(1, "Printing is active")
+		Alert("1< Printing is active")
 		return Pr
 	}
 	return PrNull

@@ -72,21 +72,30 @@ func Halt(message ...any) {
 	}
 }
 
-//goland:noinspection GoUnusedExportedFunction
 func NotSupported(message ...any) {
 	auxPanic(1, "Not supported", message...)
 }
 
-//goland:noinspection GoUnusedExportedFunction
 func NotImplemented(message ...any) {
 	auxPanic(1, "Not implemented", message...)
 }
 
-func CheckNotNil(value any, message ...any) any {
-	if value == nil {
+func IsNil(value any) bool {
+	return value == nil
+}
+
+func CheckNotNil[T any](value T, message ...any) T {
+	if IsNil(value) {
 		auxPanic(1, "Argument is nil", message...)
 	}
 	return value
+}
+
+func CheckNonEmpty(s string, message ...any) string {
+	if s == "" {
+		BadArgWithSkip(1, JoinElementToList("string is empty;", message))
+	}
+	return s
 }
 
 func CheckArg(valid bool, message ...any) bool {
@@ -147,7 +156,10 @@ func CheckOk(err error, message ...any) {
 
 const TestPanicSubstring = "!~~~~~!"
 
+var TestAlertDuration int64
+
 // Panic if an error code is nonzero.
+// Deprecated.  Use skip expression "<\d+"
 func CheckOkWithSkip(skipCount int, err error, message ...any) {
 	if err != nil {
 		auxPanic(skipCount+1, "Error returned", JoinElementToList(err.Error(), message)...)
@@ -190,13 +202,13 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	debugLock.Unlock()
 
 	// If we are never to print this alert, exit now
-	if info.priority == 0 {
+	if info.maxPerSession == 0 {
 		return
 	}
 
 	// If there's a multi-session priority value, process it
 	//
-	if info.priority > 0 {
+	if info.delayMs > 0 {
 		debugLock.Lock()
 		flag := processAlertForMultipleSessions(info)
 		debugLock.Unlock()
@@ -211,7 +223,7 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	}
 
 	var output strings.Builder
-	locn := CallerLocation(skipCount + 1)
+	locn := CallerLocation(skipCount + info.skipFactor + 1)
 	output.WriteString(locn)
 	output.WriteString(" ***")
 	output.WriteString(" ")
@@ -222,7 +234,13 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	} else {
 		output.WriteString(info.key)
 	}
-	fmt.Println(output.String())
+
+	text := output.String()
+	if !testAlertState {
+		fmt.Println(text)
+	} else {
+		TestPanicMessageLog.WriteString(text + "\n")
+	}
 }
 
 func Todo(key string, message ...any) bool {
@@ -233,13 +251,7 @@ func Todo(key string, message ...any) bool {
 // Print an Alert if an Alert with its key hasn't already been printed.
 // The key is printed, along with the additional message components
 func Alert(key string, additionalMessage ...any) bool {
-	return AlertWithSkip(1, key, additionalMessage...)
-}
-
-// Print an Alert if an Alert with its key hasn't already been printed.
-// The key is printed, along with the additional message components
-func AlertWithSkip(skipCount int, key string, additionalMessage ...any) bool {
-	auxAlert(skipCount+1, key, "WARNING", additionalMessage...)
+	auxAlert(1, key, "WARNING", additionalMessage...)
 	return true
 }
 
@@ -389,70 +401,87 @@ func IntToString(value int) string {
 // Alerts with priorities
 // ------------------------------------------------------------------------------------
 
+func SetTestAlertInfoState(state bool) {
+	if state {
+		testAlertState = true
+		priorityAlertMap = NewJSMap()
+	} else {
+		testAlertState = false
+		priorityAlertMap = nil
+	}
+}
+
+var testAlertState bool
+
 var priorityAlertPersistPath Path
 var priorityAlertMap JSMap
 
 type alertInfo struct {
-	key           string
-	priority      int
+	key           string // The string used to access the report count for this alert
+	delayMs       int64
 	maxPerSession int
+	skipFactor    int
 }
 
-var alertPattern = AssertNoError(regexp.Compile(`^(!|\?|\d+\:|\#\d+\:)?\:?(.+)$`))
-
 // Parse an alert key into an alertInfo structure.
+// Can contain zero or more prefixes of the form:
 //
-// # Can contain an optional prefix of the form
-//
-// !message       		Print once, every time the program is run
-// ?message       		Never print
-// <number>:message   	If 0, never print; else, print once, if sufficient time elapsed since last time program was run
-// #<number>            Print n times, every time program is run
-//
-// .
+// -		       		Never print
+// !					Print about once per day
+// ?		       		Print about once per month
+// #[0-9]+              Print n times, every time program is run
+// <[0-9]+              Skip first n entries in stack trace
 func extractAlertInfo(key string) alertInfo {
+
+	const minute = 60 * 1000
+	const hour = minute * 60
+
 	info := alertInfo{
-		priority:      -1,
 		maxPerSession: 1,
 	}
-	groups := alertPattern.FindStringSubmatch(key)
-	if groups == nil {
-		BadArg("failed to parse alert message:", Quoted(key))
-	}
-
-	prefix := strings.TrimSuffix(groups[1], ":")
-	info.key = groups[2]
-
-	if prefix != "" {
-		switch prefix[0] {
-		case '!':
-			info.priority = 3
-			info.maxPerSession = 1
-		case '?':
-			info.priority = 0
+	cursor := 0
+	lkey := len(key)
+	for cursor < lkey {
+		ch := key[cursor]
+		cursor++
+		if ch == '-' {
 			info.maxPerSession = 0
-		case '#':
-			info.maxPerSession = ParseIntM(prefix[1:])
-		default:
-			info.priority = ParseIntM(prefix)
+			break
+		}
+		if ch == '!' {
+			info.delayMs = hour * 24
+		} else if ch == '?' {
+			info.delayMs = hour * 24 * 31
+		} else if ch == '#' {
+			cursor, info.maxPerSession = extractInt(key, cursor)
+		} else if ch == '<' {
+			var sf int
+			cursor, sf = extractInt(key, cursor)
+			info.skipFactor += sf
+		} else if ch == ' ' {
+			// ignore leading spaces
+		} else {
+			cursor--
+			break
 		}
 	}
-
+	info.key = key[cursor:]
 	return info
 }
 
-const minute = 60 * 1000
-const hour = minute * 60
-
-var alertIntervals = []int64{
-	0,               // don't show even once
-	0,               // show only once
-	hour * 24 * 365, // repeat once per year
-	hour * 24 * 31,  // month
-	hour * 24 * 7,   // week
-	hour * 24,       // day
-	minute * 30,     // half hour
-	minute * 5,      // five minutes
+func extractInt(s string, cursor int) (newCursor int, value int) {
+	sLen := len(s)
+	newCursor = cursor
+	value = 0
+	for newCursor < sLen {
+		ch := s[newCursor]
+		if ch < '0' || ch > '9' {
+			break
+		}
+		value = value*10 + (int)(ch-'0')
+		newCursor++
+	}
+	return
 }
 
 func processAlertForMultipleSessions(info alertInfo) bool {
@@ -476,30 +505,21 @@ func processAlertForMultipleSessions(info alertInfo) bool {
 	}
 
 	m := priorityAlertMap.OptMapOrEmpty(info.key)
-	existingPri := m.OptInt("p", -1)
-	if existingPri > info.priority {
-		return false
-	}
-	m.Put("p", info.priority)
-
-	lastReport := m.OptLong("r", 0)
-	index := MinInt(info.priority, len(alertIntervals)-1)
-	interval := alertIntervals[index]
-	if interval == 0 {
-		if lastReport != 0 {
-			return false
-		}
-	}
 	currTime := CurrentTimeMs()
-	elapsed := currTime - lastReport
+	elapsed := TestAlertDuration
+	if elapsed == 0 {
+		lastReport := m.OptLong("r", 0)
+		elapsed = currTime - lastReport
+	}
 	CheckArg(elapsed >= 0)
-	remaining := interval - elapsed
-	if remaining > 0 {
+	if elapsed < info.delayMs {
 		return false
 	}
 	m.Put("r", currTime)
 	priorityAlertMap.Put(info.key, m)
-	priorityAlertPersistPath.WriteStringM(priorityAlertMap.String())
+	if !testAlertState {
+		priorityAlertPersistPath.WriteStringM(priorityAlertMap.String())
+	}
 	return true
 }
 

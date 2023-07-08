@@ -22,7 +22,7 @@ type WidgetManagerObj struct {
 	mComboChoices               *Array[string]
 	mPendingBooleanDefaultValue bool
 	mPendingStringDefaultValue  string
-	mPendingLabel               string
+	pendingText                 string
 	mPendingTabTitle            string
 	mPendingFloatingPointFlag   bool
 	mPendingDefaultFloatValue   float64
@@ -31,6 +31,7 @@ type WidgetManagerObj struct {
 	parentStack                 *Array[ContainerWidget]
 	pendingSize                 int
 	pendingColumns              int
+	pendingId                   string
 }
 
 func NewWidgetManager() WidgetManager {
@@ -169,6 +170,22 @@ func (m WidgetManager) SetF(id string, v float64) float64 {
 }
 
 // ------------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------------------
+// Constructing widgets
+// ------------------------------------------------------------------------------------
+
+func (m WidgetManager) Id(id string) WidgetManager {
+	m.pendingId = id
+	return m
+}
+
+func (m WidgetManager) consumePendingId() string {
+	id := m.pendingId
+	CheckNonEmpty(id, "no pending id")
+	m.pendingId = ""
+	return id
+}
 
 var digitsExpr = Regexp(`^\d+$`)
 
@@ -323,7 +340,7 @@ func (m WidgetManager) LineCount(numLines int) WidgetManager {
 }
 
 func (m WidgetManager) addLabel(id string) WidgetManager {
-	text := m.ConsumePendingLabel()
+	text := m.consumePendingText()
 	Todo("addLabel", text)
 	//add(new LabelWidget(id, mPendingGravity, mLineCount, text, mPendingSize, mPendingMonospaced,
 	//    mPendingAlignment));
@@ -349,7 +366,7 @@ func (m WidgetManager) DefaultString(value string) WidgetManager {
 }
 
 func (m WidgetManager) Label(value string) WidgetManager {
-	m.mPendingLabel = value
+	m.pendingText = value
 	return m
 }
 
@@ -395,9 +412,9 @@ func (m WidgetManager) ConsumePendingFloatingPointFlag() bool {
 	return v
 }
 
-func (m WidgetManager) ConsumePendingLabel() string {
-	lbl := m.mPendingLabel
-	m.mPendingLabel = ""
+func (m WidgetManager) consumePendingText() string {
+	lbl := m.pendingText
+	m.pendingText = ""
 	return lbl
 }
 
@@ -433,7 +450,7 @@ func (m WidgetManager) clearPendingComponentFields() {
 	//verifyUsed(mComboChoices, "pending combo choices");
 	verifyUsed(m.mPendingDefaultIntValue == 0, "pendingDefaultIntValue")
 	verifyUsed(m.mPendingStringDefaultValue == "", "mPendingStringDefaultValue")
-	verifyUsed(m.mPendingLabel == "", "mPendingLabel ")
+	verifyUsed(m.pendingText == "", "mPendingLabel ")
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
 	verifyUsed(m.pendingListener == nil, "pendingListener")
 	verifyUsed(m.pendingSize == 0, "pendingSize")
@@ -451,7 +468,7 @@ func (m WidgetManager) clearPendingComponentFields() {
 	m.mPendingDefaultIntValue = 0
 	m.mPendingBooleanDefaultValue = false
 	m.mPendingStringDefaultValue = ""
-	m.mPendingLabel = ""
+	m.pendingText = ""
 	m.mPendingFloatingPointFlag = false
 }
 
@@ -528,7 +545,7 @@ func (m WidgetManager) finish() WidgetManager {
 	return m
 }
 
-func (m WidgetManager) AddText(id string) WidgetManager {
+func (m WidgetManager) AddInput(id string) WidgetManager {
 	t := NewInputWidget(id, m.mPendingSize)
 	m.assignPendingListener(t)
 	//TextWidget t = new TextWidget(consumePendingListener(), id, consumePendingStringDefaultValue(),
@@ -612,16 +629,15 @@ func (m WidgetManager) AddHorzSpace() WidgetManager {
 //  return add(button);
 //}
 
-func (m WidgetManager) AddLabel(id string) WidgetManager {
-	text := m.ConsumePendingLabel()
+func (m WidgetManager) AddText() WidgetManager {
 	w := NewLabelWidget()
-	w.Id = id
+	w.Id = m.consumePendingId()
 	w.LineCount = m.mLineCount
-	w.Text = text
+	w.Text = m.consumePendingText()
 	w.Size = m.mPendingSize
 	w.Monospaced = m.mPendingMonospaced
 	w.Alignment = m.mPendingAlignment
-	m.Log("Adding label, id:", id)
+	m.Log("Adding label, id:", w.Id)
 	return m.Add(w)
 }
 
