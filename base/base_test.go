@@ -27,15 +27,17 @@ func TestPanics(t *testing.T) {
 	NotImplemented(s)
 	NotSupported(s)
 	Halt(s)
-	ok := Error(s)
+	ok := Error("this", "is", "an", "error", "message;")
 	CheckOk(ok, s)
+	nestedAssertions("<1 Nested assertions")
+	nestedAssertions2()
 
 	j.AssertMessage(TestPanicMessageLog.String())
 }
 
 // This test is very sensitive to line numbers; if this file changes, the hash might need
 // updating.
-func TestReportDelays(t *testing.T) {
+func TestAlerts(t *testing.T) {
 	j := jt.New(t)
 
 	SetTestAlertInfoState(true)
@@ -77,4 +79,19 @@ const day = hour * 24
 
 func f1(key string) {
 	Alert(key)
+}
+
+func nestedAssertions(s string) {
+	CheckArg(false, s)
+	var str *string
+	CheckNotNil(str, s)
+	NotImplemented(s)
+	NotSupported(s)
+	Halt(s)
+	ok := Error("This", "is", "an", "error", "message;")
+	CheckOk(ok, s)
+}
+func nestedAssertions2() {
+	const s = "<2 Nested assertions"
+	nestedAssertions(s)
 }

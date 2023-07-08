@@ -106,6 +106,7 @@ func CheckArg(valid bool, message ...any) bool {
 }
 
 // A skip count of 0 reports the immediate caller's location
+// Deprecated.  Use skip prefix instead.
 func BadArgWithSkip(skipCount int, message ...any) {
 	auxPanic(skipCount+1, "Bad argument", message...)
 }
@@ -114,17 +115,20 @@ func BadArg(message ...any) {
 	BadArgWithSkip(1, message...)
 }
 
+// Deprecated.  Use skip prefix instead.
 func BadStateWithSkip(skipCount int, message ...any) {
 	auxPanic(skipCount+1, "Bad state", message...)
 }
 
 func BadState(message ...any) {
-	BadStateWithSkip(4, message...)
+	auxPanic(4, "Bad state", message...)
+	//BadStateWithSkip(4, message...)
 }
 
 // Given a value and an error, make sure the error is nil, and return just the value
 func AssertNoError[X any](arg1 X, err error) X {
-	CheckOkWithSkip(1, err)
+	CheckOk(err, "<1")
+	//CheckOkWithSkip(1, err)
 	return arg1
 }
 
@@ -135,7 +139,9 @@ func CheckState(valid bool, message ...any) {
 }
 
 func preparePanicMessage(skipCount int, prefix string, message ...any) string {
-	return CallerLocation(skipCount+1) + " *** " + prefix + "! " + ToString(message...)
+	str := ToString(message...)
+	alertInfo := extractAlertInfo(str)
+	return CallerLocation(skipCount+1+alertInfo.skipFactor) + " *** " + prefix + "! " + alertInfo.key
 }
 
 func auxPanic(skipCount int, prefix string, message ...any) {
@@ -154,7 +160,10 @@ var TestAlertDuration int64
 
 // Panic if an error code is nonzero.
 func CheckOk(err error, message ...any) {
-	CheckOkWithSkip(1, err, message...)
+	if err != nil {
+		auxPanic(1, "Unexpected error", message...)
+	}
+	//CheckOkWithSkip(1, err, message...)
 }
 
 // Panic if an error code is nonzero.
