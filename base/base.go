@@ -63,8 +63,8 @@ func Die(message ...any) {
 }
 
 func Halt(message ...any) {
-	text := preparePanicMessage(1, "Halting", message)
-	if !strings.Contains(text, TestPanicSubstring) {
+	text := preparePanicMessage(1, "Halting", message...)
+	if !testAlertState {
 		Pr(text)
 		os.Exit(1)
 	} else {
@@ -139,24 +139,23 @@ func preparePanicMessage(skipCount int, prefix string, message ...any) string {
 }
 
 func auxPanic(skipCount int, prefix string, message ...any) {
-	msg := preparePanicMessage(skipCount+1, prefix, message)
-	if !strings.Contains(msg, TestPanicSubstring) {
+	msg := preparePanicMessage(skipCount+1, prefix, message...)
+	if !testAlertState {
 		panic(msg)
 	} else {
 		TestPanicMessageLog.WriteString(msg + "\n")
 	}
 }
 
+// True if we're performing unit tests on Alerts, Assertions
+var testAlertState bool
 var TestPanicMessageLog = strings.Builder{}
+var TestAlertDuration int64
 
 // Panic if an error code is nonzero.
 func CheckOk(err error, message ...any) {
 	CheckOkWithSkip(1, err, message...)
 }
-
-const TestPanicSubstring = "!~~~~~!"
-
-var TestAlertDuration int64
 
 // Panic if an error code is nonzero.
 // Deprecated.  Use skip expression "<\d+"
@@ -409,9 +408,8 @@ func SetTestAlertInfoState(state bool) {
 		testAlertState = false
 		priorityAlertMap = nil
 	}
+	TestAlertDuration = 0
 }
-
-var testAlertState bool
 
 var priorityAlertPersistPath Path
 var priorityAlertMap JSMap

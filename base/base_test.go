@@ -15,7 +15,10 @@ import (
 func TestPanics(t *testing.T) {
 	j := jt.New(t)
 
-	s := TestPanicSubstring
+	SetTestAlertInfoState(true)
+	defer SetTestAlertInfoState(false)
+
+	s := "Sample panic message"
 	TestPanicMessageLog.Reset()
 
 	CheckArg(false, s)
@@ -30,14 +33,13 @@ func TestPanics(t *testing.T) {
 	j.AssertMessage(TestPanicMessageLog.String())
 }
 
-const minute = 60 * 1000
-const hour = minute * 60
-const day = hour * 24
-
+// This test is very sensitive to line numbers; if this file changes, the hash might need
+// updating.
 func TestReportDelays(t *testing.T) {
 	j := jt.New(t)
 
 	SetTestAlertInfoState(true)
+	defer SetTestAlertInfoState(false)
 
 	//s := TestPanicSubstring
 	TestPanicMessageLog.Reset()
@@ -66,11 +68,12 @@ func TestReportDelays(t *testing.T) {
 	f1("this is an alert without a skip")
 	f1("<1 this is an alert with a skip of 1")
 
-	TestAlertDuration = 0
-	SetTestAlertInfoState(false)
-
 	j.AssertMessage(TestPanicMessageLog.String())
 }
+
+const minute = 60 * 1000
+const hour = minute * 60
+const day = hour * 24
 
 func f1(key string) {
 	Alert(key)
