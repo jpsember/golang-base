@@ -36,9 +36,7 @@ func AscendToDirectoryContainingFile(startDir Path, seekFile string) (Path, erro
 }
 
 func AscendToDirectoryContainingFileM(startDir Path, seekFile string) Path {
-	var pth, err = AscendToDirectoryContainingFile(startDir, seekFile)
-	CheckOk(err, "<1")
-	return pth
+	return AssertNoError(AscendToDirectoryContainingFile(startDir, seekFile))
 }
 
 func (path Path) ReadString() (content string, err error) {
@@ -52,7 +50,7 @@ func (path Path) ReadString() (content string, err error) {
 
 func (path Path) ReadStringM() string {
 	content, err := path.ReadString()
-	CheckOk(err, "<1")
+	CheckOk(err)
 	return content
 }
 
@@ -71,7 +69,7 @@ func (path Path) ReadStringIfExists(defaultContent string) (content string, err 
 
 func (path Path) ReadStringIfExistsM(defaultContent string) string {
 	content, err := path.ReadStringIfExists(defaultContent)
-	CheckOk(err, "<1")
+	CheckOk(err)
 	return content
 }
 
@@ -86,7 +84,7 @@ func (path Path) ReadBytes() (content []byte, err error) {
 
 func (path Path) ReadBytesM() (content []byte) {
 	bytes, err := os.ReadFile(string(path))
-	CheckOk(err, "<1")
+	CheckOk(err)
 	return bytes
 }
 
@@ -115,7 +113,7 @@ func JSMapFromFile(file Path) (JSMap, error) {
 
 func JSMapFromFileM(file Path) JSMap {
 	var result, err = JSMapFromFile(file)
-	CheckOk(err, "<1")
+	CheckOk(err)
 	return result
 }
 
@@ -126,7 +124,7 @@ func JSMapFromFileIfExists(file Path) (JSMap, error) {
 
 func JSMapFromFileIfExistsM(file Path) JSMap {
 	var result, err = JSMapFromFileIfExists(file)
-	CheckOk(err, "<1")
+	CheckOk(err)
 	return result
 }
 

@@ -15,7 +15,7 @@ var homeDir = EmptyPath
 func HomeDirM() Path {
 	if homeDir.Empty() {
 		p, err := os.UserHomeDir()
-		CheckOk(err, "<1")
+		CheckOk(err)
 		homeDir = NewPathM(p)
 	}
 	return homeDir
@@ -35,7 +35,7 @@ func TempFile(prefix string) (Path, error) {
 
 func TempFileM(prefix string) Path {
 	result, err := TempFile(prefix)
-	CheckOk(err, "<2")
+	CheckOk(err)
 	return result
 }
 
@@ -65,15 +65,14 @@ func NewPathOrEmpty(s string) (Path, error) {
 // Construct a Path from a string, or the empty path if string is empty
 func NewPathOrEmptyM(s string) Path {
 	p, err := NewPathOrEmpty(s)
-	CheckOk(err, "<1")
+	CheckOk(err)
 	return p
 }
 
 // Construct a Path from a string; panic if there is a problem
 func NewPathM(s string) Path {
 	p, err := NewPath(s)
-	Todo("these skip factors are not helpful on assertions, as it will display the full stack trace")
-	CheckOk(err, "<1")
+	CheckOk(err)
 	return p
 }
 
@@ -86,7 +85,7 @@ func (path Path) Join(s string) (Path, error) {
 // Join path to a relative path (string); panic if error
 func (path Path) JoinM(s string) Path {
 	j, err := path.Join(s)
-	CheckOk(err, "<1")
+	CheckOk(err)
 	return j
 }
 
@@ -111,7 +110,7 @@ func (path Path) String() string {
 // Panic if path is empty
 func (path Path) CheckNonEmpty() Path {
 	if path.Empty() {
-		BadArg("<1", "Path is empty")
+		BadArg("Path is empty")
 	}
 	return path
 }
@@ -156,7 +155,7 @@ func (path Path) WriteString(content string) error {
 
 // Write string to file; panic if error
 func (path Path) WriteStringM(content string) {
-	CheckOk(path.WriteString(content), "<1")
+	CheckOk(path.WriteString(content))
 }
 
 // Write bytes to file
@@ -167,7 +166,7 @@ func (path Path) WriteBytes(content []byte) error {
 
 // Write string to file; panic if error
 func (path Path) WriteBytesM(content []byte) {
-	CheckOk(path.WriteBytes(content), "<1")
+	CheckOk(path.WriteBytes(content))
 }
 
 // Get the filename denoted by (nonempty) path
@@ -181,7 +180,7 @@ func (path Path) MkDirs() error {
 }
 
 func (path Path) MkDirsM() {
-	CheckOk(path.MkDirs(), "<1")
+	CheckOk(path.MkDirs())
 }
 
 func (path Path) RemakeDir(substring string) error {
@@ -193,7 +192,7 @@ func (path Path) RemakeDir(substring string) error {
 }
 
 func (path Path) RemakeDirM(substring string) {
-	CheckOk(path.RemakeDir(substring), "<1")
+	CheckOk(path.RemakeDir(substring))
 }
 
 func (path Path) DeleteDirectory(substring string) error {
@@ -205,7 +204,7 @@ func (path Path) DeleteDirectory(substring string) error {
 }
 
 func (path Path) DeleteDirectoryM(substring string) {
-	CheckOk(path.DeleteDirectory(substring), "<1")
+	CheckOk(path.DeleteDirectory(substring))
 }
 
 func (path Path) DeleteFile() error {
@@ -214,7 +213,7 @@ func (path Path) DeleteFile() error {
 }
 
 func (path Path) DeleteFileM() {
-	CheckOk(path.DeleteFile(), "<1")
+	CheckOk(path.DeleteFile())
 }
 
 func (path Path) MoveTo(target Path) error {
@@ -257,7 +256,7 @@ func (path Path) GetAbs() (Path, error) {
 
 func (path Path) GetAbsM() Path {
 	result, err := path.GetAbs()
-	CheckOk(err, "<1")
+	CheckOk(err)
 	return result
 }
 
@@ -272,7 +271,7 @@ func (path Path) GetAbsFrom(defaultParentDir Path) (Path, error) {
 
 func (path Path) GetAbsFromM(defaultParentDir Path) Path {
 	result, err := path.GetAbsFrom(defaultParentDir)
-	CheckOk(err, "<1")
+	CheckOk(err)
 	return result
 }
 

@@ -119,7 +119,7 @@ func BadState(message ...any) {
 
 // Given a value and an error, make sure the error is nil, and return just the value
 func AssertNoError[X any](arg1 X, err error) X {
-	CheckOk(err, "<1")
+	CheckOk(err)
 	return arg1
 }
 

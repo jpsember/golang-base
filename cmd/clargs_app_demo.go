@@ -18,8 +18,6 @@ func (oper *JumpOper) Perform(app *App) {
 	oper.SetVerbose(true)
 	pr := oper.Log
 	pr("this is JumpOper.perform")
-	p := NewPathM("")
-	p.Parent()
 	Pr("goodbye")
 }
 
