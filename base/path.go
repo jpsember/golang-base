@@ -15,7 +15,7 @@ var homeDir = EmptyPath
 func HomeDirM() Path {
 	if homeDir.Empty() {
 		p, err := os.UserHomeDir()
-		CheckOkWithSkip(1, err)
+		CheckOk(err, "<1")
 		homeDir = NewPathM(p)
 	}
 	return homeDir
@@ -35,7 +35,7 @@ func TempFile(prefix string) (Path, error) {
 
 func TempFileM(prefix string) Path {
 	result, err := TempFile(prefix)
-	CheckOkWithSkip(2, err)
+	CheckOk(err, "<2")
 	return result
 }
 
@@ -65,14 +65,15 @@ func NewPathOrEmpty(s string) (Path, error) {
 // Construct a Path from a string, or the empty path if string is empty
 func NewPathOrEmptyM(s string) Path {
 	p, err := NewPathOrEmpty(s)
-	CheckOkWithSkip(1, err)
+	CheckOk(err, "<1")
 	return p
 }
 
 // Construct a Path from a string; panic if there is a problem
 func NewPathM(s string) Path {
 	p, err := NewPath(s)
-	CheckOkWithSkip(1, err)
+	Todo("these skip factors are not helpful on assertions, as it will display the full stack trace")
+	CheckOk(err, "<1")
 	return p
 }
 
@@ -84,8 +85,8 @@ func (path Path) Join(s string) (Path, error) {
 
 // Join path to a relative path (string); panic if error
 func (path Path) JoinM(s string) Path {
-	j, e := path.Join(s)
-	CheckOkWithSkip(1, e)
+	j, err := path.Join(s)
+	CheckOk(err, "<1")
 	return j
 }
 
@@ -109,19 +110,15 @@ func (path Path) String() string {
 
 // Panic if path is empty
 func (path Path) CheckNonEmpty() Path {
-	return path.CheckNonEmptyWithSkip(1)
-}
-
-func (path Path) CheckNonEmptyWithSkip(skip int) Path {
 	if path.Empty() {
-		BadArgWithSkip(1+skip, "Path is empty")
+		BadArg("<1", "Path is empty")
 	}
 	return path
 }
 
 // Get parent of (nonempty) path; returns empty path if it has no parent
 func (path Path) Parent() Path {
-	path.CheckNonEmptyWithSkip(1)
+	path.CheckNonEmpty()
 	input := string(path)
 	var s = filepath.Dir(input)
 	if s == input {
@@ -132,7 +129,7 @@ func (path Path) Parent() Path {
 
 // Determine if path refers to a file (or directory)
 func (path Path) Exists() bool {
-	path.CheckNonEmptyWithSkip(1)
+	path.CheckNonEmpty()
 	_, err := os.Stat(string(path))
 	return err == nil
 }
@@ -143,7 +140,7 @@ func (path Path) IsDir() bool {
 }
 
 func (path Path) IsRoot() bool {
-	path.CheckNonEmptyWithSkip(1)
+	path.CheckNonEmpty()
 	return path.String() == "/"
 }
 
@@ -159,23 +156,23 @@ func (path Path) WriteString(content string) error {
 
 // Write string to file; panic if error
 func (path Path) WriteStringM(content string) {
-	CheckOkWithSkip(1, path.WriteString(content))
+	CheckOk(path.WriteString(content), "<1")
 }
 
 // Write bytes to file
 func (path Path) WriteBytes(content []byte) error {
-	path.CheckNonEmptyWithSkip(1)
+	path.CheckNonEmpty()
 	return os.WriteFile(string(path), content, 0644)
 }
 
 // Write string to file; panic if error
 func (path Path) WriteBytesM(content []byte) {
-	CheckOkWithSkip(1, path.WriteBytes(content))
+	CheckOk(path.WriteBytes(content), "<1")
 }
 
 // Get the filename denoted by (nonempty) path
 func (path Path) Base() string {
-	path.CheckNonEmptyWithSkip(1)
+	path.CheckNonEmpty()
 	return filepath.Base(string(path))
 }
 
@@ -184,7 +181,7 @@ func (path Path) MkDirs() error {
 }
 
 func (path Path) MkDirsM() {
-	CheckOkWithSkip(1, path.MkDirs())
+	CheckOk(path.MkDirs(), "<1")
 }
 
 func (path Path) RemakeDir(substring string) error {
@@ -196,7 +193,7 @@ func (path Path) RemakeDir(substring string) error {
 }
 
 func (path Path) RemakeDirM(substring string) {
-	CheckOkWithSkip(1, path.RemakeDir(substring))
+	CheckOk(path.RemakeDir(substring), "<1")
 }
 
 func (path Path) DeleteDirectory(substring string) error {
@@ -208,7 +205,7 @@ func (path Path) DeleteDirectory(substring string) error {
 }
 
 func (path Path) DeleteDirectoryM(substring string) {
-	CheckOkWithSkip(1, path.DeleteDirectory(substring))
+	CheckOk(path.DeleteDirectory(substring), "<1")
 }
 
 func (path Path) DeleteFile() error {
@@ -217,7 +214,7 @@ func (path Path) DeleteFile() error {
 }
 
 func (path Path) DeleteFileM() {
-	CheckOkWithSkip(1, path.DeleteFile())
+	CheckOk(path.DeleteFile(), "<1")
 }
 
 func (path Path) MoveTo(target Path) error {
@@ -244,12 +241,12 @@ func (path Path) EnsureExists(message ...any) {
 }
 
 func (path Path) IsAbs() bool {
-	path.CheckNonEmptyWithSkip(1)
+	path.CheckNonEmpty()
 	return filepath.IsAbs(path.String())
 }
 
 func (path Path) GetAbs() (Path, error) {
-	path.CheckNonEmptyWithSkip(1)
+	path.CheckNonEmpty()
 	pth, err := filepath.Abs(path.String())
 	result := EmptyPath
 	if err == nil {
@@ -260,7 +257,7 @@ func (path Path) GetAbs() (Path, error) {
 
 func (path Path) GetAbsM() Path {
 	result, err := path.GetAbs()
-	CheckOkWithSkip(1, err)
+	CheckOk(err, "<1")
 	return result
 }
 
@@ -275,7 +272,7 @@ func (path Path) GetAbsFrom(defaultParentDir Path) (Path, error) {
 
 func (path Path) GetAbsFromM(defaultParentDir Path) Path {
 	result, err := path.GetAbsFrom(defaultParentDir)
-	CheckOkWithSkip(1, err)
+	CheckOk(err, "<1")
 	return result
 }
 

@@ -33,7 +33,7 @@ func (array *Array[T]) Pop() T {
 	var w = array.wrappedArray
 	i := len(w)
 	if i == 0 {
-		BadStateWithSkip(1, "Pop of empty array")
+		BadState("<1 Pop of empty array")
 	}
 	var result = w[i-1]
 	array.wrappedArray = w[:i-1]

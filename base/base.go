@@ -93,42 +93,33 @@ func CheckNotNil[T any](value T, message ...any) T {
 
 func CheckNonEmpty(s string, message ...any) string {
 	if s == "" {
-		BadArgWithSkip(1, JoinElementToList("string is empty;", message))
+		badArgWithSkip(1, JoinElementToList("string is empty;", message))
 	}
 	return s
 }
 
 func CheckArg(valid bool, message ...any) bool {
 	if !valid {
-		BadArgWithSkip(1, message...)
+		badArgWithSkip(1, message...)
 	}
 	return valid
 }
 
-// A skip count of 0 reports the immediate caller's location
-// Deprecated.  Use skip prefix instead.
-func BadArgWithSkip(skipCount int, message ...any) {
+func badArgWithSkip(skipCount int, message ...any) {
 	auxPanic(skipCount+1, "Bad argument", message...)
 }
 
 func BadArg(message ...any) {
-	BadArgWithSkip(1, message...)
-}
-
-// Deprecated.  Use skip prefix instead.
-func BadStateWithSkip(skipCount int, message ...any) {
-	auxPanic(skipCount+1, "Bad state", message...)
+	badArgWithSkip(1, message...)
 }
 
 func BadState(message ...any) {
 	auxPanic(4, "Bad state", message...)
-	//BadStateWithSkip(4, message...)
 }
 
 // Given a value and an error, make sure the error is nil, and return just the value
 func AssertNoError[X any](arg1 X, err error) X {
 	CheckOk(err, "<1")
-	//CheckOkWithSkip(1, err)
 	return arg1
 }
 
@@ -162,15 +153,6 @@ var TestAlertDuration int64
 func CheckOk(err error, message ...any) {
 	if err != nil {
 		auxPanic(1, "Unexpected error", message...)
-	}
-	//CheckOkWithSkip(1, err, message...)
-}
-
-// Panic if an error code is nonzero.
-// Deprecated.  Use skip expression "<\d+"
-func CheckOkWithSkip(skipCount int, err error, message ...any) {
-	if err != nil {
-		auxPanic(skipCount+1, "Error returned", JoinElementToList(err.Error(), message)...)
 	}
 }
 

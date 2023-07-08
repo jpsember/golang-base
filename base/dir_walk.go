@@ -29,7 +29,7 @@ func NewDirWalk(directory Path) *DirWalk {
 	w.patternFlags = patflagFile | patflagDir
 	w.regexpSet = make(map[string]regex)
 	w.SetName("DirWalk")
-	w.startDirectory = directory.CheckNonEmptyWithSkip(1)
+	w.startDirectory = directory.CheckNonEmpty()
 	w.filePatterns = newPatternCollection()
 	w.dirPatterns = newPatternCollection()
 	w.OmitNames(defaultOmitExprs...)

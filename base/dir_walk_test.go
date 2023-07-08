@@ -72,7 +72,7 @@ func TestIncludePrefixes(t *testing.T) {
 }
 
 func TestAscendToDirectoryContainingFile(t *testing.T) {
-	j := jt.Newz(t)
+	j := jt.New(t)
 	_, err := AscendToDirectoryContainingFile(EmptyPath, "hello")
 	j.Log("Ascend result:", err)
 	j.AssertTrue(strings.Contains(err.Error(), "Cannot find hello"))
