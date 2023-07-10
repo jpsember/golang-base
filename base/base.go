@@ -115,8 +115,13 @@ func BadState(message ...any) {
 	auxPanic(1, "Bad state", message...)
 }
 
-// Given a value and an error, make sure the error is nil, and return just the value
-func AssertNoError[X any](arg1 X, err error, message ...any) X {
+// Given an error, panic if it is not nil
+func CheckOk(err error, message ...any) {
+	auxCheckOk(1, err, message...)
+}
+
+// Given a value and an error, make sure the error is nil, and return the value
+func CheckOkWith[X any](arg1 X, err error, message ...any) X {
 	auxCheckOk(1, err, message...)
 	return arg1
 }
@@ -133,11 +138,6 @@ func auxPanicWithArgument(skipCount int, prefix string, argument string, message
 	messageStr := ToString(message...)
 	messageInfo := extractAlertInfo(messageStr)
 	auxPanic(1+skipCount+messageInfo.skipCount, prefix, Quoted(argument)+" "+messageInfo.key)
-}
-
-// Panic if an error code is nonzero.
-func CheckOk(err error, message ...any) {
-	auxCheckOk(1, err, message...)
 }
 
 func CheckState(valid bool, message ...any) {
@@ -392,7 +392,7 @@ func ParseInt(str string) (int64, error) {
 
 func ParseIntM(str string) int {
 	result, err := ParseInt(str)
-	return int(AssertNoError(result, err, "Failed to parse int from:", str))
+	return int(CheckOkWith(result, err, "Failed to parse int from:", str))
 }
 
 func IntToString(value int) string {

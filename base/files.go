@@ -36,7 +36,7 @@ func AscendToDirectoryContainingFile(startDir Path, seekFile string) (Path, erro
 }
 
 func AscendToDirectoryContainingFileM(startDir Path, seekFile string) Path {
-	return AssertNoError(AscendToDirectoryContainingFile(startDir, seekFile))
+	return CheckOkWith(AscendToDirectoryContainingFile(startDir, seekFile))
 }
 
 func (path Path) ReadString() (content string, err error) {
@@ -49,7 +49,7 @@ func (path Path) ReadString() (content string, err error) {
 }
 
 func (path Path) ReadStringM() string {
-	return AssertNoError(path.ReadString())
+	return CheckOkWith(path.ReadString())
 }
 
 func (path Path) ReadStringIfExists(defaultContent string) (content string, err error) {
@@ -66,7 +66,7 @@ func (path Path) ReadStringIfExists(defaultContent string) (content string, err 
 }
 
 func (path Path) ReadStringIfExistsM(defaultContent string) string {
-	return AssertNoError(path.ReadStringIfExists(defaultContent))
+	return CheckOkWith(path.ReadStringIfExists(defaultContent))
 }
 
 // Deprecated: use Path type
@@ -79,7 +79,7 @@ func (path Path) ReadBytes() (content []byte, err error) {
 }
 
 func (path Path) ReadBytesM() (content []byte) {
-	return AssertNoError(os.ReadFile(string(path)))
+	return CheckOkWith(os.ReadFile(string(path)))
 }
 
 func (path Path) Chmod(mode os.FileMode) error {
@@ -91,7 +91,7 @@ func (path Path) ChmodM(mode os.FileMode) {
 }
 
 func CurrentDirectory() Path {
-	path := AssertNoError(os.Getwd())
+	path := CheckOkWith(os.Getwd())
 	return NewPathM(path)
 }
 
@@ -105,7 +105,7 @@ func JSMapFromFile(file Path) (JSMap, error) {
 }
 
 func JSMapFromFileM(file Path) JSMap {
-	return AssertNoError(JSMapFromFile(file))
+	return CheckOkWith(JSMapFromFile(file))
 }
 
 func JSMapFromFileIfExists(file Path) (JSMap, error) {
@@ -114,7 +114,7 @@ func JSMapFromFileIfExists(file Path) (JSMap, error) {
 }
 
 func JSMapFromFileIfExistsM(file Path) JSMap {
-	return AssertNoError(JSMapFromFileIfExists(file))
+	return CheckOkWith(JSMapFromFileIfExists(file))
 }
 
 // Copies file.  If destination exists, its contents will be replaced.
@@ -146,7 +146,7 @@ func CopyFile(sourcePath Path, destPath Path) (err error) {
 
 func FindProjectDirM() Path {
 	var path, err = FindProjectDir()
-	return AssertNoError(path, err, "<1 Can't find project directory")
+	return CheckOkWith(path, err, "<1 Can't find project directory")
 }
 
 func FindProjectDir() (Path, error) {

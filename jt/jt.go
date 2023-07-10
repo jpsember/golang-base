@@ -130,7 +130,7 @@ func (j JTest) SetVerbose() {
 
 func (j JTest) GetModuleDir() Path {
 	if j.moduleDir.Empty() {
-		j.moduleDir = AssertNoError(AscendToDirectoryContainingFile("", "go.mod"))
+		j.moduleDir = CheckOkWith(AscendToDirectoryContainingFile("", "go.mod"))
 	}
 	return j.moduleDir
 }
@@ -180,7 +180,7 @@ func HashOfString(str string) int32 {
 
 func HashOfBytes(b []byte) int32 {
 	hasher.Reset()
-	AssertNoError(hasher.Write(b))
+	CheckOkWith(hasher.Write(b))
 	return int32((hasher.Sum32()&0xffff)%9000 + 1000)
 }
 
@@ -233,7 +233,7 @@ func DirSummary(dir Path) JSMap {
 			var subdirSummary = DirSummary(dir.JoinM(filename))
 			value = subdirSummary
 		} else {
-			bytes := AssertNoError(dir.JoinM(filename).ReadBytes())
+			bytes := CheckOkWith(dir.JoinM(filename).ReadBytes())
 			value = HashOfBytes(bytes)
 		}
 		jsMap.Put(filename, value)
@@ -396,4 +396,8 @@ func (j JTest) saveTestResults() {
 	} else {
 		CheckOk(res.DeleteDirectory("unit_test"))
 	}
+}
+
+// A do-nothing method
+func (j JTest) Nothing() {
 }

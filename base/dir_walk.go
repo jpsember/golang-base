@@ -79,7 +79,7 @@ func (w *DirWalk) addPattern(pat string) regex {
 	r, hasKey := w.regexpSet[pat]
 	if !hasKey {
 		r2, err := regexp.Compile(pat)
-		w.regexpSet[pat] = AssertNoError(r2, err, "failed to compile reg exp:", pat)
+		w.regexpSet[pat] = CheckOkWith(r2, err, "failed to compile reg exp:", pat)
 		r = r2
 	}
 	return r
@@ -166,7 +166,7 @@ func (w *DirWalk) Files() []Path {
 			}
 
 			files, err := os.ReadDir(dir.String())
-			AssertNoError(files, err, "failed to read dir:", dir)
+			CheckOkWith(files, err, "failed to read dir:", dir)
 
 			for _, file := range files {
 				var nm = file.Name()

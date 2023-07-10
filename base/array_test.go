@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-var _ = Pr
-
 type Q struct {
 	message string
 }
@@ -20,7 +18,7 @@ func q(msg ...any) *Q {
 func (q *Q) String() string { return q.message }
 
 func TestArray(t *testing.T) {
-	j := jt.New(t) // Use Newz to regenerate hash
+	j := jt.New(t)
 	j.SetVerbose()
 
 	var a = NewArray[*Q]()
@@ -31,8 +29,8 @@ func TestArray(t *testing.T) {
 }
 
 func TestAddAndRemoveLots(t *testing.T) {
-	j := jt.New(t) // Use Newz to regenerate hash
-	j.SetVerbose()
+	j := jt.New(t)
+	j.Nothing()
 
 	var a = NewArray[*Q]()
 	for i := 0; i < 100; i++ {
@@ -44,8 +42,7 @@ func TestAddAndRemoveLots(t *testing.T) {
 }
 
 func TestSort(t *testing.T) {
-	j := jt.New(t) // Use Newz to regenerate hash
-
+	j := jt.New(t)
 	var a = NewArray[string]()
 	a.Add("milk")
 	a.Add("eggs")

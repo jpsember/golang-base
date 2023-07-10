@@ -44,7 +44,7 @@ func (oper *EncryptOper) Perform(app *App) {
 
 	if false {
 		message := "Hello, World!"
-		encrypted := AssertNoError(EncryptBytes([]byte(message), password))
+		encrypted := CheckOkWith(EncryptBytes([]byte(message), password))
 
 		pr("encrypted:", INDENT, encrypted)
 		pr("expected :", INDENT, bytes)
@@ -52,7 +52,7 @@ func (oper *EncryptOper) Perform(app *App) {
 		bytes = encrypted
 	}
 
-	decrypted := AssertNoError(DecryptBytes(bytes, password))
+	decrypted := CheckOkWith(DecryptBytes(bytes, password))
 
 	Pr("Decrypted:", decrypted)
 	Pr("Message  :", string(decrypted))

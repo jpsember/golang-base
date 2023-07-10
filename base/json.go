@@ -362,7 +362,7 @@ func EncodeBase64Maybe(byteArray []byte) JSEntity {
 
 func ParseBase64(s string) []byte {
 	s = removeDataTypeSuffix(s, DATA_TYPE_SUFFIX_BYTE)
-	return AssertNoError(base64.StdEncoding.DecodeString(s))
+	return CheckOkWith(base64.StdEncoding.DecodeString(s))
 }
 
 /**

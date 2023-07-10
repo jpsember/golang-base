@@ -30,7 +30,7 @@ func TestPanics(t *testing.T) {
 	Die(s)
 	CheckNonEmpty("", s)
 	ok := Error("Sed", "ut", "perspiciatis", "unde", "omnis")
-	AssertNoError("sample error", ok, s)
+	CheckOkWith("sample error", ok, s)
 	nestedAssertions("<1 Nested assertions")
 	nestedAssertions2()
 	expression := NewPathM("alpha/bravo")
@@ -92,7 +92,7 @@ func nestedAssertions(s string) {
 	NotSupported(s)
 	Halt(s)
 	ok := Error("This", "is", "an", "error", "message")
-	AssertNoError("sample result", ok, s)
+	CheckOkWith("sample result", ok, s)
 }
 
 func nestedAssertions2() {
