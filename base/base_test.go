@@ -18,7 +18,7 @@ func TestPanics(t *testing.T) {
 	SetTestAlertInfoState(true)
 	defer SetTestAlertInfoState(false)
 
-	s := "Sample panic message"
+	s := "lorem ipsum"
 	TestPanicMessageLog.Reset()
 
 	CheckArg(false, s)
@@ -27,11 +27,14 @@ func TestPanics(t *testing.T) {
 	NotImplemented(s)
 	NotSupported(s)
 	Halt(s)
-	CheckNonEmpty("", "lorem ipsum")
-	ok := Error("this", "is", "an", "error", "message")
-	CheckOk(ok, s)
+	Die(s)
+	CheckNonEmpty("", s)
+	ok := Error("Sed", "ut", "perspiciatis", "unde", "omnis")
+	AssertNoError("sample error", ok, s)
 	nestedAssertions("<1 Nested assertions")
 	nestedAssertions2()
+	expression := NewPathM("alpha/bravo")
+	CheckNil(expression, s)
 
 	j.AssertMessage(TestPanicMessageLog.String())
 }
@@ -44,7 +47,6 @@ func TestAlerts(t *testing.T) {
 	SetTestAlertInfoState(true)
 	defer SetTestAlertInfoState(false)
 
-	//s := TestPanicSubstring
 	TestPanicMessageLog.Reset()
 
 	Alert("Normal message")
@@ -90,8 +92,9 @@ func nestedAssertions(s string) {
 	NotSupported(s)
 	Halt(s)
 	ok := Error("This", "is", "an", "error", "message")
-	CheckOk(ok, s)
+	AssertNoError("sample result", ok, s)
 }
+
 func nestedAssertions2() {
 	const s = "<2 Nested assertions"
 	nestedAssertions(s)

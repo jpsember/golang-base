@@ -158,8 +158,7 @@ func (a *App) auxStart() {
 		ordered.Add(k)
 	}
 
-	err := ordered.Sort()
-	CheckOk(err)
+	CheckOk(ordered.Sort())
 
 	var c = a.CmdLineArgs()
 	c.Parse(args)

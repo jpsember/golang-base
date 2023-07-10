@@ -63,7 +63,9 @@ func Die(message ...any) {
 }
 
 func Halt(message ...any) {
-	text := preparePanicMessage(1, "Halting", message...)
+	str := ToString(message...)
+	alertInfo := extractAlertInfo(str)
+	text := CallerLocation(1+alertInfo.skipCount) + " *** Halting! " + alertInfo.key
 	if !testAlertState {
 		Pr(text)
 		os.Exit(1)
@@ -80,12 +82,12 @@ func NotImplemented(message ...any) {
 	auxPanic(1, "Not implemented", message...)
 }
 
-func IsNil(value any) bool {
+func isNil(value any) bool {
 	return value == nil
 }
 
 func CheckNotNil[T any](value T, message ...any) T {
-	if IsNil(value) {
+	if isNil(value) {
 		auxPanic(1, "Argument is nil", message...)
 	}
 	return value
@@ -93,29 +95,24 @@ func CheckNotNil[T any](value T, message ...any) T {
 
 func CheckNonEmpty(s string, message ...any) string {
 	if s == "" {
-		auxPanicNew(1, "String is empty", message...)
+		auxPanicWithArgument(1, "String is empty", s, message...)
 	}
 	return s
 }
 
 func CheckArg(valid bool, message ...any) bool {
 	if !valid {
-		auxPanicNew(1, "Bad argument", message...)
+		auxPanic(1, "Bad argument", message...)
 	}
 	return valid
 }
 
-// Deprecated.  Call auxPanic directly, embed skip count
-func badArgWithSkip(skipCount int, message ...any) {
-	auxPanic(skipCount+1, "Bad argument", message...)
-}
-
 func BadArg(message ...any) {
-	auxPanicNew(1, "Bad argument", message...)
+	auxPanic(1, "Bad argument", message...)
 }
 
 func BadState(message ...any) {
-	auxPanicNew(1, "Bad state", message...)
+	auxPanic(1, "Bad state", message...)
 }
 
 // Given a value and an error, make sure the error is nil, and return just the value
@@ -128,8 +125,14 @@ func auxCheckOk(skipCount int, err error, message ...any) {
 	if err != nil {
 		messageStr := ToString(message...)
 		messageInfo := extractAlertInfo(messageStr)
-		auxPanicNew(1+skipCount+messageInfo.skipFactor, "Unexpected error", Quoted(err.Error())+" "+messageInfo.key)
+		auxPanicWithArgument(1+skipCount+messageInfo.skipCount, "Unexpected error", err.Error(), messageInfo.key)
 	}
+}
+
+func auxPanicWithArgument(skipCount int, prefix string, argument string, message ...any) {
+	messageStr := ToString(message...)
+	messageInfo := extractAlertInfo(messageStr)
+	auxPanic(1+skipCount+messageInfo.skipCount, prefix, Quoted(argument)+" "+messageInfo.key)
 }
 
 // Panic if an error code is nonzero.
@@ -143,29 +146,7 @@ func CheckState(valid bool, message ...any) {
 	}
 }
 
-func preparePanicMessage(skipCount int, prefix string, message ...any) string {
-	str := ToString(message...)
-	alertInfo := extractAlertInfo(str)
-	return CallerLocation(skipCount+1+alertInfo.skipFactor) + " *** " + prefix + "! " + alertInfo.key
-}
-
-//
-//func preparePanicMessageNew(prefixInfo alertInfo, message ...any) string {
-//	str := ToString(message...)
-//	//alertInfo := extractAlertInfo(str)
-//	return CallerLocation(info.skipFactor+1) + " *** " + info.key + "! " + str
-//}
-
 func auxPanic(skipCount int, prefix string, message ...any) {
-	msg := preparePanicMessage(skipCount+1, prefix, message...)
-	if !testAlertState {
-		panic(msg)
-	} else {
-		TestPanicMessageLog.WriteString(msg + "\n")
-	}
-}
-
-func auxPanicNew(skipCount int, prefix string, message ...any) {
 	// Both the prefix and the message can contain skip information, so
 	// parse and sum them
 
@@ -173,7 +154,7 @@ func auxPanicNew(skipCount int, prefix string, message ...any) {
 	messageStr := ToString(message...)
 	messageInfo := extractAlertInfo(messageStr)
 
-	msg := CallerLocation(prefixInfo.skipFactor+messageInfo.skipFactor+skipCount+1) + " *** " + prefixInfo.key + "! " + messageInfo.key
+	msg := CallerLocation(prefixInfo.skipCount+messageInfo.skipCount+skipCount+1) + " *** " + prefixInfo.key + "! " + messageInfo.key
 
 	if !testAlertState {
 		panic(msg)
@@ -189,7 +170,7 @@ var TestAlertDuration int64
 
 func CheckNil(result any, message ...any) {
 	if result != nil {
-		auxPanic(1, "Result is not nil", JoinElementToList(ToString(result)+"; \n", message)...)
+		auxPanicWithArgument(1, "Result is not nil", ToString(result), message...)
 	}
 }
 
@@ -244,7 +225,7 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	}
 
 	var output strings.Builder
-	locn := CallerLocation(skipCount + info.skipFactor + 1)
+	locn := CallerLocation(skipCount + info.skipCount + 1)
 	output.WriteString(locn)
 	output.WriteString(" ***")
 	output.WriteString(" ")
@@ -378,6 +359,7 @@ func Regexp(expr string) *regexp.Regexp {
 	if ok {
 		return value.(*regexp.Regexp)
 	}
+
 	pat, err := regexp.Compile(expr)
 	CheckOk(err, "trouble compiling regexp:", Quoted(expr))
 	regexpCache.Store(expr, pat)
@@ -410,8 +392,7 @@ func ParseInt(str string) (int64, error) {
 
 func ParseIntM(str string) int {
 	result, err := ParseInt(str)
-	CheckOk(err, "Failed to parse int from:", Quoted(str))
-	return int(result)
+	return int(AssertNoError(result, err, "Failed to parse int from:", str))
 }
 
 func IntToString(value int) string {
@@ -440,7 +421,7 @@ type alertInfo struct {
 	key           string // The string used to access the report count for this alert
 	delayMs       int64
 	maxPerSession int
-	skipFactor    int
+	skipCount     int
 }
 
 // Parse an alert key into an alertInfo structure.
@@ -477,7 +458,7 @@ func extractAlertInfo(key string) alertInfo {
 		} else if ch == '<' {
 			var sf int
 			cursor, sf = extractInt(key, cursor)
-			info.skipFactor += sf
+			info.skipCount += sf
 		} else if ch == ' ' {
 			// ignore leading spaces
 		} else {

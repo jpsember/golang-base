@@ -118,8 +118,7 @@ func (j JTest) GetTestResultsDir() Path {
 		var dir = j.getGeneratedDir().JoinM(j.Filename + "/" + j.BaseName())
 		// Delete any existing contents of this directory
 		// Make sure it contains '/generated/' (pretty sure it does) to avoid crazy deletion
-		err := dir.RemakeDir("/generated/")
-		CheckOk(err)
+		CheckOk(dir.RemakeDir("/generated/"))
 		j.testResultsDir = dir
 	}
 	return j.testResultsDir
@@ -131,9 +130,7 @@ func (j JTest) SetVerbose() {
 
 func (j JTest) GetModuleDir() Path {
 	if j.moduleDir.Empty() {
-		var path, err = AscendToDirectoryContainingFile("", "go.mod")
-		CheckOk(err)
-		j.moduleDir = path
+		j.moduleDir = AssertNoError(AscendToDirectoryContainingFile("", "go.mod"))
 	}
 	return j.moduleDir
 }
@@ -183,8 +180,7 @@ func HashOfString(str string) int32 {
 
 func HashOfBytes(b []byte) int32 {
 	hasher.Reset()
-	_, e := hasher.Write(b)
-	CheckOk(e)
+	AssertNoError(hasher.Write(b))
 	return int32((hasher.Sum32()&0xffff)%9000 + 1000)
 }
 
@@ -237,8 +233,7 @@ func DirSummary(dir Path) JSMap {
 			var subdirSummary = DirSummary(dir.JoinM(filename))
 			value = subdirSummary
 		} else {
-			bytes, err := dir.JoinM(filename).ReadBytes()
-			CheckOk(err)
+			bytes := AssertNoError(dir.JoinM(filename).ReadBytes())
 			value = HashOfBytes(bytes)
 		}
 		jsMap.Put(filename, value)
@@ -397,10 +392,8 @@ func (j JTest) saveTestResults() {
 	var res = j.GetTestResultsDir()
 
 	if !j.referenceDir().Exists() {
-		err := res.MoveTo(j.referenceDir())
-		CheckOk(err)
+		CheckOk(res.MoveTo(j.referenceDir()))
 	} else {
-		err := res.DeleteDirectory("unit_test")
-		CheckOk(err)
+		CheckOk(res.DeleteDirectory("unit_test"))
 	}
 }

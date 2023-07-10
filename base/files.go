@@ -49,9 +49,7 @@ func (path Path) ReadString() (content string, err error) {
 }
 
 func (path Path) ReadStringM() string {
-	content, err := path.ReadString()
-	CheckOk(err)
-	return content
+	return AssertNoError(path.ReadString())
 }
 
 func (path Path) ReadStringIfExists(defaultContent string) (content string, err error) {
@@ -68,9 +66,7 @@ func (path Path) ReadStringIfExists(defaultContent string) (content string, err 
 }
 
 func (path Path) ReadStringIfExistsM(defaultContent string) string {
-	content, err := path.ReadStringIfExists(defaultContent)
-	CheckOk(err)
-	return content
+	return AssertNoError(path.ReadStringIfExists(defaultContent))
 }
 
 // Deprecated: use Path type
@@ -83,9 +79,7 @@ func (path Path) ReadBytes() (content []byte, err error) {
 }
 
 func (path Path) ReadBytesM() (content []byte) {
-	bytes, err := os.ReadFile(string(path))
-	CheckOk(err)
-	return bytes
+	return AssertNoError(os.ReadFile(string(path)))
 }
 
 func (path Path) Chmod(mode os.FileMode) error {
@@ -97,8 +91,7 @@ func (path Path) ChmodM(mode os.FileMode) {
 }
 
 func CurrentDirectory() Path {
-	path, err := os.Getwd()
-	CheckOk(err)
+	path := AssertNoError(os.Getwd())
 	return NewPathM(path)
 }
 
@@ -112,9 +105,7 @@ func JSMapFromFile(file Path) (JSMap, error) {
 }
 
 func JSMapFromFileM(file Path) JSMap {
-	var result, err = JSMapFromFile(file)
-	CheckOk(err)
-	return result
+	return AssertNoError(JSMapFromFile(file))
 }
 
 func JSMapFromFileIfExists(file Path) (JSMap, error) {
@@ -123,9 +114,7 @@ func JSMapFromFileIfExists(file Path) (JSMap, error) {
 }
 
 func JSMapFromFileIfExistsM(file Path) JSMap {
-	var result, err = JSMapFromFileIfExists(file)
-	CheckOk(err)
-	return result
+	return AssertNoError(JSMapFromFileIfExists(file))
 }
 
 // Copies file.  If destination exists, its contents will be replaced.
@@ -157,8 +146,7 @@ func CopyFile(sourcePath Path, destPath Path) (err error) {
 
 func FindProjectDirM() Path {
 	var path, err = FindProjectDir()
-	CheckOk(err, "<1 Can't find project directory")
-	return path
+	return AssertNoError(path, err, "<1 Can't find project directory")
 }
 
 func FindProjectDir() (Path, error) {

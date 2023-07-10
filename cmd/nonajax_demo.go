@@ -288,8 +288,7 @@ func (oper NonAjaxOper) handleUpload(w http.ResponseWriter, r *http.Request, res
 		newPath.DeleteFileM()
 	}
 
-	err = os.Rename(oldLocation, newPath.String())
-	CheckOk(err)
+	CheckOk(os.Rename(oldLocation, newPath.String()))
 
 	oper.uploadedFile = newPath
 	oper.sendResponseMarkup(w, r, "Successfully uploaded: "+newPath.String())

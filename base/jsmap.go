@@ -328,9 +328,7 @@ func JSMapFromString(content string) (JSMap, error) {
 }
 
 func JSMapFromStringM(content string) JSMap {
-	var result, err = JSMapFromString(content)
-	CheckOk(err)
-	return result
+	return AssertNoError(JSMapFromString(content))
 }
 
 func (m JSMap) WrappedMap() map[string]JSEntity {

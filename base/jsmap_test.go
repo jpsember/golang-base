@@ -35,8 +35,7 @@ func TestPrintJSMapToString(t *testing.T) {
 
 	var p JSONParser
 	p.WithText(text1)
-	var jsmap, e = p.ParseMap()
-	CheckOk(e)
+	var jsmap = AssertNoError(p.ParseMap())
 
 	var s = ToString(jsmap)
 
@@ -124,8 +123,7 @@ func TestEscapes(t *testing.T) {
 	s := `{"":"^(\\w|-|\\.|\\x20|'|\\(|\\)|,)+$"}`
 	var p JSONParser
 	p.WithText(s)
-	var jsmap, e = p.ParseMap()
-	CheckOk(e)
+	var jsmap = AssertNoError(p.ParseMap())
 	j.AssertMessage(jsmap)
 }
 

@@ -21,8 +21,7 @@ func RandomSessionId() string {
 		idLength = 3
 	}
 	b := make([]byte, idLength)
-	_, err := io.ReadFull(rand.Reader, b)
-	CheckOk(err)
+	AssertNoError(io.ReadFull(rand.Reader, b))
 	return base64.URLEncoding.EncodeToString(b)
 }
 

@@ -14,8 +14,7 @@ var homeDir = EmptyPath
 
 func HomeDirM() Path {
 	if homeDir.Empty() {
-		p, err := os.UserHomeDir()
-		CheckOk(err)
+		p := AssertNoError(os.UserHomeDir())
 		homeDir = NewPathM(p)
 	}
 	return homeDir
@@ -34,9 +33,7 @@ func TempFile(prefix string) (Path, error) {
 }
 
 func TempFileM(prefix string) Path {
-	result, err := TempFile(prefix)
-	CheckOk(err)
-	return result
+	return AssertNoError(TempFile(prefix))
 }
 
 // Construct a Path from a string; return error if there is a problem
@@ -64,16 +61,12 @@ func NewPathOrEmpty(s string) (Path, error) {
 
 // Construct a Path from a string, or the empty path if string is empty
 func NewPathOrEmptyM(s string) Path {
-	p, err := NewPathOrEmpty(s)
-	CheckOk(err)
-	return p
+	return AssertNoError(NewPathOrEmpty(s))
 }
 
 // Construct a Path from a string; panic if there is a problem
 func NewPathM(s string) Path {
-	p, err := NewPath(s)
-	CheckOk(err)
-	return p
+	return AssertNoError(NewPath(s))
 }
 
 // Join path to a relative path (string)
@@ -84,9 +77,7 @@ func (path Path) Join(s string) (Path, error) {
 
 // Join path to a relative path (string); panic if error
 func (path Path) JoinM(s string) Path {
-	j, err := path.Join(s)
-	CheckOk(err)
-	return j
+	return AssertNoError(path.Join(s))
 }
 
 // Join path to a relative path (Path)
@@ -255,9 +246,7 @@ func (path Path) GetAbs() (Path, error) {
 }
 
 func (path Path) GetAbsM() Path {
-	result, err := path.GetAbs()
-	CheckOk(err)
-	return result
+	return AssertNoError(path.GetAbs())
 }
 
 func (path Path) GetAbsFrom(defaultParentDir Path) (Path, error) {
@@ -270,9 +259,7 @@ func (path Path) GetAbsFrom(defaultParentDir Path) (Path, error) {
 }
 
 func (path Path) GetAbsFromM(defaultParentDir Path) Path {
-	result, err := path.GetAbsFrom(defaultParentDir)
-	CheckOk(err)
-	return result
+	return AssertNoError(path.GetAbsFrom(defaultParentDir))
 }
 
 func (path Path) Info(message ...any) JSMap {
