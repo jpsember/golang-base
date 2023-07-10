@@ -63,7 +63,7 @@ func (s *FileSystemSessionManager) CreateSession() Session {
 	s.setModified()
 	s.lock.Unlock()
 
-	Todo("have a background task handle flushing any modifications")
+	Todo("?have a background task handle flushing any modifications")
 	s.flush()
 	return b
 }

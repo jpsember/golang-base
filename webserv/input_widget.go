@@ -11,7 +11,7 @@ type InputWidgetObj struct {
 
 type InputWidget = *InputWidgetObj
 
-func NewInputWidget(id string, size int) InputWidget {
+func NewInputWidget(id string) InputWidget {
 	w := InputWidgetObj{
 		BaseWidgetObj{
 			Id: id,

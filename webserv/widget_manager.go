@@ -12,9 +12,6 @@ type WidgetManagerObj struct {
 	widgetMap                   WidgetMap
 	GrowXWeight                 int
 	GrowYWeight                 int
-	mPendingSize                int
-	mPendingAlignment           int
-	mPendingGravity             int
 	mPendingMinWidthEm          float64
 	mPendingMinHeightEm         float64
 	mPendingMonospaced          bool
@@ -187,8 +184,6 @@ func (m WidgetManager) consumePendingId() string {
 	return id
 }
 
-var digitsExpr = Regexp(`^\d+$`)
-
 const (
 	SIZE_DEFAULT = iota
 	SIZE_TINY
@@ -256,48 +251,6 @@ func (m WidgetManager) SetPendingContainer(component any) WidgetManager {
 	return m
 }
 
-func (m WidgetManager) setPendingSize(value int) WidgetManager {
-	m.mPendingSize = value
-	return m
-}
-
-func (m WidgetManager) setPendingAlignment(value int) WidgetManager {
-	m.mPendingAlignment = value
-	return m
-}
-
-func (m WidgetManager) Small() WidgetManager {
-	return m.setPendingSize(SIZE_SMALL)
-}
-
-func (m WidgetManager) Large() WidgetManager {
-	return m.setPendingSize(SIZE_LARGE)
-}
-
-func (m WidgetManager) medium() WidgetManager {
-	return m.setPendingSize(SIZE_MEDIUM)
-}
-
-func (m WidgetManager) tiny() WidgetManager {
-	return m.setPendingSize(SIZE_TINY)
-}
-
-func (m WidgetManager) huge() WidgetManager {
-	return m.setPendingSize(SIZE_HUGE)
-}
-
-func (m WidgetManager) left() WidgetManager {
-	return m.setPendingAlignment(ALIGNMENT_LEFT)
-}
-
-func (m WidgetManager) right() WidgetManager {
-	return m.setPendingAlignment(ALIGNMENT_RIGHT)
-}
-
-func (m WidgetManager) center() WidgetManager {
-	return m.setPendingAlignment(ALIGNMENT_CENTER)
-}
-
 // Set size for next widget (what size means depends upon the widget type).
 func (m WidgetManager) Size(size int) WidgetManager {
 	m.pendingSize = 1 + size
@@ -325,25 +278,6 @@ func (m WidgetManager) MinWidth(ems float64) WidgetManager {
 
 func (m WidgetManager) MinHeight(ems float64) WidgetManager {
 	m.mPendingMinHeightEm = ems
-	return m
-}
-
-func (m WidgetManager) gravity(gravity int) WidgetManager {
-	m.mPendingGravity = gravity
-	return m
-}
-
-func (m WidgetManager) LineCount(numLines int) WidgetManager {
-	CheckArg(numLines > 0)
-	m.mLineCount = numLines
-	return m
-}
-
-func (m WidgetManager) addLabel(id string) WidgetManager {
-	text := m.consumePendingText()
-	Todo("addLabel", text)
-	//add(new LabelWidget(id, mPendingGravity, mLineCount, text, mPendingSize, mPendingMonospaced,
-	//    mPendingAlignment));
 	return m
 }
 
@@ -446,8 +380,8 @@ func verifyUsed(flag bool, name string) {
 }
 
 func (m WidgetManager) clearPendingComponentFields() {
+	Todo("incorporate skip values into 'BadState', other assertions")
 	// If some values were not used, issue warnings
-	//verifyUsed(mComboChoices, "pending combo choices");
 	verifyUsed(m.mPendingDefaultIntValue == 0, "pendingDefaultIntValue")
 	verifyUsed(m.mPendingStringDefaultValue == "", "mPendingStringDefaultValue")
 	verifyUsed(m.pendingText == "", "mPendingLabel ")
@@ -457,13 +391,9 @@ func (m WidgetManager) clearPendingComponentFields() {
 
 	m.GrowXWeight = 0
 	m.GrowYWeight = 0
-	m.mPendingSize = SIZE_DEFAULT
-	m.mPendingAlignment = ALIGNMENT_DEFAULT
-	m.mPendingGravity = 0
 	m.mPendingMinWidthEm = 0
 	m.mPendingMinHeightEm = 0
 	m.mPendingMonospaced = false
-	m.mLineCount = 0
 	m.mComboChoices = nil
 	m.mPendingDefaultIntValue = 0
 	m.mPendingBooleanDefaultValue = false
@@ -546,11 +476,8 @@ func (m WidgetManager) finish() WidgetManager {
 }
 
 func (m WidgetManager) AddInput(id string) WidgetManager {
-	t := NewInputWidget(id, m.mPendingSize)
+	t := NewInputWidget(id)
 	m.assignPendingListener(t)
-	//TextWidget t = new TextWidget(consumePendingListener(), id, consumePendingStringDefaultValue(),
-	//    mLineCount, mEditableFlag, mPendingSize, mPendingMonospaced, mPendingMinWidthEm, mPendingMinHeightEm);
-	//consumeTooltip(t);
 	return m.Add(t)
 }
 
@@ -567,86 +494,13 @@ func (m WidgetManager) assignPendingListener(widget Widget) {
 	}
 }
 
-//func (m WidgetManager)  AddHeader(text string ) WidgetManager {
-//  m.spanx();
-//  JLabel label = new JLabel(text);
-//  label.setBorder(
-//      new CompoundBorder(buildStandardBorderWithZeroBottom(), BorderFactory.createEtchedBorder()));
-//  label.setHorizontalAlignment(SwingConstants.CENTER);
-//  add(wrap(label));
-//  return m;
-//}
-
-/**
-* Add a horizontal space to occupy cell(s) in place of other widgets
- */
-func (m WidgetManager) AddHorzSpace() WidgetManager {
-	return m.Add(NewPanelWidget())
-}
-
-///**
-// * Add a horizontal separator that visually separates components above from
-// * below
-// */
-//func (m WidgetManager)  AddHorzSep( ) WidgetManager {
-//  m.spanx();
-//  m.add(wrap(new JSeparator(JSeparator.HORIZONTAL)));
-//  return m
-//}
-
-///**
-// * Add a vertical separator that visually separates components left from right
-// */
-//func (m WidgetManager)  AddVertSep( ) WidgetManager {
-// m. spanx();
-// m. growY();
-// m. add(m.wrap(new JSeparator(JSeparator.VERTICAL)));
-//  return m
-//}
-
-///**
-// * Add a row that can stretch vertically to occupy the available space
-// */
-//func (m WidgetManager)  AddVertGrow( ) WidgetManager {
-//  //JComponent panel;
-//  //if (verbose())
-//  //  panel = colorPanel();
-//  //else
-//  //  panel = new JPanel();
-//  //spanx().growY();
-//  //add(wrap(panel));
-//  return m
-//}
-
-//func (m WidgetManager) AddButton ( id string) WidgetManager {
-//  ButtonWidget button = new ButtonWidget(consumePendingListener(), id, consumePendingLabel(true));
-//  return add(button);
-//}
-
-//func (m WidgetManager) AddToggleButton (id string ) WidgetManager {
-//  ToggleButtonWidget button = new ToggleButtonWidget(consumePendingListener(), id,
-//      consumePendingLabel(true), consumePendingBooleanDefaultValue());
-//  return add(button);
-//}
-
 func (m WidgetManager) AddText() WidgetManager {
-	w := NewLabelWidget()
+	w := NewTextWidget()
 	w.Id = m.consumePendingId()
-	w.LineCount = m.mLineCount
 	w.Text = m.consumePendingText()
-	w.Size = m.mPendingSize
-	w.Monospaced = m.mPendingMonospaced
-	w.Alignment = m.mPendingAlignment
 	m.Log("Adding label, id:", w.Id)
 	return m.Add(w)
 }
-
-//
-//
-//func (m WidgetManager) AddChoiceBox (id string ) WidgetManager {
-//  ComboBoxWidget c = new ComboBoxWidget(consumePendingListener(), id, mComboChoices);
-//  return add(c);
-//}
 
 func (m WidgetManager) Listener(listener WidgetListener) WidgetManager {
 	m.pendingListener = listener
