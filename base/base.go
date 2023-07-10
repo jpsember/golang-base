@@ -93,34 +93,48 @@ func CheckNotNil[T any](value T, message ...any) T {
 
 func CheckNonEmpty(s string, message ...any) string {
 	if s == "" {
-		badArgWithSkip(1, JoinElementToList("string is empty;", message))
+		auxPanicNew(1, "String is empty", message...)
 	}
 	return s
 }
 
 func CheckArg(valid bool, message ...any) bool {
 	if !valid {
-		badArgWithSkip(1, message...)
+		auxPanicNew(1, "Bad argument", message...)
 	}
 	return valid
 }
 
+// Deprecated.  Call auxPanic directly, embed skip count
 func badArgWithSkip(skipCount int, message ...any) {
 	auxPanic(skipCount+1, "Bad argument", message...)
 }
 
 func BadArg(message ...any) {
-	badArgWithSkip(1, message...)
+	auxPanicNew(1, "Bad argument", message...)
 }
 
 func BadState(message ...any) {
-	auxPanic(4, "Bad state", message...)
+	auxPanicNew(1, "Bad state", message...)
 }
 
 // Given a value and an error, make sure the error is nil, and return just the value
-func AssertNoError[X any](arg1 X, err error) X {
-	CheckOk(err)
+func AssertNoError[X any](arg1 X, err error, message ...any) X {
+	auxCheckOk(1, err, message...)
 	return arg1
+}
+
+func auxCheckOk(skipCount int, err error, message ...any) {
+	if err != nil {
+		messageStr := ToString(message...)
+		messageInfo := extractAlertInfo(messageStr)
+		auxPanicNew(1+skipCount+messageInfo.skipFactor, "Unexpected error", Quoted(err.Error())+" "+messageInfo.key)
+	}
+}
+
+// Panic if an error code is nonzero.
+func CheckOk(err error, message ...any) {
+	auxCheckOk(1, err, message...)
 }
 
 func CheckState(valid bool, message ...any) {
@@ -135,8 +149,32 @@ func preparePanicMessage(skipCount int, prefix string, message ...any) string {
 	return CallerLocation(skipCount+1+alertInfo.skipFactor) + " *** " + prefix + "! " + alertInfo.key
 }
 
+//
+//func preparePanicMessageNew(prefixInfo alertInfo, message ...any) string {
+//	str := ToString(message...)
+//	//alertInfo := extractAlertInfo(str)
+//	return CallerLocation(info.skipFactor+1) + " *** " + info.key + "! " + str
+//}
+
 func auxPanic(skipCount int, prefix string, message ...any) {
 	msg := preparePanicMessage(skipCount+1, prefix, message...)
+	if !testAlertState {
+		panic(msg)
+	} else {
+		TestPanicMessageLog.WriteString(msg + "\n")
+	}
+}
+
+func auxPanicNew(skipCount int, prefix string, message ...any) {
+	// Both the prefix and the message can contain skip information, so
+	// parse and sum them
+
+	prefixInfo := extractAlertInfo(prefix)
+	messageStr := ToString(message...)
+	messageInfo := extractAlertInfo(messageStr)
+
+	msg := CallerLocation(prefixInfo.skipFactor+messageInfo.skipFactor+skipCount+1) + " *** " + prefixInfo.key + "! " + messageInfo.key
+
 	if !testAlertState {
 		panic(msg)
 	} else {
@@ -148,13 +186,6 @@ func auxPanic(skipCount int, prefix string, message ...any) {
 var testAlertState bool
 var TestPanicMessageLog = strings.Builder{}
 var TestAlertDuration int64
-
-// Panic if an error code is nonzero.
-func CheckOk(err error, message ...any) {
-	if err != nil {
-		auxPanic(1, "Unexpected error", message...)
-	}
-}
 
 func CheckNil(result any, message ...any) {
 	if result != nil {

@@ -380,7 +380,7 @@ func verifyUsed(flag bool, name string) {
 }
 
 func (m WidgetManager) clearPendingComponentFields() {
-	Todo("incorporate skip values into 'BadState', other assertions")
+	Todo("!incorporate skip values into 'BadState', other assertions")
 	// If some values were not used, issue warnings
 	verifyUsed(m.mPendingDefaultIntValue == 0, "pendingDefaultIntValue")
 	verifyUsed(m.mPendingStringDefaultValue == "", "mPendingStringDefaultValue")

@@ -27,7 +27,8 @@ func TestPanics(t *testing.T) {
 	NotImplemented(s)
 	NotSupported(s)
 	Halt(s)
-	ok := Error("this", "is", "an", "error", "message;")
+	CheckNonEmpty("", "lorem ipsum")
+	ok := Error("this", "is", "an", "error", "message")
 	CheckOk(ok, s)
 	nestedAssertions("<1 Nested assertions")
 	nestedAssertions2()
@@ -88,7 +89,7 @@ func nestedAssertions(s string) {
 	NotImplemented(s)
 	NotSupported(s)
 	Halt(s)
-	ok := Error("This", "is", "an", "error", "message;")
+	ok := Error("This", "is", "an", "error", "message")
 	CheckOk(ok, s)
 }
 func nestedAssertions2() {
