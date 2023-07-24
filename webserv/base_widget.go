@@ -11,6 +11,7 @@ type BaseWidgetObj struct {
 	Id       string
 	Bounds   Rect
 	Listener WidgetListener
+	hidden   bool
 }
 
 type BaseWidget = *BaseWidgetObj
@@ -21,6 +22,10 @@ func (w BaseWidget) GetBaseWidget() BaseWidget {
 
 func (w BaseWidget) WriteValue(v JSEntity) {
 	NotImplemented("WriteValue")
+}
+
+func (w BaseWidget) SetVisible(v bool) {
+	w.hidden = !v
 }
 
 func (w BaseWidget) ReadValue() JSEntity {
@@ -56,6 +61,7 @@ func (w BaseWidget) IdSummary() string {
 func (w BaseWidget) IdComment() string {
 	return WrapWithinComment(w.IdSummary())
 }
+
 func (w BaseWidget) GetId() string {
 	return w.Id
 }
@@ -63,4 +69,8 @@ func (w BaseWidget) GetId() string {
 func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A("BaseWidget, id: ")
 	m.A(w.Id)
+}
+
+func (w BaseWidget) Visible() bool {
+	return !w.hidden
 }

@@ -118,7 +118,7 @@ func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Req
 	if sess.AppData == nil {
 		sess.AppData = oper
 		sess.State.Put("header_text", "This is ajax_demo.go").
-			Put("header_text_2b", "8 columns").Put("header_text_3", "4 columns")
+			Put("header_text_2", "8 columns").Put("header_text_3", "4 columns")
 	}
 
 	if sess.PageWidget == nil {
@@ -173,14 +173,10 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	widget := m.OpenFor(WidgetIdPage, "main container")
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
+	alertWidget.SetVisible(false)
 	m.Add(alertWidget)
 
 	m.Add(NewHeadingWidget("header_text", 1))
-
-	m.Col(8)
-	m.Size(2).AddHeading("header_text_2")
-	m.Col(4)
-	m.Size(2).AddHeading("header_text_3")
 
 	m.Col(8)
 	m.Listener(birdListener)
@@ -219,7 +215,6 @@ func birdListener(sess any, widget Widget) {
 }
 
 func zebraListener(sess any, widget Widget) {
-	alertWidget.Class = (alertWidget.Class + 1) % 4
 
 	s := sess.(Session)
 
@@ -231,9 +226,15 @@ func zebraListener(sess any, widget Widget) {
 
 	// Store this as the new value for this widget within the session state map
 	s.State.Put(widget.GetBaseWidget().Id, newVal)
-	s.State.Put(alertWidget.Id,
-		strings.TrimSpace(s.State.OptString(alertWidget.Id, "")+" "+
-			RandomText(myRand, 55, false)))
 	s.Repaint(widget.GetBaseWidget())
+
+	// Increment the alert class, and update its message
+	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
+
+	alertWidget.SetVisible(newVal != "")
+
+	s.State.Put(alertWidget.Id,
+		strings.TrimSpace(newVal+" "+
+			RandomText(myRand, 55, false)))
 	s.Repaint(alertWidget)
 }

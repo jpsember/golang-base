@@ -12,6 +12,7 @@ const (
 	AlertInfo
 	AlertWarning
 	AlertDanger
+	AlertTotal
 )
 
 type AlertClass int
@@ -35,6 +36,15 @@ func NewAlertWidget(id string, alertClass AlertClass) AlertWidget {
 var classNames = []string{`success`, `info`, `warning`, `danger`}
 
 func (w AlertWidget) RenderTo(m MarkupBuilder, state JSMap) {
+	if !w.Visible() {
+    Todo("have utility method for this")
+		m.A(`<div id='`)
+		m.A(w.Id)
+		m.A(`'>`)
+		m.A(`</div>`)
+		m.Cr()
+		return
+	}
 	pr := PrIf(false)
 	desc := `AlertWidget ` + w.IdSummary()
 	pr("rendering AlertWidget, desc:", desc, "class:", w.Class)

@@ -421,7 +421,6 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	m.Log("addWidget, id:", widget.GetId(), "panel stack size:", m.parentStack.Size())
 	if !m.parentStack.IsEmpty() {
 		m.parentStack.Last().AddChild(widget, m)
-
 	}
 	m.clearPendingComponentFields()
 	return m
