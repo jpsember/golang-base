@@ -37,12 +37,7 @@ var classNames = []string{`success`, `info`, `warning`, `danger`}
 
 func (w AlertWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if !w.Visible() {
-    Todo("have utility method for this")
-		m.A(`<div id='`)
-		m.A(w.Id)
-		m.A(`'>`)
-		m.A(`</div>`)
-		m.Cr()
+		m.RenderInvisible(w, "div")
 		return
 	}
 	pr := PrIf(false)

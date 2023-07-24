@@ -22,6 +22,18 @@ func NewMarkupBuilder() MarkupBuilder {
 	return &v
 }
 
+func (m MarkupBuilder) RenderInvisible(w Widget, tag string) MarkupBuilder {
+	m.A(`<`)
+	m.A(tag)
+	m.A(` id='`)
+	m.A(w.GetId())
+	m.A(`'></`)
+	m.A(tag)
+	m.A(`>`)
+	m.Cr()
+	return m
+}
+
 func (m MarkupBuilder) Quoted(text string) MarkupBuilder {
 	return m.A(Quoted(text))
 }

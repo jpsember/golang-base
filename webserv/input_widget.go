@@ -21,6 +21,10 @@ func NewInputWidget(id string) InputWidget {
 }
 
 func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
+	if !w.Visible() {
+		m.RenderInvisible(w, "span")
+		return
+	}
 	value := WidgetStringValue(state, w.Id)
 	m.A(`<input type='text' id='`)
 	m.A(w.Id)

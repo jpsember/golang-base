@@ -176,7 +176,8 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	alertWidget.SetVisible(false)
 	m.Add(alertWidget)
 
-	m.Add(NewHeadingWidget("header_text", 1))
+	heading := NewHeadingWidget("header_text", 1)
+	m.Add(heading)
 
 	m.Col(8)
 	m.Listener(birdListener)

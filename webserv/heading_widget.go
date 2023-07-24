@@ -21,10 +21,14 @@ func NewHeadingWidget(id string, size int) HeadingWidget {
 }
 
 func (w HeadingWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	value := WidgetStringValue(state, w.Id)
-	tag := `h` + IntToString(w.size)
-	m.A(`<`).A(tag).A(` id='`).A(w.Id).A(`'>`)
-	m.A(EscapedHtml(value).String())
-	m.A(`</`).A(tag).A(`>`)
+	if !w.Visible() {
+		m.RenderInvisible(w, "div")
+	} else {
+		value := WidgetStringValue(state, w.Id)
+		tag := `h` + IntToString(w.size)
+		m.A(`<`).A(tag).A(` id='`).A(w.Id).A(`'>`)
+		m.A(EscapedHtml(value).String())
+		m.A(`</`).A(tag).A(`>`)
+	}
 	m.Cr()
 }

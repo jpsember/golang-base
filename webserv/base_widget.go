@@ -67,7 +67,7 @@ func (w BaseWidget) GetId() string {
 }
 
 func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	m.A("BaseWidget, id: ")
+	m.A("No RenderTo() for id: ")
 	m.A(w.Id)
 }
 

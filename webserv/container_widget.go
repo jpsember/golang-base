@@ -63,36 +63,38 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.Comments(false)
 	desc := `ContainerWidget ` + w.IdSummary()
 	m.OpenHtml(`div class='col-sm-`+IntToString(w.columns)+`' id='`+w.Id+`'`, desc)
-	prevPoint := IPointWith(0, -1)
-	for index, child := range w.children.Array() {
-		cell := w.cells.Get(index)
-		// If this cell lies in a row below the current, Close the current and start a new one
-		if cell.Location.Y > prevPoint.Y {
-			if prevPoint.Y >= 0 {
-				m.CloseHtml("div", "end of row")
+	if w.Visible() {
+		prevPoint := IPointWith(0, -1)
+		for index, child := range w.children.Array() {
+			cell := w.cells.Get(index)
+			// If this cell lies in a row below the current, Close the current and start a new one
+			if cell.Location.Y > prevPoint.Y {
+				if prevPoint.Y >= 0 {
+					m.CloseHtml("div", "end of row")
+				}
+				m.Br()
+				m.OpenHtml(`div class='row'`, `start of row`)
+				m.Cr()
+				prevPoint = IPointWith(0, cell.Location.Y)
 			}
-			m.Br()
-			m.OpenHtml(`div class='row'`, `start of row`)
-			m.Cr()
-			prevPoint = IPointWith(0, cell.Location.Y)
-		}
 
-		// If cell lies to right of current, add space
-		spaceColumns := cell.Location.X - prevPoint.X
-		if spaceColumns > 0 {
-			m.OpenHtml(`div class='col-sm-`+IntToString(spaceColumns)+`'`, `spacer`)
+			// If cell lies to right of current, add space
+			spaceColumns := cell.Location.X - prevPoint.X
+			if spaceColumns > 0 {
+				m.OpenHtml(`div class='col-sm-`+IntToString(spaceColumns)+`'`, `spacer`)
+				child.RenderTo(m, state)
+				m.CloseHtml(`div`, `spacer`)
+			}
+
+			m.OpenHtml(`div class='col-sm-`+IntToString(cell.Width)+`'`, `child`)
 			child.RenderTo(m, state)
-			m.CloseHtml(`div`, `spacer`)
+			m.CloseHtml(`div`, `child`)
+			prevPoint = IPointWith(cell.Location.X+cell.Width, cell.Location.Y)
 		}
-
-		m.OpenHtml(`div class='col-sm-`+IntToString(cell.Width)+`'`, `child`)
-		child.RenderTo(m, state)
-		m.CloseHtml(`div`, `child`)
-		prevPoint = IPointWith(cell.Location.X+cell.Width, cell.Location.Y)
-	}
-	if prevPoint.Y >= 0 {
-		m.CloseHtml("div", "row")
-		m.Br()
+		if prevPoint.Y >= 0 {
+			m.CloseHtml("div", "row")
+			m.Br()
+		}
 	}
 	m.CloseHtml(`div`, desc)
 	m.Comments(true)
