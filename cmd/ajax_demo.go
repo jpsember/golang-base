@@ -168,6 +168,9 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m := sess.WidgetManager()
 	//m.AlertVerbose()
 
+	sess.State.Put("x54", `Sample text; is 5 < 26? "Quoted string"`)
+	Todo("Add support for constant text (no ids?)")
+
 	// Page occupies full 12 columns
 	m.Col(12)
 	widget := m.OpenFor(WidgetIdPage, "main container")
