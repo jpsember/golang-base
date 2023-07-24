@@ -2,7 +2,6 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"html"
 )
 
 type TextWidgetObj struct {
@@ -18,17 +17,22 @@ func NewTextWidget() TextWidget {
 
 func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if !w.Visible() {
-		m.RenderInvisible(w, "p")
+		m.RenderInvisible(w, "div")
 		return
 	}
-	m.A(`<pr id='`)
+
+	m.A(`<div id='`)
 	m.A(w.Id)
 	m.A(`'>`)
-	Todo("Perhaps assume text is already escaped?")
-	Todo("Perhaps treat linefeeds as distinct paragraphs?")
-	
+
 	textContent := state.OptString(w.Id, "No text found")
-	m.A(html.EscapeString(textContent))
-	m.A(`</pr>`)
+	paras := EscapedHtmlIntoParagraphs(textContent)
+	for _, c := range paras {
+		m.A(`<p>`)
+		m.A(c.String())
+		m.A(`</p>`)
+		m.Cr()
+	}
+	m.A(`</div>`)
 	m.Cr()
 }

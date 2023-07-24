@@ -1,6 +1,7 @@
 package webserv
 
 import (
+	. "github.com/jpsember/golang-base/base"
 	"html"
 )
 
@@ -18,6 +19,31 @@ func EscapedHtml(markup string) HtmlString {
 	}
 
 	return &h
+}
+
+func EscapedHtmlIntoParagraphs(markup string) []HtmlString {
+	c := NewArray[HtmlString]()
+
+	var currentPar []byte
+	for i := 0; i < len(markup); i++ {
+		ch := markup[i]
+		if ch == '\n' {
+			if currentPar != nil {
+				s := string(currentPar)
+				c.Add(EscapedHtml(s))
+				currentPar = nil
+			}
+		} else {
+			if currentPar == nil {
+				currentPar = make([]byte, 0)
+			}
+			currentPar = append(currentPar, ch)
+		}
+	}
+	if currentPar != nil {
+		c.Add(EscapedHtml(string(currentPar)))
+	}
+	return c.Array()
 }
 
 func (h HtmlString) String() string {

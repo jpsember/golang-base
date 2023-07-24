@@ -168,7 +168,12 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m := sess.WidgetManager()
 	//m.AlertVerbose()
 
-	sess.State.Put("x54", `Sample text; is 5 < 26? "Quoted string"`)
+	sess.State.Put("x54", `Sample text; is 5 < 26? A line feed
+"Quoted string"
+Multiple line feeds:
+
+
+   an indented final line`)
 	Todo("Add support for constant text (no ids?)")
 
 	// Page occupies full 12 columns
