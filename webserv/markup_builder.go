@@ -37,7 +37,8 @@ func (m MarkupBuilder) DoOutdent() MarkupBuilder {
 
 func (m MarkupBuilder) DebugOpen(widget Widget) MarkupBuilder {
 	m.Cr()
-	m.A(`<div class="card border border-primary shadow-0 mb-3"><div class="card-body">`)
+	Todo("where are the mb-x and p-x attributes documented?")
+	m.A(`<div class="card border border-info shadow-0 mb-1 p-0 rounded-1"><div class="card-body">`)
 	m.DoIndent()
 	return m
 }
