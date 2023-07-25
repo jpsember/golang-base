@@ -70,3 +70,13 @@ func (h HtmlString) Paragraphs() []string {
 	h.parse()
 	return h.escaped
 }
+
+
+// Get the expected single escaped html paragraph.
+func (h HtmlString) Escaped() string {
+	p := h.Paragraphs()
+	if len(p) != 1 {
+		BadArg("<1 Expected a single escaped paragraph from:", Quoted(h.rawString), "but got:", JSListWith(h.escaped))
+	}
+	return p[0]
+}
