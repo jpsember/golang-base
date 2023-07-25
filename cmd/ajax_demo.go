@@ -174,7 +174,7 @@ Multiple line feeds:
 
 
    an indented final line`)
-	Todo("Add support for constant text (no ids?)")
+	Todo("!Add support for constant text (no ids?)")
 
 	// Page occupies full 12 columns
 	m.Col(12)
@@ -200,7 +200,8 @@ Multiple line feeds:
 	m.AddInput("zebra")
 
 	m.Col(4)
-	m.Id("x57").AddText()
+	m.Content("uniform delta").AddText()
+
 	m.Id("x58").AddText()
 	m.Id("x59").AddText()
 

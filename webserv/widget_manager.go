@@ -19,7 +19,6 @@ type WidgetManagerObj struct {
 	mComboChoices               *Array[string]
 	mPendingBooleanDefaultValue bool
 	mPendingStringDefaultValue  string
-	pendingText                 string
 	mPendingTabTitle            string
 	mPendingFloatingPointFlag   bool
 	mPendingDefaultFloatValue   float64
@@ -28,7 +27,9 @@ type WidgetManagerObj struct {
 	parentStack                 *Array[ContainerWidget]
 	pendingSize                 int
 	pendingColumns              int
+	pendingText                 string
 	pendingId                   string
+	anonymousIdCounter          int
 }
 
 func NewWidgetManager() WidgetManager {
@@ -299,7 +300,7 @@ func (m WidgetManager) DefaultString(value string) WidgetManager {
 	return m
 }
 
-func (m WidgetManager) Label(value string) WidgetManager {
+func (m WidgetManager) Content(value string) WidgetManager {
 	m.pendingText = value
 	return m
 }
@@ -495,13 +496,26 @@ func (m WidgetManager) assignPendingListener(widget Widget) {
 
 func (m WidgetManager) AddText() WidgetManager {
 	w := NewTextWidget()
-	w.Id = m.consumePendingId()
-	w.Text = m.consumePendingText()
-	m.Log("Adding label, id:", w.Id)
+
+	// The content can either be expressed as a string (static content), or an id (dynamic content)
+	staticContent := m.consumePendingText()
+	if staticContent != "" {
+		CheckState(m.pendingId == "", "specify id OR static content")
+		w.Text = staticContent
+		w.Id = m.AllocateAnonymousId()
+	} else {
+		w.Id = m.consumePendingId()
+	}
+	m.Log("Adding text, id:", w.Id)
 	return m.Add(w)
 }
 
 func (m WidgetManager) Listener(listener WidgetListener) WidgetManager {
 	m.pendingListener = listener
 	return m
+}
+
+func (m WidgetManager) AllocateAnonymousId() string {
+	m.anonymousIdCounter++
+	return "." + IntToString(m.anonymousIdCounter)
 }
