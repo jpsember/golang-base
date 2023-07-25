@@ -207,7 +207,6 @@ Multiple line feeds:
 	m.Close()
 
 	sess.PageWidget = widget
-
 }
 
 func birdListener(sess any, widget Widget) {

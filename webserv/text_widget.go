@@ -24,6 +24,8 @@ func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(`<div id='`)
 	m.A(w.Id)
 	m.A(`'>`)
+	m.DoIndent()
+	m.DebugOpen(w)
 
 	textContent := state.OptString(w.Id, "No text found")
 	paras := EscapedHtmlIntoParagraphs(textContent)
@@ -33,6 +35,9 @@ func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		m.A(`</p>`)
 		m.Cr()
 	}
+
+	m.DebugClose()
+	m.DoOutdent()
 	m.A(`</div>`)
 	m.Cr()
 }

@@ -25,13 +25,33 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		m.RenderInvisible(w, "span")
 		return
 	}
+
+	// While <input> are span tags, our widget should be considered a block element
+
+	// The outermost element must have id "foo", since we will be replacing that id's outerhtml
+	// to perform AJAX updates.
+  //
+  // The HTML input element has id "foo.aux"
+
+	m.A(`<div id='`)
+	m.A(w.Id)
+	m.A(`'>`)
+	m.DoIndent()
+
+	Alert("Why does this cause nesting with every ajax refresh?")
+	Todo("we probably can't update via Ajax by setting outerhtml; we probably need to pass in another id?")
+	m.DebugOpen(w)
+
 	value := WidgetStringValue(state, w.Id)
 	m.A(`<input type='text' id='`)
 	m.A(w.Id)
+	m.A(`.aux`)
 	m.A(`' value='`)
 	m.A(EscapedHtml(value).String())
 	m.A(`' onchange='jsVal("`)
 	m.A(w.Id)
 	m.A(`")'>`)
 	m.Cr()
+
+	m.DebugClose()
 }

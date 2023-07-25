@@ -22,6 +22,50 @@ func NewMarkupBuilder() MarkupBuilder {
 	return &v
 }
 
+func (m MarkupBuilder) DoIndent() MarkupBuilder {
+	m.Cr()
+	m.indent += 2
+	return m
+}
+
+func (m MarkupBuilder) DoOutdent() MarkupBuilder {
+	m.indent -= 2
+	CheckState(m.indent >= 0, "indent underflow")
+	m.Cr()
+	return m
+}
+
+func (m MarkupBuilder) DebugOpen(widget Widget) MarkupBuilder {
+	m.Cr()
+	m.A(`<div class="card border border-primary shadow-0 mb-3"><div class="card-body">`)
+	m.DoIndent()
+	if false {
+		m.A(`<!-- Id: `)
+		m.A(widget.GetId())
+		m.A(` -->`)
+	}
+	return m
+}
+
+func (m MarkupBuilder) DebugClose() MarkupBuilder {
+	m.DoOutdent()
+	m.A(`</div></div>`)
+	m.Cr()
+	return m
+}
+
+func (m MarkupBuilder) DebugOpenSpan(widget Widget) MarkupBuilder {
+	m.A(`<span class="border">`)
+	m.A("span border open")
+	return m
+}
+
+func (m MarkupBuilder) DebugCloseSpan() MarkupBuilder {
+	m.A("span border close")
+	m.A(`</span>`)
+	return m
+}
+
 func (m MarkupBuilder) RenderInvisible(w Widget, tag string) MarkupBuilder {
 	m.A(`<`)
 	m.A(tag)
@@ -81,15 +125,12 @@ func (b MarkupBuilder) OpenHtml(tag string, comment string) MarkupBuilder {
 		b.A(comment)
 		b.A(" -->")
 	}
-	b.Cr()
-	b.indent += 2
+	b.DoIndent()
 	return b
 }
 
 func (b MarkupBuilder) CloseHtml(tag string, comment string) MarkupBuilder {
-	b.indent -= 2
-	CheckState(b.indent >= 0, "indent underflow")
-	b.Cr()
+	b.DoOutdent()
 	b.A("</")
 	b.A(tag)
 	comment = b.commentFilter(comment)

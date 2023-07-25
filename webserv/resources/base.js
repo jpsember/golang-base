@@ -69,6 +69,7 @@ function processServerResponse(text) {
               continue;
             }
             pr("replacing outerHTML for widget with id:",id)
+            pr("and markup:",markup)
             elem.outerHTML = markup;
         }
     }
@@ -79,7 +80,11 @@ function processServerResponse(text) {
 function jsVal(id) {
     // see https://tobiasahlin.com/blog/move-from-jquery-to-vanilla-javascript
     // to add back in some useful jquery functions
-    const x = document.getElementById(id);
+
+    // The Widget id has id "<id>"
+    // The HTML element for the input field has id "<id>.aux"
+    const auxId = id + '.aux'
+    const x = document.getElementById(auxId);
     const textValue = x.value;
     const xhttp = new XMLHttpRequest();
     const addr = window.location.href.split('?')[0];
