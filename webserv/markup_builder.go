@@ -39,11 +39,6 @@ func (m MarkupBuilder) DebugOpen(widget Widget) MarkupBuilder {
 	m.Cr()
 	m.A(`<div class="card border border-primary shadow-0 mb-3"><div class="card-body">`)
 	m.DoIndent()
-	if false {
-		m.A(`<!-- Id: `)
-		m.A(widget.GetId())
-		m.A(` -->`)
-	}
 	return m
 }
 
