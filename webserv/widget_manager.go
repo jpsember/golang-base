@@ -300,7 +300,7 @@ func (m WidgetManager) DefaultString(value string) WidgetManager {
 	return m
 }
 
-func (m WidgetManager) Content(value string) WidgetManager {
+func (m WidgetManager) Text(value string) WidgetManager {
 	m.pendingText = value
 	return m
 }
@@ -385,7 +385,7 @@ func (m WidgetManager) clearPendingComponentFields() {
 	// If some values were not used, issue warnings
 	verifyUsed(m.mPendingDefaultIntValue == 0, "pendingDefaultIntValue")
 	verifyUsed(m.mPendingStringDefaultValue == "", "mPendingStringDefaultValue")
-	verifyUsed(m.pendingText == "", "mPendingLabel ")
+	verifyUsed(m.pendingText == "", "pendingText")
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
 	verifyUsed(m.pendingListener == nil, "pendingListener")
 	verifyUsed(m.pendingSize == 0, "pendingSize")
@@ -497,11 +497,12 @@ func (m WidgetManager) assignPendingListener(widget Widget) {
 func (m WidgetManager) AddText() WidgetManager {
 	w := NewTextWidget()
 
-	// The content can either be expressed as a string (static content), or an id (dynamic content)
+	// The text can either be expressed as a string (static content),
+	// or an id (dynamic content, read from session state)
 	staticContent := m.consumePendingText()
 	if staticContent != "" {
 		CheckState(m.pendingId == "", "specify id OR static content")
-		w.Text = staticContent
+		w.Text = NewHtmlString(staticContent)
 		w.Id = m.AllocateAnonymousId()
 	} else {
 		w.Id = m.consumePendingId()

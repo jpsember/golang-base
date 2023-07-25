@@ -154,7 +154,7 @@ func (j JTest) generateMessageTo(filename string, content string) {
 			q.WriteString(s)
 			q.WriteString("\u21e6\n")
 		}
-		j.Log("Content:", INDENT, q)
+		j.Log("Text:", INDENT, q)
 	}
 	var path = j.GetTestResultsDir().JoinM(filename)
 	if !strings.HasSuffix(content, "\n") {

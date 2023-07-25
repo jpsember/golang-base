@@ -6,7 +6,7 @@ import (
 
 type TextWidgetObj struct {
 	BaseWidgetObj
-	Text string // if nonempty, the static content of the widget
+	Text HtmlString // if not nil, the static content of the widget
 }
 
 type TextWidget = *TextWidgetObj
@@ -23,23 +23,21 @@ func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	textContent := w.Text
 	m.A(`<div`)
-	dynamic := textContent == ""
-	if dynamic {
+	if textContent == nil {
 		m.A(` id='`)
 		m.A(w.Id)
 		m.A(`'`)
-		textContent = state.OptString(w.Id, "No text found")
+		s := state.OptString(w.Id, "No text found")
+		textContent = NewHtmlString(s)
 	}
 	m.A(`>`)
 
 	m.DoIndent()
 	m.DebugOpen(w)
 
-	Todo("make w.Text field an HtmlString")
-	paras := EscapedHtmlIntoParagraphs(textContent)
-	for _, c := range paras {
+	for _, c := range textContent.Paragraphs() {
 		m.A(`<p>`)
-		m.A(c.String())
+		m.A(c)
 		m.A(`</p>`)
 		m.Cr()
 	}

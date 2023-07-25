@@ -143,7 +143,7 @@ func (oper NonAjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 </form>
 `)
 
-	sb.Pr(`<div id="div1"><h2>Let AJAX Change This Text</h2></div><button onclick="ajax('div1')">Get External Content</button>`)
+	sb.Pr(`<div id="div1"><h2>Let AJAX Change This Text</h2></div><button onclick="ajax('div1')">Get External Text</button>`)
 	sb.Pr(`<div id="div2"><h2>Another independent element</h2></div><button onclick="ajax('div2')">Button 2</button>`)
 
 	oper.writeFooter(w, sb)

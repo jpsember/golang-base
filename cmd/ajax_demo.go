@@ -47,7 +47,7 @@ func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AjaxOper) Perform(app *App) {
-
+	//ClearAlertHistory()
 	oper.sessionManager = BuildFileSystemSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
@@ -168,14 +168,6 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m := sess.WidgetManager()
 	//m.AlertVerbose()
 
-	sess.State.Put("x54", `Sample text; is 5 < 26? A line feed
-"Quoted string"
-Multiple line feeds:
-
-
-   an indented final line`)
-	Todo("!Add support for constant text (no ids?)")
-
 	// Page occupies full 12 columns
 	m.Col(12)
 	widget := m.OpenFor(WidgetIdPage, "main container")
@@ -194,13 +186,20 @@ Multiple line feeds:
 	m.Id("x52").AddText()
 
 	m.Col(8)
-	m.Id("x54").AddText()
+	m.Text(`Sample text; is 5 < 26? A line feed
+"Quoted string"
+Multiple line feeds:
+
+
+   an indented final line`)
+	m.AddText()
+
 	m.Col(4)
 	m.Listener(zebraListener)
 	m.AddInput("zebra")
 
 	m.Col(4)
-	m.Content("uniform delta").AddText()
+	m.Text("uniform delta").AddText()
 
 	m.Id("x58").AddText()
 	m.Id("x59").AddText()

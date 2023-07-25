@@ -6,23 +6,22 @@ import (
 )
 
 type HtmlStringStruct struct {
-	Source           string
-	escaped          string
+	rawString        string
+	escaped          []string
 	escapedGenerated bool
 }
 
 type HtmlString = *HtmlStringStruct
 
-func EscapedHtml(markup string) HtmlString {
+func NewHtmlString(rawString string) HtmlString {
 	h := HtmlStringStruct{
-		Source: markup,
+		rawString: rawString,
 	}
-
 	return &h
 }
 
-func EscapedHtmlIntoParagraphs(markup string) []HtmlString {
-	c := NewArray[HtmlString]()
+func stringToEscapedParagraphs(markup string) []string {
+	c := NewArray[string]()
 
 	var currentPar []byte
 	for i := 0; i < len(markup); i++ {
@@ -30,7 +29,7 @@ func EscapedHtmlIntoParagraphs(markup string) []HtmlString {
 		if ch == '\n' {
 			if currentPar != nil {
 				s := string(currentPar)
-				c.Add(EscapedHtml(s))
+				c.Add(html.EscapeString(s))
 				currentPar = nil
 			}
 		} else {
@@ -41,15 +40,33 @@ func EscapedHtmlIntoParagraphs(markup string) []HtmlString {
 		}
 	}
 	if currentPar != nil {
-		c.Add(EscapedHtml(string(currentPar)))
+		c.Add(html.EscapeString(string(currentPar)))
 	}
 	return c.Array()
 }
 
 func (h HtmlString) String() string {
+	return "HtmlString, source:" + Quoted(h.rawString)
+}
+
+func (h HtmlString) parse() {
 	if !h.escapedGenerated {
-		h.escaped = html.EscapeString(h.Source)
+		h.escaped = stringToEscapedParagraphs(h.rawString)
 		h.escapedGenerated = true
 	}
+}
+
+func (h HtmlString) ParagraphCount() int {
+	h.parse()
+	return len(h.escaped)
+}
+
+func (h HtmlString) Paragraph(index int) string {
+	h.parse()
+	return h.escaped[index]
+}
+
+func (h HtmlString) Paragraphs() []string {
+	h.parse()
 	return h.escaped
 }

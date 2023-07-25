@@ -198,6 +198,7 @@ func Info(arg any) string {
 func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any) {
 	// Acquire the lock while we test and increment the current session report count for this alert
 	debugLock.Lock()
+	processClearAlertHistoryFlag()
 	info := extractAlertInfo(key)
 	cachedInfo := debugLocMap[info.key] + 1
 	debugLocMap[info.key] = cachedInfo
@@ -249,6 +250,23 @@ func Todo(key string, message ...any) bool {
 	auxAlert(1, key, "TODO", message...)
 	return true
 }
+
+func ClearAlertHistory() {
+	Alert("<1 clearing alert history")
+	clearAlertHistoryFlag = true
+}
+
+func processClearAlertHistoryFlag() {
+	if clearAlertHistoryFlag {
+		clearPriorityAlertMapFlag = true
+		debugLocMap = make(map[string]int)
+		priorityAlertMap = nil
+		clearAlertHistoryFlag = false
+	}
+}
+
+var clearAlertHistoryFlag bool
+var clearPriorityAlertMapFlag bool
 
 // Print an Alert if an Alert with its key hasn't already been printed.
 // The key is printed, along with the additional message components
@@ -498,7 +516,12 @@ func processAlertForMultipleSessions(info alertInfo) bool {
 			}
 		}
 		priorityAlertPersistPath = d.JoinM(".go_flags.json")
-		priorityAlertMap = JSMapFromFileIfExistsM(priorityAlertPersistPath)
+		if clearPriorityAlertMapFlag {
+			priorityAlertMap = NewJSMap()
+			clearPriorityAlertMapFlag = false
+		} else {
+			priorityAlertMap = JSMapFromFileIfExistsM(priorityAlertPersistPath)
+		}
 		const expectedVersion = 2
 		if priorityAlertMap.OptInt("version", 0) != expectedVersion {
 			priorityAlertMap.Clear().Put("version", expectedVersion)

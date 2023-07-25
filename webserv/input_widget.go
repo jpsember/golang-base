@@ -45,7 +45,7 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(w.Id)
 	m.A(`.aux`)
 	m.A(`' value='`)
-	m.A(EscapedHtml(value).String())
+	m.A(NewHtmlString(value).String())
 	m.A(`' onchange='jsVal("`)
 	m.A(w.Id)
 	m.A(`")'>`)
