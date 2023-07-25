@@ -100,3 +100,17 @@ function jsVal(id) {
     xhttp.send();
 }
 
+// An onClick event has occurred within a button
+function jsButton(id) {
+    const xhttp = new XMLHttpRequest();
+    const addr = window.location.href.split('?')[0];
+    const url = new URL(addr + '/ajax');
+    url.searchParams.set('w', id);         // The widget id
+    xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+            processServerResponse(this.responseText)
+        }
+    };
+    xhttp.open('GET', url);
+    xhttp.send();
+}

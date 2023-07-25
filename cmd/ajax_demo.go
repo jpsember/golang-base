@@ -183,7 +183,7 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.Listener(birdListener)
 	m.AddInput("bird")
 	m.Col(4)
-	m.Id("x52").AddText()
+	m.Id("launch").Text(`Launch`).Listener(buttonListener).AddButton()
 
 	m.Col(8)
 	m.Text(`Sample text; is 5 < 26? A line feed
@@ -200,9 +200,8 @@ Multiple line feeds:
 
 	m.Col(4)
 	m.Text("uniform delta").AddText()
-
-	m.Id("x58").AddText()
-	m.Id("x59").AddText()
+	m.Id("x58").Text(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
+	m.Id("x59").Text(`X59`).Listener(buttonListener).AddButton()
 
 	m.Close()
 
@@ -244,5 +243,20 @@ func zebraListener(sess any, widget Widget) {
 	s.State.Put(alertWidget.Id,
 		strings.TrimSpace(newVal+" "+
 			RandomText(myRand, 55, false)))
+	s.Repaint(alertWidget)
+}
+
+func buttonListener(sess any, widget Widget) {
+	s := sess.(Session)
+	wid := s.GetWidgetId()
+	Pr("Button click on id:", wid)
+	newVal := "Clicked: " + wid
+
+	// Increment the alert class, and update its message
+	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
+	alertWidget.SetVisible(true)
+
+	s.State.Put(alertWidget.Id,
+		strings.TrimSpace(newVal))
 	s.Repaint(alertWidget)
 }

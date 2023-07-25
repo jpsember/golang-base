@@ -12,6 +12,7 @@ type BaseWidgetObj struct {
 	Bounds   Rect
 	Listener WidgetListener
 	hidden   bool
+	disabled bool
 }
 
 type BaseWidget = *BaseWidgetObj
@@ -26,6 +27,10 @@ func (w BaseWidget) WriteValue(v JSEntity) {
 
 func (w BaseWidget) SetVisible(v bool) {
 	w.hidden = !v
+}
+
+func (w BaseWidget) SetEnabled(s bool) {
+	w.disabled = !s
 }
 
 func (w BaseWidget) ReadValue() JSEntity {
@@ -73,4 +78,8 @@ func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 func (w BaseWidget) Visible() bool {
 	return !w.hidden
+}
+
+func (w BaseWidget) Enabled() bool {
+	return !w.disabled
 }

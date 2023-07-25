@@ -511,6 +511,17 @@ func (m WidgetManager) AddText() WidgetManager {
 	return m.Add(w)
 }
 
+func (m WidgetManager) AddButton() ButtonWidget {
+	w := NewButtonWidget()
+	w.Id = m.consumePendingId()
+	m.assignPendingListener(w)
+	m.Log("Adding button, id:", w.Id)
+	w.Label =
+		NewHtmlString(m.consumePendingText())
+	m.Add(w)
+	return w
+}
+
 func (m WidgetManager) Listener(listener WidgetListener) WidgetManager {
 	m.pendingListener = listener
 	return m

@@ -114,6 +114,11 @@ func (s Session) processClientMessage() {
 		s.SetProblem("no listener for id", widget.GetId())
 		return
 	}
+	Todo("move some Widget methods to the BaseWidget, e.g. enabled")
+	if !widget.Enabled() {
+		s.SetProblem("widget is disabled", widget.GetId())
+		return
+	}
 	listener(s, widget)
 }
 
