@@ -30,7 +30,7 @@ func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		s := state.OptString(w.Id, "No text found")
 		textContent = NewHtmlString(s)
 	}
-	m.A(`> <!-- end of text widget -->`)
+	m.A(`>`)
 
 	for _, c := range textContent.Paragraphs() {
 		m.A(`<p>`)

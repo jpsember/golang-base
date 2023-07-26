@@ -29,10 +29,7 @@
       </div>
 
       <div class='row'>
-        <div class='col-sm-4'>
-          <div> <!-- end of text widget --><p>uniform delta</p>
-          </div>
-        </div>
+
         <div class='col-sm-4'>
           <div id='x58'>
             <div class="card border border-info shadow-0 mb-1 p-0 rounded-1"><div class="card-body">
@@ -40,6 +37,84 @@
             </div></div>
           </div>
         </div>
+
+<!-- see https://code-boxx.com/show-error-messages-html-forms/ -->
+        <div class='col-sm-4'>
+
+<div class="container">
+  <!-- a label -->
+  <div class="row text-sm" style="font-size: .7rem">
+    Age
+  </div>
+
+  <div class="row">
+    <input  type='text' id='bird.aux' value='this is sample input' onchange='jsVal("bird")'>
+  </div>
+  <div class="row text-danger" style="font-size:  60%" class="text-danger">
+    &nbsp;
+  </div>
+
+</div>
+
+
+
+<div class="container">
+  <div class="row text-sm" style="font-size: .7rem">
+    Age
+  </div>
+  <div class="row">
+    <input class="text-bg-danger" type='text' id='bird.aux' value='this is sample input' onchange='jsVal("bird")'>
+  </div>
+  <div class="row text-danger" style="font-size:  60%" class="text-danger">
+    Please enter a number from 1 to 120
+  </div>
+
+</div>
+
+
+<div class="container">
+  <div class="row text-sm" style="font-size: .7rem">
+    Enter a number...
+  </div>
+
+  <div class="row">
+    <input class="text-bg-danger" type='text' id='bird.aux' value='this is sample input' onchange='jsVal("bird")'>
+  </div>
+
+  <div class="row text-danger" style="font-size:  60%" class="text-danger">
+    Num must be between 1-4
+  </div>
+
+</div>
+
+
+<!-- <div class="container">
+  <div class="row text-sm" style="font-size: .7rem">
+    Enter a number...
+  </div>
+  <div class="row">
+    <input class="text-bg-danger" type='text' id='bird.aux' value='this is sample input' onchange='jsVal("bird")'>
+  </div>
+
+<div class="row text-danger" style="font-size:  60%" class="text-danger">Num must be between 1-4
+
+
+  <div class="row">
+    <p style="font-size:  60%" class="text-danger">Num must be between 1-4</p>
+  </div>
+  <div class="row text-danger" style="font-size:  60%" class="text-danger">Num must be between 1-4
+  </div>
+  <div class="row">
+     Some text in extra row
+  </div>
+  <div class="row">
+     Some text in extra row
+  </div>
+</div>
+ -->
+
+        </div>
+
         <div class='col-sm-4'>
           <div id='x59'>
             <div class="card border border-info shadow-0 mb-1 p-0 rounded-1"><div class="card-body">
@@ -68,7 +143,8 @@
 
       <div class='row'>
         <div class='col-sm-8'>
-          <div> <!-- end of text widget --><p>Sample text; is 5 &lt; 26? A line feed</p>
+          <div>
+            <p>Sample text; is 5 &lt; 26? A line feed</p>
           <p>&#34;Quoted string&#34;</p>
           <p>Multiple line feeds:</p>
           <p>   an indented final line</p>
