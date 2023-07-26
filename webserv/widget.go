@@ -14,9 +14,6 @@ type Widget interface {
 	AddChild(c Widget, manager WidgetManager)
 	LayoutChildren(manager WidgetManager)
 	GetChildren() []Widget
-	// These should be in the base widget
-	SetEnabled(s bool)
-	Enabled() bool
 }
 
 type WidgetMap = map[string]Widget

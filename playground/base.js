@@ -1,0 +1,1 @@
+../webserv/resources/base.js

@@ -179,6 +179,12 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	heading := NewHeadingWidget("header_text", 1)
 	m.Add(heading)
 
+	m.Col(4)
+	m.Text("uniform delta").AddText()
+	m.Id("x58").Text(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
+	m.Id("x59").Text(`X59`).Listener(buttonListener).AddButton()
+
+	Todo("!Why do these next two widgets not lie in the same row?")
 	m.Col(8)
 	m.Listener(birdListener)
 	m.AddInput("bird")
@@ -197,11 +203,6 @@ Multiple line feeds:
 	m.Col(4)
 	m.Listener(zebraListener)
 	m.AddInput("zebra")
-
-	m.Col(4)
-	m.Text("uniform delta").AddText()
-	m.Id("x58").Text(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
-	m.Id("x59").Text(`X59`).Listener(buttonListener).AddButton()
 
 	m.Close()
 

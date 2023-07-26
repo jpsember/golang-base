@@ -25,8 +25,16 @@ func (w BaseWidget) WriteValue(v JSEntity) {
 	NotImplemented("WriteValue")
 }
 
+func (w BaseWidget) Visible() bool {
+	return !w.hidden
+}
+
 func (w BaseWidget) SetVisible(v bool) {
 	w.hidden = !v
+}
+
+func (w BaseWidget) Enabled() bool {
+	return !w.disabled
 }
 
 func (w BaseWidget) SetEnabled(s bool) {
@@ -74,12 +82,4 @@ func (w BaseWidget) GetId() string {
 func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A("No RenderTo() for id: ")
 	m.A(w.Id)
-}
-
-func (w BaseWidget) Visible() bool {
-	return !w.hidden
-}
-
-func (w BaseWidget) Enabled() bool {
-	return !w.disabled
 }
