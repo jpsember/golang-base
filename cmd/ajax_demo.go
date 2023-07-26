@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 )
 
 func main() {
@@ -120,7 +119,7 @@ func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Req
 	if sess.AppData == nil {
 		sess.AppData = oper
 		sess.State.Put("header_text", "This is ajax_demo.go").
-			Put("header_text_2", "8 columns").Put("header_text_3", "4 columns")
+			Put("header_text_2", "8 columns").Put("header_text_3", "4 columns").Put("bird", "").Put("zebra", "")
 	}
 
 	if sess.PageWidget == nil {
@@ -188,6 +187,7 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	m.Col(8)
 	m.Listener(birdListener)
+	m.Label("Bird")
 	m.AddInput("bird")
 	m.Col(4)
 	m.Id("launch").Text(`Launch`).Listener(buttonListener).AddButton()
@@ -203,7 +203,7 @@ Multiple line feeds:
 
 	m.Col(4)
 	m.Listener(zebraListener)
-	m.AddInput("zebra")
+	m.Label("Animal").AddInput("zebra")
 
 	m.Close()
 
@@ -217,9 +217,12 @@ func birdListener(sess any, widget Widget) {
 	if !s.Ok() {
 		return
 	}
-	s.State.Put(widget.GetId(), newVal+" at "+time.Now().Format(time.ANSIC))
-	//Pr("state map now:", INDENT, s.State)
-	//Pr("repainting widget")
+	s.ClearInputProblem(widget)
+	s.State.Put(widget.GetId(), newVal)
+	Todo("do validation as a global function somewhere")
+	if newVal == "parrot" {
+		s.SetInputProblem(widget, "No parrots, please!")
+	}
 	s.Repaint(widget)
 }
 

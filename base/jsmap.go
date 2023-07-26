@@ -117,7 +117,7 @@ func (m JSMap) prettyPrintWithIndent(context *JSONPrinter) {
 //-----------------------------------------------------------------
 
 // Factory constructor.  Do *not* construct via JSMapStruct().
-func NewJSMap() *JSMapStruct {
+func NewJSMap() JSMap {
 	var m = new(JSMapStruct)
 	return m.Clear()
 }
@@ -133,7 +133,12 @@ func (m JSMap) CompactString() string {
 	return PrintJSEntity(m, false)
 }
 
-func (m JSMap) Put(key string, value any) *JSMapStruct {
+func (m JSMap) Delete(key string) JSMap {
+	delete(m.wrappedMap, key)
+	return m
+}
+
+func (m JSMap) Put(key string, value any) JSMap {
 	m.wrappedMap[key] = ToJSEntity(value)
 	return m
 }

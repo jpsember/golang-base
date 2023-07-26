@@ -86,6 +86,11 @@ func (m MarkupBuilder) Quoted(text string) MarkupBuilder {
 	return m.A(Quoted(text))
 }
 
+func (m MarkupBuilder) H(text HtmlString) MarkupBuilder {
+	Pr("appending escaped text for:", text, INDENT, text.Escaped())
+	return m.A(text.Escaped())
+}
+
 func (m MarkupBuilder) A(text string) MarkupBuilder {
 	if m.crRequest != 0 {
 		if m.crRequest == 1 {

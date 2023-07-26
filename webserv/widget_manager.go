@@ -29,6 +29,7 @@ type WidgetManagerObj struct {
 	pendingColumns              int
 	pendingText                 string
 	pendingId                   string
+	pendingLabel                string
 	anonymousIdCounter          int
 }
 
@@ -305,6 +306,12 @@ func (m WidgetManager) Text(value string) WidgetManager {
 	return m
 }
 
+func (m WidgetManager) Label(value string) WidgetManager {
+	CheckState(m.pendingLabel == "")
+	m.pendingLabel = value
+	return m
+}
+
 /**
  * Set default value for next double-valued control
  */
@@ -353,6 +360,12 @@ func (m WidgetManager) consumePendingText() string {
 	return lbl
 }
 
+func (m WidgetManager) consumePendingLabel() string {
+	lbl := m.pendingLabel
+	m.pendingLabel = ""
+	return lbl
+}
+
 func (m WidgetManager) ConsumePendingSize() int {
 	CheckState(m.pendingSize > 0, "no pending Size")
 	size := m.pendingSize - 1
@@ -386,6 +399,7 @@ func (m WidgetManager) clearPendingComponentFields() {
 	verifyUsed(m.mPendingDefaultIntValue == 0, "pendingDefaultIntValue")
 	verifyUsed(m.mPendingStringDefaultValue == "", "mPendingStringDefaultValue")
 	verifyUsed(m.pendingText == "", "pendingText")
+	verifyUsed(m.pendingLabel == "", "pendingLabel")
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
 	verifyUsed(m.pendingListener == nil, "pendingListener")
 	verifyUsed(m.pendingSize == 0, "pendingSize")
@@ -476,7 +490,7 @@ func (m WidgetManager) finish() WidgetManager {
 }
 
 func (m WidgetManager) AddInput(id string) WidgetManager {
-	t := NewInputWidget(id)
+	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()))
 	m.assignPendingListener(t)
 	return m.Add(t)
 }

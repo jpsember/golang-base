@@ -228,3 +228,15 @@ func (s Session) GetWidget() Widget {
 	}
 	return nil
 }
+
+func (s Session) ClearInputProblem(widget Widget) {
+	Todo("Clarify SetInputProblem vs SetProblem; latter is an app problem, or crash")
+	key := widget.GetId() + ".problem"
+	s.State.Delete(key)
+}
+
+func (s Session) SetInputProblem(widget Widget, s2 string) {
+	CheckArg(s2 != "")
+	key := widget.GetId() + ".problem"
+	s.State.Put(key, s2)
+}
