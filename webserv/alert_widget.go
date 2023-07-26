@@ -37,7 +37,7 @@ var classNames = []string{`success`, `info`, `warning`, `danger`}
 
 func (w AlertWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if !w.Visible() {
-		m.RenderInvisible(w, "div")
+		m.RenderInvisible(w)
 		return
 	}
 	pr := PrIf(false)

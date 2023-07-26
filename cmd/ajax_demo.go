@@ -13,6 +13,9 @@ import (
 )
 
 func main() {
+	//ClearAlertHistory()
+	SetDebugWidgetBounds()
+
 	var app = NewApp()
 	app.SetName("WebServer")
 	app.Version = "1.0"
@@ -47,7 +50,6 @@ func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AjaxOper) Perform(app *App) {
-	//ClearAlertHistory()
 	oper.sessionManager = BuildFileSystemSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
@@ -184,7 +186,6 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.Id("x58").Text(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
 	m.Id("x59").Text(`X59`).Listener(buttonListener).AddButton()
 
-	Todo("!Why do these next two widgets not lie in the same row?")
 	m.Col(8)
 	m.Listener(birdListener)
 	m.AddInput("bird")

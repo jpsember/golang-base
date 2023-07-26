@@ -17,7 +17,7 @@ func NewButtonWidget() ButtonWidget {
 
 func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if !w.Visible() {
-		m.RenderInvisible(w, "div")
+		m.RenderInvisible(w)
 		return
 	}
 

@@ -17,7 +17,7 @@ func NewTextWidget() TextWidget {
 
 func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if !w.Visible() {
-		m.RenderInvisible(w, "div")
+		m.RenderInvisible(w)
 		return
 	}
 
@@ -30,10 +30,7 @@ func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		s := state.OptString(w.Id, "No text found")
 		textContent = NewHtmlString(s)
 	}
-	m.A(`>`)
-
-	m.DoIndent()
-	m.DebugOpen(w)
+	m.A(`> <!-- end of text widget -->`)
 
 	for _, c := range textContent.Paragraphs() {
 		m.A(`<p>`)
@@ -42,8 +39,7 @@ func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		m.Cr()
 	}
 
-	m.DebugClose()
-	m.DoOutdent()
 	m.A(`</div>`)
+
 	m.Cr()
 }

@@ -22,7 +22,7 @@ func NewHeadingWidget(id string, size int) HeadingWidget {
 
 func (w HeadingWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if !w.Visible() {
-		m.RenderInvisible(w, "div")
+		m.RenderInvisible(w)
 	} else {
 		value := WidgetStringValue(state, w.Id)
 		tag := `h` + IntToString(w.size)

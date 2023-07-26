@@ -22,7 +22,7 @@ func NewInputWidget(id string) InputWidget {
 
 func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if !w.Visible() {
-		m.RenderInvisible(w, "span")
+		m.RenderInvisible(w)
 		return
 	}
 
@@ -36,8 +36,8 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(`<div id='`)
 	m.A(w.Id)
 	m.A(`'>`)
-	m.DoIndent()
 
+	m.DoIndent()
 	m.DebugOpen(w)
 
 	value := WidgetStringValue(state, w.Id)
@@ -52,4 +52,8 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.Cr()
 
 	m.DebugClose()
+	m.DoOutdent()
+
+	m.A(`</div>`)
+	m.Cr()
 }

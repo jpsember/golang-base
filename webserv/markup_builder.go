@@ -37,6 +37,12 @@ func (m MarkupBuilder) DoOutdent() MarkupBuilder {
 
 var DebugWidgetBounds = false
 
+// Deprecated. To have uses show up in editor as a warning.
+func SetDebugWidgetBounds() {
+	Alert("<1 Setting debug widget bounds")
+	DebugWidgetBounds = true
+}
+
 func (m MarkupBuilder) DebugOpen(widget Widget) MarkupBuilder {
 	if DebugWidgetBounds {
 		m.Cr()
@@ -68,14 +74,10 @@ func (m MarkupBuilder) DebugCloseSpan() MarkupBuilder {
 	return m
 }
 
-func (m MarkupBuilder) RenderInvisible(w Widget, tag string) MarkupBuilder {
-	m.A(`<`)
-	m.A(tag)
-	m.A(` id='`)
+func (m MarkupBuilder) RenderInvisible(w Widget) MarkupBuilder {
+	m.A(`<div id='`)
 	m.A(w.GetId())
-	m.A(`'></`)
-	m.A(tag)
-	m.A(`>`)
+	m.A(`'></div>`)
 	m.Cr()
 	return m
 }
