@@ -114,3 +114,20 @@ function jsButton(id) {
     xhttp.open('GET', url);
     xhttp.send();
 }
+
+// An click event has occurred within a checkbox
+function jsCheckboxClicked(id) {
+    var checkbox = document.getElementById(id+'.aux');
+    const xhttp = new XMLHttpRequest();
+    const addr = window.location.href.split('?')[0];
+    const url = new URL(addr + '/ajax');
+    url.searchParams.set('w', id);         // The widget id
+    url.searchParams.set('v', checkbox.checked.toString());	 // The new value
+    xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+            processServerResponse(this.responseText)
+        }
+    };
+    xhttp.open('GET', url);
+    xhttp.send();
+}

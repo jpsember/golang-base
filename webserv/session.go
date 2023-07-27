@@ -99,6 +99,7 @@ func (s Session) parseAjaxRequest(req *http.Request) {
 	// will expected just one.
 	s.widgetValues, _ = v[clientKeyValue]
 	s.widgetIds, _ = v[clientKeyWidget]
+	//Pr("parsed ajax request, values:", s.widgetValues, "ids:", s.widgetIds)
 }
 
 func (s Session) processClientMessage() {
@@ -111,11 +112,11 @@ func (s Session) processClientMessage() {
 	}
 	listener := widget.GetBaseWidget().Listener
 	if listener == nil {
-		s.SetProblem("no listener for id", widget.GetId())
+		s.SetRequestProblem("no listener for id", widget.GetId())
 		return
 	}
 	if !widget.GetBaseWidget().Enabled() {
-		s.SetProblem("widget is disabled", widget.GetId())
+		s.SetRequestProblem("widget is disabled", widget.GetId())
 		return
 	}
 	listener(s, widget)
@@ -171,7 +172,7 @@ func (s Session) sendAjaxResponse() {
 
 // Discard state added to session to serve a request; release session lock.
 func (s Session) discardRequest() {
-	problem := s.GetProblem()
+	problem := s.GetRequestProblem()
 	if problem != "" {
 		Pr("Problem processing client message:", INDENT, problem)
 	}
@@ -184,14 +185,14 @@ func (s Session) discardRequest() {
 	s.Mutex.Unlock()
 }
 
-func (s Session) SetProblem(message ...any) Session {
+func (s Session) SetRequestProblem(message ...any) Session {
 	if s.requestProblem == "" {
 		s.requestProblem = "Problem with ajax request: " + ToString(message...)
 	}
 	return s
 }
 
-func (s Session) GetProblem() string {
+func (s Session) GetRequestProblem() string {
 	return s.requestProblem
 }
 
@@ -202,7 +203,7 @@ func (s Session) Ok() bool {
 // Read request's (single) widget id
 func (s Session) GetWidgetId() string {
 	if s.widgetIds == nil || len(s.widgetIds) != 1 {
-		s.SetProblem("Unable to get widget id")
+		s.SetRequestProblem("Unable to get widget id")
 		return ""
 	}
 	return s.widgetIds[0]
@@ -211,10 +212,28 @@ func (s Session) GetWidgetId() string {
 // Read request's widget value as a string
 func (s Session) GetValueString() string {
 	if s.widgetValues == nil || len(s.widgetValues) != 1 {
-		s.SetProblem("Unable to get widget value")
+		s.SetRequestProblem("Unable to get widget value")
 		return ""
 	}
 	return s.widgetValues[0]
+}
+
+// Read request's widget value as a boolean
+func (s Session) GetValueBoolean() bool {
+	if s.widgetValues == nil || len(s.widgetValues) != 1 {
+		s.SetRequestProblem("Unable to get widget value")
+		return false
+	}
+	str := s.widgetValues[0]
+	switch str {
+	case "true":
+		return true
+	case "false":
+		return false
+	default:
+		s.SetRequestProblem("Unable to parse boolean widget value:", Quoted(str))
+		return false
+	}
 }
 
 func (s Session) GetWidget() Widget {
@@ -224,18 +243,17 @@ func (s Session) GetWidget() Widget {
 		if ok {
 			return widget
 		}
-		s.SetProblem("no widget found with id", widgetId)
+		s.SetRequestProblem("no widget found with id", widgetId)
 	}
 	return nil
 }
 
-func (s Session) ClearInputProblem(widget Widget) {
-	Todo("Clarify SetInputProblem vs SetProblem; latter is an app problem, or crash")
+func (s Session) ClearWidgetProblem(widget Widget) {
 	key := widget.GetId() + ".problem"
 	s.State.Delete(key)
 }
 
-func (s Session) SetInputProblem(widget Widget, s2 string) {
+func (s Session) SetWidgetProblem(widget Widget, s2 string) {
 	CheckArg(s2 != "")
 	key := widget.GetId() + ".problem"
 	s.State.Put(key, s2)

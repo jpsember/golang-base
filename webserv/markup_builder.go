@@ -91,8 +91,16 @@ func (m MarkupBuilder) EscapeString(arg string) MarkupBuilder {
 	return m.Escape(NewHtmlString(arg))
 }
 
-func (m MarkupBuilder) Escape(arg Escaper) MarkupBuilder {
-	return m.A(arg.Escaped())
+func (m MarkupBuilder) Escape(arg any) MarkupBuilder {
+
+	if escaper, ok := arg.(Escaper); ok {
+		return m.A(escaper.Escaped())
+	}
+	if str, ok := arg.(string); ok {
+		return m.A(NewHtmlString(str).Escaped())
+	}
+	BadArg("<1Not escapable:", arg)
+	return m
 }
 
 // Append markup, generating a linefeed if one is pending.  No escaping is performed.

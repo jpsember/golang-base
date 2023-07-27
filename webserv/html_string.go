@@ -35,7 +35,7 @@ func (h HtmlString) String() string {
 
 func (h HtmlString) parse() {
 	if !h.escapedGenerated {
-		Todo("this paragraph stuff is going to trouble")
+		Todo("this paragraph stuff is going to be trouble")
 		h.escaped = stringToEscapedParagraphs(h.rawString)
 		h.escapedGenerated = true
 	}

@@ -69,18 +69,16 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(w.Id)
 	m.A(`.aux" value="`)
 	value := WidgetStringValue(state, w.Id)
-	m.EscapeString(value)
+	m.Escape(value)
 	m.A(`" onchange='jsVal("`)
 	m.A(w.Id)
 	m.A(`")'>`).Cr()
-
-	Todo("Simplify m.Comment, m.H, m.A(NewHtmlString)...")
 
 	if hasProblem {
 		m.Comment("Problem")
 		m.A(`<div class="form-text`)
 		m.A(` text-danger" style="font-size:  70%">`)
-		m.EscapeString(problemText).A(`</div>`).Cr()
+		m.Escape(problemText).A(`</div>`).Cr()
 	}
 
 	m.DebugClose()
@@ -88,17 +86,4 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	m.A(`</div>`)
 	m.Cr()
-
-	if Alert("testing escaping comments") {
-		m.Cr().Comment("no escaping necessary")
-		m.Cr().Comment(``)
-		m.Cr().Comment(` `)
-		m.Cr().Comment(`this is an --> embedded comment token`)
-		m.Cr().Comment(`-->this starts with a token`)
-		m.Cr().Comment(`this ends with a token-->`)
-		m.Cr().Comment("\n")
-		m.Cr().Comment(`this has two -->--> adjacent tokens`)
-		m.Cr().Comment(`->doesn't-- >quite ->-- have tokens`)
-		m.Cr().Comment(`lots-->-->->of tokens--><--<!---->-->->>`)
-	}
 }

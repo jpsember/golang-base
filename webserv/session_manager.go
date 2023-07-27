@@ -76,5 +76,10 @@ func WidgetStringValue(state JSMap, id string) string {
 	return state.GetString(id)
 }
 
+// Get a boolean value from session state map
+func WidgetBooleanValue(state JSMap, id string) bool {
+	return state.OptBool(id, false)
+}
+
 const clientKeyWidget = "w"
 const clientKeyValue = "v"

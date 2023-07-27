@@ -536,6 +536,14 @@ func (m WidgetManager) AddButton() ButtonWidget {
 	return w
 }
 
+func (m WidgetManager) AddCheckbox() CheckboxWidget {
+	w := NewCheckboxWidget(m.consumePendingId(), NewHtmlString(m.consumePendingText()))
+	Pr("added checkbox, id:", w.Id)
+	m.assignPendingListener(w)
+	m.Add(w)
+	return w
+}
+
 func (m WidgetManager) Listener(listener WidgetListener) WidgetManager {
 	m.pendingListener = listener
 	return m

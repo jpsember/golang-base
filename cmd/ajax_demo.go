@@ -183,7 +183,7 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.Col(4)
 	m.Text("uniform delta").AddText()
 	m.Id("x58").Text(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
-	m.Id("x59").Text(`X59`).Listener(buttonListener).AddButton()
+	m.Id("x59").Text(`Label for X59`).Listener(checkboxListener).AddCheckbox()
 
 	m.Col(8)
 	m.Listener(birdListener)
@@ -217,11 +217,11 @@ func birdListener(sess any, widget Widget) {
 	if !s.Ok() {
 		return
 	}
-	s.ClearInputProblem(widget)
+	s.ClearWidgetProblem(widget)
 	s.State.Put(widget.GetId(), newVal)
 	Todo("do validation as a global function somewhere")
 	if newVal == "parrot" {
-		s.SetInputProblem(widget, "No parrots, please!")
+		s.SetWidgetProblem(widget, "No parrots, please!")
 	}
 	s.Repaint(widget)
 }
@@ -264,4 +264,19 @@ func buttonListener(sess any, widget Widget) {
 	s.State.Put(alertWidget.Id,
 		strings.TrimSpace(newVal))
 	s.Repaint(alertWidget)
+}
+
+func checkboxListener(sess any, widget Widget) {
+	Todo("!add support for switch-style; https://getbootstrap.com/docs/5.3/forms/checks-radios/")
+	s := sess.(Session)
+	wid := s.GetWidgetId()
+
+	// Get the requested new value for the widget
+	newVal := s.GetValueBoolean()
+	if !s.Ok() {
+		return
+	}
+
+	s.State.Put(wid, newVal)
+	// Repainting isn't necessary, as the web page has already done this
 }
