@@ -86,10 +86,16 @@ func (m MarkupBuilder) Quoted(text string) MarkupBuilder {
 	return m.A(Quoted(text))
 }
 
-func (m MarkupBuilder) H(text HtmlString) MarkupBuilder {
-	return m.A(text.Escaped())
+// Deprecated.  Modify Escape() to examine type of argument instead.
+func (m MarkupBuilder) EscapeString(arg string) MarkupBuilder {
+	return m.Escape(NewHtmlString(arg))
 }
 
+func (m MarkupBuilder) Escape(arg Escaper) MarkupBuilder {
+	return m.A(arg.Escaped())
+}
+
+// Append markup, generating a linefeed if one is pending.  No escaping is performed.
 func (m MarkupBuilder) A(text string) MarkupBuilder {
 	if m.crRequest != 0 {
 		if m.crRequest == 1 {
@@ -109,9 +115,27 @@ func (m MarkupBuilder) Pr(message ...any) MarkupBuilder {
 	return m
 }
 
-func (b MarkupBuilder) HtmlComment(messages ...any) MarkupBuilder {
+// Append an HTML comment.
+func (b MarkupBuilder) Comment(messages ...any) MarkupBuilder {
 	b.A(`<!-- `)
-	b.Pr(messages...)
+	content := ToString(messages...)
+	// Look for embedded "-->" substrings within the comment, and escape them so the text doesn't
+	// prematurely close the comment.
+	const token = `-->`
+	const tokenLen = len(token)
+	substr := content
+	sb := strings.Builder{}
+	for {
+		i := strings.Index(substr, token)
+		if i < 0 {
+			break
+		}
+		sb.WriteString(substr[:i])
+		sb.WriteString(`--\>`)
+		substr = substr[i+tokenLen:]
+	}
+	sb.WriteString(substr)
+	b.A(sb.String())
 	b.A(` -->`)
 	b.Cr()
 	return b

@@ -54,13 +54,13 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	labelHtml := w.Label
 	if labelHtml != nil {
-		m.HtmlComment("Label")
+		m.Comment("Label")
 		m.A(`<label class="form-label" style="font-size:70%">`).Cr()
-		m.H(labelHtml)
+		m.Escape(labelHtml)
 		m.A(`</label>`).Cr()
 	}
 
-	m.HtmlComment("Input")
+	m.Comment("Input")
 	m.A(`<input class="form-control`)
 	if hasProblem {
 		m.A(` border-danger border-3`) // Adding border-3 makes the text shift a bit on error, maybe not desirable
@@ -69,20 +69,18 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(w.Id)
 	m.A(`.aux" value="`)
 	value := WidgetStringValue(state, w.Id)
-	m.H(NewHtmlString(value))
+	m.EscapeString(value)
 	m.A(`" onchange='jsVal("`)
 	m.A(w.Id)
 	m.A(`")'>`).Cr()
 
-	Todo("Simplify m.HtmlComment, m.H, m.A(NewHtmlString)...")
+	Todo("Simplify m.Comment, m.H, m.A(NewHtmlString)...")
 
 	if hasProblem {
-		m.HtmlComment("Problem")
+		m.Comment("Problem")
 		m.A(`<div class="form-text`)
 		m.A(` text-danger" style="font-size:  70%">`)
-		problemHtml := NewHtmlString(problemText)
-		Todo("Have MarkupBuilder method to write escaped form of argument")
-		m.H(problemHtml).A(`</div>`).Cr()
+		m.EscapeString(problemText).A(`</div>`).Cr()
 	}
 
 	m.DebugClose()
@@ -90,4 +88,17 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	m.A(`</div>`)
 	m.Cr()
+
+	if Alert("testing escaping comments") {
+		m.Cr().Comment("no escaping necessary")
+		m.Cr().Comment(``)
+		m.Cr().Comment(` `)
+		m.Cr().Comment(`this is an --> embedded comment token`)
+		m.Cr().Comment(`-->this starts with a token`)
+		m.Cr().Comment(`this ends with a token-->`)
+		m.Cr().Comment("\n")
+		m.Cr().Comment(`this has two -->--> adjacent tokens`)
+		m.Cr().Comment(`->doesn't-- >quite ->-- have tokens`)
+		m.Cr().Comment(`lots-->-->->of tokens--><--<!---->-->->>`)
+	}
 }
