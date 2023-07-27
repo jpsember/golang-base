@@ -13,6 +13,8 @@ type HtmlStringStruct struct {
 
 type HtmlString = *HtmlStringStruct
 
+var EmptyHtmlString = NewHtmlString("")
+
 func NewHtmlString(rawString string) HtmlString {
 	Todo("!What about text that might occur within quotes, e.g. in inputs?")
 	h := HtmlStringStruct{

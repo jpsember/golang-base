@@ -38,9 +38,9 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	// The HTML input element has id "foo.aux"
 	// If there is a problem with the input, its text will have id "foo.problem"
 
-	m.A(`<div class="container" id='`)
+	m.A(`<div id="`)
 	m.A(w.Id)
-	m.A(`'>`)
+	m.A(`">`)
 
 	m.DoIndent()
 	m.DebugOpen(w)
@@ -55,41 +55,39 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	labelHtml := w.Label
 	if labelHtml != nil {
 		m.HtmlComment("Label")
-		m.A(`<div class="row-text-sm" style="font-size: 70%">`).Cr()
+		m.A(`<label class="form-label" style="font-size:70%">`).Cr()
 		m.H(labelHtml)
-		m.A("</div>").Cr()
+		m.A(`</label>`).Cr()
 	}
 
 	m.HtmlComment("Input")
-	m.A(`<div class="row">`).Cr()
-	value := WidgetStringValue(state, w.Id)
-	m.A(`<input `)
+	m.A(`<input class="form-control`)
 	if hasProblem {
-		m.A(`class="text-bg-danger" `)
+		m.A(` border-danger border-3`) // Adding border-3 makes the text shift a bit on error, maybe not desirable
 	}
-	m.A(`type='text' id='`)
+	m.A(`" type="text" id="`)
 	m.A(w.Id)
-	m.A(`.aux`)
-	m.A(`' value='`)
+	m.A(`.aux" value="`)
+	value := WidgetStringValue(state, w.Id)
 	m.H(NewHtmlString(value))
-	m.A(`' onchange='jsVal("`)
+	m.A(`" onchange='jsVal("`)
 	m.A(w.Id)
-	m.A(`")'>`)
-	m.Cr()
-	m.A("</div>").Cr()
+	m.A(`")'>`).Cr()
+
 	Todo("Simplify m.HtmlComment, m.H, m.A(NewHtmlString)...")
 
-	m.HtmlComment("Problem")
-	m.A(`<div class="row text-danger" style="font-size:  60%" class="text-danger">`).Cr()
-	problemHtml := HtmlStringNbsp
 	if hasProblem {
-		problemHtml = NewHtmlString(problemText)
+		m.HtmlComment("Problem")
+		m.A(`<div class="form-text`)
+		m.A(` text-danger" style="font-size:  70%">`)
+		problemHtml := NewHtmlString(problemText)
+		Todo("Have MarkupBuilder method to write escaped form of argument")
+		m.H(problemHtml).A(`</div>`).Cr()
 	}
-	m.H(problemHtml).A(`</div>`).Cr()
 
 	m.DebugClose()
 	m.DoOutdent()
 
-	m.A(`</container>`)
+	m.A(`</div>`)
 	m.Cr()
 }
