@@ -7,18 +7,17 @@ import (
 // A Widget that displays a checkbox
 type CheckboxWidgetObj struct {
 	BaseWidgetObj
-	Label HtmlString
+	Label      HtmlString
+	switchFlag bool
 }
 
 type CheckboxWidget = *CheckboxWidgetObj
 
 func NewCheckboxWidget(id string, label HtmlString) CheckboxWidget {
-	w := CheckboxWidgetObj{
-		BaseWidgetObj{
-			Id: id,
-		},
-		label,
-	}
+	w := CheckboxWidgetObj{}
+	w.GetBaseWidget().Id = id
+	w.Label = label
+	w.switchFlag = true
 	return &w
 }
 
@@ -37,9 +36,22 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.DebugOpen(w)
 
 	m.Comment("Checkbox").Cr()
-	m.A(`<div class="form-check">`).Cr()
+
+	var cbClass string
+	var role string
+	if w.switchFlag {
+		cbClass = `"form-check form-switch"`
+		role = ` role="switch"`
+	} else {
+		cbClass = "form-check"
+		role = ``
+	}
+	m.A(`<div class=`)
+	m.A(cbClass)
+	m.A(`>`).Cr()
 	m.DoIndent()
-	m.A(`<input class="form-check-input" type="checkbox" value="" id="`).A(auxId).A(`"`)
+	m.A(`<input class="form-check-input" type="checkbox" id="`).A(auxId).A(`"`)
+	m.A(role)
 	if WidgetBooleanValue(state, w.Id) {
 		m.A(` checked`)
 	}
