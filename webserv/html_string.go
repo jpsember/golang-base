@@ -2,11 +2,13 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"html"
 )
 
 type HtmlStringStruct struct {
 	rawString        string
-	escaped          []string
+	escaped          string
+	paragraphs       []string
 	escapedGenerated bool
 }
 
@@ -21,52 +23,62 @@ func NewHtmlString(rawString string) HtmlString {
 }
 
 func NewHtmlStringEscaped(escapedString string) HtmlString {
-	h := HtmlStringStruct{
+	return &HtmlStringStruct{
 		rawString:        escapedString,
-		escaped:          []string{escapedString},
+		escaped:          escapedString,
 		escapedGenerated: true,
 	}
-	return &h
 }
 
 func (h HtmlString) String() string {
-	return "HtmlString, source:" + Quoted(h.rawString)
+	return h.Escaped()
 }
 
 func (h HtmlString) parse() {
 	if !h.escapedGenerated {
-		Todo("this paragraph stuff is going to be trouble")
-		h.escaped = stringToEscapedParagraphs(h.rawString)
+		h.escaped =
+			html.EscapeString(h.rawString)
 		h.escapedGenerated = true
 	}
 }
 
-func (h HtmlString) ParagraphCount() int {
-	h.parse()
-	return len(h.escaped)
-}
-
-func (h HtmlString) Paragraph(index int) string {
-	h.parse()
-	return h.escaped[index]
-}
-
 func (h HtmlString) Paragraphs() []string {
+	if h.paragraphs == nil {
+		h.paragraphs = stringToEscapedParagraphs(h.rawString)
+	}
+	return h.paragraphs
+}
+
+// Get the escaped form of the string.
+func (h HtmlString) Escaped() string {
 	h.parse()
 	return h.escaped
 }
 
-// Get the expected single escaped html paragraph.
-// If there are no paragraphs, return an empty string.
-func (h HtmlString) Escaped() string {
-	p := h.Paragraphs()
-	var result string
-	switch len(p) {
-	default:
-		BadArg("<1 Expected a single escaped paragraph from:", Quoted(h.rawString), "but got:", JSListWith(h.escaped))
-	case 1:
-		result = p[0]
-	case 0:
+func stringToEscapedParagraphs(markup string) []string {
+	c := NewArray[string]()
+
+	var currentPar []byte
+	for i := 0; i < len(markup); i++ {
+		ch := markup[i]
+		if ch == '\n' {
+			if currentPar != nil {
+				s := string(currentPar)
+				c.Add(html.EscapeString(s))
+				currentPar = nil
+			}
+		} else {
+			if currentPar == nil {
+				currentPar = make([]byte, 0)
+			}
+			currentPar = append(currentPar, ch)
+		}
 	}
-	return result
+	if currentPar != nil {
+		c.Add(html.EscapeString(string(currentPar)))
+	}
+	if c.Size() == 0 {
+		c.Add("")
+	}
+	return c.Array()
 }

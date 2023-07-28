@@ -87,13 +87,7 @@ func (m MarkupBuilder) Quoted(text string) MarkupBuilder {
 	return m.A(Quoted(text))
 }
 
-// Deprecated.  Modify Escape() to examine type of argument instead.
-func (m MarkupBuilder) EscapeString(arg string) MarkupBuilder {
-	return m.Escape(NewHtmlString(arg))
-}
-
 func (m MarkupBuilder) Escape(arg any) MarkupBuilder {
-
 	if escaper, ok := arg.(Escaper); ok {
 		return m.A(escaper.Escaped())
 	}

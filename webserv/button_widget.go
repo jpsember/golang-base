@@ -34,7 +34,7 @@ func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(` onclick='jsButton("`)
 	m.A(w.Id)
 	m.A(`")'>`)
-	m.A(w.Label.Escaped())
+	m.Escape(w.Label)
 	m.A(`</button>`)
 	m.Cr()
 

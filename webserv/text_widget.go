@@ -11,8 +11,10 @@ type TextWidgetObj struct {
 
 type TextWidget = *TextWidgetObj
 
-func NewTextWidget() TextWidget {
-	return &TextWidgetObj{}
+func NewTextWidget(id string) TextWidget {
+	t := &TextWidgetObj{}
+	t.Id = id
+	return t
 }
 
 func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {

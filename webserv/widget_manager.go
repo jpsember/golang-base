@@ -511,7 +511,8 @@ func (m WidgetManager) assignPendingListener(widget Widget) {
 }
 
 func (m WidgetManager) AddText() WidgetManager {
-	w := NewTextWidget()
+
+	var w TextWidget
 
 	// The text can either be expressed as a string (static content),
 	// or an id (dynamic content, read from session state)
@@ -522,6 +523,7 @@ func (m WidgetManager) AddText() WidgetManager {
 		w.Id = m.AllocateAnonymousId()
 	} else {
 		w.Id = m.consumePendingId()
+		Todo("when does the text field content get read from the session state?")
 	}
 	m.Log("Adding text, id:", w.Id)
 	return m.Add(w)
@@ -532,8 +534,7 @@ func (m WidgetManager) AddButton() ButtonWidget {
 	w.Id = m.consumePendingId()
 	m.assignPendingListener(w)
 	m.Log("Adding button, id:", w.Id)
-	w.Label =
-		NewHtmlString(m.consumePendingText())
+	w.Label = NewHtmlString(m.consumePendingText())
 	m.Add(w)
 	return w
 }
