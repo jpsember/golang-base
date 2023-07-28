@@ -217,8 +217,9 @@ func birdListener(sess any, widget Widget) {
 	if !s.Ok() {
 		return
 	}
+	b := widget.GetBaseWidget()
 	s.ClearWidgetProblem(widget)
-	s.State.Put(widget.GetId(), newVal)
+	s.State.Put(b.Id, newVal)
 	Todo("do validation as a global function somewhere")
 	if newVal == "parrot" {
 		s.SetWidgetProblem(widget, "No parrots, please!")
@@ -254,7 +255,6 @@ func zebraListener(sess any, widget Widget) {
 func buttonListener(sess any, widget Widget) {
 	s := sess.(Session)
 	wid := s.GetWidgetId()
-	Pr("Button click on id:", wid)
 	newVal := "Clicked: " + wid
 
 	// Increment the alert class, and update its message

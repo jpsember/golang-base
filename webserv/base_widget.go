@@ -75,6 +75,7 @@ func (w BaseWidget) IdComment() string {
 	return WrapWithinComment(w.IdSummary())
 }
 
+// Deprecated.  Just use w.Id
 func (w BaseWidget) GetId() string {
 	return w.Id
 }
@@ -82,4 +83,8 @@ func (w BaseWidget) GetId() string {
 func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A("No RenderTo() for id: ")
 	m.A(w.Id)
+}
+
+func (w BaseWidget) AuxId() string {
+	return w.GetId() + ".aux"
 }

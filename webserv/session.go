@@ -62,8 +62,9 @@ func (s Session) ToJson() *JSMapStruct {
 
 // Mark a widget for repainting.
 func (s Session) Repaint(w Widget) {
+	b := w.GetBaseWidget()
 	pr := PrIf(debRepaint)
-	id := w.GetId()
+	id := b.GetId()
 	pr("Repaint:", id)
 	if s.repaintSet.Add(id) {
 		pr("...adding to set")
@@ -107,23 +108,26 @@ func (s Session) processClientMessage() {
 	// for that widget
 	//
 	widget := s.GetWidget()
+	b := widget.GetBaseWidget()
+
 	if !s.Ok() {
 		return
 	}
-	listener := widget.GetBaseWidget().Listener
+	listener := b.Listener
 	if listener == nil {
-		s.SetRequestProblem("no listener for id", widget.GetId())
+		s.SetRequestProblem("no listener for id", b.GetId())
 		return
 	}
 	if !widget.GetBaseWidget().Enabled() {
-		s.SetRequestProblem("widget is disabled", widget.GetId())
+		s.SetRequestProblem("widget is disabled", b.GetId())
 		return
 	}
 	listener(s, widget)
 }
 
 func (s Session) processRepaintFlags(debugDepth int, w Widget, refmap JSMap, repaint bool) {
-	id := w.GetId()
+	b := w.GetBaseWidget()
+	id := b.GetId()
 	pr := PrIf(debRepaint)
 	pr(Dots(debugDepth*4)+IntToString(debugDepth), "repaint, flag:", repaint, "id:", id)
 
@@ -137,7 +141,7 @@ func (s Session) processRepaintFlags(debugDepth int, w Widget, refmap JSMap, rep
 	if repaint {
 		m := NewMarkupBuilder()
 		w.RenderTo(m, s.State)
-		refmap.Put(w.GetId(), m.String())
+		refmap.Put(id, m.String())
 	}
 
 	for _, c := range w.GetChildren() {
@@ -248,13 +252,17 @@ func (s Session) GetWidget() Widget {
 	return nil
 }
 
+func getProblemId(w Widget) string {
+	return w.GetBaseWidget().Id + ".problem"
+}
+
 func (s Session) ClearWidgetProblem(widget Widget) {
-	key := widget.GetId() + ".problem"
+	key := getProblemId(widget)
 	s.State.Delete(key)
 }
 
 func (s Session) SetWidgetProblem(widget Widget, s2 string) {
 	CheckArg(s2 != "")
-	key := widget.GetId() + ".problem"
+	key := getProblemId(widget)
 	s.State.Put(key, s2)
 }

@@ -425,7 +425,8 @@ func (m WidgetManager) Open(id string) Widget {
  * Add widget to the hierarchy
  */
 func (m WidgetManager) Add(widget Widget) WidgetManager {
-	id := widget.GetId()
+	b := widget.GetBaseWidget()
+	id := b.GetId()
 	if id != "" {
 		if m.Exists(id) {
 			BadState("Attempt to add widget with duplicate id:", id)
@@ -433,7 +434,7 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		m.widgetMap[id] = widget
 	}
 
-	m.Log("addWidget, id:", widget.GetId(), "panel stack size:", m.parentStack.Size())
+	m.Log("addWidget, id:", id, "panel stack size:", m.parentStack.Size())
 	if !m.parentStack.IsEmpty() {
 		m.parentStack.Last().AddChild(widget, m)
 	}
@@ -502,7 +503,8 @@ func (m WidgetManager) AddHeading(id string) WidgetManager {
 
 func (m WidgetManager) assignPendingListener(widget Widget) {
 	if m.pendingListener != nil {
-		CheckState(widget.GetBaseWidget().Listener == nil, "Widget", widget.GetId(), "already has a listener")
+		b := widget.GetBaseWidget()
+		CheckState(widget.GetBaseWidget().Listener == nil, "Widget", b.GetId(), "already has a listener")
 		widget.GetBaseWidget().Listener = m.pendingListener
 		m.pendingListener = nil
 	}
@@ -538,7 +540,6 @@ func (m WidgetManager) AddButton() ButtonWidget {
 
 func (m WidgetManager) AddCheckbox() CheckboxWidget {
 	w := NewCheckboxWidget(m.consumePendingId(), NewHtmlString(m.consumePendingText()))
-	Pr("added checkbox, id:", w.Id)
 	m.assignPendingListener(w)
 	m.Add(w)
 	return w

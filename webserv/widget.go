@@ -6,7 +6,6 @@ import (
 
 // The interface that all widgets must support
 type Widget interface {
-	GetId() string
 	WriteValue(v JSEntity)
 	ReadValue() JSEntity
 	RenderTo(m MarkupBuilder, state JSMap)

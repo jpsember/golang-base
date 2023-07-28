@@ -27,17 +27,9 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		m.RenderInvisible(w)
 		return
 	}
+	auxId := w.AuxId()
 
-	auxId := w.Id + ".aux"
-
-	//<div class="form-check">
-	//  <input class="form-check-input" type="checkbox" value="" id="foo">
-	//  <label class="form-check-label" for="foo">
-	//    Checkbox 'foo'
-	//  </label>
-	//</div>
-
-	m.A(`<div class "form-check" id="`)
+	m.A(`<div id="`)
 	m.A(w.Id)
 	m.A(`">`)
 
@@ -45,11 +37,18 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.DebugOpen(w)
 
 	m.Comment("Checkbox").Cr()
-	Pr("getting string value for:", Quoted(w.Id), "from:", INDENT, state)
-	m.A(`<input class="form-check-input" type="checkbox" value="`).A(boolToHtmlString(WidgetBooleanValue(state, w.Id))).A(`" id="`).A(auxId).A(`"`)
+	m.A(`<div class="form-check">`).Cr()
+	m.DoIndent()
+	m.A(`<input class="form-check-input" type="checkbox" value="" id="`).A(auxId).A(`"`)
+	if WidgetBooleanValue(state, w.Id) {
+		m.A(` checked`)
+	}
+
 	m.A(` onclick='jsCheckboxClicked("`).A(w.Id).A(`")'>`).Cr()
 	m.Comment("Label").Cr()
 	m.A(`<label class="form-check-label" for="`).A(auxId).A(`">`).Escape(w.Label).A(`</label>`).Cr()
+	m.DoOutdent()
+	m.A(`</div>`).Cr()
 
 	m.DebugClose()
 	m.DoOutdent()
