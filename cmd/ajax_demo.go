@@ -14,6 +14,7 @@ import (
 func main() {
 	//ClearAlertHistory()
 	SetDebugWidgetBounds()
+	SetDebugColors()
 
 	var app = NewApp()
 	app.SetName("WebServer")
@@ -168,8 +169,6 @@ func GetOperFromSession(session Session) AjaxOper {
 func (oper AjaxOper) constructPageWidget(sess Session) {
 	m := sess.WidgetManager()
 	//m.AlertVerbose()
-
-	m.SetDebugColors(true)
 
 	// Page occupies full 12 columns
 	m.Col(12)

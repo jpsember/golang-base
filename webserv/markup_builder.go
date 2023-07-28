@@ -35,14 +35,6 @@ func (m MarkupBuilder) DoOutdent() MarkupBuilder {
 	return m
 }
 
-var DebugWidgetBounds = false
-
-// Deprecated. To have uses show up in editor as a warning.
-func SetDebugWidgetBounds() {
-	Alert("<1 Setting debug widget bounds")
-	DebugWidgetBounds = true
-}
-
 func (m MarkupBuilder) DebugOpen(widget Widget) MarkupBuilder {
 	if DebugWidgetBounds {
 		m.Cr()

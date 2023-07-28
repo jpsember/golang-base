@@ -20,10 +20,9 @@ func (g *GridCell) String() string {
 // A concrete Widget that can contain others
 type ContainerWidgetObj struct {
 	BaseWidgetObj
-	DebugColorsFlag bool
-	children        *Array[Widget]
-	cells           *Array[GridCell]
-	columns         int
+	children *Array[Widget]
+	cells    *Array[GridCell]
+	columns  int
 }
 
 type ContainerWidget = *ContainerWidgetObj
@@ -35,7 +34,6 @@ func NewContainerWidget(id string, m WidgetManager) ContainerWidget {
 		columns:  m.pendingColumns,
 	}
 	w.Id = id
-	w.DebugColorsFlag = m.DebugColorsFlag
 	return &w
 }
 
@@ -63,7 +61,7 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 
 func (w ContainerWidget) columnsTag(columns int) string {
 	s := `div class="col-sm-` + IntToString(columns)
-	if w.DebugColorsFlag {
+	if DebugColorsFlag {
 		i := colorCounter
 		colorCounter++
 		s += ` bg-` + colorsExpr[i%len(colorsExpr)]

@@ -9,7 +9,6 @@ import (
 type WidgetManagerObj struct {
 	BaseObject
 	rand                        *rand.Rand
-	DebugColorsFlag             bool
 	widgetMap                   WidgetMap
 	GrowXWeight                 int
 	GrowYWeight                 int
@@ -568,10 +567,17 @@ func (m WidgetManager) AllocateAnonymousId() string {
 	return "." + IntToString(m.anonymousIdCounter)
 }
 
-func (m WidgetManager) SetDebugColors(flag bool) WidgetManager {
-	if flag {
-		Alert("Setting debug colors")
-	}
-	m.DebugColorsFlag = flag
-	return m
+var DebugColorsFlag bool
+var DebugWidgetBounds = false
+
+// Deprecated. To have uses show up in editor as a warning.
+func SetDebugColors() {
+	Alert("<1 Setting debug colors")
+	DebugColorsFlag = true
+}
+
+// Deprecated. To have uses show up in editor as a warning.
+func SetDebugWidgetBounds() {
+	Alert("<1 Setting debug widget bounds")
+	DebugWidgetBounds = true
 }
