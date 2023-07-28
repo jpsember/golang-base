@@ -13,11 +13,11 @@ type CheckboxWidgetObj struct {
 
 type CheckboxWidget = *CheckboxWidgetObj
 
-func NewCheckboxWidget(id string, label HtmlString) CheckboxWidget {
+func NewCheckboxWidget(switchFlag bool, id string, label HtmlString) CheckboxWidget {
 	w := CheckboxWidgetObj{}
 	w.GetBaseWidget().Id = id
 	w.Label = label
-	w.switchFlag = true
+	w.switchFlag = switchFlag
 	return &w
 }
 

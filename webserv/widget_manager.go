@@ -513,17 +513,20 @@ func (m WidgetManager) assignPendingListener(widget Widget) {
 func (m WidgetManager) AddText() WidgetManager {
 
 	var w TextWidget
-
 	// The text can either be expressed as a string (static content),
 	// or an id (dynamic content, read from session state)
+	var id string
 	staticContent := m.consumePendingText()
-	if staticContent != "" {
+	hasStaticContent := staticContent != ""
+	if hasStaticContent {
 		CheckState(m.pendingId == "", "specify id OR static content")
-		w.Text = NewHtmlString(staticContent)
-		w.Id = m.AllocateAnonymousId()
+		id = m.AllocateAnonymousId()
 	} else {
-		w.Id = m.consumePendingId()
-		Todo("when does the text field content get read from the session state?")
+		id = m.consumePendingId()
+	}
+	w = NewTextWidget(id)
+	if hasStaticContent {
+		w.SetStaticContent(staticContent)
 	}
 	m.Log("Adding text, id:", w.Id)
 	return m.Add(w)
@@ -540,7 +543,15 @@ func (m WidgetManager) AddButton() ButtonWidget {
 }
 
 func (m WidgetManager) AddCheckbox() CheckboxWidget {
-	w := NewCheckboxWidget(m.consumePendingId(), NewHtmlString(m.consumePendingText()))
+	return m.checkboxHelper(false)
+}
+
+func (m WidgetManager) AddSwitch() CheckboxWidget {
+	return m.checkboxHelper(true)
+}
+
+func (m WidgetManager) checkboxHelper(switchFlag bool) CheckboxWidget {
+	w := NewCheckboxWidget(switchFlag, m.consumePendingId(), NewHtmlString(m.consumePendingText()))
 	m.assignPendingListener(w)
 	m.Add(w)
 	return w

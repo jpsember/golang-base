@@ -182,13 +182,25 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	m.Col(4)
 	m.Text("uniform delta").AddText()
-	m.Id("x58").Text(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
-	m.Id("x59").Text(`Label for X59`).Listener(checkboxListener).AddCheckbox()
-
 	m.Col(8)
+	m.Id("x58").Text(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
+
+	Todo("if no id, assign anonymous?")
+	m.Col(6)
+	m.Open("box_container")
+	Todo("what is happening with nested widget's columns?")
+	m.Col(12)
+	m.Id("x59").Text(`Label for X59`).Listener(checkboxListener).AddCheckbox()
+	m.Id("x60").Text(`With fruit`).Listener(checkboxListener).AddSwitch()
+	m.Close()
+
+	m.Col(6)
 	m.Listener(birdListener)
 	m.Label("Bird")
 	m.AddInput("bird")
+
+	//m.Id("info").AddText()
+
 	m.Col(4)
 	m.Id("launch").Text(`Launch`).Listener(buttonListener).AddButton()
 
@@ -220,7 +232,7 @@ func birdListener(sess any, widget Widget) {
 	b := widget.GetBaseWidget()
 	s.ClearWidgetProblem(widget)
 	s.State.Put(b.Id, newVal)
-	Todo("do validation as a global function somewhere")
+	Todo("!do validation as a global function somewhere")
 	if newVal == "parrot" {
 		s.SetWidgetProblem(widget, "No parrots, please!")
 	}

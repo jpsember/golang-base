@@ -8,17 +8,26 @@ type WidgetListener func(sess any, widget Widget)
 
 // The simplest concrete Widget implementation
 type BaseWidgetObj struct {
-	Id       string
-	Bounds   Rect
-	Listener WidgetListener
-	hidden   bool
-	disabled bool
+	Id            string
+	Bounds        Rect
+	Listener      WidgetListener
+	hidden        bool
+	disabled      bool
+	staticContent any
 }
 
 type BaseWidget = *BaseWidgetObj
 
 func (w BaseWidget) GetBaseWidget() BaseWidget {
 	return w
+}
+
+func (w BaseWidget) SetStaticContent(content any) {
+	w.staticContent = content
+}
+
+func (w BaseWidget) StaticContent() any {
+	return w.staticContent
 }
 
 func (w BaseWidget) WriteValue(v JSEntity) {
