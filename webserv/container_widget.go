@@ -20,9 +20,10 @@ func (g *GridCell) String() string {
 // A concrete Widget that can contain others
 type ContainerWidgetObj struct {
 	BaseWidgetObj
-	children *Array[Widget]
-	cells    *Array[GridCell]
-	columns  int
+	DebugColorsFlag bool
+	children        *Array[Widget]
+	cells           *Array[GridCell]
+	columns         int
 }
 
 type ContainerWidget = *ContainerWidgetObj
@@ -34,6 +35,7 @@ func NewContainerWidget(id string, m WidgetManager) ContainerWidget {
 		columns:  m.pendingColumns,
 	}
 	w.Id = id
+	w.DebugColorsFlag = m.DebugColorsFlag
 	return &w
 }
 
@@ -59,10 +61,15 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	w.cells.Add(cell)
 }
 
-func columnsTag(columns int) string {
-	i := colorCounter
-	colorCounter++
-	return `div class="col-sm-` + IntToString(columns) + ` bg-` + colorsExpr[i%len(colorsExpr)] + `"`
+func (w ContainerWidget) columnsTag(columns int) string {
+	s := `div class="col-sm-` + IntToString(columns)
+	if w.DebugColorsFlag {
+		i := colorCounter
+		colorCounter++
+		s += ` bg-` + colorsExpr[i%len(colorsExpr)]
+	}
+	s += `"`
+	return s
 }
 
 var colorsExpr = []string{
@@ -81,7 +88,7 @@ var colorCounter int
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.Comments(false)
 	desc := `ContainerWidget ` + w.IdSummary()
-	m.OpenHtml(columnsTag(w.columns)+` id='`+w.Id+`'`, desc)
+	m.OpenHtml(w.columnsTag(w.columns)+` id='`+w.Id+`'`, desc)
 	if w.Visible() {
 		prevPoint := IPointWith(0, -1)
 		for index, child := range w.children.Array() {
@@ -100,12 +107,12 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			// If cell lies to right of current, add space
 			spaceColumns := cell.Location.X - prevPoint.X
 			if spaceColumns > 0 {
-				m.OpenHtml(columnsTag(spaceColumns), `spacer`)
+				m.OpenHtml(w.columnsTag(spaceColumns), `spacer`)
 				child.RenderTo(m, state)
 				m.CloseHtml(`div`, `spacer`)
 			}
 
-			m.OpenHtml(columnsTag(cell.Width), `child`)
+			m.OpenHtml(w.columnsTag(cell.Width), `child`)
 			child.RenderTo(m, state)
 			m.CloseHtml(`div`, `child`)
 			prevPoint = IPointWith(cell.Location.X+cell.Width, cell.Location.Y)

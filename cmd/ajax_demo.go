@@ -61,12 +61,12 @@ func (oper AjaxOper) Perform(app *App) {
 		oper.headerMarkup = s.String()
 	}
 
-	var url = "zebra.org"
+	var ourUrl = "zebra.org"
 
 	var keyDir = oper.appRoot.JoinM("https_keys")
-	var certPath = keyDir.JoinM(url + ".crt")
-	var keyPath = keyDir.JoinM(url + ".key")
-	Pr("URL:", INDENT, `https://`+url)
+	var certPath = keyDir.JoinM(ourUrl + ".crt")
+	var keyPath = keyDir.JoinM(ourUrl + ".key")
+	Pr("URL:", INDENT, `https://`+ourUrl)
 
 	http.HandleFunc("/",
 		func(w http.ResponseWriter, req *http.Request) {
@@ -168,6 +168,8 @@ func GetOperFromSession(session Session) AjaxOper {
 func (oper AjaxOper) constructPageWidget(sess Session) {
 	m := sess.WidgetManager()
 	//m.AlertVerbose()
+
+	m.SetDebugColors(true)
 
 	// Page occupies full 12 columns
 	m.Col(12)

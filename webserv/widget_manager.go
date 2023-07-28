@@ -9,6 +9,7 @@ import (
 type WidgetManagerObj struct {
 	BaseObject
 	rand                        *rand.Rand
+	DebugColorsFlag             bool
 	widgetMap                   WidgetMap
 	GrowXWeight                 int
 	GrowYWeight                 int
@@ -565,4 +566,12 @@ func (m WidgetManager) Listener(listener WidgetListener) WidgetManager {
 func (m WidgetManager) AllocateAnonymousId() string {
 	m.anonymousIdCounter++
 	return "." + IntToString(m.anonymousIdCounter)
+}
+
+func (m WidgetManager) SetDebugColors(flag bool) WidgetManager {
+	if flag {
+		Alert("Setting debug colors")
+	}
+	m.DebugColorsFlag = flag
+	return m
 }
