@@ -188,7 +188,7 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	Todo("if no id, assign anonymous?")
 	m.Col(6)
 	m.Open("box_container")
-	Todo("what is happening with nested widget's columns?")
+	Todo("what is happening with nested widget's columns?  When opening a new container, its columns should reset to 12 (using stack as appropriate)")
 	m.Col(12)
 	m.Id("x59").Text(`Label for X59`).Listener(checkboxListener).AddCheckbox()
 	m.Id("x60").Text(`With fruit`).Listener(checkboxListener).AddSwitch()

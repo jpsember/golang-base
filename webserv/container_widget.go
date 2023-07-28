@@ -59,10 +59,29 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	w.cells.Add(cell)
 }
 
+func columnsTag(columns int) string {
+	i := colorCounter
+	colorCounter++
+	return `div class="col-sm-` + IntToString(columns) + ` bg-` + colorsExpr[i%len(colorsExpr)] + `"`
+}
+
+var colorsExpr = []string{
+	"primary",   //    $primary,
+	"secondary", //  $secondary,
+	"success",   //    $success,
+	"info",      //       $info,
+	"warning",   //    $warning,
+	"danger",    //     $danger,
+	"light",     //      $light,
+	"dark",      //
+}
+
+var colorCounter int
+
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.Comments(false)
 	desc := `ContainerWidget ` + w.IdSummary()
-	m.OpenHtml(`div class='col-sm-`+IntToString(w.columns)+`' id='`+w.Id+`'`, desc)
+	m.OpenHtml(columnsTag(w.columns)+` id='`+w.Id+`'`, desc)
 	if w.Visible() {
 		prevPoint := IPointWith(0, -1)
 		for index, child := range w.children.Array() {
@@ -81,12 +100,12 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			// If cell lies to right of current, add space
 			spaceColumns := cell.Location.X - prevPoint.X
 			if spaceColumns > 0 {
-				m.OpenHtml(`div class='col-sm-`+IntToString(spaceColumns)+`'`, `spacer`)
+				m.OpenHtml(columnsTag(spaceColumns), `spacer`)
 				child.RenderTo(m, state)
 				m.CloseHtml(`div`, `spacer`)
 			}
 
-			m.OpenHtml(`div class='col-sm-`+IntToString(cell.Width)+`'`, `child`)
+			m.OpenHtml(columnsTag(cell.Width), `child`)
 			child.RenderTo(m, state)
 			m.CloseHtml(`div`, `child`)
 			prevPoint = IPointWith(cell.Location.X+cell.Width, cell.Location.Y)

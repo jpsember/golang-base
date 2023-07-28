@@ -11,240 +11,133 @@
 <script src="base.js"></script>
 
 </head>
+
+
+
+
+
+
+
+
+
 <body>
 
   <div class='container  pt-5'> <!--page container -->
-    <div class='col-sm-12' id='page'>
+    <div class="col-sm-12 bg-primary" id='page'>
 
       <div class='row'>
-        <div class='col-sm-12'>
+        <div class="col-sm-12 bg-secondary">
           <div id='sample_alert'></div>
         </div>
       </div>
 
       <div class='row'>
-        <div class='col-sm-12'>
+        <div class="col-sm-12 bg-success">
           <h1 id='header_text'>This is ajax_demo.go</h1>
         </div>
       </div>
 
       <div class='row'>
-
-
-<div class='col-sm-8'>
-
-
-
-
-
-
-
-
-
-
-
-<div class="form-check form-switch">
-  <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckChecked" checked>
-  <label class="form-check-label" for="flexSwitchCheckChecked">Checked switch checkbox input</label>
-</div>
-
-
-
-
-
-
-
-
-<div class="form-check">
-  <input class="form-check-input" type="checkbox" value="" id="foo">
-  <label class="form-check-label" for="foo">
-    Checkbox 'foo'
-  </label>
-</div>
-
-<div class="form-check">
-  <input class="form-check-input" type="checkbox" value="" id="bar" checked>
-  <label class="form-check-label" for="bar">
-    Checkbox 'bar'
-  </label>
-</div>
-
-
-
-
-<div class="form-check" id="x59">
- <div class="card border border-info shadow-0 mb-1 p-0 rounded-1"><div class="card-body">
- <div class="form-check">
-  <input class="form-check-input" type="checkbox" value="" id="flexCheckChecked" checked>
-  <label class="form-check-label" for="flexCheckChecked">
-    Checked checkbox
-  </label>
-</div>
-
-              <input class="form-check-input" type="checkbox" value="" id="x59.aux" checked onclick='jsCheckboxClicked("x59")'>
-              <!-- Label -->
-              <label class="form-check-label" for="x59.aux">Label for X59</label>
-            </div></div>
+        <div class="col-sm-4 bg-info">
+          <div><p>uniform delta</p>
           </div>
         </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        <div class='col-sm-4'>
+        <div class="col-sm-8 bg-warning">
           <div id='x58'>
             <div class="card border border-info shadow-0 mb-1 p-0 rounded-1"><div class="card-body">
               <button class='btn btn-primary' disabled onclick='jsButton("x58")'>X58</button>
             </div></div>
           </div>
         </div>
-
-
-
-<!-- see https://code-boxx.com/show-error-messages-html-forms/ -->
-        <div class='col-sm-4'>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<div class="container">
-
-  <div class="row">
-    <p class="text-sm" style="font-size: .7rem">
-    Age
-    </p>
-  </div>
-
-  <div class="row">
-    <input  type='text' id='bird.aux' value='this is sample input' onchange='jsVal("bird")'>
-  </div>
-
-  <div class="row">
-    <p class="text-danger" style="font-size:  60%" >
-    &nbsp;
-    </p>
-  </div>
-</div>
-
-
-
-
-
-<div class="container">
-  <div class="row">
-   <p class="text-sm" style="font-size: .7rem">
-     Age
-   </p>
-  </div>
-  <div class="row">
-    <input class="text-bg-danger" type='text' id='bird.aux' value='this is sample input' onchange='jsVal("bird")'>
-  </div>
-  <div class="row">
-  <p class="text-danger" style="font-size:  60%" >
-    Please enter a number from 1 to 120
-  </p>
-</div>
-
-</div>
-
-
-<div class="container">
-  <div class="row text-sm" style="font-size: .7rem">
-    Enter a number...
-  </div>
-
-  <div class="row">
-    <input class="text-bg-danger" type='text' id='bird.aux' value='this is sample input' onchange='jsVal("bird")'>
-  </div>
-
-  <div class="row text-danger" style="font-size:  60%" class="text-danger">
-    Num must be between 1-4
-  </div>
-
-</div>
-
-
-
-
-        </div>
-
-        <div class='col-sm-4'>
-          <div id='x59'>
-            <div class="card border border-info shadow-0 mb-1 p-0 rounded-1"><div class="card-body">
-              <button class='btn btn-primary' onclick='jsButton("x59")'>X59</button>
-            </div></div>
-          </div>
-        </div>
       </div>
 
       <div class='row'>
-        <div class='col-sm-8'>
-          <div id='bird'>
+        <div class="col-sm-6 bg-danger">
+          <div class="bg-light" id='box_container'>
+
+            <div class='row'>
+              <div class="bg-dark">
+                <div id="x59">
+                  <div class="card border border-info shadow-0 mb-1 p-0 rounded-1"><div class="card-body">
+                    <!-- Checkbox -->
+                    <div class=form-check>
+                      <input class="form-check-input" type="checkbox" id="x59.aux" onclick='jsCheckboxClicked("x59")'>
+                      <!-- Label -->
+                      <label class="form-check-label" for="x59.aux">Label for X59</label>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class='row'>
+              <div class="bg-primary">
+                <div id="x60">
+                  <div class="card border border-info shadow-0 mb-1 p-0 rounded-1"><div class="card-body">
+                    <!-- Checkbox -->
+                    <div class="form-check form-switch">
+                      <input class="form-check-input" type="checkbox" id="x60.aux" role="switch" onclick='jsCheckboxClicked("x60")'>
+                      <!-- Label -->
+                      <label class="form-check-label" for="x60.aux">With fruit</label>
+                    </div>
+                  </div></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div> <!-- child -->
+        <div class="col-sm-6 bg-secondary"> <!--child -->
+          <div id="bird">
             <div class="card border border-info shadow-0 mb-1 p-0 rounded-1"><div class="card-body">
-              <input type='text' id='bird.aux' value='HtmlString, source:"??? #bird ???"' onchange='jsVal("bird")'>
+              <!-- Label -->
+              <label class="form-label" style="font-size:70%">
+              Bird</label>
+              <!-- Input -->
+              <input class="form-control" type="text" id="bird.aux" value="" onchange='jsVal("bird")'>
             </div></div>
           </div>
-        </div>
-        <div class='col-sm-4'>
+        </div> <!-- child -->
+      </div> <!-- end of row -->
+
+      <div class='row'> <!--start of row -->
+        <div class="col-sm-4 bg-success"> <!--child -->
           <div id='launch'>
             <div class="card border border-info shadow-0 mb-1 p-0 rounded-1"><div class="card-body">
               <button class='btn btn-primary' onclick='jsButton("launch")'>Launch</button>
             </div></div>
           </div>
-        </div>
-      </div>
-
-      <div class='row'>
-        <div class='col-sm-8'>
-          <div>
-            <p>Sample text; is 5 &lt; 26? A line feed</p>
+        </div> <!-- child -->
+        <div class="col-sm-8 bg-info"> <!--child -->
+          <div><p>Sample text; is 5 &lt; 26? A line feed</p>
           <p>&#34;Quoted string&#34;</p>
           <p>Multiple line feeds:</p>
           <p>   an indented final line</p>
           </div>
-        </div>
-        <div class='col-sm-4'>
-          <div id='zebra'>
+        </div> <!-- child -->
+      </div> <!-- end of row -->
+
+      <div class='row'> <!--start of row -->
+        <div class="col-sm-4 bg-warning"> <!--child -->
+          <div id="zebra">
             <div class="card border border-info shadow-0 mb-1 p-0 rounded-1"><div class="card-body">
-              <input type='text' id='zebra.aux' value='HtmlString, source:"??? #zebra ???"' onchange='jsVal("zebra")'>
+              <!-- Label -->
+              <label class="form-label" style="font-size:70%">
+              Animal</label>
+              <!-- Input -->
+              <input class="form-control" type="text" id="zebra.aux" value="" onchange='jsVal("zebra")'>
             </div></div>
           </div>
-        </div>
-      </div>
+        </div> <!-- child -->
+      </div> <!-- row -->
 
-    </div>
+    </div> <!-- ContainerWidget Id: page -->
   </div> <!-- page container -->
 
 </body>
+
+
+
+
+
 </html>
