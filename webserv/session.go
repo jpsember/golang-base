@@ -3,7 +3,6 @@ package webserv
 import (
 	. "github.com/jpsember/golang-base/base"
 	"net/http"
-	"strings"
 	"sync"
 )
 
@@ -102,22 +101,10 @@ func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request,
 
 	var err error
 	for {
-		Todo("Add appropriate error checking")
-		resource := req.URL.Path //strings.TrimPrefix(req.URL.Path, "/r/")
+		resource := req.URL.Path
 		var resPath Path
 		resPath, err = resourcePath.Join(resource)
 		if err != nil {
-			break
-		}
-
-		Alert("I don't think urls can refer to files outside of the root, so this is unnecessary")
-		resPath, err = resPath.GetAbs()
-		if err != nil {
-			break
-		}
-
-		if !strings.HasPrefix(resPath.String(), cachedCurrentDirectoryString) {
-			err = Error("Illegal url path:", resource)
 			break
 		}
 

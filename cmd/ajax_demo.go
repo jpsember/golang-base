@@ -96,15 +96,8 @@ var panicked bool
 
 // A handler such as this must be thread safe!
 func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(true)
-
-	//// These are a pain in the ass
-	//if req.RequestURI == "/favicon.ico" {
-	//	return
-	//}
-
+	pr := PrIf(false)
 	pr("handler, request:", req.RequestURI)
-
 	url, err := url.Parse(req.RequestURI)
 	if err != nil {
 		Pr("Error parsing RequestURI:", Quoted(req.RequestURI), INDENT, err)
@@ -119,8 +112,6 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	if path == "/ajax" {
 		sess.HandleAjaxRequest(w, req)
-		//} else if strings.HasPrefix(path, `/r/`) {
-		//	sess.HandleResourceRequest(w, req, oper.resources)
 	} else if path == "/" {
 		oper.processFullPageRequest(w, req)
 	} else {
