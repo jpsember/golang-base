@@ -583,6 +583,7 @@ var DebugWidgetBounds = false
 func SetDebugColors() {
 	Alert("<1 Setting debug colors")
 	DebugColorsFlag = true
+	Todo("!<1 Have debug colors affect all widgets, not just debug_widget")
 }
 
 // Deprecated. To have uses show up in editor as a warning.

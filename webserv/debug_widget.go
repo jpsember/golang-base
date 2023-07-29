@@ -8,7 +8,7 @@ import (
 type DebugWidgetObj struct {
 	BaseWidgetObj
 	assignedColumns int
-	bgndColor       string
+	BgndColor       string
 }
 
 type DebugWidget = *DebugWidgetObj
@@ -16,6 +16,14 @@ type DebugWidget = *DebugWidgetObj
 func NewDebugWidget(id string) DebugWidget {
 	t := &DebugWidgetObj{}
 	t.Id = id
+
+	const bgColors = "#fc7f03#fcce03#58bf58#4aa3b5#cfa8ed#fa7fc1#b2f7a6#b2f7a6#90adad#3588cc#b06dfc"
+
+	{
+		const wlen = 7
+		c := Rand().Intn(len(bgColors)/wlen) * wlen
+		t.BgndColor = bgColors[c : c+wlen]
+	}
 	return t
 }
 
@@ -25,25 +33,17 @@ func (w DebugWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		return
 	}
 
-	const bgColors = "#fc7f03#fcce03#58bf58#4aa3b5#cfa8ed#fa7fc1#b2f7a6#b2f7a6#90adad#3588cc#b06dfc"
-
 	{
 		m.A(`<div id='`)
 		m.A(w.Id)
 		m.A(`'`)
-
-		if w.bgndColor == "" {
-			const wlen = 7
-			c := Rand().Intn(len(bgColors)/wlen) * wlen
-			w.bgndColor = bgColors[c : c+wlen]
-		}
-
-		m.Pr(` style="background-color:`, w.bgndColor, `;"`, `>`)
+		m.A(` style="font-size:60%; font-family:monospace; min-height:4em;"`)
+		m.A(`>`)
 	}
 	s := strings.Builder{}
-	s.WriteString(ToString("Id:", w.Id))
-	s.WriteString(ToString(" Cols:", w.assignedColumns))
-	s.WriteString(ToString(" Bg:", w.bgndColor))
+	s.WriteString("#" + w.Id)
+	s.WriteString(" C" + IntToString(w.assignedColumns))
+	s.WriteString(" B" + w.BgndColor)
 
 	Todo("!Have utility method to construct and append to strings.Builder")
 	m.Escape(s.String())

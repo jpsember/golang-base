@@ -70,29 +70,21 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	}
 }
 
-func (w ContainerWidget) columnsTag(columns int) string {
-	s := `div class="col-sm-` + IntToString(columns)
-	if DebugColorsFlag {
-		i := colorCounter
-		colorCounter++
-		s += ` bg-` + colorsExpr[i%len(colorsExpr)]
+func (w ContainerWidget) columnsTag(columns int, optionalWidget Widget) string {
+	s := `div class="col-sm-` + IntToString(columns) + `"`
+
+	if Alert("!Have debug flag for this") {
+		if optionalWidget != nil {
+			if deb, ok := optionalWidget.(DebugWidget); ok {
+				c := deb.BgndColor
+				if c != "" {
+					s += ` style="background-color:` + deb.BgndColor + `"`
+				}
+			}
+		}
 	}
-	s += `"`
 	return s
 }
-
-var colorsExpr = []string{
-	"primary",   //    $primary,
-	"secondary", //  $secondary,
-	"success",   //    $success,
-	"info",      //       $info,
-	"warning",   //    $warning,
-	"danger",    //     $danger,
-	"light",     //      $light,
-	"dark",      //
-}
-
-var colorCounter int
 
 func (w ContainerWidget) SetColumns(columns int) {
 	w.columns = columns
@@ -122,12 +114,12 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			// If cell lies to right of current, add space
 			spaceColumns := cell.Location.X - prevPoint.X
 			if spaceColumns > 0 {
-				m.OpenHtml(w.columnsTag(spaceColumns), `spacer`)
+				m.OpenHtml(w.columnsTag(spaceColumns, nil), `spacer`)
 				child.RenderTo(m, state)
 				m.CloseHtml(`div`, `spacer`)
 			}
 
-			m.OpenHtml(w.columnsTag(cell.Width), `child`)
+			m.OpenHtml(w.columnsTag(cell.Width, child), `child`)
 			child.RenderTo(m, state)
 			m.CloseHtml(`div`, `child`)
 			prevPoint = IPointWith(cell.Location.X+cell.Width, cell.Location.Y)

@@ -202,16 +202,10 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.Col(8)
 	m.Id("x58").Text(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
 
-	m.Col(2)
-	m.AddDebug()
-	m.Col(3)
-	m.AddDebug()
-	m.Col(3)
-	m.AddDebug()
-	m.Col(4)
-	m.AddDebug()
-
-	Todo("if no id, assign anonymous?")
+	m.Col(2).AddDebug()
+	m.Col(3).AddDebug()
+	m.Col(3).AddDebug()
+	m.Col(4).AddDebug()
 
 	m.Col(6)
 	m.Listener(birdListener)
@@ -220,7 +214,6 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	m.Col(6)
 	m.Open()
-	Todo("what is happening with nested widget's columns?  When opening a new container, its columns should reset to 12 (using stack as appropriate)")
 	m.Id("x59").Text(`Label for X59`).Listener(checkboxListener).AddCheckbox()
 	m.Id("x60").Text(`With fruit`).Listener(checkboxListener).AddSwitch()
 	m.Close()
