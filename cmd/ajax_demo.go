@@ -114,22 +114,18 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 	path := url.Path
 	pr("url path:", path)
 
-	if strings.HasPrefix(path, `/r/`) {
-		sess := DetermineSession(oper.sessionManager, w, req, false)
-		if sess != nil {
-			sess.HandleResourceRequest(w, req, oper.resources)
-			return
-		}
-	}
+	sess := DetermineSession(oper.sessionManager, w, req, true)
+	pr("determined session:", sess != nil)
+
 	if path == "/ajax" {
-		sess := DetermineSession(oper.sessionManager, w, req, false)
-		if sess != nil {
-			sess.HandleAjaxRequest(w, req)
-			return
-		}
-		// ...if no session, we fall back on a full page request
+		sess.HandleAjaxRequest(w, req)
+		//} else if strings.HasPrefix(path, `/r/`) {
+		//	sess.HandleResourceRequest(w, req, oper.resources)
+	} else if path == "/" {
+		oper.processFullPageRequest(w, req)
+	} else {
+		sess.HandleResourceRequest(w, req, oper.resources)
 	}
-	oper.processFullPageRequest(w, req)
 }
 
 func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Request) {

@@ -100,10 +100,38 @@ func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request,
 	s.request = req
 	s.requestProblem = ""
 
-	Todo("Add appropriate error checking")
-	resource := strings.TrimPrefix(req.URL.Path, "/r/")
-	resPath := resourcePath.JoinM(resource)
-	s.responseWriter.Write(resPath.ReadBytesM())
+	var err error
+	for {
+		Todo("Add appropriate error checking")
+		resource := req.URL.Path //strings.TrimPrefix(req.URL.Path, "/r/")
+		var resPath Path
+		resPath, err = resourcePath.Join(resource)
+		if err != nil {
+			break
+		}
+
+		Alert("I don't think urls can refer to files outside of the root, so this is unnecessary")
+		resPath, err = resPath.GetAbs()
+		if err != nil {
+			break
+		}
+
+		if !strings.HasPrefix(resPath.String(), cachedCurrentDirectoryString) {
+			err = Error("Illegal url path:", resource)
+			break
+		}
+
+		var content []byte
+		content, err = resPath.ReadBytes()
+		if err != nil {
+			break
+		}
+		_, err = s.responseWriter.Write(content)
+		break
+	}
+	if err != nil {
+		s.SetRequestProblem(err)
+	}
 }
 
 func (s Session) parseAjaxRequest(req *http.Request) {
@@ -207,6 +235,7 @@ func (s Session) discardRequest() {
 func (s Session) SetRequestProblem(message ...any) Session {
 	if s.requestProblem == "" {
 		s.requestProblem = "Problem with ajax request: " + ToString(message...)
+		Pr("...set request problem:", s.requestProblem)
 	}
 	return s
 }
@@ -281,3 +310,5 @@ func (s Session) SetWidgetProblem(widget Widget, s2 string) {
 	key := getProblemId(widget)
 	s.State.Put(key, s2)
 }
+
+var cachedCurrentDirectoryString = CurrentDirectory().String()
