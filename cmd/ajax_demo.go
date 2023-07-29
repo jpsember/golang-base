@@ -202,6 +202,15 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.Col(8)
 	m.Id("x58").Text(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
 
+	m.Col(2)
+	m.AddDebug()
+	m.Col(3)
+	m.AddDebug()
+	m.Col(3)
+	m.AddDebug()
+	m.Col(4)
+	m.AddDebug()
+
 	Todo("if no id, assign anonymous?")
 
 	m.Col(6)

@@ -543,6 +543,14 @@ func (m WidgetManager) AddButton() ButtonWidget {
 	return w
 }
 
+func (m WidgetManager) AddDebug() WidgetManager {
+	Alert("!<1 Adding DebugWidget")
+	w := NewDebugWidget(m.consumeOptionalPendingId())
+	m.Add(w)
+
+	return m
+}
+
 func (m WidgetManager) AddCheckbox() CheckboxWidget {
 	return m.checkboxHelper(false)
 }
