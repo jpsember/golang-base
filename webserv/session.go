@@ -64,7 +64,7 @@ func (s Session) ToJson() *JSMapStruct {
 func (s Session) Repaint(w Widget) {
 	b := w.GetBaseWidget()
 	pr := PrIf(debRepaint)
-	id := b.GetId()
+	id := b.Id
 	pr("Repaint:", id)
 	if s.repaintSet.Add(id) {
 		pr("...adding to set")
@@ -115,11 +115,11 @@ func (s Session) processClientMessage() {
 	}
 	listener := b.Listener
 	if listener == nil {
-		s.SetRequestProblem("no listener for id", b.GetId())
+		s.SetRequestProblem("no listener for id", b.Id)
 		return
 	}
 	if !widget.GetBaseWidget().Enabled() {
-		s.SetRequestProblem("widget is disabled", b.GetId())
+		s.SetRequestProblem("widget is disabled", b.Id)
 		return
 	}
 	listener(s, widget)
@@ -127,7 +127,7 @@ func (s Session) processClientMessage() {
 
 func (s Session) processRepaintFlags(debugDepth int, w Widget, refmap JSMap, repaint bool) {
 	b := w.GetBaseWidget()
-	id := b.GetId()
+	id := b.Id
 	pr := PrIf(debRepaint)
 	pr(Dots(debugDepth*4)+IntToString(debugDepth), "repaint, flag:", repaint, "id:", id)
 

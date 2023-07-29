@@ -191,15 +191,6 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	widget := m.Open()
 	sess.PageWidget = widget
 
-	if false && Alert("just a few") {
-
-		m.Col(7).AddDebug()
-		m.Col(7).AddDebug()
-		m.Col(5).AddDebug()
-
-		return
-	}
-
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
 	m.Add(alertWidget)
@@ -212,10 +203,10 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.Col(8)
 	m.Id("x58").Text(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
 
-	m.Col(2).AddDebug()
-	m.Col(3).AddDebug()
-	m.Col(3).AddDebug()
-	m.Col(4).AddDebug()
+	m.Col(2).AddSpace()
+	m.Col(3).AddSpace()
+	m.Col(3).AddSpace()
+	m.Col(4).AddSpace()
 
 	m.Col(6)
 	m.Listener(birdListener)

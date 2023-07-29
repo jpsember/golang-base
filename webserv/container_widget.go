@@ -63,12 +63,6 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 		Todo("!add support for cell heights > 1")
 	}
 	w.cells.Add(cell)
-
-	if Alert("!Have a 'debug features' for this kind of thing") {
-		if dw, ok := c.(DebugWidget); ok {
-			dw.SetAssignedColumns(cell.Width)
-		}
-	}
 }
 
 // Construct expression [  div class="...." ] with appropriate debug rendering attributes.

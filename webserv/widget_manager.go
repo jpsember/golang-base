@@ -431,7 +431,7 @@ func (m WidgetManager) clearPendingComponentFields() {
  */
 func (m WidgetManager) Add(widget Widget) WidgetManager {
 	b := widget.GetBaseWidget()
-	id := b.GetId()
+	id := b.Id
 	if id != "" {
 		if m.Exists(id) {
 			BadState("Attempt to add widget with duplicate id:", id)
@@ -508,7 +508,7 @@ func (m WidgetManager) AddHeading(id string) WidgetManager {
 func (m WidgetManager) assignPendingListener(widget Widget) {
 	if m.pendingListener != nil {
 		b := widget.GetBaseWidget()
-		CheckState(widget.GetBaseWidget().Listener == nil, "Widget", b.GetId(), "already has a listener")
+		CheckState(widget.GetBaseWidget().Listener == nil, "Widget", b.Id, "already has a listener")
 		widget.GetBaseWidget().Listener = m.pendingListener
 		m.pendingListener = nil
 	}
@@ -543,12 +543,8 @@ func (m WidgetManager) AddButton() ButtonWidget {
 	return w
 }
 
-func (m WidgetManager) AddDebug() WidgetManager {
-	Alert("!<1 Adding DebugWidget")
-	w := NewDebugWidget(m.consumeOptionalPendingId())
-	m.Add(w)
-
-	return m
+func (m WidgetManager) AddSpace() WidgetManager {
+	return m.Add(NewBaseWidget(m.consumeOptionalPendingId()))
 }
 
 func (m WidgetManager) AddCheckbox() CheckboxWidget {

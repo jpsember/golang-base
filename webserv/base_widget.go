@@ -19,6 +19,12 @@ type BaseWidgetObj struct {
 
 type BaseWidget = *BaseWidgetObj
 
+func NewBaseWidget(id string) BaseWidget {
+	t := &BaseWidgetObj{}
+	t.Id = id
+	return t
+}
+
 func (w BaseWidget) GetBaseWidget() BaseWidget {
 	return w
 }
@@ -85,18 +91,14 @@ func (w BaseWidget) IdComment() string {
 	return WrapWithinComment(w.IdSummary())
 }
 
-// Deprecated.  Just use w.Id
-func (w BaseWidget) GetId() string {
-	return w.Id
-}
-
 func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	m.A("No RenderTo() for id: ")
+	m.A(`<div id='`)
 	m.A(w.Id)
+	m.A(`'></div>`)
 }
 
 func (w BaseWidget) AuxId() string {
-	return w.GetId() + ".aux"
+	return w.Id + ".aux"
 }
 
 func (w BaseWidget) IdHashcode() int {

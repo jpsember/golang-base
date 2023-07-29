@@ -69,7 +69,7 @@ func (m MarkupBuilder) DebugCloseSpan() MarkupBuilder {
 func (m MarkupBuilder) RenderInvisible(w Widget) MarkupBuilder {
 	b := w.GetBaseWidget()
 	m.A(`<div id='`)
-	m.A(b.GetId())
+	m.A(b.Id)
 	m.A(`'></div>`)
 	m.Cr()
 	return m
