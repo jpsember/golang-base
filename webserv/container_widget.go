@@ -20,20 +20,23 @@ func (g *GridCell) String() string {
 // A concrete Widget that can contain others
 type ContainerWidgetObj struct {
 	BaseWidgetObj
-	children *Array[Widget]
-	cells    *Array[GridCell]
-	columns  int
+	children   *Array[Widget]
+	cells      *Array[GridCell]
+	columns    int // The columns to apply to child widgets
+	ourColumns int // The columns that our widget occupies within its parent
 }
 
 type ContainerWidget = *ContainerWidgetObj
 
-func NewContainerWidget(id string, m WidgetManager) ContainerWidget {
+func NewContainerWidget(id string, m WidgetManager, columns int) ContainerWidget {
 	w := ContainerWidgetObj{
-		children: NewArray[Widget](),
-		cells:    NewArray[GridCell](),
-		columns:  m.pendingColumns,
+		children:   NewArray[Widget](),
+		cells:      NewArray[GridCell](),
+		columns:    12,
+		ourColumns: columns,
 	}
 	w.Id = id
+	Pr("NewContainerWidget, id:", id, "columns:", w.columns)
 	return &w
 }
 
@@ -45,8 +48,12 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	w.children.Add(c)
 	pr := PrIf(false)
 	pr("adding widget to container:", INDENT, w)
+	cols := w.columns
+	if cols == 0 {
+		BadState("no pending columns for widget:", c.GetBaseWidget().Id)
+	}
 	cell := GridCell{
-		Width: manager.pendingColumns,
+		Width: cols,
 	}
 	if w.cells.NonEmpty() {
 		c := w.cells.Last()
@@ -83,10 +90,18 @@ var colorsExpr = []string{
 
 var colorCounter int
 
+func (w ContainerWidget) SetColumns(columns int) {
+	w.columns = columns
+	Pr("ContainerWidget, id:", w.Id, " setting columns:", columns)
+
+}
+
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.Comments(false)
 	desc := `ContainerWidget ` + w.IdSummary()
-	m.OpenHtml(w.columnsTag(w.columns)+` id='`+w.Id+`'`, desc)
+	// It is the job of the widget that *contains* us to set the columns that we
+	// are to occupy, not ours.
+	m.OpenHtml(`div id='`+w.Id+`'`, desc)
 	if w.Visible() {
 		prevPoint := IPointWith(0, -1)
 		for index, child := range w.children.Array() {

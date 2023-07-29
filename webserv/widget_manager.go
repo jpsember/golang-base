@@ -26,11 +26,11 @@ type WidgetManagerObj struct {
 	pendingListener             WidgetListener
 	parentStack                 *Array[ContainerWidget]
 	pendingSize                 int
-	pendingColumns              int
-	pendingText                 string
-	pendingId                   string
-	pendingLabel                string
-	anonymousIdCounter          int
+	//pendingColumns              int
+	pendingText        string
+	pendingId          string
+	pendingLabel       string
+	anonymousIdCounter int
 }
 
 func NewWidgetManager() WidgetManager {
@@ -185,6 +185,15 @@ func (m WidgetManager) consumePendingId() string {
 	m.pendingId = ""
 	return id
 }
+func (m WidgetManager) consumeOptionalPendingId() string {
+	id := m.pendingId
+	if id != "" {
+		m.pendingId = ""
+	} else {
+		id = m.AllocateAnonymousId()
+	}
+	return id
+}
 
 const (
 	SIZE_DEFAULT = iota
@@ -269,7 +278,7 @@ func (m WidgetManager) Monospaced() WidgetManager {
 
 // Set number of Bootstrap columns for next widget
 func (m WidgetManager) Col(columns int) WidgetManager {
-	m.pendingColumns = columns
+	m.currentPanel().SetColumns(columns)
 	return m
 }
 
@@ -417,10 +426,6 @@ func (m WidgetManager) clearPendingComponentFields() {
 	m.mPendingFloatingPointFlag = false
 }
 
-func (m WidgetManager) Open(id string) Widget {
-	return m.OpenFor(id, "<no context>")
-}
-
 /**
  * Add widget to the hierarchy
  */
@@ -443,19 +448,20 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 }
 
 /**
- * Create a child widget and push onto stack
+ * Create a child container widget and push onto stack
  */
-func (m WidgetManager) OpenFor(id string, debugContext string) Widget {
-	m.Log("openFor:", debugContext)
+func (m WidgetManager) Open() Widget {
+	Todo("The pendingColumns should be a property of the current container, not the widgetManager")
+	m.Log("open")
 
-	if m.pendingColumns == 0 {
-		Todo("default to previous columns?")
-		m.pendingColumns = 4
+	ourColumns := 12
+	if m.parentStack.NonEmpty() {
+		ourColumns = m.currentPanel().columns
 	}
 
 	// the number of columns a widget is to occupy should be sent to the *parent*...
 
-	widget := NewContainerWidget(id, m)
+	widget := NewContainerWidget(m.consumeOptionalPendingId(), m, ourColumns)
 	m.Log("Adding container widget")
 	m.Add(widget)
 	m.parentStack.Add(widget)
@@ -490,6 +496,13 @@ func (m WidgetManager) finish() WidgetManager {
 	return m
 }
 
+func (m WidgetManager) currentPanel() ContainerWidget {
+	if m.parentStack.IsEmpty() {
+		BadState("no current panel")
+	}
+	return m.parentStack.Last()
+}
+
 func (m WidgetManager) AddInput(id string) WidgetManager {
 	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()))
 	m.assignPendingListener(t)
@@ -515,15 +528,12 @@ func (m WidgetManager) AddText() WidgetManager {
 	var w TextWidget
 	// The text can either be expressed as a string (static content),
 	// or an id (dynamic content, read from session state)
-	var id string
 	staticContent := m.consumePendingText()
 	hasStaticContent := staticContent != ""
 	if hasStaticContent {
 		CheckState(m.pendingId == "", "specify id OR static content")
-		id = m.AllocateAnonymousId()
-	} else {
-		id = m.consumePendingId()
 	}
+	id := m.consumeOptionalPendingId()
 	w = NewTextWidget(id)
 	if hasStaticContent {
 		w.SetStaticContent(staticContent)

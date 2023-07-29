@@ -69,9 +69,22 @@ func (oper AjaxOper) Perform(app *App) {
 	var keyPath = keyDir.JoinM(ourUrl + ".key")
 	Pr("URL:", INDENT, `https://`+ourUrl)
 
+	// If there is a bug that causes *every* request to fail, only generate the stack trace once
+	Todo("!Clean up this 'fail only once' code")
 	http.HandleFunc("/",
 		func(w http.ResponseWriter, req *http.Request) {
+			if panicked {
+				w.Write([]byte("panic has occurred"))
+				return
+			}
+			panicked = true
+			defer func() {
+				if panicked {
+					w.Write([]byte("panic has occurred"))
+				}
+			}()
 			oper.handle(w, req)
+			panicked = false
 		})
 
 	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
@@ -82,9 +95,10 @@ func (oper AjaxOper) Perform(app *App) {
 
 }
 
+var panicked bool
+
 // A handler such as this must be thread safe!
 func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
-
 	pr := PrIf(false)
 
 	// These are a pain in the ass
@@ -171,8 +185,10 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	//m.AlertVerbose()
 
 	// Page occupies full 12 columns
-	m.Col(12)
-	widget := m.OpenFor(WidgetIdPage, "main container")
+	//m.Col(12)
+	Pr("opening page widget")
+	m.Id(WidgetIdPage)
+	widget := m.Open()
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
@@ -187,18 +203,18 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.Id("x58").Text(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
 
 	Todo("if no id, assign anonymous?")
-	m.Col(6)
-	m.Open("box_container")
-	Todo("what is happening with nested widget's columns?  When opening a new container, its columns should reset to 12 (using stack as appropriate)")
-	m.Col(12)
-	m.Id("x59").Text(`Label for X59`).Listener(checkboxListener).AddCheckbox()
-	m.Id("x60").Text(`With fruit`).Listener(checkboxListener).AddSwitch()
-	m.Close()
 
 	m.Col(6)
 	m.Listener(birdListener)
 	m.Label("Bird")
 	m.AddInput("bird")
+
+	m.Col(6)
+	m.Open()
+	Todo("what is happening with nested widget's columns?  When opening a new container, its columns should reset to 12 (using stack as appropriate)")
+	m.Id("x59").Text(`Label for X59`).Listener(checkboxListener).AddCheckbox()
+	m.Id("x60").Text(`With fruit`).Listener(checkboxListener).AddSwitch()
+	m.Close()
 
 	//m.Id("info").AddText()
 
