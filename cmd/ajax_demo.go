@@ -13,7 +13,7 @@ import (
 
 func main() {
 	//ClearAlertHistory()
-	SetWidgetDebugRendering()
+	//SetWidgetDebugRendering()
 
 	var app = NewApp()
 	app.SetName("WebServer")
@@ -56,8 +56,6 @@ func (oper AjaxOper) Perform(app *App) {
 	{
 		s := strings.Builder{}
 		s.WriteString(oper.resources.JoinM("header.html").ReadStringM())
-		s.WriteString(oper.resources.JoinM("base.js").ReadStringM())
-		s.WriteString("</script>\n</head>\n")
 		oper.headerMarkup = s.String()
 	}
 
@@ -98,12 +96,12 @@ var panicked bool
 
 // A handler such as this must be thread safe!
 func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(false)
+	pr := PrIf(true)
 
-	// These are a pain in the ass
-	if req.RequestURI == "/favicon.ico" {
-		return
-	}
+	//// These are a pain in the ass
+	//if req.RequestURI == "/favicon.ico" {
+	//	return
+	//}
 
 	pr("handler, request:", req.RequestURI)
 
@@ -112,8 +110,18 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		Pr("Error parsing RequestURI:", Quoted(req.RequestURI), INDENT, err)
 		return
 	}
-	pr("url path:", url.Path)
-	if url.Path == "/ajax" {
+
+	path := url.Path
+	pr("url path:", path)
+
+	if strings.HasPrefix(path, `/r/`) {
+		sess := DetermineSession(oper.sessionManager, w, req, false)
+		if sess != nil {
+			sess.HandleResourceRequest(w, req, oper.resources)
+			return
+		}
+	}
+	if path == "/ajax" {
 		sess := DetermineSession(oper.sessionManager, w, req, false)
 		if sess != nil {
 			sess.HandleAjaxRequest(w, req)

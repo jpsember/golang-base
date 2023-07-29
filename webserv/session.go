@@ -3,6 +3,7 @@ package webserv
 import (
 	. "github.com/jpsember/golang-base/base"
 	"net/http"
+	"strings"
 	"sync"
 )
 
@@ -89,6 +90,20 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 	s.parseAjaxRequest(req)
 	s.processClientMessage()
 	s.sendAjaxResponse()
+}
+
+// Serve a request for a resource
+func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request, resourcePath Path) {
+	defer s.discardRequest()
+	s.Mutex.Lock()
+	s.responseWriter = w
+	s.request = req
+	s.requestProblem = ""
+
+	Todo("Add appropriate error checking")
+	resource := strings.TrimPrefix(req.URL.Path, "/r/")
+	resPath := resourcePath.JoinM(resource)
+	s.responseWriter.Write(resPath.ReadBytesM())
 }
 
 func (s Session) parseAjaxRequest(req *http.Request) {
