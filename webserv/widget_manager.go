@@ -2,20 +2,12 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"math/rand"
 	"strings"
 )
 
 type WidgetManagerObj struct {
 	BaseObject
-	rand                        *rand.Rand
 	widgetMap                   WidgetMap
-	GrowXWeight                 int
-	GrowYWeight                 int
-	mPendingMinWidthEm          float64
-	mPendingMinHeightEm         float64
-	mPendingMonospaced          bool
-	mLineCount                  int
 	mComboChoices               *Array[string]
 	mPendingBooleanDefaultValue bool
 	mPendingStringDefaultValue  string
@@ -26,11 +18,10 @@ type WidgetManagerObj struct {
 	pendingListener             WidgetListener
 	parentStack                 *Array[ContainerWidget]
 	pendingSize                 int
-	//pendingColumns              int
-	pendingText        string
-	pendingId          string
-	pendingLabel       string
-	anonymousIdCounter int
+	pendingText                 string
+	pendingId                   string
+	pendingLabel                string
+	anonymousIdCounter          int
 }
 
 func NewWidgetManager() WidgetManager {
@@ -132,7 +123,6 @@ func (m WidgetManager) Setb(id string, boolValue bool) bool {
 
 /**
  * Toggle value of boolean-valued widget
- *
  */
 func (m WidgetManager) Toggle(id string) bool {
 	return m.Setb(id, !m.Vb(id))
@@ -195,100 +185,15 @@ func (m WidgetManager) consumeOptionalPendingId() string {
 	return id
 }
 
-const (
-	SIZE_DEFAULT = iota
-	SIZE_TINY
-	SIZE_SMALL
-	SIZE_LARGE
-	SIZE_HUGE
-	SIZE_MEDIUM
-)
-
-const (
-	ALIGNMENT_DEFAULT = iota
-	ALIGNMENT_LEFT
-	ALIGNMENT_CENTER
-	ALIGNMENT_RIGHT
-)
-
-/**
- * Set pending component, and the column it occupies, as 'growable'. This can
- * also be accomplished by using an 'x' when declaring the columns.
- * <p>
- * Calls growX(100)...
- */
-func (m WidgetManager) GrowX() WidgetManager {
-	return m.GrowXBy(100)
-}
-
-/**
- * Set pending component, and the column it occupies, as 'growable'. This can
- * also be accomplished by using an 'x' when declaring the columns.
- * <p>
- * Calls growY(100)...
- */
-func (m WidgetManager) GrowY() WidgetManager {
-	return m.GrowYBy(100)
-}
-
-/**
- * Set pending component's horizontal weight to a value > 0 (if it is already
- * less than this value)
- */
-func (m WidgetManager) GrowXBy(weight int) WidgetManager {
-	m.GrowXWeight = MaxInt(m.GrowXWeight, weight)
-	return m
-}
-
-/**
- * Set pending component's vertical weight to a value > 0 (if it is already
- * less than this value)
- */
-func (m WidgetManager) GrowYBy(weight int) WidgetManager {
-	m.GrowYWeight = MaxInt(m.GrowYWeight, weight)
-	return m
-}
-
-/**
- * Specify the component to use for the next open() call, instead of
- * generating one
- */
-func (m WidgetManager) SetPendingContainer(component any) WidgetManager {
-	//
-	//public WidgetManager setPendingContainer(JComponent component) {
-	//  checkState(mPanelStack.isEmpty(), "current panel stack isn't empty");
-	//  mPendingContainer = component;
-	//  return m
-	return m
-}
-
 // Set size for next widget (what size means depends upon the widget type).
 func (m WidgetManager) Size(size int) WidgetManager {
 	m.pendingSize = 1 + size
 	return m
 }
 
-/**
- * Have next widget use a monospaced font
- */
-func (m WidgetManager) Monospaced() WidgetManager {
-	m.mPendingMonospaced = true
-	return m
-}
-
 // Set number of Bootstrap columns for next widget
 func (m WidgetManager) Col(columns int) WidgetManager {
 	m.currentPanel().SetColumns(columns)
-	return m
-}
-
-func (m WidgetManager) MinWidth(ems float64) WidgetManager {
-	m.mPendingMinWidthEm = ems
-	return m
-}
-
-func (m WidgetManager) MinHeight(ems float64) WidgetManager {
-	m.mPendingMinHeightEm = ems
 	return m
 }
 
@@ -375,14 +280,14 @@ func (m WidgetManager) consumePendingLabel() string {
 	return lbl
 }
 
-func (m WidgetManager) ConsumePendingSize() int {
+func (m WidgetManager) consumePendingSize() int {
 	CheckState(m.pendingSize > 0, "no pending Size")
 	size := m.pendingSize - 1
 	m.pendingSize = 0
 	return size
 }
 
-func (m WidgetManager) ConsumePendingStringDefaultValue() string {
+func (m WidgetManager) consumePendingStringDefaultValue() string {
 	s := m.mPendingStringDefaultValue
 	m.mPendingStringDefaultValue = ""
 	return s
@@ -413,11 +318,6 @@ func (m WidgetManager) clearPendingComponentFields() {
 	verifyUsed(m.pendingListener == nil, "pendingListener")
 	verifyUsed(m.pendingSize == 0, "pendingSize")
 
-	m.GrowXWeight = 0
-	m.GrowYWeight = 0
-	m.mPendingMinWidthEm = 0
-	m.mPendingMinHeightEm = 0
-	m.mPendingMonospaced = false
 	m.mComboChoices = nil
 	m.mPendingDefaultIntValue = 0
 	m.mPendingBooleanDefaultValue = false
@@ -490,7 +390,7 @@ func (m WidgetManager) AddInput(id string) WidgetManager {
 }
 
 func (m WidgetManager) AddHeading(id string) WidgetManager {
-	t := NewHeadingWidget(id, m.ConsumePendingSize())
+	t := NewHeadingWidget(id, m.consumePendingSize())
 	return m.Add(t)
 }
 
