@@ -66,22 +66,23 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 		if dw, ok := c.(DebugWidget); ok {
 			dw.SetAssignedColumns(cell.Width)
 		}
-
 	}
 }
 
+// Construct expression [  div class="...." ] with appropriate debug rendering attributes.
 func (w ContainerWidget) columnsTag(columns int, optionalWidget Widget) string {
 	s := `div class="col-sm-` + IntToString(columns) + `"`
 
 	if Alert("!Have debug flag for this") {
-		if optionalWidget != nil {
-			if deb, ok := optionalWidget.(DebugWidget); ok {
-				c := deb.BgndColor
-				if c != "" {
-					s += ` style="background-color:` + deb.BgndColor + `"`
-				}
-			}
+		s += ` style="`
+		if optionalWidget == nil {
+			// This is a spacer, so render as such
+			s += `background-color:#84a3ba;`
+		} else {
+			b := optionalWidget.GetBaseWidget()
+			s += `background-color:` + DebugColor(b.IdHashcode()) + `;`
 		}
+		s += `"`
 	}
 	return s
 }
@@ -109,14 +110,6 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 				m.OpenHtml(`div class='row'`, `start of row`)
 				m.Cr()
 				prevPoint = IPointWith(0, cell.Location.Y)
-			}
-
-			// If cell lies to right of current, add space
-			spaceColumns := cell.Location.X - prevPoint.X
-			if spaceColumns > 0 {
-				m.OpenHtml(w.columnsTag(spaceColumns, nil), `spacer`)
-				child.RenderTo(m, state)
-				m.CloseHtml(`div`, `spacer`)
 			}
 
 			m.OpenHtml(w.columnsTag(cell.Width, child), `child`)

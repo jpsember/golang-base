@@ -14,6 +14,7 @@ type BaseWidgetObj struct {
 	hidden        bool
 	disabled      bool
 	staticContent any
+	idHashcode    int
 }
 
 type BaseWidget = *BaseWidgetObj
@@ -96,4 +97,16 @@ func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 func (w BaseWidget) AuxId() string {
 	return w.GetId() + ".aux"
+}
+
+func (w BaseWidget) IdHashcode() int {
+	if w.idHashcode == 0 {
+		b := []byte(w.Id)
+		sum := 0
+		for _, x := range b {
+			sum += int(x)
+		}
+		w.idHashcode = MaxInt(sum&0xffff, 1)
+	}
+	return w.idHashcode
 }

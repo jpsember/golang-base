@@ -189,6 +189,16 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	Pr("opening page widget")
 	m.Id(WidgetIdPage)
 	widget := m.Open()
+	sess.PageWidget = widget
+
+	if Alert("just a few") {
+
+		m.Col(7).AddDebug()
+		m.Col(7).AddDebug()
+		m.Col(5).AddDebug()
+
+		return
+	}
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
@@ -238,7 +248,6 @@ Multiple line feeds:
 
 	m.Close()
 
-	sess.PageWidget = widget
 }
 
 func birdListener(sess any, widget Widget) {
