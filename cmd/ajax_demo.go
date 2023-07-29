@@ -98,24 +98,39 @@ var panicked bool
 func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 	pr := PrIf(false)
 	pr("handler, request:", req.RequestURI)
-	url, err := url.Parse(req.RequestURI)
-	if err != nil {
-		Pr("Error parsing RequestURI:", Quoted(req.RequestURI), INDENT, err)
-		return
-	}
-
-	path := url.Path
-	pr("url path:", path)
 
 	sess := DetermineSession(oper.sessionManager, w, req, true)
 	pr("determined session:", sess != nil)
 
-	if path == "/ajax" {
-		sess.HandleAjaxRequest(w, req)
-	} else if path == "/" {
-		oper.processFullPageRequest(w, req)
-	} else {
-		sess.HandleResourceRequest(w, req, oper.resources)
+	Todo("!This x,err idiom is troubling")
+	var err error
+	for {
+
+		url, err2 := url.Parse(req.RequestURI)
+		err = err2
+		if err != nil {
+			break
+		}
+
+		path := url.Path
+		pr("url path:", path)
+
+		if path == "/ajax" {
+			sess.HandleAjaxRequest(w, req)
+		} else if path == "/" {
+			oper.processFullPageRequest(w, req)
+		} else {
+			err = sess.HandleResourceRequest(w, req, oper.resources)
+		}
+		break
+	}
+
+	if err != nil {
+		sess.SetRequestProblem(err)
+	}
+
+	if p := sess.GetRequestProblem(); p != "" {
+		Pr("...problem with request, URL:", req.RequestURI, INDENT, p)
 	}
 }
 

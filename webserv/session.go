@@ -92,7 +92,7 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 }
 
 // Serve a request for a resource
-func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request, resourcePath Path) {
+func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request, resourcePath Path) error {
 	defer s.discardRequest()
 	s.Mutex.Lock()
 	s.responseWriter = w
@@ -100,25 +100,21 @@ func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request,
 	s.requestProblem = ""
 
 	var err error
-	for {
-		resource := req.URL.Path
-		var resPath Path
-		resPath, err = resourcePath.Join(resource)
-		if err != nil {
-			break
-		}
-
-		var content []byte
-		content, err = resPath.ReadBytes()
-		if err != nil {
-			break
-		}
-		_, err = s.responseWriter.Write(content)
-		break
-	}
+	resource := req.URL.Path
+	var resPath Path
+	resPath, err = resourcePath.Join(resource)
 	if err != nil {
-		s.SetRequestProblem(err)
+		return err
 	}
+
+	var content []byte
+	content, err = resPath.ReadBytes()
+	if err != nil {
+		return err
+	}
+	_, err = s.responseWriter.Write(content)
+
+	return err
 }
 
 func (s Session) parseAjaxRequest(req *http.Request) {
@@ -222,7 +218,6 @@ func (s Session) discardRequest() {
 func (s Session) SetRequestProblem(message ...any) Session {
 	if s.requestProblem == "" {
 		s.requestProblem = "Problem with ajax request: " + ToString(message...)
-		Pr("...set request problem:", s.requestProblem)
 	}
 	return s
 }
