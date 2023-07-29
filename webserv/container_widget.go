@@ -20,23 +20,20 @@ func (g *GridCell) String() string {
 // A concrete Widget that can contain others
 type ContainerWidgetObj struct {
 	BaseWidgetObj
-	children   *Array[Widget]
-	cells      *Array[GridCell]
-	columns    int // The columns to apply to child widgets
-	ourColumns int // The columns that our widget occupies within its parent
+	children *Array[Widget]
+	cells    *Array[GridCell]
+	columns  int // The columns to apply to child widgets
 }
 
 type ContainerWidget = *ContainerWidgetObj
 
-func NewContainerWidget(id string, m WidgetManager, columns int) ContainerWidget {
+func NewContainerWidget(id string) ContainerWidget {
 	w := ContainerWidgetObj{
-		children:   NewArray[Widget](),
-		cells:      NewArray[GridCell](),
-		columns:    12,
-		ourColumns: columns,
+		children: NewArray[Widget](),
+		cells:    NewArray[GridCell](),
+		columns:  12,
 	}
 	w.Id = id
-	Pr("NewContainerWidget, id:", id, "columns:", w.columns)
 	return &w
 }
 
@@ -92,8 +89,6 @@ var colorCounter int
 
 func (w ContainerWidget) SetColumns(columns int) {
 	w.columns = columns
-	Pr("ContainerWidget, id:", w.Id, " setting columns:", columns)
-
 }
 
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {

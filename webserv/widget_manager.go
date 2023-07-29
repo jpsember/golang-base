@@ -451,17 +451,9 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
  * Create a child container widget and push onto stack
  */
 func (m WidgetManager) Open() Widget {
-	Todo("The pendingColumns should be a property of the current container, not the widgetManager")
 	m.Log("open")
-
-	ourColumns := 12
-	if m.parentStack.NonEmpty() {
-		ourColumns = m.currentPanel().columns
-	}
-
 	// the number of columns a widget is to occupy should be sent to the *parent*...
-
-	widget := NewContainerWidget(m.consumeOptionalPendingId(), m, ourColumns)
+	widget := NewContainerWidget(m.consumeOptionalPendingId())
 	m.Log("Adding container widget")
 	m.Add(widget)
 	m.parentStack.Add(widget)
@@ -476,9 +468,8 @@ func (m WidgetManager) Close() WidgetManager {
 	return m.CloseFor("<no context>")
 }
 
-/**
- * Pop view from the stack
- */
+// Pop view from stack
+// Deprecated. Get rid of debugContext.
 func (m WidgetManager) CloseFor(debugContext string) WidgetManager {
 	m.Log("Close", debugContext)
 	parent := m.parentStack.Pop()
