@@ -589,5 +589,7 @@ func SetDebugColors() {
 // Deprecated. To have uses show up in editor as a warning.
 func SetDebugWidgetBounds() {
 	Alert("<1 Setting debug widget bounds")
-	DebugWidgetBounds = true
+	if !Alert("probably no longer useful") {
+		DebugWidgetBounds = true
+	}
 }

@@ -191,7 +191,7 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	widget := m.Open()
 	sess.PageWidget = widget
 
-	if Alert("just a few") {
+	if false && Alert("just a few") {
 
 		m.Col(7).AddDebug()
 		m.Col(7).AddDebug()

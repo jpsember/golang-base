@@ -2,6 +2,8 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"reflect"
+	"strings"
 )
 
 type GridCell struct {
@@ -70,18 +72,11 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 }
 
 // Construct expression [  div class="...." ] with appropriate debug rendering attributes.
-func (w ContainerWidget) columnsTag(columns int, optionalWidget Widget) string {
+func (w ContainerWidget) columnsTag(columns int, widget Widget) string {
+	b := widget.GetBaseWidget()
 	s := `div class="col-sm-` + IntToString(columns) + `"`
-
-	if Alert("!Have debug flag for this") {
-		s += ` style="`
-		if optionalWidget == nil {
-			// This is a spacer, so render as such
-			s += `background-color:#84a3ba;`
-		} else {
-			b := optionalWidget.GetBaseWidget()
-			s += `background-color:` + DebugColor(b.IdHashcode()) + `;`
-		}
+	if DebugColorsFlag {
+		s += ` style="background-color:` + DebugColor(b.IdHashcode()) + `;`
 		s += `"`
 	}
 	return s
@@ -112,7 +107,43 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 				prevPoint = IPointWith(0, cell.Location.Y)
 			}
 
-			m.OpenHtml(w.columnsTag(cell.Width, child), `child`)
+			b := child.GetBaseWidget()
+			s := `div class="col-sm-` + IntToString(cell.Width) + `"`
+			if DebugColorsFlag {
+				s += ` style="background-color:` + DebugColor(b.IdHashcode()) + `;`
+				s += `border-style:double;`
+				s += `"`
+			}
+			m.OpenHtml(s, `child`)
+			if DebugColorsFlag {
+				// Render a div that contains some information
+				{
+					m.A(`<div id='`)
+					m.A(w.Id)
+					m.A(`'`)
+					m.A(` style="font-size:50%; font-family:monospace;"`)
+					m.A(`>`)
+				}
+
+				if b.Id[0] != '.' {
+					m.A(`Id:`)
+					m.A(b.Id)
+					m.A(` `)
+				}
+				m.A(`Cols:`)
+				m.A(IntToString(cell.Width))
+				m.A(` `)
+				{
+					widgetType := reflect.TypeOf(child).String()
+					i := strings.LastIndex(widgetType, ".")
+					widgetType = widgetType[i+1:]
+					widgetType = strings.TrimSuffix(widgetType, "Obj")
+					m.A(widgetType)
+					m.A(` `)
+				}
+
+				m.A(`</div>`).Cr()
+			}
 			child.RenderTo(m, state)
 			m.CloseHtml(`div`, `child`)
 			prevPoint = IPointWith(cell.Location.X+cell.Width, cell.Location.Y)
