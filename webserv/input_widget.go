@@ -43,7 +43,6 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(`">`)
 
 	m.DoIndent()
-	m.DebugOpen(w)
 
 	problemId := w.Id + ".problem"
 	problemText := state.OptString(problemId, "")
@@ -81,7 +80,6 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		m.Escape(problemText).A(`</div>`).Cr()
 	}
 
-	m.DebugClose()
 	m.DoOutdent()
 
 	m.A(`</div>`)

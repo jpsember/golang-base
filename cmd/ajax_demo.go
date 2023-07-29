@@ -13,8 +13,7 @@ import (
 
 func main() {
 	//ClearAlertHistory()
-	SetDebugWidgetBounds()
-	SetDebugColors()
+	SetWidgetDebugRendering()
 
 	var app = NewApp()
 	app.SetName("WebServer")
@@ -184,9 +183,6 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m := sess.WidgetManager()
 	//m.AlertVerbose()
 
-	// Page occupies full 12 columns
-	//m.Col(12)
-	Pr("opening page widget")
 	m.Id(WidgetIdPage)
 	widget := m.Open()
 	sess.PageWidget = widget
@@ -218,8 +214,6 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.Id("x59").Text(`Label for X59`).Listener(checkboxListener).AddCheckbox()
 	m.Id("x60").Text(`With fruit`).Listener(checkboxListener).AddSwitch()
 	m.Close()
-
-	//m.Id("info").AddText()
 
 	m.Col(4)
 	m.Id("launch").Text(`Launch`).Listener(buttonListener).AddButton()

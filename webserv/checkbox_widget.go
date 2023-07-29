@@ -33,7 +33,6 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(`">`)
 
 	m.DoIndent()
-	m.DebugOpen(w)
 
 	m.Comment("Checkbox").Cr()
 
@@ -62,7 +61,6 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.DoOutdent()
 	m.A(`</div>`).Cr()
 
-	m.DebugClose()
 	m.DoOutdent()
 
 	m.A(`</div>`)

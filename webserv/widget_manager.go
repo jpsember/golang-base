@@ -447,9 +447,7 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	return m
 }
 
-/**
- * Create a child container widget and push onto stack
- */
+// Create a child container widget and push onto stack
 func (m WidgetManager) Open() Widget {
 	m.Log("open")
 	// the number of columns a widget is to occupy should be sent to the *parent*...
@@ -461,19 +459,10 @@ func (m WidgetManager) Open() Widget {
 	return widget
 }
 
-/**
- * Pop view from the stack
- */
+// Pop view from the stack.
 func (m WidgetManager) Close() WidgetManager {
-	return m.CloseFor("<no context>")
-}
-
-// Pop view from stack
-// Deprecated. Get rid of debugContext.
-func (m WidgetManager) CloseFor(debugContext string) WidgetManager {
-	m.Log("Close", debugContext)
+	m.Log("Close")
 	parent := m.parentStack.Pop()
-	//m.EndRow()
 	parent.LayoutChildren(m)
 	return m
 }
@@ -572,20 +561,10 @@ func (m WidgetManager) AllocateAnonymousId() string {
 	return "." + IntToString(m.anonymousIdCounter)
 }
 
-var DebugColorsFlag bool
-var DebugWidgetBounds = false
+var WidgetDebugRenderingFlag bool
 
 // Deprecated. To have uses show up in editor as a warning.
-func SetDebugColors() {
-	Alert("<1 Setting debug colors")
-	DebugColorsFlag = true
-	Todo("!<1 Have debug colors affect all widgets, not just debug_widget")
-}
-
-// Deprecated. To have uses show up in editor as a warning.
-func SetDebugWidgetBounds() {
-	Alert("<1 Setting debug widget bounds")
-	if !Alert("probably no longer useful") {
-		DebugWidgetBounds = true
-	}
+func SetWidgetDebugRendering() {
+	Alert("<1 Setting widget debug rendering")
+	WidgetDebugRenderingFlag = true
 }

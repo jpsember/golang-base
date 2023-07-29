@@ -65,17 +65,6 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	w.cells.Add(cell)
 }
 
-// Construct expression [  div class="...." ] with appropriate debug rendering attributes.
-func (w ContainerWidget) columnsTag(columns int, widget Widget) string {
-	b := widget.GetBaseWidget()
-	s := `div class="col-sm-` + IntToString(columns) + `"`
-	if DebugColorsFlag {
-		s += ` style="background-color:` + DebugColor(b.IdHashcode()) + `;`
-		s += `"`
-	}
-	return s
-}
-
 func (w ContainerWidget) SetColumns(columns int) {
 	w.columns = columns
 }
@@ -103,13 +92,13 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 			b := child.GetBaseWidget()
 			s := `div class="col-sm-` + IntToString(cell.Width) + `"`
-			if DebugColorsFlag {
+			if WidgetDebugRenderingFlag {
 				s += ` style="background-color:` + DebugColor(b.IdHashcode()) + `;`
 				s += `border-style:double;`
 				s += `"`
 			}
 			m.OpenHtml(s, `child`)
-			if DebugColorsFlag {
+			if WidgetDebugRenderingFlag {
 				// Render a div that contains some information
 				{
 					m.A(`<div id='`)

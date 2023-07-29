@@ -26,7 +26,6 @@ func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(`'>`)
 
 	m.DoIndent()
-	m.DebugOpen(w)
 	m.A(`<button class='btn btn-primary'`)
 	if !w.Enabled() {
 		m.A(` disabled`)
@@ -38,7 +37,6 @@ func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(`</button>`)
 	m.Cr()
 
-	m.DebugClose()
 	m.DoOutdent()
 	m.A(`</div>`)
 	m.Cr()

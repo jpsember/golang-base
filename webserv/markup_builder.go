@@ -35,25 +35,6 @@ func (m MarkupBuilder) DoOutdent() MarkupBuilder {
 	return m
 }
 
-func (m MarkupBuilder) DebugOpen(widget Widget) MarkupBuilder {
-	if DebugWidgetBounds {
-		m.Cr()
-		Todo("!where are the mb-x and p-x attributes documented?")
-		m.A(`<div class="card border border-info shadow-0 mb-1 p-0 rounded-1"><div class="card-body">`)
-		m.DoIndent()
-	}
-	return m
-}
-
-func (m MarkupBuilder) DebugClose() MarkupBuilder {
-	if DebugWidgetBounds {
-		m.DoOutdent()
-		m.A(`</div></div>`)
-		m.Cr()
-	}
-	return m
-}
-
 func (m MarkupBuilder) DebugOpenSpan(widget Widget) MarkupBuilder {
 	m.A(`<span class="border">`)
 	m.A("span border open")
