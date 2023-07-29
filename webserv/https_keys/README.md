@@ -8,7 +8,7 @@ Run this command to generate a certificate and private key.  Replace all occurre
 of `URL` with an expression such as `foo.com`:
 
 ```
-openssl req -x509 -out URL.crt -keyout URL.key \
+openssl req -x509 -days 3650 -out URL.crt -keyout URL.key \
   -newkey rsa:2048 -nodes -sha256 \
   -subj '/CN=URL.org' -extensions EXT -config <( \
    printf "[dn]\nCN=URL.org\n[req]\ndistinguished_name = dn\n[EXT]\nsubjectAltName=DNS:URL.org\nkeyUsage=digitalSignature\nextendedKeyUsage=serverAuth")

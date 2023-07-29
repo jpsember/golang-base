@@ -62,7 +62,7 @@ func (oper AjaxOper) Perform(app *App) {
 		oper.headerMarkup = s.String()
 	}
 
-	var ourUrl = "zebra.org"
+	var ourUrl = "jeff.org"
 
 	var keyDir = oper.appRoot.JoinM("https_keys")
 	var certPath = keyDir.JoinM(ourUrl + ".crt")
