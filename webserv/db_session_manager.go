@@ -5,7 +5,6 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	_ "github.com/mattn/go-sqlite3"
 	"sync"
-	"time"
 )
 
 type DbSessionManager struct {
@@ -60,62 +59,4 @@ func (s *DbSessionManager) FindSession(id string) Session {
 
 	}
 	return nil
-}
-
-func (s *DbSessionManager) CreateSession() Session {
-	s.lock.Lock()
-
-	b := NewSession()
-
-	for {
-		b.Id = RandomSessionId()
-		// Stop looking for session ids if we've found one that isn't used
-		if s.sessionMap[b.Id] == nil {
-			break
-		}
-	}
-	s.sessionMap[b.Id] = b
-	s.setModified()
-	s.lock.Unlock()
-
-	Todo("?have a background task handle flushing any modifications")
-	s.flush()
-	return b
-}
-
-func (s *DbSessionManager) setModified() {
-	s.modified = true
-}
-
-func (s *DbSessionManager) flush() {
-	if !s.modified {
-		return
-	}
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	if s.modified {
-		pth := s.getPath()
-		Pr("writing session map to path:", pth)
-		jsm := NewJSMap()
-		for k, v := range s.sessionMap {
-			jsm.Put(k, v.ToJson())
-		}
-		pth.WriteStringM(jsm.CompactString())
-		s.lastWrittenMs = time.Now().UnixMilli()
-		Pr("flushed modified session map to:", pth)
-		s.modified = false
-	}
-
-}
-
-func (s *DbSessionManager) getPath() Path {
-	if s.persistPath == "" {
-		pth := AscendToDirectoryContainingFileM("", "go.mod")
-		pth = pth.JoinM("webserv/cache")
-		if !pth.IsDir() {
-			pth.MkDirsM()
-		}
-		s.persistPath = pth.JoinM("session_map.json")
-	}
-	return s.persistPath
 }

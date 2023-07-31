@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	. "github.com/jpsember/golang-base/base"
 	"io"
-	"sync"
 )
 
 type SessionManager interface {
@@ -23,15 +22,14 @@ func RandomSessionId() string {
 
 type inMemorySessionMap struct {
 	BaseObject
-	sessionMap map[string]Session
-	lock       sync.RWMutex
+	sessionMap *ConcurrentMap[string, Session]
 }
 
 func BuildSessionMap() SessionManager {
 	sm := new(inMemorySessionMap)
 	sm.SetName("inMemorySessionMap")
-	sm.SetVerbose(Alert("setting verbosity"))
-	sm.sessionMap = make(map[string]Session)
+	//sm.SetVerbose(Alert("setting verbosity"))
+	sm.sessionMap = NewConcurrentMap[string, Session]()
 	return sm
 }
 
@@ -40,27 +38,23 @@ func (s *inMemorySessionMap) SetModified(session Session) {
 
 func (s *inMemorySessionMap) FindSession(id string) Session {
 	s.Log("FindSession, id:", id)
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-	var result = s.sessionMap[id]
+	result := s.sessionMap.Get(id)
 	s.Log("Result:", INDENT, result)
 	return result
 }
 
 func (s *inMemorySessionMap) CreateSession() Session {
-	s.lock.Lock()
 
 	b := NewSession()
 	for {
 		b.Id = RandomSessionId()
+		oldValue := s.sessionMap.Provide(b.Id, b)
 		// Stop looking for session ids if we've found one that isn't used
-		if s.sessionMap[b.Id] == nil {
+		if oldValue == nil {
 			break
 		}
 	}
-	s.Log("Creating new session:", INDENT, b)
-	s.sessionMap[b.Id] = b
-	s.lock.Unlock()
+	s.Log("Created new session:", INDENT, b)
 	return b
 }
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webserv"
@@ -35,7 +34,6 @@ type AjaxOperStruct struct {
 	headerMarkup   string
 	FullWidth      bool // If true, page occupies full width of screen
 	TopPadding     int  // If nonzero, adds padding to top of page
-	db             *sql.DB
 }
 type AjaxOper = *AjaxOperStruct
 
@@ -51,8 +49,7 @@ func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AjaxOper) Perform(app *App) {
-	oper.db = openDb()
-	oper.buildSessionManager()
+	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
 
@@ -307,30 +304,4 @@ func checkboxListener(sess any, widget Widget) {
 
 	s.State.Put(wid, newVal)
 	// Repainting isn't necessary, as the web page has already done this
-}
-
-func openDb() *sql.DB {
-
-	// From https://softchris.github.io/golang-book/05-misc/05-sqlite/
-
-	db := CheckOkWith(sql.Open("sqlite3", "ajax_demo.db"))
-	Pr("opened db")
-
-	// Apparently it creates a database if none exists...?
-
-	// Create a table if it doesn't exist
-	const create string = `
-  CREATE TABLE IF NOT EXISTS user (
-  uid INTEGER PRIMARY KEY AUTOINCREMENT,
-  name VARCHAR(64) NOT NULL,
-  age INTEGER
-  );`
-
-	CheckOkWith(db.Exec(create))
-
-	return db
-}
-
-func (oper AjaxOper) buildSessionManager() {
-	oper.sessionManager = BuildDbSessionManager(oper.db)
 }
