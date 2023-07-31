@@ -102,19 +102,10 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 	sess := DetermineSession(oper.sessionManager, w, req, true)
 	pr("determined session:", sess != nil)
 
-	Todo("!This x,err idiom is troubling")
-	var err error
-	for {
-
-		url, err2 := url.Parse(req.RequestURI)
-		err = err2
-		if err != nil {
-			break
-		}
-
+	url, err := url.Parse(req.RequestURI)
+	if err == nil {
 		path := url.Path
 		pr("url path:", path)
-
 		if path == "/ajax" {
 			sess.HandleAjaxRequest(w, req)
 		} else if path == "/" {
@@ -122,7 +113,6 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		} else {
 			err = sess.HandleResourceRequest(w, req, oper.resources)
 		}
-		break
 	}
 
 	if err != nil {
