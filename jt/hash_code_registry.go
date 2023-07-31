@@ -6,15 +6,12 @@ import (
 	"sync"
 )
 
-var _ = Pr
-
-var mutex sync.RWMutex
-
 type HashCodeRegistry struct {
 	Key                string
-	Map                *JSMapStruct
+	Map                JSMap
 	registryFileCached Path
 	unitTestDirCached  Path
+	mutex              sync.RWMutex
 }
 
 // Get registry for a test case, constructing one if necessary
@@ -22,18 +19,13 @@ type HashCodeRegistry struct {
 // Must be thread safe
 func (j JTest) registry() *HashCodeRegistry {
 	var key = j.Filename
-	mutex.RLock()
-	var registry = sClassesMap[key]
-	mutex.RUnlock()
+	var registry = sClassesMap.Get(key)
 	if registry == nil {
-		mutex.Lock()
 		registry = new(HashCodeRegistry)
 		registry.Key = key
-		// Don't let other threads modify the map while we are modifying it or creating the registry's jsmap
-		sClassesMap[key] = registry
 		// See if there is a file it was saved to
 		registry.Map = JSMapFromFileIfExistsM(registry.file(j))
-		mutex.Unlock()
+		registry, _ = sClassesMap.Provide(key, registry)
 	}
 	return registry
 }
@@ -56,22 +48,16 @@ func (r *HashCodeRegistry) unitTestDirectory(j JTest) Path {
 
 func (r *HashCodeRegistry) VerifyHash(j JTest, currentHash int32, invalidateOldHash bool) bool {
 	testName := j.BaseName()
+	// Don't let other threads read or write this HashCodeRegistry's map
+	r.mutex.Lock()
 	var expectedHash = r.Map.OptInt32(testName, 0)
 	if expectedHash == 0 || invalidateOldHash {
-		// Don't let other threads modify or write the map
-		mutex.Lock()
 		r.Map.Put(testName, currentHash)
-		r.write(j)
-		mutex.Unlock()
+		r.file(j).WriteStringM(r.Map.String())
 		expectedHash = currentHash
 	}
+	r.mutex.Unlock()
 	return currentHash == expectedHash
 }
 
-func (r *HashCodeRegistry) write(j JTest) {
-	var path = r.file(j)
-	var content = r.Map.String()
-	path.WriteStringM(content)
-}
-
-var sClassesMap = make(map[string]*HashCodeRegistry)
+var sClassesMap = NewConcurrentMap[string, *HashCodeRegistry]()

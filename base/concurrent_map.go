@@ -43,13 +43,14 @@ func (m *ConcurrentMap[K, V]) Put(key K, value V) V {
 	return oldValue
 }
 
-// Store key/value pair if key doesn't already exist.  Returns old value mapped to the key.
-func (m *ConcurrentMap[K, V]) Provide(key K, value V) V {
+// Store key/value pair if key doesn't already exist.  Returns old value if it existed, else new one; and true if already existed.
+func (m *ConcurrentMap[K, V]) Provide(key K, value V) (V, bool) {
 	m.lock.Lock()
 	oldValue, ok := m.wrappedMap[key]
 	if !ok {
 		m.wrappedMap[key] = value
+		oldValue = value
 	}
 	m.lock.Unlock()
-	return oldValue
+	return oldValue, ok
 }
