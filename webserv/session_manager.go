@@ -16,10 +16,6 @@ type SessionManager interface {
 
 func RandomSessionId() string {
 	var idLength = 32
-	if true {
-		// For now, use a much smaller id for legibility
-		idLength = 3
-	}
 	b := make([]byte, idLength)
 	CheckOkWith(io.ReadFull(rand.Reader, b))
 	return base64.URLEncoding.EncodeToString(b)

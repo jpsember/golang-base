@@ -55,4 +55,8 @@ func main() {
 		age := rnd.Intn(65) + 8
 		CheckOkWith(addUserStatement.Exec(name, age))
 	}
+
+	Pr("sleeping...")
+	SleepMs(60000)
+	Pr("...done sleeping")
 }
