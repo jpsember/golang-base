@@ -143,6 +143,7 @@ func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Req
 	oper.writeHeader(sb)
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
 	sess.PageWidget.RenderTo(sb, sess.State)
+	sess.RequestClientInfo(sb)
 	oper.writeFooter(w, sb)
 }
 
@@ -232,7 +233,6 @@ Multiple line feeds:
 	m.Label("Animal").AddInput("zebra")
 
 	m.Close()
-
 }
 
 func birdListener(sess any, widget Widget) {
@@ -292,7 +292,6 @@ func buttonListener(sess any, widget Widget) {
 }
 
 func checkboxListener(sess any, widget Widget) {
-	Todo("!add support for switch-style; https://getbootstrap.com/docs/5.3/forms/checks-radios/")
 	s := sess.(Session)
 	wid := s.GetWidgetId()
 

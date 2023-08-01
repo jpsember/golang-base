@@ -31,6 +31,7 @@ type SessionStruct struct {
 	requestProblem string
 	widgetIds      []string
 	widgetValues   []string
+	messageValues  []string
 }
 
 func NewSession() Session {
@@ -130,6 +131,12 @@ func (s Session) parseAjaxRequest(req *http.Request) {
 }
 
 func (s Session) processClientMessage() {
+	if s.GetWidgetId() == "__info__" {
+		message := s.GetValueString()
+		Pr("got client message:", message)
+		return
+	}
+
 	// At present, we will assume that the request consists of a single widget id, and perhaps a single value
 	// for that widget
 	//
@@ -291,6 +298,16 @@ func (s Session) SetWidgetProblem(widget Widget, s2 string) {
 	CheckArg(s2 != "")
 	key := getProblemId(widget)
 	s.State.Put(key, s2)
+}
+
+// Include javascript call within page to get client's display properties.
+func (s Session) RequestClientInfo(sb MarkupBuilder) {
+	// If necessary, determine client's screen resolution by including some javascript that will make an ajax
+	// call back to us with that information.
+	if true {
+		Alert("Always making resolution call; might want to avoid infinite calls by only requesting if at least n seconds elapsed")
+		sb.A(`<script>jsGetDisplayProperties();</script>`).Cr()
+	}
 }
 
 var cachedCurrentDirectoryString = CurrentDirectory().String()

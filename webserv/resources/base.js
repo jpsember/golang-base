@@ -1,3 +1,7 @@
+const request_key_widget = 'w'
+const request_key_value = 'v'
+const widget_id_info = '__info__'
+
 function warning() {
     _alert("WARNING",_argsToArray(arguments))
 }
@@ -89,8 +93,8 @@ function jsVal(id) {
     const xhttp = new XMLHttpRequest();
     const addr = window.location.href.split('?')[0];
     const url = new URL(addr + '/ajax');
-    url.searchParams.set('w', id);         // The widget id
-    url.searchParams.set('v', textValue);	 // The new value
+    url.searchParams.set(request_key_widget, id);         // The widget id
+    url.searchParams.set(request_key_value, textValue);	 // The new value
     xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
             processServerResponse(this.responseText)
@@ -105,7 +109,7 @@ function jsButton(id) {
     const xhttp = new XMLHttpRequest();
     const addr = window.location.href.split('?')[0];
     const url = new URL(addr + '/ajax');
-    url.searchParams.set('w', id);         // The widget id
+    url.searchParams.set(request_key_widget, id);         // The widget id
     xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
             processServerResponse(this.responseText)
@@ -121,8 +125,8 @@ function jsCheckboxClicked(id) {
     const xhttp = new XMLHttpRequest();
     const addr = window.location.href.split('?')[0];
     const url = new URL(addr + '/ajax');
-    url.searchParams.set('w', id);         // The widget id
-    url.searchParams.set('v', checkbox.checked.toString());	 // The new value
+    url.searchParams.set(request_key_widget, id);         // The widget id
+    url.searchParams.set(request_key_value, checkbox.checked.toString());	 // The new value
     xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
             processServerResponse(this.responseText)
@@ -131,3 +135,28 @@ function jsCheckboxClicked(id) {
     xhttp.open('GET', url);
     xhttp.send();
 }
+
+function jsGetDisplayProperties() {
+    const xhttp = new XMLHttpRequest();
+    const addr = window.location.href.split('?')[0];
+    const url = new URL(addr + '/ajax');
+
+    const info = {
+        "sw": window.screen.width,
+        "sh": window.screen.height,
+        "dp": window.devicePixelRatio
+    }
+
+    url.searchParams.set(request_key_widget, widget_id_info);
+    url.searchParams.set(request_key_value, JSON.stringify(info));
+    xhttp.open('GET', url);
+    xhttp.send();
+}
+
+function getResolution() {
+    pr("getResolution, screen width/height:",window.screen.width, window.screen.height)
+    pr("window.screen.width:",window.screen.width)
+    pr("device pixel ratio:",window.devicePixelRatio)
+}
+
+getResolution();
