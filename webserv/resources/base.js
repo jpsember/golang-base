@@ -2,25 +2,46 @@ const request_key_widget = 'w'
 const request_key_value = 'v'
 const request_key_info = 'i'
 
-function warning() {
-    _alert("WARNING",_argsToArray(arguments))
-}
+const _db = warning("db is true")
 
-function todo() {
-    _alert("TODO",_argsToArray(arguments))
-}
 
-function _alert(type, args) {
-    const x = ["***",type + ";", where(2), ":"].concat(args)
-    pr(...x)
-}
 
-function _argsToArray(x) {
-    const args = [];
-    for (let i = 0; i < x.length; i++) {
-        args[i] = x[i];
+// This ...args syntax is not strictly required; we could omit it and refer to 'arguments'
+function pr(...args) {
+    let s = ""
+    for (let i = 0; i < args.length; i++) {
+        let a = args[i]
+        const t = typeof a
+        if (t == "object") {
+            a = "\n" + JSON.stringify(a, null, 2) + "\n"
+        }
+        if (i != 0) {
+            s += " "
+        }
+        s += String(a)
     }
-    return args
+    console.log(s)
+}
+
+function db() {
+    if (_db) {
+        pr(...arguments)
+    }
+}
+
+
+function warning(...args) {
+    _alert("WARNING", ...args)
+    return true
+}
+
+function todo(...args) {
+    _alert("TODO",  ...args)
+    return true
+}
+
+function _alert(type, ...args) {
+    pr("***",type+";",where(2),":",...args)
 }
 
 function var_info(x) {
@@ -43,22 +64,6 @@ function where(skip) {
     return x
 }
 
-function pr() {
-    let s = ""
-    for (let i = 0; i < arguments.length; i++) {
-        let a = arguments[i]
-        const t = typeof a
-        if (t == "object") {
-            a = "\n" + JSON.stringify(a, null, 2) + "\n"
-        }
-        if (i != 0) {
-            s += " "
-        }
-        s += String(a)
-    }
-    console.log(s)
-}
-
 function processServerResponse(text) {
     if (text.length == 0) {
         return
@@ -72,74 +77,62 @@ function processServerResponse(text) {
               warning("can't find element with id:",id);
               continue;
             }
-            pr("replacing outerHTML for widget with id:",id)
-            pr("and markup:",markup)
             elem.outerHTML = markup;
         }
     }
 }
 
 function ajaxUrl() {
-        const addr = window.location.href.split('?')[0];
-        const url = new URL(addr + '/ajax');
-        return url;
+    const addr = window.location.href.split('?')[0];
+    const url = new URL(addr + 'ajax');
+    return url;
 }
+
+function makeAjaxCall(...args) {
+    warning("making ajax call",1,2,3)
+    const url = ajaxUrl()
+    for (let i = 0; i < args.length; i+=2) {
+        url.searchParams.set(args[i],args[i+1])
+    }
+    const xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+            processServerResponse(this.responseText)
+        }
+    };
+    xhttp.open('GET', url);
+    xhttp.send();
+}
+
 
 // An onChange event has occurred within an input field;
 // send widget id and value back to server; process response
 function jsVal(id) {
+    db("jsVal",id)
     // see https://tobiasahlin.com/blog/move-from-jquery-to-vanilla-javascript
     // to add back in some useful jquery functions
-
     // The Widget id has id "<id>"
     // The HTML element for the input field has id "<id>.aux"
     const auxId = id + '.aux'
     const x = document.getElementById(auxId);
-    const textValue = x.value;
-    const xhttp = new XMLHttpRequest();
-    const url = ajaxUrl()
-    url.searchParams.set(request_key_widget, id);         // The widget id
-    url.searchParams.set(request_key_value, textValue);	 // The new value
-    xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-            processServerResponse(this.responseText)
-        }
-    };
-    xhttp.open('GET', url);
-    xhttp.send();
+    makeAjaxCall(request_key_widget,id,request_key_value,x.value)
 }
 
 // An onClick event has occurred within a button
 function jsButton(id) {
-    const url = ajaxUrl()
-    url.searchParams.set(request_key_widget, id);         // The widget id
-    const xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-            processServerResponse(this.responseText)
-        }
-    };
-    xhttp.open('GET', url);
-    xhttp.send();
+    db("jsButton",id)
+    makeAjaxCall(request_key_widget, id)
 }
 
 // An click event has occurred within a checkbox
 function jsCheckboxClicked(id) {
+    db("jsCheckboxClicked", id)
     const checkbox = document.getElementById(id+'.aux');
-    const url = ajaxUrl()
-    url.searchParams.set(request_key_widget, id);         // The widget id
-    url.searchParams.set(request_key_value, checkbox.checked.toString());	 // The new value
-    const xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
-        if (this.readyState == 4 && this.status == 200) {
-            processServerResponse(this.responseText)
-        }
-    };
-    xhttp.open('GET', url);
-    xhttp.send();
+    makeAjaxCall(request_key_widget,id,request_key_value,checkbox.checked.toString())
 }
 
 function jsGetDisplayProperties() {
+    todo("we can probably call makeAjaxCall, assuming it can handle the empty response")
     const url = ajaxUrl()
 
     const info = {

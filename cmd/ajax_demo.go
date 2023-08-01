@@ -96,7 +96,7 @@ var panicked bool
 
 // A handler such as this must be thread safe!
 func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(false)
+	pr := PrIf(true)
 	pr("handler, request:", req.RequestURI)
 
 	sess := DetermineSession(oper.sessionManager, w, req, true)
