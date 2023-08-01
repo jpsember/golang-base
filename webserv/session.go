@@ -127,13 +127,12 @@ func (s Session) parseAjaxRequest(req *http.Request) {
 	// will expected just one.
 	s.widgetValues, _ = v[clientKeyValue]
 	s.widgetIds, _ = v[clientKeyWidget]
-	//Pr("parsed ajax request, values:", s.widgetValues, "ids:", s.widgetIds)
+	Todo("Maybe have client info be sent back in an info key instead, and not tied to a page refresh?")
 }
 
 func (s Session) processClientMessage() {
 	if s.GetWidgetId() == "__info__" {
-		message := s.GetValueString()
-		Pr("got client message:", message)
+		s.processClientInfo(s.GetValueString())
 		return
 	}
 
@@ -156,6 +155,15 @@ func (s Session) processClientMessage() {
 		return
 	}
 	listener(s, widget)
+}
+
+func (s Session) processClientInfo(infoString string) {
+	json, err := JSMapFromString(infoString)
+	if err != nil {
+		Pr("failed to parse json:", err, INDENT, infoString)
+		return
+	}
+	Todo("process client message:", INDENT, json)
 }
 
 func (s Session) processRepaintFlags(debugDepth int, w Widget, refmap JSMap, repaint bool) {
