@@ -2,12 +2,10 @@ const request_key_widget = 'w'
 const request_key_value = 'v'
 const request_key_info = 'i'
 
-const _db = warning("db is true")
+const _db = false && warning("db is true")
 
-
-
-// This ...args syntax is not strictly required; we could omit it and refer to 'arguments'
-function pr(...args) {
+function pr() {
+    const args = arguments
     let s = ""
     for (let i = 0; i < args.length; i++) {
         let a = args[i]
@@ -29,19 +27,17 @@ function db() {
     }
 }
 
-
-function warning(...args) {
-    _alert("WARNING", ...args)
-    return true
+function warning() {
+    return _alert("WARNING", ...arguments)
 }
 
-function todo(...args) {
-    _alert("TODO",  ...args)
-    return true
+function todo() {
+    return _alert("TODO",   ...arguments)
 }
 
 function _alert(type, ...args) {
     pr("***",type+";",where(2),":",...args)
+    return true
 }
 
 function var_info(x) {
@@ -82,15 +78,9 @@ function processServerResponse(text) {
     }
 }
 
-function ajaxUrl() {
+function makeAjaxCall(...args) {
     const addr = window.location.href.split('?')[0];
     const url = new URL(addr + 'ajax');
-    return url;
-}
-
-function makeAjaxCall(...args) {
-    warning("making ajax call",1,2,3)
-    const url = ajaxUrl()
     for (let i = 0; i < args.length; i+=2) {
         url.searchParams.set(args[i],args[i+1])
     }
@@ -103,7 +93,6 @@ function makeAjaxCall(...args) {
     xhttp.open('GET', url);
     xhttp.send();
 }
-
 
 // An onChange event has occurred within an input field;
 // send widget id and value back to server; process response
@@ -132,17 +121,10 @@ function jsCheckboxClicked(id) {
 }
 
 function jsGetDisplayProperties() {
-    todo("we can probably call makeAjaxCall, assuming it can handle the empty response")
-    const url = ajaxUrl()
-
     const info = {
         "sw": window.screen.width,
         "sh": window.screen.height,
         "dp": window.devicePixelRatio
     }
-
-    url.searchParams.set(request_key_info, JSON.stringify(info));
-    const xhttp = new XMLHttpRequest();
-    xhttp.open('GET', url);
-    xhttp.send();
+    makeAjaxCall(request_key_info, JSON.stringify(info))
 }

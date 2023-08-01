@@ -171,7 +171,7 @@ func (s Session) processClientInfo(infoString string) {
 		Pr("failed to parse json:", err, INDENT, infoString)
 		return
 	}
-	Todo("process client message:", INDENT, json)
+	Todo("!process client info:", INDENT, json)
 }
 
 func (s Session) processRepaintFlags(debugDepth int, w Widget, refmap JSMap, repaint bool) {
