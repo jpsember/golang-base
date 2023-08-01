@@ -73,3 +73,4 @@ func WidgetBooleanValue(state JSMap, id string) bool {
 
 const clientKeyWidget = "w"
 const clientKeyValue = "v"
+const clientKeyInfo = "i"

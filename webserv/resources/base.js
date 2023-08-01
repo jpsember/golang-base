@@ -1,6 +1,6 @@
 const request_key_widget = 'w'
 const request_key_value = 'v'
-const widget_id_info = '__info__'
+const request_key_info = 'i'
 
 function warning() {
     _alert("WARNING",_argsToArray(arguments))
@@ -79,6 +79,12 @@ function processServerResponse(text) {
     }
 }
 
+function ajaxUrl() {
+        const addr = window.location.href.split('?')[0];
+        const url = new URL(addr + '/ajax');
+        return url;
+}
+
 // An onChange event has occurred within an input field;
 // send widget id and value back to server; process response
 function jsVal(id) {
@@ -91,8 +97,7 @@ function jsVal(id) {
     const x = document.getElementById(auxId);
     const textValue = x.value;
     const xhttp = new XMLHttpRequest();
-    const addr = window.location.href.split('?')[0];
-    const url = new URL(addr + '/ajax');
+    const url = ajaxUrl()
     url.searchParams.set(request_key_widget, id);         // The widget id
     url.searchParams.set(request_key_value, textValue);	 // The new value
     xhttp.onreadystatechange = function () {
@@ -106,10 +111,9 @@ function jsVal(id) {
 
 // An onClick event has occurred within a button
 function jsButton(id) {
-    const xhttp = new XMLHttpRequest();
-    const addr = window.location.href.split('?')[0];
-    const url = new URL(addr + '/ajax');
+    const url = ajaxUrl()
     url.searchParams.set(request_key_widget, id);         // The widget id
+    const xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
             processServerResponse(this.responseText)
@@ -121,12 +125,11 @@ function jsButton(id) {
 
 // An click event has occurred within a checkbox
 function jsCheckboxClicked(id) {
-    var checkbox = document.getElementById(id+'.aux');
-    const xhttp = new XMLHttpRequest();
-    const addr = window.location.href.split('?')[0];
-    const url = new URL(addr + '/ajax');
+    const checkbox = document.getElementById(id+'.aux');
+    const url = ajaxUrl()
     url.searchParams.set(request_key_widget, id);         // The widget id
     url.searchParams.set(request_key_value, checkbox.checked.toString());	 // The new value
+    const xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
             processServerResponse(this.responseText)
@@ -137,9 +140,7 @@ function jsCheckboxClicked(id) {
 }
 
 function jsGetDisplayProperties() {
-    const xhttp = new XMLHttpRequest();
-    const addr = window.location.href.split('?')[0];
-    const url = new URL(addr + '/ajax');
+    const url = ajaxUrl()
 
     const info = {
         "sw": window.screen.width,
@@ -147,16 +148,8 @@ function jsGetDisplayProperties() {
         "dp": window.devicePixelRatio
     }
 
-    url.searchParams.set(request_key_widget, widget_id_info);
-    url.searchParams.set(request_key_value, JSON.stringify(info));
+    url.searchParams.set(request_key_info, JSON.stringify(info));
+    const xhttp = new XMLHttpRequest();
     xhttp.open('GET', url);
     xhttp.send();
 }
-
-function getResolution() {
-    pr("getResolution, screen width/height:",window.screen.width, window.screen.height)
-    pr("window.screen.width:",window.screen.width)
-    pr("device pixel ratio:",window.devicePixelRatio)
-}
-
-getResolution();

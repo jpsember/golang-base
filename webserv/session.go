@@ -31,7 +31,7 @@ type SessionStruct struct {
 	requestProblem string
 	widgetIds      []string
 	widgetValues   []string
-	messageValues  []string
+	clientInfo     []string
 }
 
 func NewSession() Session {
@@ -120,20 +120,28 @@ func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request,
 
 func (s Session) parseAjaxRequest(req *http.Request) {
 	// At present, the ajax request parameters are of the form
-	//  /ajax?w=<widget id>&v=<widget value>
-	//
+	//  /ajax? [expr [& expr]*]
+	// where expr is:
+	//  w=<widget id>
+	//  v=<widget value>
+	//  i=<client information as json map, encoded as string>
 	v := req.URL.Query()
+
 	// A url can contain multiple values for a parameter, though we
 	// will expected just one.
 	s.widgetValues, _ = v[clientKeyValue]
 	s.widgetIds, _ = v[clientKeyWidget]
-	Todo("Maybe have client info be sent back in an info key instead, and not tied to a page refresh?")
+	s.clientInfo, _ = v[clientKeyInfo]
 }
 
 func (s Session) processClientMessage() {
-	if s.GetWidgetId() == "__info__" {
-		s.processClientInfo(s.GetValueString())
-		return
+	// Process client info, if it was sent
+	if info, err := getSingleValue(s.clientInfo); err == nil {
+		s.processClientInfo(info)
+		// If there isn't a widget message as well, do nothing else
+		if len(s.widgetIds) == 0 {
+			return
+		}
 	}
 
 	// At present, we will assume that the request consists of a single widget id, and perhaps a single value
@@ -245,31 +253,36 @@ func (s Session) Ok() bool {
 	return s.requestProblem == ""
 }
 
+func getSingleValue(array []string) (string, error) {
+	if array != nil && len(array) == 1 {
+		return array[0], nil
+	}
+	return "", Error("expected single string, got:", array)
+}
+
 // Read request's (single) widget id
 func (s Session) GetWidgetId() string {
-	if s.widgetIds == nil || len(s.widgetIds) != 1 {
+	id, err := getSingleValue(s.widgetIds)
+	if err != nil {
 		s.SetRequestProblem("Unable to get widget id")
 		return ""
 	}
-	return s.widgetIds[0]
+	return id
 }
 
 // Read request's widget value as a string
 func (s Session) GetValueString() string {
-	if s.widgetValues == nil || len(s.widgetValues) != 1 {
+	id, err := getSingleValue(s.widgetValues)
+	if err != nil {
 		s.SetRequestProblem("Unable to get widget value")
 		return ""
 	}
-	return s.widgetValues[0]
+	return id
 }
 
 // Read request's widget value as a boolean
 func (s Session) GetValueBoolean() bool {
-	if s.widgetValues == nil || len(s.widgetValues) != 1 {
-		s.SetRequestProblem("Unable to get widget value")
-		return false
-	}
-	str := s.widgetValues[0]
+	str := s.GetValueString()
 	switch str {
 	case "true":
 		return true
@@ -313,7 +326,7 @@ func (s Session) RequestClientInfo(sb MarkupBuilder) {
 	// If necessary, determine client's screen resolution by including some javascript that will make an ajax
 	// call back to us with that information.
 	if true {
-		Alert("Always making resolution call; might want to avoid infinite calls by only requesting if at least n seconds elapsed")
+		Alert("!Always making resolution call; might want to avoid infinite calls by only requesting if at least n seconds elapsed")
 		sb.A(`<script>jsGetDisplayProperties();</script>`).Cr()
 	}
 }
