@@ -1,29 +1,38 @@
 
-#rcorners {
+.rcorners, .rcorners0 {
   border-radius: .3em;
-  background: #73AD21;
   xpadding: 3px;
-  width: 200px;
   height: 20px;
 }
 
+.rcorners {
+  background: #73AD21;
 
-
-
-
-graphcontainer {
-  width: 100px;
-  height: 100px;
-  position: relative;
 }
-navi,
-infoi {
+
+.rcorners0 {
+  background: #e0e0e0;
+  width: 100%;
+}
+
+
+
+.graphcontainer {
+  width: 100%;
+  height: 1em;
+  position: relative;
+  /*background:#552*/
+}
+
+.navi,
+.infoi {
   width: 100%;
   height: 100%;
   position: absolute;
   top: 0;
   left: 0;
 }
-infoi {
+
+.infoi {
   z-index: 10;
 }
