@@ -24,3 +24,6 @@
   background: #e0e0e0;
 }
 
+.animal-card {
+  max-width:16em;
+}
