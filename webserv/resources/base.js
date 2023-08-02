@@ -64,6 +64,7 @@ function processServerResponse(text) {
     if (text.length == 0) {
         return
     }
+    pr("processServerResponse, text:",text)
     const obj = JSON.parse(text)
     if ('w' in obj) {
         const widgetMap = obj.w
@@ -128,3 +129,5 @@ function jsGetDisplayProperties() {
     }
     makeAjaxCall(request_key_info, JSON.stringify(info))
 }
+
+pr("...base.js has loaded")

@@ -56,32 +56,33 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.CloseTag()
 
 	m.OpenTag(`div class="card-body"`, `Progress towards goal, controls`)
-
 	m.OpenTag(`div class="progress-container"`, "progress-container")
 	m.OpenCloseTag(`div class="progress-bar-bgnd"`, "Plot grey in background, full width")
 	m.OpenCloseTag(`div class="progress-bar" style="width: 35%;"`, "Plot bar graph in foreground, partial width")
 	m.CloseTag()
-
-	m.OpenTag(`div class="progress-text"`)
-	m.Pr("$120 raised of $250 goal")
 	m.CloseTag()
 
-	m.OpenTag(`div class="row"`, "right-justified button")
-	m.OpenCloseTag(`div class="col-sm-7"`)
-	m.OpenTag(`div class="col-sm-5"`, "button")
+	//m.OpenTag(`div class="card-body"`, `Progress towards goal`)
+	//m.OpenTag(`div class="progress-text"`)
+	//m.Pr("$120 raised of $250 goal")
+	//m.CloseTag()
+	//m.CloseTag()
 
-	// Add the single child widget (a view button)
-	ch := w.GetChildren()
-	CheckState(len(ch) == 1, "expected single 'view' button widget")
-	vb := ch[0]
-	m.OpenTag(`div id='`, vb.GetBaseWidget().Id, `' style='font-size:75%'`)
-	//Halt("open tag, expr:", ToString(`div id='`, vb.GetBaseWidget().Id, `' style='font-size:75%'`))
-	vb.RenderTo(m, state)
-	m.CloseTag()
-
-	m.CloseTag() // button
-	m.CloseTag()
-	m.CloseTag()
+	//m.OpenTag(`div class="row"`, "right-justified button")
+	//m.OpenCloseTag(`div class="col-sm-7"`)
+	//m.OpenTag(`div class="col-sm-5"`, "button")
+	//
+	//// Add the single child widget (a view button)
+	//ch := w.GetChildren()
+	//CheckState(len(ch) == 1, "expected single 'view' button widget")
+	//vb := ch[0]
+	//m.OpenTag(`div style='font-size:75%'`)
+	////Halt("open tag, expr:", ToString(`div id='`, vb.GetBaseWidget().Id, `' style='font-size:75%'`))
+	//vb.RenderTo(m, state)
+	//m.CloseTag()
+	//
+	//m.CloseTag() // button
+	//m.CloseTag()
 	m.CloseTag()
 
 	m.VerifyEnd(i)

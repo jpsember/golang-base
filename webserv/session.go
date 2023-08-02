@@ -113,8 +113,9 @@ func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request,
 	if err != nil {
 		return err
 	}
-	_, err = s.responseWriter.Write(content)
-
+	Pr("read resource:", resPath, "got bytes:", len(content))
+	code, err := s.responseWriter.Write(content)
+	Pr("wrote, code:", code, " error:", err)
 	return err
 }
 

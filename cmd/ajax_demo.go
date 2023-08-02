@@ -70,18 +70,18 @@ func (oper AjaxOper) Perform(app *App) {
 	Todo("!Clean up this 'fail only once' code")
 	http.HandleFunc("/",
 		func(w http.ResponseWriter, req *http.Request) {
-			if panicked {
-				w.Write([]byte("panic has occurred"))
-				return
-			}
-			panicked = true
-			defer func() {
-				if panicked {
-					w.Write([]byte("panic has occurred"))
-				}
-			}()
+			//if panicked {
+			//	w.Write([]byte("panic has occurred"))
+			//	return
+			//}
+			//panicked = true
+			//defer func() {
+			//	if panicked {
+			//		w.Write([]byte("panic has occurred"))
+			//	}
+			//}()
 			oper.handle(w, req)
-			panicked = false
+			//panicked = false
 		})
 
 	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
@@ -96,7 +96,7 @@ var panicked bool
 
 // A handler such as this must be thread safe!
 func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(false)
+	pr := PrIf(true)
 	pr("handler, request:", req.RequestURI)
 
 	sess := DetermineSession(oper.sessionManager, w, req, true)
@@ -111,6 +111,7 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		} else if path == "/" {
 			oper.processFullPageRequest(w, req)
 		} else {
+			pr("handling resource request for:", path)
 			err = sess.HandleResourceRequest(w, req, oper.resources)
 		}
 	}
@@ -151,6 +152,7 @@ func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Req
 func (oper AjaxOper) writeHeader(bp MarkupBuilder) {
 	bp.A(oper.headerMarkup)
 	bp.OpenHtml("body", "").Br()
+	bp.A(`<div class="wtf">hello</div>`).Cr()
 	containerClass := "container"
 	if oper.FullWidth {
 		containerClass = "container-fluid"
@@ -198,6 +200,7 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.Col(4)
 	for i := 0; i < 4; i++ {
 		oper.addAnimalCard(m, "a"+IntToString(i))
+		break
 	}
 
 	m.Col(4)

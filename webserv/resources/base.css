@@ -1,4 +1,3 @@
-
 .progress-container {
   height: 1em;
   position: relative;
@@ -10,16 +9,22 @@
   width: 100%;
   height: 100%;
   position: absolute;
- }
+}
+
+.wtf {
+  background: #f08080;
+}
 .progress-bar {
   z-index: 10;
 }
+
 .progress-text {
   padding-top:.2em;
   text-align: center;
   font-size: 80%;
   padding-bottom:.5em;
 }
+
 .progress-bar-bgnd {
   background: #e0e0e0;
 }
