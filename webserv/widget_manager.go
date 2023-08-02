@@ -16,7 +16,7 @@ type WidgetManagerObj struct {
 	mPendingDefaultFloatValue   float64
 	mPendingDefaultIntValue     int
 	pendingListener             WidgetListener
-	parentStack                 *Array[ContainerWidget]
+	parentStack                 *Array[Widget]
 	pendingSize                 int
 	pendingText                 string
 	pendingId                   string
@@ -26,7 +26,7 @@ type WidgetManagerObj struct {
 
 func NewWidgetManager() WidgetManager {
 	w := WidgetManagerObj{
-		parentStack: NewArray[ContainerWidget](),
+		parentStack: NewArray[Widget](),
 		widgetMap:   make(map[string]Widget),
 	}
 	w.SetName("WidgetManager")
@@ -193,7 +193,10 @@ func (m WidgetManager) Size(size int) WidgetManager {
 
 // Set number of Bootstrap columns for next widget
 func (m WidgetManager) Col(columns int) WidgetManager {
-	m.currentPanel().SetColumns(columns)
+	w := m.currentPanel()
+	c, ok := w.(ContainerWidget)
+	CheckState(ok)
+	c.SetColumns(columns)
 	return m
 }
 
@@ -376,7 +379,7 @@ func (m WidgetManager) finish() WidgetManager {
 	return m
 }
 
-func (m WidgetManager) currentPanel() ContainerWidget {
+func (m WidgetManager) currentPanel() Widget {
 	if m.parentStack.IsEmpty() {
 		BadState("no current panel")
 	}
