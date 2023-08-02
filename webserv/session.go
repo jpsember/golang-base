@@ -113,9 +113,8 @@ func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request,
 	if err != nil {
 		return err
 	}
-	Pr("read resource:", resPath, "got bytes:", len(content))
-	code, err := s.responseWriter.Write(content)
-	Pr("wrote, code:", code, " error:", err)
+
+	WriteResponse(s.responseWriter, InferContentTypeM(resource), content)
 	return err
 }
 
@@ -220,8 +219,7 @@ func (s Session) sendAjaxResponse() {
 	jsmap.Put(respKeyWidgetsToRefresh, refmap)
 	pr("sending back to Ajax caller:", INDENT, jsmap)
 	content := jsmap.CompactString()
-
-	s.responseWriter.Write([]byte(content))
+	WriteResponse(s.responseWriter, "application/json", []byte(content))
 }
 
 // Discard state added to session to serve a request; release session lock.

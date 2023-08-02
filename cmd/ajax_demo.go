@@ -96,7 +96,7 @@ var panicked bool
 
 // A handler such as this must be thread safe!
 func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("handler, request:", req.RequestURI)
 
 	sess := DetermineSession(oper.sessionManager, w, req, true)
@@ -152,7 +152,6 @@ func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Req
 func (oper AjaxOper) writeHeader(bp MarkupBuilder) {
 	bp.A(oper.headerMarkup)
 	bp.OpenHtml("body", "").Br()
-	bp.A(`<div class="wtf">hello</div>`).Cr()
 	containerClass := "container"
 	if oper.FullWidth {
 		containerClass = "container-fluid"
@@ -200,6 +199,7 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.Col(4)
 	for i := 0; i < 4; i++ {
 		oper.addAnimalCard(m, "a"+IntToString(i))
+    Alert("only printing single card") 
 		break
 	}
 

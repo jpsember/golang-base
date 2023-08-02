@@ -216,8 +216,12 @@ func (path Path) MoveTo(target Path) error {
 	return os.Rename(string(path), string(target))
 }
 
+func ExtensionFrom(path string) string {
+	return strings.TrimPrefix(filepath.Ext(path), ".")
+}
+
 func (path Path) Extension() string {
-	return strings.TrimPrefix(filepath.Ext(path.String()), ".")
+	return ExtensionFrom(path.String())
 }
 
 func (path Path) NonEmpty() bool {

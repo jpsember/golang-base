@@ -83,8 +83,8 @@ func (oper NonAjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 	bp.CloseHtml("div", "body")
 	bp.Br().CloseHtml("body", "")
 	bp.A(`</html>`).Cr()
-	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(bp.String()))
+	// See https://stackoverflow.com/questions/64294267/
+	WriteResponse(w, "text/html", []byte(bp.String()))
 }
 
 // A handler such as this must be thread safe!
