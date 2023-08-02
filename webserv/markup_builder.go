@@ -7,18 +7,25 @@ import (
 
 // A builder for constructing html markup
 
+type tagEntry struct {
+	tag     string // e.g. div, p (no '<' or '>')
+	comment string
+}
+
 type MarkupBuilderObj struct {
 	strings.Builder
 	indent       int
 	indented     bool
 	crRequest    int
 	omitComments bool
+	tagStack     *Array[tagEntry]
 }
 
 type MarkupBuilder = *MarkupBuilderObj
 
 func NewMarkupBuilder() MarkupBuilder {
 	v := MarkupBuilderObj{}
+	v.tagStack = NewArray[tagEntry]()
 	return &v
 }
 
@@ -122,6 +129,76 @@ func (b MarkupBuilder) doIndent() {
 	b.indented = true
 }
 
+// Open a tag, e.g.
+//
+//	<div class="card-body" style="max-height:8em;">
+//
+// tagExpression in the above case would be:  div class="card-body" style="max-height:8em;"
+func (b MarkupBuilder) OpenTag(tagExpression string, comments ...any) MarkupBuilder {
+	Todo("!In debug mode, parse the tag expression to make sure quotes are balanced")
+	exprLen := len(tagExpression)
+	if tagExpression[0] == '<' || tagExpression[exprLen-1] == '>' {
+		BadArg("<1Tag expression contains <,> delimiters:", tagExpression, "comments:", comments)
+	}
+	i := strings.IndexByte(tagExpression, ' ')
+	if i < 0 {
+		i = exprLen
+	}
+
+	CheckState(b.tagStack.Size() < 50, "tags are nested too deeply")
+	entry := tagEntry{
+		tag: tagExpression[0:i],
+	}
+	if !b.omitComments && len(comments) != 0 {
+		entry.comment = `<!-- ` + ToString(comments...) + " -->"
+	}
+
+	b.tagStack.Add(entry)
+	if entry.comment != "" {
+		b.Br()
+		b.A(entry.comment).Cr()
+	}
+	b.A("<").A(tagExpression).A(">") //.A(entry.comment)
+	b.DoIndent()
+	return b
+}
+
+func (b MarkupBuilder) tagStackInfo() string {
+	jl := NewJSList()
+
+	for _, ent := range b.tagStack.Array() {
+		jl.Add(NewJSList().Add(ent.tag).Add(ent.comment))
+	}
+	return jl.String()
+}
+
+func (b MarkupBuilder) VerifyBegin() int {
+	return b.tagStack.Size()
+}
+func (b MarkupBuilder) VerifyEnd(expectedStackSize int) {
+	s := b.tagStack.Size()
+	if s != expectedStackSize {
+		BadState("tag stack size", s, "!=", expectedStackSize, "; content:", b.tagStackInfo())
+	}
+}
+
+func (b MarkupBuilder) CloseTag() MarkupBuilder {
+	entry := b.tagStack.Pop()
+	b.DoOutdent()
+	b.A("</").A(entry.tag).A(">")
+	if entry.comment != "" {
+		b.A(`  `).A(entry.comment)
+		b.Br()
+	}
+	return b.Cr()
+}
+
+func (b MarkupBuilder) OpenCloseTag(tagExpression string, comments ...any) MarkupBuilder {
+	b.OpenTag(tagExpression, comments...)
+	return b.CloseTag()
+}
+
+// Deprecated.  Use OpenTag.
 func (b MarkupBuilder) OpenHtml(tag string, comment string) MarkupBuilder {
 	CheckState(b.indent < 100, "too many indents")
 	comment = b.commentFilter(comment)

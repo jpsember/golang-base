@@ -157,6 +157,8 @@ func auxPanic(skipCount int, prefix string, message ...any) {
 	msg := CallerLocation(prefixInfo.skipCount+messageInfo.skipCount+skipCount+1) + " *** " + prefixInfo.key + "! " + messageInfo.key
 
 	if !testAlertState {
+		// Print the panic to stdout in case it doesn't later get printed in this convenient way for some other reason
+		fmt.Println(msg)
 		panic(msg)
 	} else {
 		TestPanicMessageLog.WriteString(msg + "\n")

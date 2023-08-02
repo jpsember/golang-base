@@ -70,7 +70,7 @@ func (w ContainerWidget) SetColumns(columns int) {
 }
 
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	m.Comments(false)
+	//m.Comments(false)
 	desc := `ContainerWidget ` + w.IdSummary()
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
@@ -137,5 +137,5 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		}
 	}
 	m.CloseHtml(`div`, desc)
-	m.Comments(true)
+	//m.Comments(true)
 }
