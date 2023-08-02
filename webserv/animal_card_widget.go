@@ -21,7 +21,6 @@ func NewAnimalCardWidget(widgetId string, aId string) AnimalCardWidget {
 
 func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
-	Todo("add support for our own css")
 	Todo("This is another type of container widget, have to figure that out")
 
 	if !w.Visible() {
@@ -30,7 +29,7 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	}
 	m.OpenHtml(`div class="card bg-light mb-3 animal-card"`, "AnimalCardWidget")
 
-	m.Pr(`<img class="card-img-top" src="_SKIP_0.jpg">`).Cr()
+	m.Pr(`<img class="card-img-top" src="0.jpg">`).Cr()
 	m.Pr(` <div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;">
           <h6 class="card-title">Roscoe</h6>
           <p class="card-text" style="font-size:75%;">This boxer cross came to us with skin issues and needs additional treatment.  She is on the mend though!</p>
