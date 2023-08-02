@@ -11,7 +11,6 @@ type Widget interface {
 	RenderTo(m MarkupBuilder, state JSMap)
 	GetBaseWidget() BaseWidget
 	AddChild(c Widget, manager WidgetManager)
-	LayoutChildren(manager WidgetManager)
 	GetChildren() []Widget
 }
 

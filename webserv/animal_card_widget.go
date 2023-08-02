@@ -23,25 +23,41 @@ func NewAnimalCardWidget(widgetId string, aId string) AnimalCardWidget {
 
 func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
-	Todo("This is another type of container widget, have to figure that out")
-
 	if !w.Visible() {
 		m.RenderInvisible(w)
 		return
 	}
 
+	// Open a bootstrap card
+
+	// <div class="card bg-light mb-3" style="max-width:16em;">
 	m.OpenHtml(`div class="card bg-light mb-3 animal-card"`, "AnimalCardWidget")
+
+	// Display an image
+
+	// <img class="card-img-top" src="_SKIP_0.jpg">
+	Todo("!add support for image based on particular animal")
 	m.Pr(`<img class="card-img-top" src="0.jpg">`).Cr()
-	m.OpenHtml(`<div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;">`)
-	m.Pr(` <div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;">
-          <h6 class="card-title">Roscoe</h6>
-          <p class="card-text" style="font-size:75%;">This boxer cross came to us with skin issues and needs additional treatment.  She is on the mend though!</p>
-        </div>
 
+	// Display title and brief summary
+	//     <div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;">
+	//      <h6 class="card-title">Roscoe</h6>
+	//      <p class="card-text" style="font-size:75%;">This boxer cross came to us with skin issues and needs additional treatment.  She is on the mend though!</p>
+	//    </div>
+	m.OpenHtml(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`, "title and summary")
 
-        <div class="card-body">
+	Todo("!display animal name")
+	m.Pr(`<h6 class="card-title">Roscoe</h6>`).Cr()
 
-          <div class="progress-container">
+	m.Pr(`<p class="card-text" style="font-size:75%;">This boxer cross came 
+                           to us with skin issues and needs additional treatment.  
+                           She is on the mend though!</p>`).Cr()
+	m.CloseHtml(`div`, "title and summary")
+
+	m.OpenHtml(`div class="card-body">`, `Progress towards goal`)
+	Todo("CloseHtml should use a stack, so it checks at runtime.  Also, debug ability to verify tag agrees.")
+
+	m.Pr(`div class="progress-container">
             <!-- Plot grey in background, full width -->
             <div class="progress-bar-bgnd"></div>
 
@@ -53,9 +69,8 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
           <div class="progress-text">
             $120 raised of $250 goal
           </div>
-
- 		</div>
 `).Cr()
+	m.CloseHtml(`div`, `Progress towards goal`)
 
 	m.Pr(`<div class="row">
           <div class="col-sm-7">

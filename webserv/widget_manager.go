@@ -367,13 +367,10 @@ func (m WidgetManager) OpenContainer(widget Widget) {
 	m.Log("added container to stack")
 }
 
-// Pop view from the stack.
+// Pop a container widget from the stack.
 func (m WidgetManager) Close() WidgetManager {
 	m.Log("Close")
-	parent := m.parentStack.Pop()
-	if !Todo("get rid of LayoutChildren") {
-		parent.LayoutChildren(m)
-	}
+	m.parentStack.Pop()
 	return m
 }
 

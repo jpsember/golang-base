@@ -66,10 +66,6 @@ func (w BaseWidget) AddChild(c Widget, manager WidgetManager) {
 	NotSupported("AddChild not supported")
 }
 
-func (w BaseWidget) LayoutChildren(manager WidgetManager) {
-	NotSupported("LayoutChildren not supported")
-}
-
 func (w BaseWidget) ReceiveValue(sess Session, value string) {
 	Pr("Ignoring ReceiveValue for widget:", w.Id, "value:", Quoted(value))
 }
