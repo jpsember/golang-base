@@ -355,18 +355,25 @@ func (m WidgetManager) Open() Widget {
 	m.Log("open")
 	// the number of columns a widget is to occupy should be sent to the *parent*...
 	widget := NewContainerWidget(m.consumeOptionalPendingId())
+	m.OpenContainer(widget)
+	return widget
+}
+
+// Push a container widget onto the stack
+func (m WidgetManager) OpenContainer(widget Widget) {
 	m.Log("Adding container widget")
 	m.Add(widget)
 	m.parentStack.Add(widget)
 	m.Log("added container to stack")
-	return widget
 }
 
 // Pop view from the stack.
 func (m WidgetManager) Close() WidgetManager {
 	m.Log("Close")
 	parent := m.parentStack.Pop()
-	parent.LayoutChildren(m)
+	if !Todo("get rid of LayoutChildren") {
+		parent.LayoutChildren(m)
+	}
 	return m
 }
 

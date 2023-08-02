@@ -194,10 +194,11 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	heading := NewHeadingWidget("header_text", 1)
 	m.Add(heading)
+
 	m.Col(4)
-	m.Add(NewAnimalCardWidget("a1", "animal_db_1"))
-	m.Add(NewAnimalCardWidget("a2", "animal_db_2"))
-	m.Add(NewAnimalCardWidget("a3", "animal_db_3"))
+	for i := 0; i < 4; i++ {
+		oper.addAnimalCard(m, "a"+IntToString(i))
+	}
 
 	m.Col(4)
 	m.Text("uniform delta").AddText()
@@ -236,6 +237,14 @@ Multiple line feeds:
 	m.Listener(zebraListener)
 	m.Label("Animal").AddInput("zebra")
 
+	m.Close()
+}
+
+func (oper AjaxOper) addAnimalCard(m WidgetManager, id string) {
+	widget := NewAnimalCardWidget(id, "db_"+id)
+	m.OpenContainer(widget)
+	// Create a button within this card
+	m.Id(id + "_view").Text(`View`).Listener(buttonListener).AddButton()
 	m.Close()
 }
 
