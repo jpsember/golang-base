@@ -194,6 +194,10 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	heading := NewHeadingWidget("header_text", 1)
 	m.Add(heading)
+	m.Col(4)
+	m.Add(NewAnimalCardWidget("a1", "animal_db_1"))
+	m.Add(NewAnimalCardWidget("a2", "animal_db_2"))
+	m.Add(NewAnimalCardWidget("a3", "animal_db_3"))
 
 	m.Col(4)
 	m.Text("uniform delta").AddText()
