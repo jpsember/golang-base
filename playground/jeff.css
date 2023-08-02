@@ -1,38 +1,25 @@
 
-.rcorners, .rcorners0 {
-  border-radius: .3em;
-  xpadding: 3px;
-  height: 20px;
-}
-
-.rcorners {
-  background: #73AD21;
-
-}
-
-.rcorners0 {
-  background: #e0e0e0;
-  width: 100%;
-}
-
-
-
-.graphcontainer {
-  width: 100%;
+.progress-container {
   height: 1em;
   position: relative;
-  /*background:#552*/
 }
 
-.navi,
-.infoi {
+.progress-bar, .progress-bar-bgnd {
+  border-radius: .3em;
+  background: #73AD21;
   width: 100%;
   height: 100%;
   position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.infoi {
+ }
+.progress-bar {
   z-index: 10;
 }
+.progress-text {
+  padding-top:.3em;
+  text-align: center;
+  font-size: 80%;
+}
+.progress-bar-bgnd {
+  background: #e0e0e0;
+}
+
