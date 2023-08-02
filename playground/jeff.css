@@ -15,9 +15,10 @@
   z-index: 10;
 }
 .progress-text {
-  padding-top:.3em;
+  padding-top:.2em;
   text-align: center;
   font-size: 80%;
+  padding-bottom:.5em;
 }
 .progress-bar-bgnd {
   background: #e0e0e0;
