@@ -15,6 +15,101 @@
 
 <body>
 
+
+
+
+
+  <div class='container  pt-5'> <!--page container -->
+    <div id='page'> <!--ContainerWidget Id: page -->
+
+
+      <div class='row'> <!--start of row -->
+        <div class="col-sm-4"> <!--child -->
+
+          <!-- AnimalCardWidget -->
+          <div class="card bg-light mb-3 animal-card">
+            <img class="card-img-top" src="_SKIP_0.jpg">
+
+            <!-- title and summary -->
+            <div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;">
+              <h6 class="card-title">Roscoe</h6>
+              <p class="card-text" style="font-size:75%;">This boxer cross came
+                           to us with skin issues and needs additional treatment.
+                           She is on the mend though!</p>
+            </div>  <!-- title and summary -->
+
+            <!-- Progress towards goal, controls -->
+            <div class="card-body">
+
+              <!-- progress-container -->
+              <div class="progress-container">
+
+                <!-- Plot grey in background, full width -->
+                <div class="progress-bar-bgnd">
+                </div>  <!-- Plot grey in background, full width -->
+
+                <!-- Plot bar graph in foreground, partial width -->
+                <div class="progress-bar" style="width: 35%;">
+                </div>  <!-- Plot bar graph in foreground, partial width -->
+
+              </div>  <!-- progress-container -->
+
+
+            <!-- Progress towards goal -->
+              <div class="progress-text">
+                $120 raised of $250 goal
+              </div>
+
+            <!-- right-justified button -->
+            <div class="row">
+              <div class="col-sm-7">
+              </div>
+
+              <!-- button -->
+              <div class="col-sm-5">
+                <div style='font-size:75%'>
+                  <div id='a0_view'>
+                    <button class='btn btn-primary' onclick='jsButton("a0_view")'>View</button>
+                  </div>
+                </div>
+              </div>  <!-- button -->
+
+            </div>  <!-- right-justified button -->
+
+          </div>  <!-- AnimalCardWidget -->
+
+        </div> <!-- child -->
+
+      </div> <!-- end of row -->
+
+
+
+
+      <div class='row'> <!--start of row -->
+        <div class="col-sm-4"> <!--child -->
+          <div id="zebra">
+            <!-- Label -->
+            <label class="form-label" style="font-size:70%">
+            Animal</label>
+            <!-- Input -->
+            <input class="form-control" type="text" id="zebra.aux" value="" onchange='jsVal("zebra")'>
+          </div>
+        </div> <!-- child -->
+      </div> <!-- row -->
+
+    </div> <!-- ContainerWidget Id: page -->
+  </div> <!-- page container -->
+
+
+
+
+
+
+
+
+
+
+
   <div class='container  pt-5'> <!--page container -->
     <div  id='page'>
 
@@ -69,7 +164,7 @@
           </div>
           <div class="col-sm-5">
             <div id='view'>
-              <button class='btn btn-primary' style="zwidth:100%; zfont-size:75%;" >View</button>
+              <button class='btn btn-primary' style="width:100%; font-size:75%;" >View</button>
             </div>
           </div>
         </div>

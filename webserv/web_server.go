@@ -63,7 +63,8 @@ func InferContentType(path string) (string, bool) {
 var fileExtensionMap = make(map[string]string)
 
 func init() {
-	v := strings.Split(`bin application/octet-stream css text/css jpg image/jpeg js text/javascript json application/json png image/png txt text/plain`, " ")
+	Todo("Have a utility to do this")
+	v := strings.Split(`ico image/x-icon bin application/octet-stream css text/css jpg image/jpeg js text/javascript json application/json png image/png txt text/plain`, " ")
 	for i := 0; i < len(v); i += 2 {
 		fileExtensionMap[v[i]] = v[i+1]
 	}

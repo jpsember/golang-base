@@ -31,23 +31,18 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	// Open a bootstrap card
 	i := m.VerifyBegin()
 
+	m.OpenTag(`div class="card bg-light mb-3 animal-card"`, "AnimalCardWidget")
 	{
-		// <div class="card bg-light mb-3" style="max-width:16em;">
-		m.OpenTag(`div class="card bg-light mb-3 animal-card"`, "AnimalCardWidget")
 
 		// Display an image
 
-		// <img class="card-img-top" src="_SKIP_0.jpg">
 		Todo("!add support for image based on particular animal")
 		m.Pr(`<img class="card-img-top" src="0.jpg">`).Cr()
 
+    Todo("no need for // comment if we express it in the opentag")
 		// Display title and brief summary
-		//     <div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;">
-		//      <h6 class="card-title">Roscoe</h6>
-		//      <p class="card-text" style="font-size:75%;">This boxer cross came to us with skin issues and needs additional treatment.  She is on the mend though!</p>
-		//    </div>
+		m.OpenTag(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`, "title and summary")
 		{
-			m.OpenTag(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`, "title and summary")
 
 			Todo("!display animal name")
 			m.Pr(`<h6 class="card-title">Roscoe</h6>`).Cr()
@@ -55,53 +50,42 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			m.Pr(`<p class="card-text" style="font-size:75%;">This boxer cross came 
                            to us with skin issues and needs additional treatment.  
                            She is on the mend though!</p>`).Cr()
-			m.CloseTag()
 		}
+		m.CloseTag()
 
+		m.OpenTag(`div class="card-body"`, `Progress towards goal, controls`)
 		{
-			m.OpenTag(`div class="card-body"`, `Progress towards goal, controls`)
+			m.OpenTag(`div class="progress-container"`, "progress-container")
 			{
-				m.OpenTag(`div class="progress-container"`, "progress-container")
-				{
-					m.OpenCloseTag(`div class="progress-bar-bgnd"`, "Plot grey in background, full width")
-					m.OpenCloseTag(`div class="progress-bar" style="width: 35%;"`, "Plot bar graph in foreground, partial width")
-				}
-				m.CloseTag()
+				m.OpenCloseTag(`div class="progress-bar-bgnd"`, "Plot grey in background, full width")
+				m.OpenCloseTag(`div class="progress-bar" style="width: 35%;"`, "Plot bar graph in foreground, partial width")
 			}
 			m.CloseTag()
-		}
-		{
-			m.OpenTag(`div class="card-body"`, `Progress towards goal`)
+			m.OpenTag(`div class="progress-text"`)
 			{
-				m.OpenTag(`div class="progress-text"`)
 				m.Pr("$120 raised of $250 goal")
-				m.CloseTag()
 			}
 			m.CloseTag()
-		}
-		{
 			m.OpenTag(`div class="row"`, "right-justified button")
-			m.OpenCloseTag(`div class="col-sm-7"`)
 			{
+				m.OpenCloseTag(`div class="col-sm-7"`)
 				m.OpenTag(`div class="col-sm-5"`, "button")
-
-				// Add the single child widget (a view button)
-				ch := w.GetChildren()
-				CheckState(len(ch) == 1, "expected single 'view' button widget")
-				vb := ch[0]
-				//m.OpenTag(`div style='font-size:75%; width:100%;'`)
-				Todo("!Add ability to add style = 'width:100%; font-size:75%;' to the child button")
-
-				vb.RenderTo(m, state)
-
-				m.CloseTag() // button
+				{
+					// Add the single child widget (a view button)
+					ch := w.GetChildren()
+					CheckState(len(ch) == 1, "expected single 'view' button widget")
+					vb := ch[0]
+					Todo("!Add ability to add style = 'width:100%; font-size:75%;' to the child button")
+					vb.RenderTo(m, state)
+				}
+				m.CloseTag() 
 			}
 			m.CloseTag()
 		}
 		m.CloseTag()
 	}
+	m.CloseTag()
 	m.VerifyEnd(i)
-
 }
 
 func (w AnimalCardWidget) GetChildren() []Widget {
