@@ -25,6 +25,7 @@ func NewInputWidget(id string, label HtmlString) InputWidget {
 var HtmlStringNbsp = NewHtmlStringEscaped("&nbsp;")
 
 func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
+
 	if !w.Visible() {
 		m.RenderInvisible(w)
 		return

@@ -114,7 +114,11 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 				m.A(`</div>`).Cr()
 			}
+
+			verify := m.VerifyBegin()
 			child.RenderTo(m, state)
+			m.VerifyEnd(verify, child)
+
 			m.CloseTag() // child
 			prevPoint = IPointWith(cell.Location.X+cell.Width, cell.Location.Y)
 		}

@@ -26,34 +26,43 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		m.RenderInvisible(w)
 		return
 	}
+
 	auxId := w.AuxId()
 
-	Todo("can we do OpenTag here?")
 	m.Comment("CheckboxWidget")
 	m.OpenTag(`div id="`, w.Id, `"`)
+	{
+		var cbClass string
+		var role string
+		if w.switchFlag {
+			cbClass = `"form-check form-switch"`
+			role = ` role="switch"`
+		} else {
+			cbClass = "form-check"
+			role = ``
+		}
 
-	var cbClass string
-	var role string
-	if w.switchFlag {
-		cbClass = `"form-check form-switch"`
-		role = ` role="switch"`
-	} else {
-		cbClass = "form-check"
-		role = ``
-	}
-	m.Comment("checkbox").OpenTag(`div class=`, cbClass)
-	m.DoIndent()
-	m.A(`<input class="form-check-input" type="checkbox" id="`, auxId, `"`, role)
-	if WidgetBooleanValue(state, w.Id) {
-		m.A(` checked`)
-	}
+		m.Comment("checkbox").OpenTag(`div class=`, cbClass)
+		{
+			m.VoidTag(
+				`input class="form-check-input" type="checkbox" id="`, auxId, `"`, role,
+				Ternary(WidgetBooleanValue(state, w.Id), ` checked`, ``),
+				` onclick='jsCheckboxClicked("`, w.Id, `")'`)
 
-	m.A(` onclick='jsCheckboxClicked("`, w.Id, `")'>`).Cr()
-	m.Comment("Label").Cr()
-	m.A(`<label class="form-check-label" for="`, auxId, `">`).Escape(w.Label).A(`</label>`).Cr()
-	m.DoOutdent()
+			{
+				m.Comment("Label").OpenTag(`label class="form-check-label" for="`, auxId, `"`).Escape(w.Label).CloseTag() //.A(`</label>`).Cr()
+			}
+		}
+		m.CloseTag()
+	}
 	m.CloseTag()
-	m.CloseTag()
+}
+
+func Ternary[V any](flag bool, ifTrue V, ifFalse V) V {
+	if flag {
+		return ifTrue
+	}
+	return ifFalse
 }
 
 func boolToHtmlString(value bool) string {

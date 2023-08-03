@@ -197,6 +197,9 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	m.Col(4)
 	for i := 0; i < 4; i++ {
+		//if i > 0 &&  Alert("only one") {
+		//	break
+		//}
 		oper.addAnimalCard(m, "a"+IntToString(i))
 	}
 

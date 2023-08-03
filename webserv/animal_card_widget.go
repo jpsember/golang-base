@@ -29,7 +29,6 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	}
 
 	// Open a bootstrap card
-	i := m.VerifyBegin()
 
 	m.Comments("AnimalCardWidget").OpenTag(`div class="card bg-light mb-3 animal-card"`)
 	{
@@ -85,7 +84,6 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		m.CloseTag()
 	}
 	m.CloseTag()
-	m.VerifyEnd(i)
 }
 
 func (w AnimalCardWidget) GetChildren() []Widget {

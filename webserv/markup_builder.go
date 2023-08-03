@@ -8,23 +8,30 @@ import (
 // A builder for constructing html markup
 
 type tagEntry struct {
-	tag       string // e.g. div, p (no '<' or '>')
-	comment   string
-	noContent bool // true if tag will have no content; its formatting and commenting will be different
+	tagTy   tagType
+	tag     string // e.g. div, p (no '<' or '>')
+	comment string
 }
 
 type MarkupBuilderObj struct {
 	strings.Builder
-	indent                     int
-	indented                   bool
-	crRequest                  int
-	omitComments               bool
-	tagStack                   *Array[tagEntry]
-	suppressClosingCommentFlag bool
-	pendingComments            []any
+	indent       int
+	indented     bool
+	crRequest    int
+	omitComments bool
+	tagStack     *Array[tagEntry]
+	pendingComments []any
 }
 
 type MarkupBuilder = *MarkupBuilderObj
+
+type tagType int
+
+const (
+	tagTypeOpen tagType = iota
+	tagTypeOpenClose
+	tagTypeVoid
+)
 
 func NewMarkupBuilder() MarkupBuilder {
 	v := MarkupBuilderObj{}
@@ -151,6 +158,11 @@ func (b MarkupBuilder) Comments(comments ...any) MarkupBuilder {
 //
 // tagExpression in the above case would be:  div class="card-body" style="max-height:8em;"
 func (b MarkupBuilder) OpenTag(args ...any) MarkupBuilder {
+	b.auxOpenTag(tagTypeOpen, args...)
+	return b
+}
+
+func (b MarkupBuilder) auxOpenTag(tagTy tagType, args ...any) {
 	var tagExpression string
 	{
 		sb := strings.Builder{}
@@ -184,13 +196,12 @@ func (b MarkupBuilder) OpenTag(args ...any) MarkupBuilder {
 
 	CheckState(b.tagStack.Size() < 50, "tags are nested too deeply")
 	entry := tagEntry{
-		tag:       tagExpression[0:i],
-		noContent: b.suppressClosingCommentFlag,
+		tag:   tagExpression[0:i],
+		tagTy: tagTy,
 	}
 	comments := b.pendingComments
 	b.pendingComments = nil
 
-	b.suppressClosingCommentFlag = false
 	if comments != nil {
 		entry.comment = `<!-- ` + ToString(comments...) + " -->"
 	}
@@ -198,13 +209,14 @@ func (b MarkupBuilder) OpenTag(args ...any) MarkupBuilder {
 		b.Br()
 		b.A(entry.comment).Cr()
 	}
-	b.tagStack.Add(entry)
 
 	b.A("<", tagExpression, ">")
-	if !entry.noContent {
+	if tagTy == tagTypeOpen {
 		b.DoIndent()
 	}
-	return b
+	if tagTy != tagTypeVoid {
+		b.tagStack.Add(entry)
+	}
 }
 
 func (b MarkupBuilder) tagStackInfo() string {
@@ -216,33 +228,43 @@ func (b MarkupBuilder) tagStackInfo() string {
 	return jl.String()
 }
 
+// Verify that the tag stack size *does not change* before and after some code.  Call this before the code,
+// and balance this call with a call to VerifyEnd(), supplying the stack size that VerifyBegin() returned.
 func (b MarkupBuilder) VerifyBegin() int {
 	return b.tagStack.Size()
 }
-func (b MarkupBuilder) VerifyEnd(expectedStackSize int) {
+
+// Verify that the tag stack size *does not change* before and after some code.  Call this before the code,
+// and balance this call with a call to VerifyEnd(), supplying the stack size that VerifyBegin() returned.
+func (b MarkupBuilder) VerifyEnd(expectedStackSize int, widget Widget) {
 	s := b.tagStack.Size()
 	if s != expectedStackSize {
-		BadState("tag stack size", s, "!=", expectedStackSize, "; content:", b.tagStackInfo())
+		BadState("<1tag stack size", s, "!=", expectedStackSize, INDENT,
+			"after widget:", widget.GetBaseWidget().Id, Info(widget))
 	}
 }
 
 func (b MarkupBuilder) CloseTag() MarkupBuilder {
 	entry := b.tagStack.Pop()
-	if entry.noContent {
-		b.A("</", entry.tag, ">")
-	} else {
+	if entry.tagTy == tagTypeOpen {
 		b.DoOutdent()
 		b.A("</", entry.tag, ">")
 		if entry.comment != "" {
 			b.A(`  `, entry.comment)
 		}
+	} else {
+		b.A("</", entry.tag, ">")
 	}
 	return b.Br()
 }
 
-func (b MarkupBuilder) OpenCloseTag(tagExpression string) MarkupBuilder {
-	b.suppressClosingCommentFlag = true
-	b.OpenTag(tagExpression)
+func (b MarkupBuilder) VoidTag(args ...any) MarkupBuilder {
+	b.auxOpenTag(tagTypeVoid, args...)
+	return b
+}
+
+func (b MarkupBuilder) OpenCloseTag(args ...any) MarkupBuilder {
+	b.auxOpenTag(tagTypeOpenClose, args...)
 	return b.CloseTag()
 }
 
