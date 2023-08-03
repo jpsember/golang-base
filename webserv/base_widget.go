@@ -83,10 +83,6 @@ func (w BaseWidget) IdSummary() string {
 	return `Id: ` + w.Id
 }
 
-func (w BaseWidget) IdComment() string {
-	return WrapWithinComment(w.IdSummary())
-}
-
 func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(`<div id='`)
 	m.A(w.Id)

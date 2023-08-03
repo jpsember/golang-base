@@ -10,7 +10,7 @@ import (
 type tagEntry struct {
 	tag       string // e.g. div, p (no '<' or '>')
 	comment   string
-	noContent bool
+	noContent bool // true if tag will have no content; its formatting and commenting will be different
 }
 
 type MarkupBuilderObj struct {
@@ -31,77 +31,77 @@ func NewMarkupBuilder() MarkupBuilder {
 	return &v
 }
 
-func (m MarkupBuilder) Bytes() []byte {
-	return []byte(m.String())
+func (b MarkupBuilder) Bytes() []byte {
+	return []byte(b.String())
 }
 
-func (m MarkupBuilder) DoIndent() MarkupBuilder {
-	m.Cr()
-	m.indent += 2
-	return m
+func (b MarkupBuilder) DoIndent() MarkupBuilder {
+	b.Cr()
+	b.indent += 2
+	return b
 }
 
-func (m MarkupBuilder) DoOutdent() MarkupBuilder {
-	m.indent -= 2
-	CheckState(m.indent >= 0, "indent underflow")
-	m.Cr()
-	return m
+func (b MarkupBuilder) DoOutdent() MarkupBuilder {
+	b.indent -= 2
+	CheckState(b.indent >= 0, "indent underflow")
+	b.Cr()
+	return b
 }
 
-func (m MarkupBuilder) DebugOpenSpan(widget Widget) MarkupBuilder {
-	m.A(`<span class="border">`)
-	m.A("span border open")
-	return m
+func (b MarkupBuilder) DebugOpenSpan(widget Widget) MarkupBuilder {
+	b.A(`<span class="border">`)
+	b.A("span border open")
+	return b
 }
 
-func (m MarkupBuilder) DebugCloseSpan() MarkupBuilder {
-	m.A("span border close")
-	m.A(`</span>`)
-	return m
+func (b MarkupBuilder) DebugCloseSpan() MarkupBuilder {
+	b.A("span border close")
+	b.A(`</span>`)
+	return b
 }
 
-func (m MarkupBuilder) RenderInvisible(w Widget) MarkupBuilder {
-	b := w.GetBaseWidget()
-	m.A(`<div id='`)
-	m.A(b.Id)
-	m.A(`'></div>`)
-	m.Cr()
-	return m
+func (b MarkupBuilder) RenderInvisible(w Widget) MarkupBuilder {
+	base := w.GetBaseWidget()
+	b.A(`<div id='`)
+	b.A(base.Id)
+	b.A(`'></div>`)
+	b.Cr()
+	return b
 }
 
-func (m MarkupBuilder) Quoted(text string) MarkupBuilder {
-	return m.A(Quoted(text))
+func (b MarkupBuilder) Quoted(text string) MarkupBuilder {
+	return b.A(Quoted(text))
 }
 
-func (m MarkupBuilder) Escape(arg any) MarkupBuilder {
+func (b MarkupBuilder) Escape(arg any) MarkupBuilder {
 	if escaper, ok := arg.(Escaper); ok {
-		return m.A(escaper.Escaped())
+		return b.A(escaper.Escaped())
 	}
 	if str, ok := arg.(string); ok {
-		return m.A(NewHtmlString(str).Escaped())
+		return b.A(NewHtmlString(str).Escaped())
 	}
 	BadArg("<1Not escapable:", arg)
-	return m
+	return b
 }
 
 // Append markup, generating a linefeed if one is pending.  No escaping is performed.
-func (m MarkupBuilder) A(text string) MarkupBuilder {
-	if m.crRequest != 0 {
-		if m.crRequest == 1 {
-			m.WriteString("\n")
+func (b MarkupBuilder) A(text string) MarkupBuilder {
+	if b.crRequest != 0 {
+		if b.crRequest == 1 {
+			b.WriteString("\n")
 		} else {
-			m.WriteString("\n\n")
+			b.WriteString("\n\n")
 		}
-		m.crRequest = 0
-		m.doIndent()
+		b.crRequest = 0
+		b.doIndent()
 	}
-	m.WriteString(text)
-	return m
+	b.WriteString(text)
+	return b
 }
 
-func (m MarkupBuilder) Pr(message ...any) MarkupBuilder {
-	m.A(ToString(message...))
-	return m
+func (b MarkupBuilder) Pr(message ...any) MarkupBuilder {
+	b.A(ToString(message...))
+	return b
 }
 
 // Append an HTML comment.
@@ -212,40 +212,6 @@ func (b MarkupBuilder) OpenCloseTag(tagExpression string, comments ...any) Marku
 	return b.CloseTag()
 }
 
-// Deprecated.  Use OpenTag.
-func (b MarkupBuilder) OpenHtml(tag string, comment string) MarkupBuilder {
-	Alert("#10<1Deprecated OpenHtml")
-	CheckState(b.indent < 100, "too many indents")
-	comment = b.commentFilter(comment)
-	b.A("<")
-	b.A(tag)
-	b.A(">")
-	if comment != "" {
-		b.A(" <!--")
-		b.A(comment)
-		b.A(" -->")
-	}
-	b.DoIndent()
-	return b
-}
-
-// Deprecated.  Use CloseTag.
-func (b MarkupBuilder) CloseHtml(tag string, comment string) MarkupBuilder {
-	Alert("#10<1Deprecated CloseHtml")
-	b.DoOutdent()
-	b.A("</")
-	b.A(tag)
-	comment = b.commentFilter(comment)
-	if comment != "" {
-		b.A("> <!-- ")
-		b.A(comment)
-		b.A(" -->")
-	} else {
-		b.A(">")
-	}
-	return b.Cr()
-}
-
 func (b MarkupBuilder) Cr() MarkupBuilder {
 	b.crRequest = MaxInt(1, b.crRequest)
 	return b
@@ -258,16 +224,4 @@ func (b MarkupBuilder) Br() MarkupBuilder {
 
 func (b MarkupBuilder) Comments(flag bool) {
 	b.omitComments = !flag
-}
-
-func (b MarkupBuilder) commentFilter(comment string) string {
-	if b.omitComments {
-		return ""
-	}
-	return comment
-}
-
-func WrapWithinComment(text string) string {
-	CheckArg(!strings.HasPrefix(text, "<"))
-	return "<!-- " + text + " -->"
 }

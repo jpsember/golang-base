@@ -39,7 +39,6 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		Todo("!add support for image based on particular animal")
 		m.Pr(`<img class="card-img-top" src="0.jpg">`).Cr()
 
-		Todo("no need for // comment if we express it in the opentag")
 		// Display title and brief summary
 		m.OpenTag(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`, "title and summary")
 		{
