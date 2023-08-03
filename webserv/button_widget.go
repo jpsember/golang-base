@@ -29,7 +29,11 @@ func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(`'>`)
 
 	m.DoIndent()
-	m.A(`<button class='btn btn-primary'`)
+	m.A(`<button class='btn btn-primary `)
+	if w.size != SizeDefault {
+		m.A(MapValue(wsSize, w.size))
+	}
+	m.A(`'`)
 	if !w.Enabled() {
 		m.A(` disabled`)
 	}
@@ -44,3 +48,6 @@ func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(`</div>`)
 	m.Cr()
 }
+
+var wsSize = BuildMap[WidgetSize, string](
+	SizeLarge, "btn-lg", SizeSmall, "btn-sm")

@@ -242,10 +242,11 @@ Multiple line feeds:
 }
 
 func (oper AjaxOper) addAnimalCard(m WidgetManager, id string) {
+	Todo("Have AnimalCardWidget method to construct card and child widgets (button)")
 	widget := NewAnimalCardWidget(id, "db_"+id)
 	m.OpenContainer(widget)
 	// Create a button within this card
-	m.Id(id + "_view").Text(`View`).Listener(buttonListener).AddButton()
+	m.Id(id + "_view").Text(`View`).Listener(buttonListener).Size(SizeSmall).AddButton()
 	m.Close()
 }
 

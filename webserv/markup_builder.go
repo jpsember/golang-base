@@ -8,17 +8,19 @@ import (
 // A builder for constructing html markup
 
 type tagEntry struct {
-	tag     string // e.g. div, p (no '<' or '>')
-	comment string
+	tag       string // e.g. div, p (no '<' or '>')
+	comment   string
+	noContent bool
 }
 
 type MarkupBuilderObj struct {
 	strings.Builder
-	indent       int
-	indented     bool
-	crRequest    int
-	omitComments bool
-	tagStack     *Array[tagEntry]
+	indent                     int
+	indented                   bool
+	crRequest                  int
+	omitComments               bool
+	tagStack                   *Array[tagEntry]
+	suppressClosingCommentFlag bool
 }
 
 type MarkupBuilder = *MarkupBuilderObj
@@ -147,19 +149,23 @@ func (b MarkupBuilder) OpenTag(tagExpression string, comments ...any) MarkupBuil
 
 	CheckState(b.tagStack.Size() < 50, "tags are nested too deeply")
 	entry := tagEntry{
-		tag: tagExpression[0:i],
+		tag:       tagExpression[0:i],
+		noContent: b.suppressClosingCommentFlag,
 	}
+	b.suppressClosingCommentFlag = false
 	if !b.omitComments && len(comments) != 0 {
 		entry.comment = `<!-- ` + ToString(comments...) + " -->"
 	}
-
-	b.tagStack.Add(entry)
 	if entry.comment != "" {
 		b.Br()
 		b.A(entry.comment).Cr()
 	}
-	b.A("<").A(tagExpression).A(">") //.A(entry.comment)
-	b.DoIndent()
+	b.tagStack.Add(entry)
+
+	b.A("<").A(tagExpression).A(">")
+	if !entry.noContent {
+		b.DoIndent()
+	}
 	return b
 }
 
@@ -184,22 +190,27 @@ func (b MarkupBuilder) VerifyEnd(expectedStackSize int) {
 
 func (b MarkupBuilder) CloseTag() MarkupBuilder {
 	entry := b.tagStack.Pop()
-	b.DoOutdent()
-	b.A("</").A(entry.tag).A(">")
-	if entry.comment != "" {
-		b.A(`  `).A(entry.comment)
-		b.Br()
+	if entry.noContent {
+		b.A("</").A(entry.tag).A(">")
+	} else {
+		b.DoOutdent()
+		b.A("</").A(entry.tag).A(">")
+		if entry.comment != "" {
+			b.A(`  `).A(entry.comment)
+		}
 	}
-	return b.Cr()
+	return b.Br()
 }
 
 func (b MarkupBuilder) OpenCloseTag(tagExpression string, comments ...any) MarkupBuilder {
+	b.suppressClosingCommentFlag = true
 	b.OpenTag(tagExpression, comments...)
 	return b.CloseTag()
 }
 
 // Deprecated.  Use OpenTag.
 func (b MarkupBuilder) OpenHtml(tag string, comment string) MarkupBuilder {
+	Alert("#10<1Deprecated OpenHtml")
 	CheckState(b.indent < 100, "too many indents")
 	comment = b.commentFilter(comment)
 	b.A("<")

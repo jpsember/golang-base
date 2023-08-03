@@ -559,12 +559,11 @@ func SleepMs(ms int) {
 }
 
 // Convert an array of a particular type to an array of any.
-func ToAny[T any](vals ...T) []any {
+func ToAny[T any](vals []T) []any {
 	s := make([]any, len(vals))
 	for i, v := range vals {
 		s[i] = v
 	}
-	Pr("to any, input:", vals, "output:", s)
 	return s
 }
 
@@ -588,7 +587,7 @@ func BuildMap[K comparable, V any](keyValPairs ...any) map[K]V {
 }
 
 func BuildStringStringMap(keyValPairs ...string) map[string]string {
-	return BuildMap[string, string](ToAny(keyValPairs...)...)
+	return BuildMap[string, string](ToAny(keyValPairs)...)
 }
 
 // Get value for key, returning i) default value if key doesn't exist, ii) whether it existed
