@@ -39,7 +39,7 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		Todo("!add support for image based on particular animal")
 		m.Pr(`<img class="card-img-top" src="0.jpg">`).Cr()
 
-    Todo("no need for // comment if we express it in the opentag")
+		Todo("no need for // comment if we express it in the opentag")
 		// Display title and brief summary
 		m.OpenTag(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`, "title and summary")
 		{
@@ -68,17 +68,17 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			m.CloseTag()
 			m.OpenTag(`div class="row"`, "right-justified button")
 			{
-				m.OpenCloseTag(`div class="col-sm-7"`)
-				m.OpenTag(`div class="col-sm-5"`, "button")
+				m.OpenTag(`div class="d-grid justify-content-md-end"`)
 				{
 					// Add the single child widget (a view button)
 					ch := w.GetChildren()
 					CheckState(len(ch) == 1, "expected single 'view' button widget")
 					vb := ch[0]
 					Todo("!Add ability to add style = 'width:100%; font-size:75%;' to the child button")
+					Todo("!add:  <button class='btn btn-primary btn-sm'> to button")
 					vb.RenderTo(m, state)
 				}
-				m.CloseTag() 
+				m.CloseTag()
 			}
 			m.CloseTag()
 		}

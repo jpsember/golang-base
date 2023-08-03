@@ -15,10 +15,6 @@
 
 <body>
 
-
-
-
-
   <div class='container  pt-5'> <!--page container -->
     <div id='page'> <!--ContainerWidget Id: page -->
 
@@ -28,7 +24,7 @@
 
           <!-- AnimalCardWidget -->
           <div class="card bg-light mb-3 animal-card">
-            <img class="card-img-top" src="_SKIP_0.jpg">
+            <img class="card-img-top" src="0.jpg">
 
             <!-- title and summary -->
             <div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;">
@@ -54,27 +50,25 @@
 
               </div>  <!-- progress-container -->
 
-
-            <!-- Progress towards goal -->
               <div class="progress-text">
                 $120 raised of $250 goal
               </div>
 
-            <!-- right-justified button -->
-            <div class="row">
-              <div class="col-sm-7">
-              </div>
+              <!-- right-justified button -->
+              <div class="row">
 
-              <!-- button -->
-              <div class="col-sm-5">
-                <div style='font-size:75%'>
-                  <div id='a0_view'>
-                    <button class='btn btn-primary' onclick='jsButton("a0_view")'>View</button>
+
+<!-- see https://getbootstrap.com/docs/5.0/components/buttons/ , 'block buttons' -->
+
+<div class="d-grid justify-content-md-end">
+  <div id='a0_view'>
+                    <button class='btn btn-primary btn-sm' onclick='jsButton("a0_view")'>View</button>
                   </div>
-                </div>
-              </div>  <!-- button -->
+  </div>
+              </div>  <!-- right-justified button -->
 
-            </div>  <!-- right-justified button -->
+
+            </div>  <!-- Progress towards goal, controls -->
 
           </div>  <!-- AnimalCardWidget -->
 
@@ -84,103 +78,10 @@
 
 
 
-
-      <div class='row'> <!--start of row -->
-        <div class="col-sm-4"> <!--child -->
-          <div id="zebra">
-            <!-- Label -->
-            <label class="form-label" style="font-size:70%">
-            Animal</label>
-            <!-- Input -->
-            <input class="form-control" type="text" id="zebra.aux" value="" onchange='jsVal("zebra")'>
-          </div>
-        </div> <!-- child -->
-      </div> <!-- row -->
-
-    </div> <!-- ContainerWidget Id: page -->
-  </div> <!-- page container -->
-
-
-
-
-
-
-
-
-
-
-
-  <div class='container  pt-5'> <!--page container -->
-    <div  id='page'>
-
-
-<div class='row'> <!--start of row -->
-        <div class="col-sm-4"> <!--child -->
-
-      <div class="card bg-light mb-3" style="max-width:16em;">
-
-        <img class="card-img-top" src="_SKIP_0.jpg">
-
-        <div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;">
-          <h6 class="card-title">Roscoe</h6>
-          <p class="card-text" style="font-size:75%;">This boxer cross came to us with skin issues and needs additional treatment.  She is on the mend though!</p>
-        </div>
-
-
-        <div class="card-body">
-
-
-
-              <!-- progress-container -->
-              <div class="progress-container">
-
-                <!-- Plot grey in background, full width -->
-                <div class="progress-bar-bgnd">
-                </div>  <!-- Plot grey in background, full width -->
-
-                <!-- Plot bar graph in foreground, partial width -->
-                <div class="progress-bar" style="width: 35%;">
-                </div>  <!-- Plot bar graph in foreground, partial width -->
-
-              </div>  <!-- progress-container -->
-
-
-
-
-
-
-
-
-
-
-          <div class="progress-text">
-            $120 raised of $250 goal
-          </div>
-
-
-
-        <div class="row">
-          <div class="col-sm-7">
-          </div>
-          <div class="col-sm-5">
-            <div id='view'>
-              <button class='btn btn-primary' style="width:100%; font-size:75%;" >View</button>
-            </div>
-          </div>
-        </div>
-
-        </div>
-        </div> <!-- card-body -->
-
-      </div> <!-- card -->
-
-</div>
-</div>
     </div> <!-- ContainerWidget Id: page -->
   </div> <!-- page container -->
 
 </body>
-
 
 
 </html>
