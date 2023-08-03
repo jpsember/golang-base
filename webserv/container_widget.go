@@ -72,7 +72,7 @@ func (w ContainerWidget) SetColumns(columns int) {
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
-	m.OpenTag(`div id='`+w.Id+`'`, `ContainerWidget`, w.IdSummary())
+	m.Comments(`ContainerWidget`, w.IdSummary()).OpenTag(`div id='` + w.Id + `'`)
 	if w.Visible() {
 		prevPoint := IPointWith(0, -1)
 		for index, child := range w.children.Array() {
@@ -93,7 +93,7 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 				s += `border-style:double;`
 				s += `"`
 			}
-			m.OpenTag(s, `child`)
+			m.Comments(`child`).OpenTag(s)
 			if WidgetDebugRenderingFlag {
 				// Render a div that contains some information
 				{

@@ -159,7 +159,7 @@ func (oper AjaxOper) writeHeader(bp MarkupBuilder) {
 	if oper.TopPadding != 0 {
 		containerClass += "  pt-" + IntToString(oper.TopPadding)
 	}
-	bp.OpenTag(`div class='`+containerClass+`'`, "page container")
+	bp.Comments("page container").OpenTag(`div class='` + containerClass + `'`)
 }
 
 // Generate the boilerplate footer markup, then write the page to the response

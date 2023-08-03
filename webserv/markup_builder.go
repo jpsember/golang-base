@@ -21,6 +21,7 @@ type MarkupBuilderObj struct {
 	omitComments               bool
 	tagStack                   *Array[tagEntry]
 	suppressClosingCommentFlag bool
+	pendingComments            []any
 }
 
 type MarkupBuilder = *MarkupBuilderObj
@@ -135,16 +136,27 @@ func (b MarkupBuilder) doIndent() {
 	b.indented = true
 }
 
+// Set pending comments for next OpenTag (or OpenCloseTag) call.
+func (b MarkupBuilder) Comments(comments ...any) MarkupBuilder {
+	if b.pendingComments != nil {
+		Alert("#20<1Previous comments were not used:", b.pendingComments)
+	}
+	if !b.omitComments {
+		b.pendingComments = comments
+	}
+	return b
+}
+
 // Open a tag, e.g.
 //
 //	<div class="card-body" style="max-height:8em;">
 //
 // tagExpression in the above case would be:  div class="card-body" style="max-height:8em;"
-func (b MarkupBuilder) OpenTag(tagExpression string, comments ...any) MarkupBuilder {
+func (b MarkupBuilder) OpenTag(tagExpression string) MarkupBuilder {
 	Todo("!In debug mode, parse the tag expression to make sure quotes are balanced")
 	exprLen := len(tagExpression)
 	if tagExpression[0] == '<' || tagExpression[exprLen-1] == '>' {
-		BadArg("<1Tag expression contains <,> delimiters:", tagExpression, "comments:", comments)
+		BadArg("<1Tag expression contains <,> delimiters:", tagExpression)
 	}
 	i := strings.IndexByte(tagExpression, ' ')
 	if i < 0 {
@@ -156,8 +168,11 @@ func (b MarkupBuilder) OpenTag(tagExpression string, comments ...any) MarkupBuil
 		tag:       tagExpression[0:i],
 		noContent: b.suppressClosingCommentFlag,
 	}
+	comments := b.pendingComments
+	b.pendingComments = nil
+
 	b.suppressClosingCommentFlag = false
-	if !b.omitComments && len(comments) != 0 {
+	if comments != nil {
 		entry.comment = `<!-- ` + ToString(comments...) + " -->"
 	}
 	if entry.comment != "" {
@@ -206,9 +221,9 @@ func (b MarkupBuilder) CloseTag() MarkupBuilder {
 	return b.Br()
 }
 
-func (b MarkupBuilder) OpenCloseTag(tagExpression string, comments ...any) MarkupBuilder {
+func (b MarkupBuilder) OpenCloseTag(tagExpression string) MarkupBuilder {
 	b.suppressClosingCommentFlag = true
-	b.OpenTag(tagExpression, comments...)
+	b.OpenTag(tagExpression)
 	return b.CloseTag()
 }
 
@@ -222,6 +237,6 @@ func (b MarkupBuilder) Br() MarkupBuilder {
 	return b
 }
 
-func (b MarkupBuilder) Comments(flag bool) {
+func (b MarkupBuilder) SetComments(flag bool) {
 	b.omitComments = !flag
 }

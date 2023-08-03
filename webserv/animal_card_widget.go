@@ -31,7 +31,7 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	// Open a bootstrap card
 	i := m.VerifyBegin()
 
-	m.OpenTag(`div class="card bg-light mb-3 animal-card"`, "AnimalCardWidget")
+	m.Comments("AnimalCardWidget").OpenTag(`div class="card bg-light mb-3 animal-card"`)
 	{
 
 		// Display an image
@@ -40,7 +40,8 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		m.Pr(`<img class="card-img-top" src="0.jpg">`).Cr()
 
 		// Display title and brief summary
-		m.OpenTag(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`, "title and summary")
+		m.Comments("title and summary").
+			OpenTag(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`)
 		{
 
 			Todo("!display animal name")
@@ -52,12 +53,12 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		}
 		m.CloseTag()
 
-		m.OpenTag(`div class="card-body"`, `Progress towards goal, controls`)
+		m.Comments(`Progress towards goal, controls`).OpenTag(`div class="card-body"`)
 		{
-			m.OpenTag(`div class="progress-container"`, "progress-container")
+			m.Comments("progress-container").OpenTag(`div class="progress-container"`)
 			{
-				m.OpenCloseTag(`div class="progress-bar-bgnd"`, "Plot grey in background, full width")
-				m.OpenCloseTag(`div class="progress-bar" style="width: 35%;"`, "Plot bar graph in foreground, partial width")
+				m.Comment("Plot grey in background, full width").OpenCloseTag(`div class="progress-bar-bgnd"`)
+				m.Comment("Plot bar graph in foreground, partial width").OpenCloseTag(`div class="progress-bar" style="width: 35%;"`)
 			}
 			m.CloseTag()
 			m.OpenTag(`div class="progress-text"`)
@@ -65,7 +66,7 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 				m.Pr("$120 raised of $250 goal")
 			}
 			m.CloseTag()
-			m.OpenTag(`div class="row"`, "right-justified button")
+			m.Comments("right-justified button").OpenTag(`div class="row"`)
 			{
 				m.OpenTag(`div class="d-grid justify-content-md-end"`)
 				{
