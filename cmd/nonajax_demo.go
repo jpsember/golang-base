@@ -185,13 +185,13 @@ func (oper NonAjaxOper) doHttp() {
 
 func (oper NonAjaxOper) doHttps() {
 
-	var url = "animalaid.org"
+	var url = "jeff.org"
 
 	var keyDir = oper.appRoot.JoinM("https_keys")
 	var certPath = keyDir.JoinM(url + ".crt")
 	var keyPath = keyDir.JoinM(url + ".key")
 
-	Pr("Type:", INDENT, "curl -sL https://"+url)
+	Pr("curl -sL https://" + url)
 
 	http.HandleFunc("/", oper.handler())
 

@@ -70,11 +70,9 @@ func (w ContainerWidget) SetColumns(columns int) {
 }
 
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	//m.Comments(false)
-	desc := `ContainerWidget ` + w.IdSummary()
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
-	m.OpenHtml(`div id='`+w.Id+`'`, desc)
+	m.OpenTag(`div id='`+w.Id+`'`, `ContainerWidget`, w.IdSummary())
 	if w.Visible() {
 		prevPoint := IPointWith(0, -1)
 		for index, child := range w.children.Array() {
@@ -82,11 +80,9 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			// If this cell lies in a row below the current, Close the current and start a new one
 			if cell.Location.Y > prevPoint.Y {
 				if prevPoint.Y >= 0 {
-					m.CloseHtml("div", "end of row")
+					m.CloseTag() // row
 				}
-				m.Br()
-				m.OpenHtml(`div class='row'`, `start of row`)
-				m.Cr()
+				m.OpenTag(`div class='row'`)
 				prevPoint = IPointWith(0, cell.Location.Y)
 			}
 
@@ -97,7 +93,7 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 				s += `border-style:double;`
 				s += `"`
 			}
-			m.OpenHtml(s, `child`)
+			m.OpenTag(s, `child`)
 			if WidgetDebugRenderingFlag {
 				// Render a div that contains some information
 				{
@@ -128,14 +124,13 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 				m.A(`</div>`).Cr()
 			}
 			child.RenderTo(m, state)
-			m.CloseHtml(`div`, `child`)
+			m.CloseTag() // child
 			prevPoint = IPointWith(cell.Location.X+cell.Width, cell.Location.Y)
 		}
 		if prevPoint.Y >= 0 {
-			m.CloseHtml("div", "row")
+			m.CloseTag() // row
 			m.Br()
 		}
 	}
-	m.CloseHtml(`div`, desc)
-	//m.Comments(true)
+	m.CloseTag() // ContainerWidget
 }

@@ -31,6 +31,10 @@ func NewMarkupBuilder() MarkupBuilder {
 	return &v
 }
 
+func (m MarkupBuilder) Bytes() []byte {
+	return []byte(m.String())
+}
+
 func (m MarkupBuilder) DoIndent() MarkupBuilder {
 	m.Cr()
 	m.indent += 2
@@ -225,7 +229,9 @@ func (b MarkupBuilder) OpenHtml(tag string, comment string) MarkupBuilder {
 	return b
 }
 
+// Deprecated.  Use CloseTag.
 func (b MarkupBuilder) CloseHtml(tag string, comment string) MarkupBuilder {
+	Alert("#10<1Deprecated CloseHtml")
 	b.DoOutdent()
 	b.A("</")
 	b.A(tag)

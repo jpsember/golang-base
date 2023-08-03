@@ -151,7 +151,7 @@ func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Req
 // Generate the biolerplate header and scripts markup
 func (oper AjaxOper) writeHeader(bp MarkupBuilder) {
 	bp.A(oper.headerMarkup)
-	bp.OpenHtml("body", "").Br()
+	bp.OpenTag("body")
 	containerClass := "container"
 	if oper.FullWidth {
 		containerClass = "container-fluid"
@@ -159,16 +159,15 @@ func (oper AjaxOper) writeHeader(bp MarkupBuilder) {
 	if oper.TopPadding != 0 {
 		containerClass += "  pt-" + IntToString(oper.TopPadding)
 	}
-	bp.OpenHtml(`div class='`+containerClass+`'`, "page container")
+	bp.OpenTag(`div class='`+containerClass+`'`, "page container")
 }
 
 // Generate the boilerplate footer markup, then write the page to the response
 func (oper AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
-	bp.CloseHtml("div", "page container")
-	bp.Br().CloseHtml("body", "")
+	bp.CloseTag() // page container
+	bp.CloseTag() // body
 	bp.A(`</html>`).Cr()
-	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(bp.String()))
+	WriteResponse(w, "text/html", bp.Bytes())
 }
 
 const WidgetIdPage = "page"
