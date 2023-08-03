@@ -83,33 +83,12 @@ func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 		b.doIndent()
 	}
 	for _, arg := range args {
-
 		s := ""
 		switch v := arg.(type) {
 		case string:
 			s = v
 		case int: // We aren't sure if it's 32 or 64, so choose 64
 			s = IntToString(v)
-		//case int32:
-		//	b.AppendInt(v)
-		//case uint32:
-		//	b.AppendInt(int32(v))
-		//case int64:
-		//	b.AppendLong(v)
-		//case uint64:
-		//	b.AppendLong(int64(v))
-		//case uint8:
-		//	b.AppendInt(int32(v))
-		//case int8:
-		//	b.AppendInt(int32(v))
-		//case uint16:
-		//	b.AppendInt(int32(v))
-		//case int16:
-		//	b.AppendInt(int32(v))
-		//case float32:
-		//	b.AppendFloat(float64(v))
-		//case float64:
-		//	b.AppendFloat(v)
 		case bool:
 			s = boolToHtmlString(v)
 		default:
@@ -171,8 +150,29 @@ func (b MarkupBuilder) Comments(comments ...any) MarkupBuilder {
 //	<div class="card-body" style="max-height:8em;">
 //
 // tagExpression in the above case would be:  div class="card-body" style="max-height:8em;"
-func (b MarkupBuilder) OpenTag(tagExpression string) MarkupBuilder {
+func (b MarkupBuilder) OpenTag(args ...any) MarkupBuilder {
+	var tagExpression string
+	{
+		sb := strings.Builder{}
+
+		for _, arg := range args {
+			s := ""
+			switch v := arg.(type) {
+			case string:
+				s = v
+			case int: // We aren't sure if it's 32 or 64, so choose 64
+				s = IntToString(v)
+			case bool:
+				s = boolToHtmlString(v)
+			default:
+				Die("<1Unsupported argument type:", Info(arg))
+			}
+			sb.WriteString(s)
+		}
+		tagExpression = sb.String()
+	}
 	Todo("!In debug mode, parse the tag expression to make sure quotes are balanced")
+
 	exprLen := len(tagExpression)
 	if tagExpression[0] == '<' || tagExpression[exprLen-1] == '>' {
 		BadArg("<1Tag expression contains <,> delimiters:", tagExpression)

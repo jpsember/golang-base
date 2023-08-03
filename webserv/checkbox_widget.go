@@ -29,8 +29,8 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	auxId := w.AuxId()
 
 	Todo("can we do OpenTag here?")
-	m.A(`<div id="`, w.Id, `">`)
-	m.DoIndent()
+	m.Comment("CheckboxWidget")
+	m.OpenTag(`div id="`, w.Id, `"`)
 	m.Comment("Checkbox").Cr()
 
 	var cbClass string
@@ -54,11 +54,7 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(`<label class="form-check-label" for="`, auxId, `">`).Escape(w.Label).A(`</label>`).Cr()
 	m.DoOutdent()
 	m.A(`</div>`).Cr()
-
-	m.DoOutdent()
-
-	m.A(`</div>`)
-	m.Cr()
+	m.CloseTag()
 }
 
 func boolToHtmlString(value bool) string {
