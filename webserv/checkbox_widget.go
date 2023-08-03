@@ -28,12 +28,9 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	}
 	auxId := w.AuxId()
 
-	m.A(`<div id="`)
-	m.A(w.Id)
-	m.A(`">`)
-
+	Todo("can we do OpenTag here?")
+	m.A(`<div id="`, w.Id, `">`)
 	m.DoIndent()
-
 	m.Comment("Checkbox").Cr()
 
 	var cbClass string
@@ -45,19 +42,16 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		cbClass = "form-check"
 		role = ``
 	}
-	m.A(`<div class=`)
-	m.A(cbClass)
-	m.A(`>`).Cr()
+	m.A(`<div class=`, cbClass, `>`).Cr()
 	m.DoIndent()
-	m.A(`<input class="form-check-input" type="checkbox" id="`).A(auxId).A(`"`)
-	m.A(role)
+	m.A(`<input class="form-check-input" type="checkbox" id="`, auxId, `"`, role)
 	if WidgetBooleanValue(state, w.Id) {
 		m.A(` checked`)
 	}
 
-	m.A(` onclick='jsCheckboxClicked("`).A(w.Id).A(`")'>`).Cr()
+	m.A(` onclick='jsCheckboxClicked("`, w.Id, `")'>`).Cr()
 	m.Comment("Label").Cr()
-	m.A(`<label class="form-check-label" for="`).A(auxId).A(`">`).Escape(w.Label).A(`</label>`).Cr()
+	m.A(`<label class="form-check-label" for="`, auxId, `">`).Escape(w.Label).A(`</label>`).Cr()
 	m.DoOutdent()
 	m.A(`</div>`).Cr()
 

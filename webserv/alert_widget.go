@@ -43,13 +43,7 @@ func (w AlertWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	pr := PrIf(false)
 	desc := `AlertWidget ` + w.IdSummary()
 	pr("rendering AlertWidget, desc:", desc, "class:", w.Class)
-	m.A(`<div class='alert alert-`)
-	m.A(classNames[w.Class])
-	m.A(`' role='alert' id='`)
-	m.A(w.Id)
-	m.A(`'>`)
 	alertMsg := state.OptString(w.Id, "No alert message found!")
-	m.A(html.EscapeString(alertMsg))
-	m.A(`</div>`)
-	m.Cr()
+	m.A(`<div class='alert alert-`, classNames[w.Class],
+		`' role='alert' id='`, w.Id, `'>`, html.EscapeString(alertMsg), `</div>`).Cr()
 }

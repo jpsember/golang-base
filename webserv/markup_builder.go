@@ -49,23 +49,9 @@ func (b MarkupBuilder) DoOutdent() MarkupBuilder {
 	return b
 }
 
-func (b MarkupBuilder) DebugOpenSpan(widget Widget) MarkupBuilder {
-	b.A(`<span class="border">`)
-	b.A("span border open")
-	return b
-}
-
-func (b MarkupBuilder) DebugCloseSpan() MarkupBuilder {
-	b.A("span border close")
-	b.A(`</span>`)
-	return b
-}
-
 func (b MarkupBuilder) RenderInvisible(w Widget) MarkupBuilder {
 	base := w.GetBaseWidget()
-	b.A(`<div id='`)
-	b.A(base.Id)
-	b.A(`'></div>`)
+	b.A(`<div id='`, base.Id, `'></div>`)
 	b.Cr()
 	return b
 }
@@ -86,7 +72,7 @@ func (b MarkupBuilder) Escape(arg any) MarkupBuilder {
 }
 
 // Append markup, generating a linefeed if one is pending.  No escaping is performed.
-func (b MarkupBuilder) A(text string) MarkupBuilder {
+func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 	if b.crRequest != 0 {
 		if b.crRequest == 1 {
 			b.WriteString("\n")
@@ -96,7 +82,41 @@ func (b MarkupBuilder) A(text string) MarkupBuilder {
 		b.crRequest = 0
 		b.doIndent()
 	}
-	b.WriteString(text)
+	for _, arg := range args {
+
+		s := ""
+		switch v := arg.(type) {
+		case string:
+			s = v
+		case int: // We aren't sure if it's 32 or 64, so choose 64
+			s = IntToString(v)
+		//case int32:
+		//	b.AppendInt(v)
+		//case uint32:
+		//	b.AppendInt(int32(v))
+		//case int64:
+		//	b.AppendLong(v)
+		//case uint64:
+		//	b.AppendLong(int64(v))
+		//case uint8:
+		//	b.AppendInt(int32(v))
+		//case int8:
+		//	b.AppendInt(int32(v))
+		//case uint16:
+		//	b.AppendInt(int32(v))
+		//case int16:
+		//	b.AppendInt(int32(v))
+		//case float32:
+		//	b.AppendFloat(float64(v))
+		//case float64:
+		//	b.AppendFloat(v)
+		case bool:
+			s = boolToHtmlString(v)
+		default:
+			Die("<1Unsupported argument type:", Info(arg))
+		}
+		b.WriteString(s)
+	}
 	return b
 }
 
@@ -125,8 +145,7 @@ func (b MarkupBuilder) Comment(messages ...any) MarkupBuilder {
 		substr = substr[i+tokenLen:]
 	}
 	sb.WriteString(substr)
-	b.A(sb.String())
-	b.A(` -->`)
+	b.A(sb.String(), ` -->`)
 	b.Cr()
 	return b
 }
@@ -181,7 +200,7 @@ func (b MarkupBuilder) OpenTag(tagExpression string) MarkupBuilder {
 	}
 	b.tagStack.Add(entry)
 
-	b.A("<").A(tagExpression).A(">")
+	b.A("<", tagExpression, ">")
 	if !entry.noContent {
 		b.DoIndent()
 	}
@@ -210,12 +229,12 @@ func (b MarkupBuilder) VerifyEnd(expectedStackSize int) {
 func (b MarkupBuilder) CloseTag() MarkupBuilder {
 	entry := b.tagStack.Pop()
 	if entry.noContent {
-		b.A("</").A(entry.tag).A(">")
+		b.A("</", entry.tag, ">")
 	} else {
 		b.DoOutdent()
-		b.A("</").A(entry.tag).A(">")
+		b.A("</", entry.tag, ">")
 		if entry.comment != "" {
-			b.A(`  `).A(entry.comment)
+			b.A(`  `, entry.comment)
 		}
 	}
 	return b.Br()

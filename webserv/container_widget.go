@@ -97,28 +97,19 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			if WidgetDebugRenderingFlag {
 				// Render a div that contains some information
 				{
-					m.A(`<div id='`)
-					m.A(w.Id)
-					m.A(`'`)
-					m.A(` style="font-size:50%; font-family:monospace;"`)
-					m.A(`>`)
+					m.A(`<div id='`, w.Id, `'`, ` style="font-size:50%; font-family:monospace;">`)
 				}
 
 				if b.Id[0] != '.' {
-					m.A(`Id:`)
-					m.A(b.Id)
-					m.A(` `)
+					m.A(`Id:`, b.Id, ` `)
 				}
-				m.A(`Cols:`)
-				m.A(IntToString(cell.Width))
-				m.A(` `)
+				m.A(`Cols:`, cell.Width, ` `)
 				{
 					widgetType := reflect.TypeOf(child).String()
 					i := strings.LastIndex(widgetType, ".")
 					widgetType = widgetType[i+1:]
 					widgetType = strings.TrimSuffix(widgetType, "Obj")
-					m.A(widgetType)
-					m.A(` `)
+					m.A(widgetType, ` `)
 				}
 
 				m.A(`</div>`).Cr()

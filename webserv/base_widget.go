@@ -84,9 +84,7 @@ func (w BaseWidget) IdSummary() string {
 }
 
 func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	m.A(`<div id='`)
-	m.A(w.Id)
-	m.A(`'></div>`)
+	m.A(`<div id='`, w.Id, `'></div>`)
 }
 
 func (w BaseWidget) AuxId() string {

@@ -35,20 +35,13 @@ func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	h := NewHtmlString(textContent)
 	if hasStaticContent {
-		m.A(`<div>`)
+		m.OpenTag(`div`)
 	} else {
-		m.A(`<div id='`)
-		m.A(w.Id)
-		m.A(`'>`)
+		m.OpenTag(`div id='` + w.Id + `'`)
 	}
 
 	for _, c := range h.Paragraphs() {
-		m.A(`<p>`)
-		m.A(c)
-		m.A(`</p>`)
-		m.Cr()
+		m.A(`<p>`, c, `</p>`).Cr()
 	}
-	m.A(`</div>`)
-
-	m.Cr()
+	m.CloseTag()
 }

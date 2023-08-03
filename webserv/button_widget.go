@@ -24,9 +24,7 @@ func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		return
 	}
 
-	m.A(`<div id='`)
-	m.A(w.Id)
-	m.A(`'>`)
+	m.A(`<div id='`, w.Id, `'>`)
 
 	m.DoIndent()
 	m.A(`<button class='btn btn-primary `)
@@ -37,9 +35,7 @@ func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if !w.Enabled() {
 		m.A(` disabled`)
 	}
-	m.A(` onclick='jsButton("`)
-	m.A(w.Id)
-	m.A(`")'>`)
+	m.A(` onclick='jsButton("`, w.Id, `")'>`)
 	m.Escape(w.Label)
 	m.A(`</button>`)
 	m.Cr()

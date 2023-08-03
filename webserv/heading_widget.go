@@ -26,9 +26,9 @@ func (w HeadingWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	} else {
 		value := WidgetStringValue(state, w.Id)
 		tag := widgetSizeToHeadingTag(w.size)
-		m.A(`<`).A(tag).A(` id='`).A(w.Id).A(`'>`)
+		m.A(`<`, tag, ` id='`, w.Id, `'>`)
 		m.Escape(value)
-		m.A(`</`).A(tag).A(`>`)
+		m.A(`</`, tag, `>`)
 	}
 	m.Cr()
 }

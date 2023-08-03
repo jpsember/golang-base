@@ -38,9 +38,7 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	// The HTML input element has id "foo.aux"
 	// If there is a problem with the input, its text will have id "foo.problem"
 
-	m.A(`<div id="`)
-	m.A(w.Id)
-	m.A(`">`)
+	m.A(`<div id="`, w.Id, `">`)
 
 	m.DoIndent()
 
@@ -54,9 +52,9 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	labelHtml := w.Label
 	if labelHtml != nil {
 		m.Comment("Label")
-		m.A(`<label class="form-label" style="font-size:70%">`).Cr()
+		m.OpenTag(`label class="form-label" style="font-size:70%"`)
 		m.Escape(labelHtml)
-		m.A(`</label>`).Cr()
+		m.CloseTag()
 	}
 
 	m.Comment("Input")
@@ -64,20 +62,15 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if hasProblem {
 		m.A(` border-danger border-3`) // Adding border-3 makes the text shift a bit on error, maybe not desirable
 	}
-	m.A(`" type="text" id="`)
-	m.A(w.Id)
-	m.A(`.aux" value="`)
+	m.A(`" type="text" id="`, w.Id, `.aux" value="`)
 	value := WidgetStringValue(state, w.Id)
 	m.Escape(value)
-	m.A(`" onchange='jsVal("`)
-	m.A(w.Id)
-	m.A(`")'>`).Cr()
+	m.A(`" onchange='jsVal("`, w.Id, `")'>`).Cr()
 
 	if hasProblem {
 		m.Comment("Problem")
-		m.A(`<div class="form-text`)
-		m.A(` text-danger" style="font-size:  70%">`)
-		m.Escape(problemText).A(`</div>`).Cr()
+		m.A(`<div class="form-text text-danger" style="font-size:  70%">`)
+		m.Escape(problemText).A(`</div>`)
 	}
 
 	m.DoOutdent()
