@@ -7,12 +7,15 @@ import (
 type ButtonWidgetObj struct {
 	BaseWidgetObj
 	Label HtmlString
+	size  WidgetSize
 }
 
 type ButtonWidget = *ButtonWidgetObj
 
-func NewButtonWidget() ButtonWidget {
-	return &ButtonWidgetObj{}
+func NewButtonWidget(size WidgetSize) ButtonWidget {
+	b := &ButtonWidgetObj{}
+	b.size = size
+	return b
 }
 
 func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {

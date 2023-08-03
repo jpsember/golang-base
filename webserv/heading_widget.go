@@ -7,12 +7,12 @@ import (
 // A Widget that displays editable text
 type HeadingWidgetStruct struct {
 	BaseWidgetObj
-	size int
+	size WidgetSize
 }
 
 type HeadingWidget = *HeadingWidgetStruct
 
-func NewHeadingWidget(id string, size int) HeadingWidget {
+func NewHeadingWidget(id string, size WidgetSize) HeadingWidget {
 	w := HeadingWidgetStruct{
 		size: size,
 	}
@@ -25,10 +25,18 @@ func (w HeadingWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		m.RenderInvisible(w)
 	} else {
 		value := WidgetStringValue(state, w.Id)
-		tag := `h` + IntToString(w.size)
+		tag := widgetSizeToHeadingTag(w.size)
 		m.A(`<`).A(tag).A(` id='`).A(w.Id).A(`'>`)
 		m.Escape(value)
 		m.A(`</`).A(tag).A(`>`)
 	}
 	m.Cr()
+}
+
+var wsHeadingSize = BuildMap[WidgetSize, string](
+	SizeHuge, "h1", SizeLarge, "h2", SizeMedium, "h3", SizeSmall, "h4", SizeTiny, "h5", SizeMicro, "h6",
+	SizeDefault, "h3")
+
+func widgetSizeToHeadingTag(widgetSize WidgetSize) string {
+	return MapValue(wsHeadingSize, widgetSize)
 }

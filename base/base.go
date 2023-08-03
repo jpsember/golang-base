@@ -557,3 +557,54 @@ func CurrentTimeMs() int64 {
 func SleepMs(ms int) {
 	time.Sleep(time.Millisecond * time.Duration(ms))
 }
+
+// Convert an array of a particular type to an array of any.
+func ToAny[T any](vals ...T) []any {
+	s := make([]any, len(vals))
+	for i, v := range vals {
+		s[i] = v
+	}
+	Pr("to any, input:", vals, "output:", s)
+	return s
+}
+
+// Build a map[K]V from a sequence of arguments key0,val0,key1,val1,....
+func BuildMap[K comparable, V any](keyValPairs ...any) map[K]V {
+	m := make(map[K]V)
+	CheckArg(len(keyValPairs)%2 == 0, "<1expected 2n elements")
+	for i := 0; i < len(keyValPairs); i += 2 {
+		obj1 := keyValPairs[i]
+		obj2 := keyValPairs[i+1]
+		key, ok1 := obj1.(K)
+		CheckArg(ok1, "<1failed to cast key:", obj1)
+		val, ok2 := obj2.(V)
+		CheckArg(ok2, "<1failed to cast value:", obj2)
+		if _, ok := m[key]; ok {
+			BadArg("<1Duplicate key:", key)
+		}
+		m[key] = val
+	}
+	return m
+}
+
+func BuildStringStringMap(keyValPairs ...string) map[string]string {
+	return BuildMap[string, string](ToAny(keyValPairs...)...)
+}
+
+// Get value for key, returning i) default value if key doesn't exist, ii) whether it existed
+func OptMapValue[K comparable, V any](m map[K]V, key K, defaultValue V) (result V, ok bool) {
+	val, ok := m[key]
+	if !ok {
+		val = defaultValue
+	}
+	return val, ok
+}
+
+// Get value for key from map; fail if missing
+func MapValue[K comparable, V any](m map[K]V, key K) V {
+	val, ok := m[key]
+	if !ok {
+		BadArg("<1Key not found within map:", key)
+	}
+	return val
+}

@@ -17,7 +17,7 @@ type WidgetManagerObj struct {
 	mPendingDefaultIntValue     int
 	pendingListener             WidgetListener
 	parentStack                 *Array[Widget]
-	pendingSize                 int
+	pendingSize                 WidgetSize
 	pendingText                 string
 	pendingId                   string
 	pendingLabel                string
@@ -186,8 +186,8 @@ func (m WidgetManager) consumeOptionalPendingId() string {
 }
 
 // Set size for next widget (what size means depends upon the widget type).
-func (m WidgetManager) Size(size int) WidgetManager {
-	m.pendingSize = 1 + size
+func (m WidgetManager) Size(size WidgetSize) WidgetManager {
+	m.pendingSize = size
 	return m
 }
 
@@ -283,10 +283,9 @@ func (m WidgetManager) consumePendingLabel() string {
 	return lbl
 }
 
-func (m WidgetManager) consumePendingSize() int {
-	CheckState(m.pendingSize > 0, "no pending Size")
-	size := m.pendingSize - 1
-	m.pendingSize = 0
+func (m WidgetManager) consumePendingSize() WidgetSize {
+	size := m.pendingSize
+	m.pendingSize = SizeDefault
 	return size
 }
 
@@ -430,7 +429,7 @@ func (m WidgetManager) AddText() WidgetManager {
 }
 
 func (m WidgetManager) AddButton() ButtonWidget {
-	w := NewButtonWidget()
+	w := NewButtonWidget(m.consumePendingSize())
 	w.Id = m.consumePendingId()
 	m.assignPendingListener(w)
 	m.Log("Adding button, id:", w.Id)

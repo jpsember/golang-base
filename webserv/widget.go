@@ -17,3 +17,15 @@ type Widget interface {
 type WidgetMap = map[string]Widget
 
 const MaxColumns = 12
+
+type WidgetSize int
+
+const (
+	SizeDefault WidgetSize = iota
+	SizeMicro
+	SizeTiny
+	SizeSmall
+	SizeMedium
+	SizeLarge
+	SizeHuge
+)
