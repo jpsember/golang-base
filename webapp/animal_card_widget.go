@@ -1,10 +1,13 @@
-package webserv
+package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/webapp"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	. "github.com/jpsember/golang-base/webserv"
 )
+
+//. "github.com/jpsember/golang-base/webserv/base_widget"
+//
 
 // A Widget that displays editable text
 type AnimalCardWidgetObj struct {

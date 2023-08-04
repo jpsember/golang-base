@@ -29,6 +29,7 @@ func (r JSRand) Rand() *rand.Rand {
 			r.seed = time.Now().UnixNano()
 		}
 		r.random = rand.New(rand.NewSource(r.seed))
+		r.built = true
 	}
 	return r.random
 }

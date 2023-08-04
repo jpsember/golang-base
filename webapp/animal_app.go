@@ -1,9 +1,8 @@
-package main
+package webapp
 
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/webapp"
 
 	// Here we are referring to a package within our own project:
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
@@ -15,23 +14,7 @@ import (
 	"strings"
 )
 
-func main() {
-	//ClearAlertHistory()
-	//SetWidgetDebugRendering()
-
-	var app = NewApp()
-	app.SetName("WebServer")
-	app.Version = "1.0"
-	app.CmdLineArgs().Add("insecure").Desc("insecure (http) mode")
-
-	app.RegisterOper(&AjaxOperStruct{
-		//FullWidth: true,
-		TopPadding: 5,
-	})
-	app.Start()
-}
-
-type AjaxOperStruct struct {
+type AnimalOperStruct struct {
 	sessionManager SessionManager
 	appRoot        Path
 	resources      Path
@@ -39,7 +22,7 @@ type AjaxOperStruct struct {
 	FullWidth      bool // If true, page occupies full width of screen
 	TopPadding     int  // If nonzero, adds padding to top of page
 }
-type AjaxOper = *AjaxOperStruct
+type AjaxOper = *AnimalOperStruct
 
 func (oper AjaxOper) UserCommand() string {
 	return "widgets"
@@ -138,6 +121,7 @@ func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Req
 	// If this is a new session, store our operation within it
 	if sess.AppData == nil {
 		sess.AppData = oper
+		Todo("!Allow header to have constant text")
 		sess.State.Put("header_text", "This is ajax_demo.go").
 			Put("header_text_2", "8 columns").Put("header_text_3", "4 columns").Put("bird", "").Put("zebra", "")
 	}
@@ -208,13 +192,14 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 		var anim Animal
 		if i == 0 {
-			anim := NewAnimal()
-			anim.SetId(int64(i + 5000))
-			anim.SetName("Roscoe " + IntToString(i))
-			anim.SetSummary(`This boxer cross came to us with skin issues and needs additional treatment. She is on the mend though!`)
+			a := RandomAnimal().ToBuilder()
+			a.SetName("Roscoe")
+			a.SetSummary(`This boxer cross came to us with skin issues and needs additional treatment. She is on the mend though!`)
+			anim = a
 		} else {
-			anim = webapp.RandomAnimal()
+			anim = RandomAnimal()
 		}
+		Pr("adding animal:", INDENT, anim)
 		cardId := "animal_" + IntToString(int(anim.Id()))
 		Todo("!read animal information from database")
 		OpenAnimalCardWidget(m, cardId, anim, buttonListener)

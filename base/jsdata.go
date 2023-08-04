@@ -11,7 +11,7 @@ func RandomText(rand *rand.Rand, maxLength int, withLinefeeds bool) string {
 	sample := "orhxxidfusuytelrcfdlordburswfxzjfjllppdsywgswkvukrammvxvsjzqwplxcpkoekiznlgsgjfonlugreiqvtvpjgrqotzu"
 
 	sb := strings.Builder{}
-	length := MinInt(maxLength, rand.Intn(maxLength+2))
+	length := MinInt(maxLength, 2+rand.Intn(maxLength))
 	for sb.Len() < length {
 		wordSize := rand.Intn(8) + 2
 		if withLinefeeds && rand.Intn(4) == 0 {
