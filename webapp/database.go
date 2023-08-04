@@ -1,5 +1,9 @@
 package webapp
 
+import (
+	. "github.com/jpsember/golang-base/base"
+)
+
 // Facade to handle database operations.
 
 type Database interface {
@@ -13,3 +17,15 @@ const (
 	DatabaseStateClosed
 	DatabaseStateFailed
 )
+
+var SingletonDatabase Database
+
+func SetSingletonDatabase(db Database) {
+	CheckState(SingletonDatabase == nil, "<1Singleton database already exists")
+	SingletonDatabase = db
+}
+
+func OpenDatabase() {
+	db := NewDatabaseSim()
+	SetSingletonDatabase(db)
+}
