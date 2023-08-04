@@ -1,3 +1,5 @@
+# This is branch no-db, which will not include code for accessing SQLite
+
 # goland related
 .idea
 
@@ -12,3 +14,4 @@ webserv/cache
 gen
 
 .go_flags.json
+
