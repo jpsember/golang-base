@@ -2,29 +2,30 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 )
 
 // A Widget that displays editable text
 type AnimalCardWidgetObj struct {
 	BaseWidgetObj
-	animalId string
+	animal   Animal
 	children *Array[Widget]
 }
 
 type AnimalCardWidget = *AnimalCardWidgetObj
 
-func OpenAnimalCardWidget(m WidgetManager, baseId string, animalId string, viewButtonListener WidgetListener) {
-	widget := newAnimalCardWidget(baseId, animalId)
+func OpenAnimalCardWidget(m WidgetManager, baseId string, animal Animal, viewButtonListener WidgetListener) {
+	widget := newAnimalCardWidget(baseId, animal)
 	m.OpenContainer(widget)
 	// Create a button within this card
 	m.Id(baseId + "_view").Text(`View`).Listener(viewButtonListener).Size(SizeSmall).AddButton()
 	m.Close()
 }
 
-func newAnimalCardWidget(widgetId string, animalId string) AnimalCardWidget {
+func newAnimalCardWidget(widgetId string, animal Animal) AnimalCardWidget {
 	w := AnimalCardWidgetObj{}
 	w.GetBaseWidget().Id = widgetId
-	w.animalId = animalId
+	w.animal = animal
 	w.children = NewArray[Widget]()
 	return &w
 }
@@ -55,13 +56,17 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			OpenTag(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`)
 		{
 
-			Todo("!display animal name")
+			m.OpenTag(`h6 class="card-title"`)
+			{
+				m.Escape(w.animal.Name())
+			}
+			m.CloseTag()
 
-			m.A(`<h6 class="card-title">Roscoe</h6>`).Cr()
-
-			m.A(`<p class="card-text" style="font-size:75%;">This boxer cross came 
-                           to us with skin issues and needs additional treatment.  
-                           She is on the mend though!</p>`).Cr()
+			m.OpenTag(`p class="card-text" style="font-size:75%;"`)
+			{
+				m.Escape(w.animal.Summary())
+			}
+			m.CloseTag()
 		}
 		m.CloseTag()
 
@@ -75,7 +80,7 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			m.CloseTag()
 			m.OpenTag(`div class="progress-text"`)
 			{
-				m.Pr("$120 raised of $250 goal")
+				m.Escape(CurrencyToString(w.animal.CampaignBalance()) + ` raised of ` + CurrencyToString(w.animal.CampaignTarget()) + ` goal`)
 			}
 			m.CloseTag()
 			m.Comments("right-justified button").OpenTag(`div class="row"`)
@@ -108,4 +113,22 @@ const maxChildren = 1
 func (w AnimalCardWidget) AddChild(c Widget, manager WidgetManager) {
 	CheckState(w.children.Size() < maxChildren)
 	w.children.Add(c)
+}
+
+type Currency = int32
+
+func CurrencyToString(amount Currency) string {
+	pr := PrIf(false)
+	pr("currency to string, amount:", amount)
+	j := IntToString(int(amount))
+	h := len(j)
+	pr("j:", j, "h:", h)
+	if h < 3 {
+		j = "000"[0:3-h] + j
+		h = 3
+		pr("adjusted, j:", j, "h:", h)
+	}
+	result := `$` + j[:h-2] + "." + j[h-2:]
+	pr("returning:", result)
+	return result
 }

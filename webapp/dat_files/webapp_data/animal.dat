@@ -1,0 +1,17 @@
+class {
+   // Unique id
+   long id;
+
+   enum AnimalState state;
+
+   string name;
+
+   // A short summary paragraph to appear on the card
+   string summary;
+
+   // A longer writeup to appear on the details screen
+   string details;
+
+   int campaign_target;
+   int campaign_balance;
+}

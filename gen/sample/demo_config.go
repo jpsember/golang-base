@@ -150,7 +150,7 @@ func (v DemoConfigBuilder) ToBuilder() DemoConfigBuilder {
 	return v
 }
 
-func (v DemoConfigBuilder) ToJson() any {
+func (v DemoConfigBuilder) ToJson() JSEntity {
 	return v.Build().ToJson()
 }
 

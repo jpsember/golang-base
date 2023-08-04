@@ -51,8 +51,6 @@ func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AjaxOper) Perform(app *App) {
-	foo := NewFoo().SetQ(45).Build()
-	Pr(foo)
 
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
@@ -205,10 +203,15 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 		//if i > 0 &&  Alert("only one") {
 		//	break
 		//}
-		cardId := "animal_" + IntToString(i)
+
+		anim := NewAnimal()
+		anim.SetId(int64(i + 5000))
+		anim.SetName("Roscoe " + IntToString(i))
+		anim.SetSummary(`This boxer cross came to us with skin issues and needs additional treatment. She is on the mend though!`)
+
+		cardId := "animal_" + IntToString(int(anim.Id()))
 		Todo("!read animal information from database")
-		animalId := "db_" + cardId
-		OpenAnimalCardWidget(m, cardId, animalId, buttonListener)
+		OpenAnimalCardWidget(m, cardId, anim, buttonListener)
 	}
 
 	m.Col(4)
