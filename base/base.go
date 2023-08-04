@@ -607,3 +607,22 @@ func MapValue[K comparable, V any](m map[K]V, key K) V {
 	}
 	return val
 }
+
+func Ternary[V any](flag bool, ifTrue V, ifFalse V) V {
+	if flag {
+		return ifTrue
+	}
+	return ifFalse
+}
+
+func MyMod(value int, divisor int) int {
+	if divisor <= 0 {
+		BadArg("<1divisor <= 0:", divisor, "value:", value)
+	}
+
+	k := value % divisor
+	if value < 0 && k != 0 {
+		k += divisor
+	}
+	return k
+}

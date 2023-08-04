@@ -3,6 +3,8 @@ package main
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
+	// Here we are referring to a package within our own project:
+	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
 	"log"
 	"math/rand"
@@ -49,6 +51,9 @@ func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AjaxOper) Perform(app *App) {
+	foo := NewFoo().SetQ(45).Build()
+	Pr(foo)
+
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
@@ -200,7 +205,10 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 		//if i > 0 &&  Alert("only one") {
 		//	break
 		//}
-		oper.addAnimalCard(m, "a"+IntToString(i))
+		cardId := "animal_" + IntToString(i)
+		Todo("!read animal information from database")
+		animalId := "db_" + cardId
+		OpenAnimalCardWidget(m, cardId, animalId, buttonListener)
 	}
 
 	m.Col(4)
@@ -240,15 +248,6 @@ Multiple line feeds:
 	m.Listener(zebraListener)
 	m.Label("Animal").AddInput("zebra")
 
-	m.Close()
-}
-
-func (oper AjaxOper) addAnimalCard(m WidgetManager, id string) {
-	Todo("Have AnimalCardWidget method to construct card and child widgets (button)")
-	widget := NewAnimalCardWidget(id, "db_"+id)
-	m.OpenContainer(widget)
-	// Create a button within this card
-	m.Id(id + "_view").Text(`View`).Listener(buttonListener).Size(SizeSmall).AddButton()
 	m.Close()
 }
 

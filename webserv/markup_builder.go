@@ -8,27 +8,27 @@ import (
 // A builder for constructing html markup
 
 type tagEntry struct {
-	tagTy   tagType
-	tag     string // e.g. div, p (no '<' or '>')
-	comment string
+	openType tagOpenType
+	tag      string // e.g. div, p (no '<' or '>')
+	comment  string
 }
 
 type MarkupBuilderObj struct {
 	strings.Builder
-	indent       int
-	indented     bool
-	crRequest    int
-	omitComments bool
-	tagStack     *Array[tagEntry]
+	indent          int
+	indented        bool
+	crRequest       int
+	omitComments    bool
+	tagStack        *Array[tagEntry]
 	pendingComments []any
 }
 
 type MarkupBuilder = *MarkupBuilderObj
 
-type tagType int
+type tagOpenType int
 
 const (
-	tagTypeOpen tagType = iota
+	tagTypeOpen tagOpenType = iota
 	tagTypeOpenClose
 	tagTypeVoid
 )
@@ -106,7 +106,9 @@ func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 	return b
 }
 
+// Deprecated.
 func (b MarkupBuilder) Pr(message ...any) MarkupBuilder {
+	Alert("#20<1Deprecated Pr")
 	b.A(ToString(message...))
 	return b
 }
@@ -162,7 +164,7 @@ func (b MarkupBuilder) OpenTag(args ...any) MarkupBuilder {
 	return b
 }
 
-func (b MarkupBuilder) auxOpenTag(tagTy tagType, args ...any) {
+func (b MarkupBuilder) auxOpenTag(openType tagOpenType, args ...any) {
 	var tagExpression string
 	{
 		sb := strings.Builder{}
@@ -196,8 +198,8 @@ func (b MarkupBuilder) auxOpenTag(tagTy tagType, args ...any) {
 
 	CheckState(b.tagStack.Size() < 50, "tags are nested too deeply")
 	entry := tagEntry{
-		tag:   tagExpression[0:i],
-		tagTy: tagTy,
+		tag:      tagExpression[0:i],
+		openType: openType,
 	}
 	comments := b.pendingComments
 	b.pendingComments = nil
@@ -211,10 +213,10 @@ func (b MarkupBuilder) auxOpenTag(tagTy tagType, args ...any) {
 	}
 
 	b.A("<", tagExpression, ">")
-	if tagTy == tagTypeOpen {
+	if openType == tagTypeOpen {
 		b.DoIndent()
 	}
-	if tagTy != tagTypeVoid {
+	if openType != tagTypeVoid {
 		b.tagStack.Add(entry)
 	}
 }
@@ -246,7 +248,7 @@ func (b MarkupBuilder) VerifyEnd(expectedStackSize int, widget Widget) {
 
 func (b MarkupBuilder) CloseTag() MarkupBuilder {
 	entry := b.tagStack.Pop()
-	if entry.tagTy == tagTypeOpen {
+	if entry.openType == tagTypeOpen {
 		b.DoOutdent()
 		b.A("</", entry.tag, ">")
 		if entry.comment != "" {

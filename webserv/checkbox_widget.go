@@ -58,13 +58,6 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.CloseTag()
 }
 
-func Ternary[V any](flag bool, ifTrue V, ifFalse V) V {
-	if flag {
-		return ifTrue
-	}
-	return ifFalse
-}
-
 func boolToHtmlString(value bool) string {
 	if value {
 		return "true"
