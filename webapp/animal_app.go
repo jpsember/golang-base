@@ -38,7 +38,7 @@ func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 func (oper AjaxOper) Perform(app *App) {
 
 	OpenDatabase()
-	
+
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")

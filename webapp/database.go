@@ -2,6 +2,7 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 )
 
 // Facade to handle database operations.
@@ -28,4 +29,10 @@ func SetSingletonDatabase(db Database) {
 func OpenDatabase() {
 	db := NewDatabaseSim()
 	SetSingletonDatabase(db)
+}
+
+func ReadAllAnimals() Array[Animal] {
+	result := NewArray[Animal]()
+
+	return result
 }

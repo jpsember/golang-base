@@ -21,3 +21,7 @@ func RandomAnimal() webapp_data.Animal {
 	a.SetCampaignBalance(r.Int31n(a.CampaignTarget()))
 	return a
 }
+
+func GenerateRandomAnimals() {
+
+}
