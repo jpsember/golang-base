@@ -1,6 +1,0 @@
-class {
-
-    int q = 42;
- // map string string m;
-   map string string n = {"a" : "aaa", "b" : "bbb" };
-}
