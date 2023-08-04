@@ -57,12 +57,10 @@ func (oper *EncryptOper) Perform(app *App) {
 	Pr("Decrypted:", decrypted)
 	Pr("Message  :", string(decrypted))
 
-	h := sample.DefaultExp
+	h := sample.DefaultDemoConfig
 	Pr(h)
 	j := h.ToBuilder()
-	j.SetN(map[string]string{
-		"alpha": "bravo",
-	})
+	j.SetName("alpha")
 	Pr(j)
 	Pr(h)
 }
