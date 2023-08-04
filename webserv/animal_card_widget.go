@@ -2,6 +2,7 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/webapp"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 )
 
@@ -113,22 +114,4 @@ const maxChildren = 1
 func (w AnimalCardWidget) AddChild(c Widget, manager WidgetManager) {
 	CheckState(w.children.Size() < maxChildren)
 	w.children.Add(c)
-}
-
-type Currency = int32
-
-func CurrencyToString(amount Currency) string {
-	pr := PrIf(false)
-	pr("currency to string, amount:", amount)
-	j := IntToString(int(amount))
-	h := len(j)
-	pr("j:", j, "h:", h)
-	if h < 3 {
-		j = "000"[0:3-h] + j
-		h = 3
-		pr("adjusted, j:", j, "h:", h)
-	}
-	result := `$` + j[:h-2] + "." + j[h-2:]
-	pr("returning:", result)
-	return result
 }

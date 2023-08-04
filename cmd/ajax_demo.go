@@ -3,6 +3,8 @@ package main
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/webapp"
+
 	// Here we are referring to a package within our own project:
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
@@ -204,11 +206,15 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 		//	break
 		//}
 
-		anim := NewAnimal()
-		anim.SetId(int64(i + 5000))
-		anim.SetName("Roscoe " + IntToString(i))
-		anim.SetSummary(`This boxer cross came to us with skin issues and needs additional treatment. She is on the mend though!`)
-
+		var anim Animal
+		if i == 0 {
+			anim := NewAnimal()
+			anim.SetId(int64(i + 5000))
+			anim.SetName("Roscoe " + IntToString(i))
+			anim.SetSummary(`This boxer cross came to us with skin issues and needs additional treatment. She is on the mend though!`)
+		} else {
+			anim = webapp.RandomAnimal()
+		}
 		cardId := "animal_" + IntToString(int(anim.Id()))
 		Todo("!read animal information from database")
 		OpenAnimalCardWidget(m, cardId, anim, buttonListener)

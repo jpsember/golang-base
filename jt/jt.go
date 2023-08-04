@@ -47,6 +47,7 @@ func auxNew(t testing.TB) JTest {
 		TB:       t,
 		Filename: determineUnittestFilename(CallerLocation(2)),
 		verbose:  testNumber == 1,
+		rand:     NewJSRand().SetSeed(1965),
 	}
 }
 
@@ -74,8 +75,7 @@ type JTestStruct struct {
 	generatedDir       Path
 	baseNameCached     string
 	InvalidateOldHash  bool
-	rand               *rand.Rand
-	randSeed           int
+	rand               JSRand
 	referenceDirCached Path
 }
 type JTest = *JTestStruct
@@ -318,19 +318,12 @@ func makeSysCall(c []string) (string, error) {
 }
 
 func (j JTest) Seed(seed int) JTest {
-	j.randSeed = seed
-	j.rand = nil
+	j.rand.SetSeed(seed)
 	return j
 }
 
 func (j JTest) Rand() *rand.Rand {
-	if j.rand == nil {
-		if j.randSeed == 0 {
-			j.randSeed = 1965
-		}
-		j.rand = rand.New(rand.NewSource(int64(j.randSeed)))
-	}
-	return j.rand
+	return j.rand.Rand()
 }
 
 // Generate a directory structure based upon a JSMap script.  The target argument, if not an absolute directory,
