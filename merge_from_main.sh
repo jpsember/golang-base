@@ -20,8 +20,6 @@ fi
 OMITTED_FILE="webapp/database.go"
 echo "Omitting: $OMITTED_FILE"
 
-exit 1
-
 git merge --no-ff --no-commit main
 git reset HEAD $OMITTED_FILE
 git checkout -- $OMITTED_FILE
