@@ -6,6 +6,7 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
 )
 
 type DatabaseStruct struct {
@@ -64,4 +65,18 @@ func (d Database) SetError(e error) {
 
 func (d Database) CreateTables() {
 	Todo("CreateTables")
+}
+
+func (d Database) AddAnimal(a webapp_data.AnimalBuilder) {
+	//d.ClearError()
+	//
+	//result, err := d.db.Exec(`INSERT INTO animal (name, summary, details, campaign_target, campaign_balance) VALUES(?,?,?,?,?)`,
+	//	a.Name(), a.Summary(), a.Details(), a.CampaignTarget(), a.CampaignBalance())
+	//if !d.SetError(err) {
+	//	id, err2 := result.LastInsertId()
+	//	if !d.SetError(err2) {
+	//		a.SetId(id)
+	//	}
+	//}
+	NotImplemented()
 }
