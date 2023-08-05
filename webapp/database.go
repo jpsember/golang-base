@@ -16,38 +16,43 @@ type DatabaseStruct struct {
 type Database = *DatabaseStruct
 
 const (
-	DatabaseStateNew = iota
-	DatabaseStateOpen
-	DatabaseStateClosed
-	DatabaseStateFailed
+	dbStateNew = iota
+	dbStateOpen
+	dbStateClosed
+	dbStateFailed
 )
 
-var SingletonDatabase Database
-
-func CreateDatabase() Database {
-	CheckState(SingletonDatabase == nil, "<1Singleton database already exists")
-	SingletonDatabase = newDatabase()
-	return Db()
-}
-
-func Db() Database {
-	CheckState(SingletonDatabase != nil, "<1No database created yet")
-	return SingletonDatabase
-}
+var singletonDatabase Database
 
 func newDatabase() Database {
 	t := &DatabaseStruct{}
 	return t
 }
 
+func CreateDatabase() Database {
+	CheckState(singletonDatabase == nil, "<1Singleton database already exists")
+	singletonDatabase = newDatabase()
+	return Db()
+}
+
+func Db() Database {
+	CheckState(singletonDatabase != nil, "<1No database created yet")
+	return singletonDatabase
+}
+
+// This method does nothing in this version
+func (db Database) SetDataSourceName(dataSourceName string) {
+	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
+}
+
 func (db Database) Open() {
-	CheckState(db.state == DatabaseStateNew, "Illegal state:", db.state)
-	db.state = DatabaseStateOpen
+	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
+	db.state = dbStateOpen
 	db.CreateTables()
 }
 
 func (db Database) Close() {
-	db.state = DatabaseStateClosed
+	db.state = dbStateClosed
 }
 
 func (d Database) SetError(e error) {
