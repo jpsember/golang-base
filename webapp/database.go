@@ -21,52 +21,52 @@ type DatabaseStruct struct {
 type Database = *DatabaseStruct
 
 const (
-	DatabaseStateNew = iota
-	DatabaseStateOpen
-	DatabaseStateClosed
-	DatabaseStateFailed
+	dbStateNew = iota
+	dbStateOpen
+	dbStateClosed
+	dbStateFailed
 )
-
-var SingletonDatabase Database
-
-func CreateDatabase() Database {
-	CheckState(SingletonDatabase == nil, "<1Singleton database already exists")
-	SingletonDatabase = newDatabase()
-	return Db()
-}
-
-func Db() Database {
-	CheckState(SingletonDatabase != nil, "<1No database created yet")
-	return SingletonDatabase
-}
-
-func (db Database) SetDataSourceName(dataSourceName string) {
-	CheckState(db.state == DatabaseStateNew, "Illegal state:", db.state)
-	db.dataSourceName = dataSourceName
-	Alert("<1Setting data source name:", dataSourceName, CurrentDirectory())
-}
 
 func newDatabase() Database {
 	t := &DatabaseStruct{}
 	return t
 }
 
+var singletonDatabase Database
+
+func CreateDatabase() Database {
+	CheckState(singletonDatabase == nil, "<1Singleton database already exists")
+	singletonDatabase = newDatabase()
+	return Db()
+}
+
+func Db() Database {
+	CheckState(singletonDatabase != nil, "<1No database created yet")
+	return singletonDatabase
+}
+
+func (db Database) SetDataSourceName(dataSourceName string) {
+	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
+	db.dataSourceName = dataSourceName
+	Alert("<1Setting data source name:", dataSourceName, CurrentDirectory())
+}
+
 func (db Database) Open() {
-	CheckState(db.state == DatabaseStateNew, "Illegal state:", db.state)
+	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
 	CheckState(db.dataSourceName != "", "<1No call to SetDataSourceName made")
 	db.db, db.err = sql.Open("sqlite3", db.dataSourceName)
 	if db.ErrorOccurred() {
-		db.state = DatabaseStateFailed
+		db.state = dbStateFailed
 		return
 	}
-	db.state = DatabaseStateOpen
+	db.state = dbStateOpen
 	db.CreateTables()
 }
 
 func (db Database) Close() {
-	if db.state == DatabaseStateOpen {
+	if db.state == dbStateOpen {
 		db.err = db.db.Close()
-		db.state = DatabaseStateClosed
+		db.state = dbStateClosed
 	}
 }
 
