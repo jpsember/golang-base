@@ -14,7 +14,7 @@ ALT_BRANCH="no-db"
 CURRENT_BRANCH=`git branch --show-current`
 if [ "$CURRENT_BRANCH" == "$MAIN_BRANCH" ]; then
   OTHER_BRANCH=$ALT_BRANCH
-elif [ "$CURRENT_BRANCH" == "ALT_BRANCH" ]; then
+elif [ "$CURRENT_BRANCH" == "$ALT_BRANCH" ]; then
   OTHER_BRANCH=$MAIN_BRANCH
 else
   echo "Current branch is $CURRENT_BRANCH, expected either $MAIN_BRANCH or $ALT_BRANCH !!!"
@@ -30,8 +30,6 @@ echo
 OMITTED_FILE="webapp/database.go"
 echo "Omitting: $OMITTED_FILE"
 
-echo "Exiting"
-exit 1
 git merge --no-ff --no-commit $OTHER_BRANCH
 git reset HEAD $OMITTED_FILE
 git checkout -- $OMITTED_FILE
