@@ -336,7 +336,7 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	id := b.Id
 	if id != "" {
 		if m.Exists(id) {
-			BadState("Attempt to add widget with duplicate id:", id)
+			BadState("<1Attempt to add widget with duplicate id:", id)
 		}
 		m.widgetMap[id] = widget
 	}

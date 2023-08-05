@@ -2,7 +2,6 @@ package base
 
 import (
 	"math/rand"
-	"time"
 )
 
 type jsRandStruct struct {
@@ -26,7 +25,7 @@ func (r JSRand) SetSeed(seed int) JSRand {
 func (r JSRand) Rand() *rand.Rand {
 	if !r.built {
 		if r.seed == 0 {
-			r.seed = time.Now().UnixNano()
+			r.seed = CurrentTimeMs()
 		}
 		r.random = rand.New(rand.NewSource(r.seed))
 		r.built = true

@@ -4,8 +4,6 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 
-	// Here we are referring to a package within our own project:
-	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
 	"log"
 	"math/rand"
@@ -37,7 +35,7 @@ func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 
 func (oper AjaxOper) Perform(app *App) {
 
-	if Alert("Performing sql experiment") {
+	if false && Alert("Performing sql experiment") {
 		SQLiteExperiment()
 		return
 	}
@@ -192,23 +190,13 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.Add(heading)
 
 	m.Col(4)
-	for i := 0; i < 4; i++ {
-		//if i > 0 &&  Alert("only one") {
-		//	break
-		//}
-
-		var anim Animal
-		if i == 0 {
-			a := RandomAnimal().ToBuilder()
-			a.SetName("Roscoe")
-			a.SetSummary(`This boxer cross came to us with skin issues and needs additional treatment. She is on the mend though!`)
-			anim = a
-		} else {
-			anim = RandomAnimal()
+	for i := 1; i < 12; i++ {
+		Todo("figure out how to make this call thread safe via lock")
+		anim := Db().GetAnimal(i)
+		if anim == nil {
+			continue
 		}
-		Pr("adding animal:", INDENT, anim)
 		cardId := "animal_" + IntToString(int(anim.Id()))
-		Todo("!read animal information from database")
 		OpenAnimalCardWidget(m, cardId, anim, buttonListener)
 	}
 

@@ -3,7 +3,6 @@ package webserv
 import (
 	. "github.com/jpsember/golang-base/base"
 	"sync"
-	"time"
 )
 
 type FileSystemSessionManager struct {
@@ -29,7 +28,7 @@ func BuildFileSystemSessionMap() *FileSystemSessionManager {
 			s := ParseSession(v)
 			sm.sessionMap[k] = s
 		}
-		sm.lastWrittenMs = time.Now().UnixMilli()
+		sm.lastWrittenMs = CurrentTimeMs()
 	}
 	return sm
 }
@@ -86,7 +85,7 @@ func (s *FileSystemSessionManager) flush() {
 			jsm.Put(k, v.ToJson())
 		}
 		pth.WriteStringM(jsm.CompactString())
-		s.lastWrittenMs = time.Now().UnixMilli()
+		s.lastWrittenMs = CurrentTimeMs()
 		Pr("flushed modified session map to:", pth)
 		s.modified = false
 	}
