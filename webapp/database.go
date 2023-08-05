@@ -7,12 +7,15 @@ package webapp
 import (
 	. "github.com/jpsember/golang-base/base"
 	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	"reflect"
 )
 
 type DatabaseStruct struct {
-	state       int
-	err         error
-	animalTable map[int]webapp_data.Animal
+	state     int
+	err       error
+	memTables map[string]MemTable
+
+	//animalTable map[int]webapp_data.Animal
 }
 
 type Database = *DatabaseStruct
@@ -28,7 +31,8 @@ var singletonDatabase Database
 
 func newDatabase() Database {
 	t := &DatabaseStruct{}
-	t.animalTable = make(map[int]webapp_data.Animal)
+	t.memTables = make(map[string]MemTable)
+	//t.animalTable = make(map[int]webapp_data.Animal)
 	Todo("read animal table (and others)")
 	return t
 }
@@ -88,15 +92,11 @@ func (d Database) CreateTables() {
 }
 
 func (d Database) AddAnimal(a webapp_data.AnimalBuilder) {
-	mp := d.animalTable
+	mp := d.getTable("animal") //d.animalTable
 	d.ClearError()
-	id := len(mp) + 1
-	for HasKey(mp, id) {
-		id++
-	}
-
+	id := mp.nextUniqueKey()
 	a.SetId(int64(id))
-	mp[id] = a.Build()
+	mp.Put(id, a.Build())
 	Todo("write modified table periodically")
 }
 
@@ -115,4 +115,99 @@ func SQLiteExperiment() {
 	d.AddAnimal(a)
 	d.AssertOk()
 	Pr("added animal:", INDENT, a)
+}
+
+func (d Database) getTable(name string) MemTable {
+	mt := d.memTables[name]
+	if mt == nil {
+		Todo("read table from filesystem; if not found, create an empty one")
+		mt = NewMemTable(name)
+		d.memTables[name] = mt
+	}
+	return mt
+}
+
+type MemTableStruct struct {
+	name  string
+	table map[string]JSMap
+}
+
+type MemTable = *MemTableStruct
+
+func NewMemTable(name string) MemTable {
+	t := &MemTableStruct{
+		name:  name,
+		table: make(map[string]JSMap),
+	}
+	Todo("read table from filesystem; if not found, create an empty one")
+	return t
+}
+
+func (m MemTable) getValue(key string) (JSMap, bool) {
+	val, ok := m.table[key]
+	return val, ok
+}
+
+func (m MemTable) nextUniqueKey() int {
+	i := 0
+	for {
+		if !HasKey(m.table, IntToString(i)) {
+			Todo("reimplement as binary search for highest key")
+			break
+		}
+		i++
+	}
+	return i
+}
+
+func (m MemTable) Put(key any, value any) {
+	strKey := argToMemtableKey(key)
+	jsmapValue := argToMemtableValue(value)
+	m.table[strKey] = jsmapValue
+	//var strKey string
+	//switch k := key.(type) {
+	//case string:
+	//	strKey = k
+	//case int: // We aren't sure if it's 32 or 64, so choose 64
+	//	strKey = IntToString(k)
+	//default:
+	//	BadArg("illegal key:", key, "type:", k)
+	//}
+	//
+	//m.table[strKey] = value
+}
+
+func argToMemtableKey(key any) string {
+	var strKey string
+	switch k := key.(type) {
+	case string:
+		strKey = k
+	case int: // We aren't sure if it's 32 or 64, so choose 64
+		strKey = IntToString(k)
+	default:
+		BadArg("illegal key:", key, "type:", k)
+	}
+	return strKey
+}
+
+func argToMemtableValue(val any) JSMap {
+	var strKey JSMap
+	switch k := val.(type) {
+	case nil:
+		break
+	case JSMap:
+		strKey = k
+	default:
+		{
+			result, ok := val.(DataClass)
+			if ok {
+				strKey = result.ToJson().AsJSMap()
+			}
+		}
+		break
+	}
+	if strKey == nil {
+		BadArg("illegal value:", val, "type:", reflect.TypeOf(val))
+	}
+	return strKey
 }
