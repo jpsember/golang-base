@@ -14,7 +14,11 @@ if [ "$a" != "no-db" ]; then
 fi
 
 echo "More to come"
-# git merge --no-ff --no-commit <merge-branch>
-# git reset HEAD myfile.txt
-# git checkout -- myfile.txt
+
+omit="webapp/database.go"
+echo "Omit: $omit"
+
+echo git merge --no-ff --no-commit main
+echo git reset HEAD $omit
+echo git checkout -- $omit
 # git commit -m "merged <merge-branch>"
