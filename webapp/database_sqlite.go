@@ -132,12 +132,14 @@ func (d DatabaseSqlite) CreateTables() {
 	db := d.db
 	// Create a table if it doesn't exist
 	const create string = `
- CREATE TABLE IF NOT EXISTS user (
- uid INTEGER PRIMARY KEY AUTOINCREMENT,
- name VARCHAR(64) NOT NULL,
- age INTEGER
- );`
-
+ CREATE TABLE IF NOT EXISTS animal (
+     uid INTEGER PRIMARY KEY AUTOINCREMENT,
+     name VARCHAR(64) NOT NULL,
+     summary VARCHAR(300),
+     details VARCHAR(3000),
+     campaign_target INT,
+     campain_balance INT 
+     );`
 	_, err := db.Exec(create)
 	d.SetError(err)
 	d.AssertOk()
