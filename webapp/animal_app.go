@@ -37,7 +37,9 @@ func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 
 func (oper AjaxOper) Perform(app *App) {
 
-	OpenDatabase()
+	db := NewDatabaseSqlite()
+	db.SetDataSourceName("../sqlite/animal_exp.db")
+	OpenDatabase(db)
 
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")

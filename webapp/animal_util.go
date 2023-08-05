@@ -2,9 +2,6 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
-)
-
-import (
 	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"github.com/jpsember/golang-base/webserv"
 )

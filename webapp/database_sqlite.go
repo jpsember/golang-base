@@ -14,6 +14,9 @@ type DatabaseSqliteStruct struct {
 	dataSourceName string
 }
 
+// Verify that DatabaseSqlite implements the Database interface
+var _ Database = (DatabaseSqlite)(nil)
+
 type DatabaseSqlite = *DatabaseSqliteStruct
 
 func NewDatabaseSqlite() DatabaseSqlite {
@@ -27,6 +30,7 @@ var _ Database = (DatabaseSqlite)(nil)
 func (db DatabaseSqlite) SetDataSourceName(dataSourceName string) {
 	CheckState(db.state == DatabaseStateNew, "Illegal state:", db.state)
 	db.dataSourceName = dataSourceName
+	Alert("<1Setting data source name:", dataSourceName, CurrentDirectory())
 }
 
 func (db DatabaseSqlite) Open() {
@@ -115,4 +119,26 @@ func SQLiteExperiment() {
 		CheckOkWith(addUserStatement.Exec(name, age))
 	}
 
+}
+
+func (d DatabaseSqlite) SetError(e error) {
+	d.err = e
+	if e != nil {
+		Alert("<1#50Setting database error:", INDENT, e)
+	}
+}
+
+func (d DatabaseSqlite) CreateTables() {
+	db := d.db
+	// Create a table if it doesn't exist
+	const create string = `
+ CREATE TABLE IF NOT EXISTS user (
+ uid INTEGER PRIMARY KEY AUTOINCREMENT,
+ name VARCHAR(64) NOT NULL,
+ age INTEGER
+ );`
+
+	_, err := db.Exec(create)
+	d.SetError(err)
+	d.AssertOk()
 }
