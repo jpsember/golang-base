@@ -10,8 +10,9 @@ import (
 )
 
 type DatabaseStruct struct {
-	state int
-	err   error
+	state       int
+	err         error
+	animalTable map[int]webapp_data.Animal
 }
 
 type Database = *DatabaseStruct
@@ -27,6 +28,8 @@ var singletonDatabase Database
 
 func newDatabase() Database {
 	t := &DatabaseStruct{}
+	t.animalTable = make(map[int]webapp_data.Animal)
+	Todo("read animal table (and others)")
 	return t
 }
 
@@ -42,25 +45,42 @@ func Db() Database {
 }
 
 // This method does nothing in this version
-func (db Database) SetDataSourceName(dataSourceName string) {
-	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
+func (d Database) SetDataSourceName(dataSourceName string) {
+	CheckState(d.state == dbStateNew, "Illegal state:", d.state)
 }
 
-func (db Database) Open() {
-	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
-	db.state = dbStateOpen
-	db.CreateTables()
+func (d Database) Open() {
+	CheckState(d.state == dbStateNew, "Illegal state:", d.state)
+	d.state = dbStateOpen
+	d.CreateTables()
 }
 
-func (db Database) Close() {
-	db.state = dbStateClosed
+func (d Database) Close() {
+	d.state = dbStateClosed
 }
 
-func (d Database) SetError(e error) {
+func (d Database) SetError(e error) bool {
 	d.err = e
-	if e != nil {
-		Pr("*** Setting database error:", INDENT, e)
+	if d.HasError() {
+		Alert("<1#50Setting database error:", INDENT, e)
 	}
+	return d.HasError()
+}
+
+func (d Database) HasError() bool {
+	return d.err != nil
+}
+
+func (d Database) ClearError() Database {
+	d.err = nil
+	return d
+}
+
+func (d Database) AssertOk() Database {
+	if d.HasError() {
+		BadState("<1DatabaseSqlite has an error:", d.err)
+	}
+	return d
 }
 
 func (d Database) CreateTables() {
@@ -68,15 +88,14 @@ func (d Database) CreateTables() {
 }
 
 func (d Database) AddAnimal(a webapp_data.AnimalBuilder) {
-	//d.ClearError()
-	//
-	//result, err := d.db.Exec(`INSERT INTO animal (name, summary, details, campaign_target, campaign_balance) VALUES(?,?,?,?,?)`,
-	//	a.Name(), a.Summary(), a.Details(), a.CampaignTarget(), a.CampaignBalance())
-	//if !d.SetError(err) {
-	//	id, err2 := result.LastInsertId()
-	//	if !d.SetError(err2) {
-	//		a.SetId(id)
-	//	}
-	//}
-	NotImplemented()
+	mp := d.animalTable
+	d.ClearError()
+	id := len(mp) + 1
+	for HasKey(mp, id) {
+		id++
+	}
+
+	a.SetId(int64(id))
+	mp[id] = a.Build()
+	Todo("write modified table periodically")
 }
