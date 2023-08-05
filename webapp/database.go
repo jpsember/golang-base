@@ -11,9 +11,10 @@ import (
 )
 
 type DatabaseStruct struct {
-	state     int
-	err       error
-	memTables map[string]MemTable
+	state        int
+	err          error
+	memTables    map[string]MemTable
+	simFilesPath Path
 
 	//animalTable map[int]webapp_data.Animal
 }
@@ -98,6 +99,14 @@ func (d Database) AddAnimal(a webapp_data.AnimalBuilder) {
 	a.SetId(int64(id))
 	mp.Put(id, a.Build())
 	Todo("write modified table periodically")
+
+	Todo("always writing")
+	d.FlushTable(mp)
+}
+
+func (d Database) FlushTable(mt MemTable) {
+	p := d.getSimFile(mt)
+	p.WriteStringM(mt.table.CompactString())
 }
 
 func SQLiteExperiment() {
@@ -120,16 +129,26 @@ func SQLiteExperiment() {
 func (d Database) getTable(name string) MemTable {
 	mt := d.memTables[name]
 	if mt == nil {
-		Todo("read table from filesystem; if not found, create an empty one")
 		mt = NewMemTable(name)
 		d.memTables[name] = mt
+		p := d.getSimFile(mt)
+		mt.table = JSMapFromFileIfExistsM(p)
+		Pr("we read from the filesystem:", p, INDENT, mt.table)
 	}
 	return mt
 }
 
+func (d Database) getSimFile(m MemTable) Path {
+	if d.simFilesPath.Empty() {
+		d.simFilesPath = NewPathM("simulated_db")
+		d.simFilesPath.MkDirsM()
+	}
+	return d.simFilesPath.JoinM(m.name + ".json")
+}
+
 type MemTableStruct struct {
 	name  string
-	table map[string]JSMap
+	table JSMap
 }
 
 type MemTable = *MemTableStruct
@@ -137,21 +156,20 @@ type MemTable = *MemTableStruct
 func NewMemTable(name string) MemTable {
 	t := &MemTableStruct{
 		name:  name,
-		table: make(map[string]JSMap),
+		table: NewJSMap(),
 	}
-	Todo("read table from filesystem; if not found, create an empty one")
 	return t
 }
 
 func (m MemTable) getValue(key string) (JSMap, bool) {
-	val, ok := m.table[key]
-	return val, ok
+	val, ok := m.table.WrappedMap()[key]
+	return val.(JSMap), ok
 }
 
 func (m MemTable) nextUniqueKey() int {
 	i := 0
 	for {
-		if !HasKey(m.table, IntToString(i)) {
+		if !m.table.HasKey(IntToString(i)) {
 			Todo("reimplement as binary search for highest key")
 			break
 		}
@@ -163,18 +181,7 @@ func (m MemTable) nextUniqueKey() int {
 func (m MemTable) Put(key any, value any) {
 	strKey := argToMemtableKey(key)
 	jsmapValue := argToMemtableValue(value)
-	m.table[strKey] = jsmapValue
-	//var strKey string
-	//switch k := key.(type) {
-	//case string:
-	//	strKey = k
-	//case int: // We aren't sure if it's 32 or 64, so choose 64
-	//	strKey = IntToString(k)
-	//default:
-	//	BadArg("illegal key:", key, "type:", k)
-	//}
-	//
-	//m.table[strKey] = value
+	m.table.Put(strKey, jsmapValue)
 }
 
 func argToMemtableKey(key any) string {
