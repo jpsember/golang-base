@@ -185,7 +185,6 @@ func (d Database) CreateTables() {
 
 func (d Database) AddAnimal(a webapp_data.AnimalBuilder) {
 	d.ClearError()
-
 	result, err := d.db.Exec(`INSERT INTO animal (name, summary, details, campaign_target, campaign_balance) VALUES(?,?,?,?,?)`,
 		a.Name(), a.Summary(), a.Details(), a.CampaignTarget(), a.CampaignBalance())
 	if !d.SetError(err) {
@@ -194,5 +193,4 @@ func (d Database) AddAnimal(a webapp_data.AnimalBuilder) {
 			a.SetId(id)
 		}
 	}
-
 }
