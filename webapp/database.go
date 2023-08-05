@@ -6,17 +6,16 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"reflect"
 )
 
 type DatabaseStruct struct {
-	state        int
-	err          error
-	memTables    map[string]MemTable
-	simFilesPath Path
-
-	//animalTable map[int]webapp_data.Animal
+	state              int
+	err                error
+	memTables          map[string]MemTable
+	simFilesPath       Path
+	changesWrittenTime int64
 }
 
 type Database = *DatabaseStruct
@@ -33,8 +32,7 @@ var singletonDatabase Database
 func newDatabase() Database {
 	t := &DatabaseStruct{}
 	t.memTables = make(map[string]MemTable)
-	//t.animalTable = make(map[int]webapp_data.Animal)
-	Todo("read animal table (and others)")
+	t.changesWrittenTime = CurrentTimeMs()
 	return t
 }
 
@@ -47,6 +45,18 @@ func CreateDatabase() Database {
 func Db() Database {
 	CheckState(singletonDatabase != nil, "<1No database created yet")
 	return singletonDatabase
+}
+
+func (d Database) FlushChanges() {
+	Alert("#50<1Flushing changes")
+	for _, mt := range d.memTables {
+		if mt.modified {
+			p := d.getSimFile(mt)
+			p.WriteStringM(mt.table.CompactString())
+			mt.modified = false
+		}
+	}
+	d.changesWrittenTime = CurrentTimeMs()
 }
 
 // This method does nothing in this version
@@ -89,19 +99,38 @@ func (d Database) AssertOk() Database {
 }
 
 func (d Database) CreateTables() {
-	Todo("CreateTables")
 }
 
-func (d Database) AddAnimal(a webapp_data.AnimalBuilder) {
-	mp := d.getTable("animal") //d.animalTable
+func (d Database) GetAnimal(id int) Animal {
 	d.ClearError()
+	mp := d.getTable("animal")
+	obj := mp.GetData(id, DefaultAnimal)
+	return obj.(Animal)
+}
+
+func (d Database) AddAnimal(a AnimalBuilder) {
+	d.ClearError()
+	mp := d.getTable("animal")
 	id := mp.nextUniqueKey()
 	a.SetId(int64(id))
 	mp.Put(id, a.Build())
 	Todo("write modified table periodically")
-
 	Todo("always writing")
-	d.FlushTable(mp)
+	d.setModified(mp)
+}
+
+const SECONDS = 1000
+const MINUTES = SECONDS * 60
+const HOURS = MINUTES * 60
+
+func (d Database) setModified(mt MemTable) {
+	mt.modified = true
+	currTime := CurrentTimeMs()
+	elapsed := currTime - d.changesWrittenTime
+	Pr("setting table modified:", mt.name, "ms since written:", elapsed)
+	if elapsed > SECONDS*20 {
+		d.FlushChanges()
+	}
 }
 
 func (d Database) FlushTable(mt MemTable) {
@@ -120,10 +149,13 @@ func SQLiteExperiment() {
 
 	Pr("opened db")
 
-	a := RandomAnimal()
-	d.AddAnimal(a)
-	d.AssertOk()
-	Pr("added animal:", INDENT, a)
+	for i := 0; i < 100; i++ {
+		a := RandomAnimal()
+		d.AddAnimal(a)
+		d.AssertOk()
+		Pr("added animal:", INDENT, a)
+	}
+	d.FlushChanges()
 }
 
 func (d Database) getTable(name string) MemTable {
@@ -133,7 +165,6 @@ func (d Database) getTable(name string) MemTable {
 		d.memTables[name] = mt
 		p := d.getSimFile(mt)
 		mt.table = JSMapFromFileIfExistsM(p)
-		Pr("we read from the filesystem:", p, INDENT, mt.table)
 	}
 	return mt
 }
@@ -147,8 +178,9 @@ func (d Database) getSimFile(m MemTable) Path {
 }
 
 type MemTableStruct struct {
-	name  string
-	table JSMap
+	name     string
+	table    JSMap
+	modified bool
 }
 
 type MemTable = *MemTableStruct
@@ -176,6 +208,15 @@ func (m MemTable) nextUniqueKey() int {
 		i++
 	}
 	return i
+}
+
+func (m MemTable) GetData(key any, parser DataClass) DataClass {
+	strKey := argToMemtableKey(key)
+	val := m.table.OptMap(strKey)
+	if val == nil {
+		return nil
+	}
+	return parser.Parse(val)
 }
 
 func (m MemTable) Put(key any, value any) {
