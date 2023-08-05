@@ -37,6 +37,10 @@ func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 
 func (oper AjaxOper) Perform(app *App) {
 
+	if Alert("Performing sql experiment") {
+		SQLiteExperiment()
+		return
+	}
 	db := CreateDatabase()
 	db.Open()
 
