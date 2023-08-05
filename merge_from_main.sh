@@ -1,24 +1,28 @@
 #!/usr/bin/env bash
 set -eu
 
-echo "Attempting to merge from main into our branch (no-db)"
+EXPECTED_BRANCH=no-db
+OTHER_BRANCH=main
+CURRENT_BRANCH=`git branch --show-current`
+
+echo "Current branch: $CURRENT_BRANCH"
+echo "Attempting to merge from $OTHER_BRANCH into $EXPECTED_BRANCH"
 echo
 echo "See: https://stackoverflow.com/questions/15232000/git-ignore-files-during-merge"
+echo
 
-a=`git branch --show-current`
-echo $a
 
-if [ "$a" != "no-db" ]; then
-  echo "We are on branch '$a', not 'no-db'!!!!"
+if [ "$CURRENT_BRANCH" != "$EXPECTED_BRANCH" ]; then
+  echo "Current branch is $CURRENT_BRANCH, expected $EXPECTED_BRANCH !!!"
   exit 1
 fi
 
-echo "More to come"
+OMITTED_FILE="webapp/database.go"
+echo "Omitting: $OMITTED_FILE"
 
-omit="webapp/database.go"
-echo "Omit: $omit"
+exit 1
 
-echo git merge --no-ff --no-commit main
-echo git reset HEAD $omit
-echo git checkout -- $omit
-# git commit -m "merged <merge-branch>"
+git merge --no-ff --no-commit main
+git reset HEAD $OMITTED_FILE
+git checkout -- $OMITTED_FILE
+git commit -m "merged $OTHER_BRANCH"
