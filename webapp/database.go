@@ -7,7 +7,7 @@ package webapp
 import (
 	"database/sql"
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -35,6 +35,7 @@ func newDatabase() Database {
 var singletonDatabase Database
 
 func CreateDatabase() Database {
+	Todo("Can we use a channel to access the database in a threadsafe manner?")
 	CheckState(singletonDatabase == nil, "<1Singleton database already exists")
 	singletonDatabase = newDatabase()
 	return Db()
@@ -71,21 +72,21 @@ func (db Database) Close() {
 	}
 }
 
-func (d Database) SetError(e error) bool {
-	d.err = e
-	if d.HasError() {
+func (db Database) SetError(e error) bool {
+	db.err = e
+	if db.HasError() {
 		Alert("<1#50Setting database error:", INDENT, e)
 	}
-	return d.HasError()
+	return db.HasError()
 }
 
-func (d Database) HasError() bool {
-	return d.err != nil
+func (db Database) HasError() bool {
+	return db.err != nil
 }
 
-func (d Database) ClearError() Database {
-	d.err = nil
-	return d
+func (db Database) ClearError() Database {
+	db.err = nil
+	return db
 }
 
 func (db Database) AssertOk() Database {
@@ -105,67 +106,18 @@ func SQLiteExperiment() {
 	d.AssertOk()
 
 	Pr("opened db")
-
-	a := RandomAnimal()
-	d.AddAnimal(a)
-	d.AssertOk()
-	Pr("added animal:", INDENT, a)
-
-	//// Apparently it creates a database if none exists...?
-	//
-	//// Create a table if it doesn't exist
-	//const create string = `
-	//CREATE TABLE IF NOT EXISTS zebra (
-	//uid INTEGER PRIMARY KEY AUTOINCREMENT,
-	//name VARCHAR(64) NOT NULL,
-	//age INTEGER
-	//);`
-	//
-	//db := d.db
-	//
-	//CheckOkWith(db.Exec(create))
-	//
-	//rows := CheckOkWith(db.Query("SELECT * FROM user"))
-	//
-	//rowTotal := 0
-	//for rows.Next() {
-	//	rowTotal++
-	//	var uid int
-	//	var name string
-	//	var age int
-	//	CheckOk(rows.Scan(&uid, &name, &age))
-	//	Pr("uid:", uid, "name:", name, "age:", age)
-	//}
-	//
-	//// I assume this prepares an SQL statement (doing the optimization to determine best way to fulfill the statement)
-	//addUserStatement := CheckOkWith(db.Prepare("INSERT INTO user(name, age) values(?,?)"))
-	//
-	//// If it's empty, create a user
-	//if rowTotal == 0 {
-	//	res := CheckOkWith(addUserStatement.Exec("Fred", 42))
-	//	affected, _ := res.RowsAffected()
-	//	Pr("affected rows:", affected)
-	//}
-	//
-	//rnd := rand.New(rand.NewSource(1965))
-	//for i := 0; i < 100-rowTotal; i++ {
-	//	name := RandomText(rnd, 20, false)
-	//	age := rnd.Intn(65) + 8
-	//	CheckOkWith(addUserStatement.Exec(name, age))
-	//}
-
+	d.DeleteAllRowsInTable("animal")
+	for i := 0; i < 20; i++ {
+		a := RandomAnimal()
+		d.AddAnimal(a)
+		d.AssertOk()
+		Pr("added animal:", INDENT, a)
+	}
 }
 
-func (d Database) CreateTables() {
-	db := d.db
-
-	if false {
-		const drop = `DROP TABLE IF EXISTS animal;`
-		_, err := db.Exec(drop)
-		d.SetError(err)
-		d.AssertOk()
-	}
-
+func (db Database) CreateTables() {
+	database := db.db
+	Todo("!Add support for prepared statements")
 	{
 		// Create a table if it doesn't exist
 		const create string = `
@@ -177,20 +129,67 @@ func (d Database) CreateTables() {
      campaign_target INT,
      campaign_balance INT 
      );`
-		_, err := db.Exec(create)
-		d.SetError(err)
-		d.AssertOk()
+		_, err := database.Exec(create)
+		db.SetError(err)
+		db.AssertOk()
 	}
 }
 
-func (d Database) AddAnimal(a webapp_data.AnimalBuilder) {
-	d.ClearError()
-	result, err := d.db.Exec(`INSERT INTO animal (name, summary, details, campaign_target, campaign_balance) VALUES(?,?,?,?,?)`,
+func (db Database) DeleteAllRowsInTable(name string) {
+	database := db.db
+	Todo("are semicolons needed in sql commands?")
+	_, err := database.Exec(`DELETE FROM ` + name)
+	db.SetError(err)
+	db.AssertOk()
+}
+
+func (db Database) AddAnimal(a AnimalBuilder) {
+	db.ClearError()
+	result, err := db.db.Exec(`INSERT INTO animal (name, summary, details, campaign_target, campaign_balance) VALUES(?,?,?,?,?)`,
 		a.Name(), a.Summary(), a.Details(), a.CampaignTarget(), a.CampaignBalance())
-	if !d.SetError(err) {
+	if !db.SetError(err) {
 		id, err2 := result.LastInsertId()
-		if !d.SetError(err2) {
+		if !db.SetError(err2) {
 			a.SetId(id)
 		}
 	}
+}
+
+func (db Database) GetAnimal(id int) Animal {
+	Pr("GetAnimal:", id)
+	db.ClearError()
+
+	// See https://go.dev/doc/database/prepared-statements
+
+	database := db.db
+	const sqlStr string = ` SELECT * FROM animal WHERE uid = ?;`
+	stmt, err := database.Prepare(sqlStr)
+
+	db.SetError(err)
+	db.AssertOk()
+
+	// Execute the prepared statement, passing in an id value for the
+	// parameter whose placeholder is ?
+
+	//var id int
+	var name string
+	var summary string
+	var details string
+	var campaignTarget int
+	var campaignBalance int
+
+	//name, summary, details, campaign_target, campaign_balance
+	rows := stmt.QueryRow(id)
+	err = rows.Scan(&id, &name, &summary, &details, &campaignTarget, &campaignBalance)
+
+	if err != nil && err != sql.ErrNoRows {
+		db.SetError(err)
+	} else if err != sql.ErrNoRows {
+		ab := NewAnimal()
+		ab.SetId(int64(id))
+		ab.SetName(name).SetSummary(summary).SetDetails(details).SetCampaignBalance(int32(campaignBalance)).SetCampaignTarget(int32(campaignTarget))
+		Pr("returning:", ab)
+		return ab.Build()
+	}
+	return nil
 }

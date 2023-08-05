@@ -40,6 +40,7 @@ func (oper AjaxOper) Perform(app *App) {
 		return
 	}
 	db := CreateDatabase()
+	db.SetDataSourceName("../sqlite/jeff_experiment.db")
 	db.Open()
 
 	oper.sessionManager = BuildSessionMap()
