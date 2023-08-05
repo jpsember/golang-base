@@ -37,6 +37,8 @@ func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 
 func (oper AjaxOper) Perform(app *App) {
 
+	Halt("Stopping for now")
+	
 	if Alert("Performing sql experiment") {
 		SQLiteExperiment()
 		return
