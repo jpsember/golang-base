@@ -99,20 +99,3 @@ func (d Database) AddAnimal(a webapp_data.AnimalBuilder) {
 	mp[id] = a.Build()
 	Todo("write modified table periodically")
 }
-
-func SQLiteExperiment() {
-	Pr("running sim database experiment")
-
-	d := CreateDatabase()
-	// We're running from within the webapp subdirectory...
-	d.SetDataSourceName("../sqlite/jeff_experiment.db")
-	d.Open()
-	d.AssertOk()
-
-	Pr("opened db")
-
-	a := RandomAnimal()
-	d.AddAnimal(a)
-	d.AssertOk()
-	Pr("added animal:", INDENT, a)
-}
