@@ -6,11 +6,9 @@ import (
 	"github.com/jpsember/golang-base/webserv"
 )
 
-func RandomAnimal() webapp_data.Animal {
+func RandomAnimal() webapp_data.AnimalBuilder {
 	r := webserv.HTMLRand.Rand()
 	a := webapp_data.NewAnimal()
-	a.SetId(r.Int63n(50000) + 1)
-	Pr("random animal, set id to:", a.Id())
 	a.SetName(RandomText(r, 20, false))
 	a.SetSummary(RandomText(r, 300, false))
 	a.SetDetails(RandomText(r, 2000, true))
@@ -20,5 +18,10 @@ func RandomAnimal() webapp_data.Animal {
 }
 
 func GenerateRandomAnimals() {
-
+	for i := 0; i < 100; i++ {
+		anim := RandomAnimal()
+		db := Db()
+		db.AddAnimal(anim)
+		Pr("added animal:", INDENT, anim)
+	}
 }
