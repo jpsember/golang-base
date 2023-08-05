@@ -6,6 +6,7 @@ import (
 
 type DatabaseSimStruct struct {
 	state int
+	err   error
 }
 
 type DatabaseSim = *DatabaseSimStruct
@@ -25,4 +26,15 @@ func (db DatabaseSim) Open() {
 
 func (db DatabaseSim) Close() {
 	db.state = DatabaseStateClosed
+}
+
+func (d DatabaseSim) SetError(e error) {
+	d.err = e
+	if e != nil {
+		Pr("*** Setting database error:", INDENT, e)
+	}
+}
+
+func (d DatabaseSim) CreateTables() {
+	Todo("CreateTables")
 }
