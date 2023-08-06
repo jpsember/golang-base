@@ -13,11 +13,12 @@ import (
 )
 
 type DatabaseStruct struct {
-	state          int
-	err            error
-	dataSourceName string
-	db             *sql.DB
-	theLock        sync.Mutex
+	state                    int
+	err                      error
+	dataSourceName           string
+	db                       *sql.DB
+	theLock                  sync.Mutex
+	stmtSelectSpecificAnimal *sql.Stmt
 }
 
 type Database = *DatabaseStruct
@@ -36,8 +37,11 @@ func newDatabase() Database {
 
 var singletonDatabase Database
 
+func (db Database) prepareStatements() {
+	db.stmtSelectSpecificAnimal = db.preparedStatement(`SELECT * FROM animal WHERE uid = ?`)
+}
+
 func CreateDatabase() Database {
-	Todo("Can we use a channel to access the database in a threadsafe manner?")
 	CheckState(singletonDatabase == nil, "<1Singleton database already exists")
 	singletonDatabase = newDatabase()
 	return Db()
@@ -63,6 +67,7 @@ func (db Database) Open() error {
 		db.state = dbStateFailed
 	} else {
 		db.state = dbStateOpen
+		db.prepareStatements()
 		db.createTables()
 	}
 	return db.err
@@ -150,44 +155,30 @@ func (db Database) AddAnimal(a AnimalBuilder) error {
 	return db.err
 }
 
-func (db Database) GetAnimal(id int) (Animal, error) {
-	db.lock()
-	defer db.unlock()
-	Pr("GetAnimal:", id)
-
-	// See https://go.dev/doc/database/prepared-statements
-
-	database := db.db
-	const sqlStr string = ` SELECT * FROM animal WHERE uid = ?;`
-	stmt, err := database.Prepare(sqlStr)
-	db.failIfError(err)
-
-	// Execute the prepared statement, passing in an id value for the
-	// parameter whose placeholder is ?
-
-	Todo("what receivers can we use here? Can we point directly to the golang dataclasses?")
-	ab := NewAnimal()
-	//var name string
-	//var summary string
-	//var details string
-	//var campaignTarget int
-	//var campaignBalance int
-
-	Todo("figure out how best to read in fields using SQL.")
-	//name, summary, details, campaign_target, campaign_balance
-	rows := stmt.QueryRow(id)
-	err = rows.Scan(&ab.Zid, &ab.Zname, &ab.Zsummary, &ab.Zdetails, &ab.ZcampaignTarget, &ab.ZcampaignBalance)
-
-	var result Animal
+func (db Database) scanAnimal(rows *sql.Row) AnimalBuilder {
+	var ab AnimalBuilder
+	var id int64
+	var name string
+	var summary string
+	var details string
+	var campaignTarget, campaignBalance int32
+	err := rows.Scan(&id, &name, &summary, &details, &campaignTarget, &campaignBalance)
 	if err != nil && err != sql.ErrNoRows {
 		db.setError(err)
 	} else if err != sql.ErrNoRows {
-
-		//ab.SetId(int64(id))
-		//ab.SetName(name).SetSummary(summary).SetDetails(details).SetCampaignBalance(int32(campaignBalance)).SetCampaignTarget(int32(campaignTarget))
-		Pr("returning:", ab)
-		result = ab.Build()
+		ab = NewAnimal().SetId(id).SetName(name).SetSummary(summary).SetDetails(details).SetCampaignTarget(campaignTarget).SetCampaignBalance(campaignBalance)
 	}
+	return ab
+}
+
+func (db Database) GetAnimal(id int) (Animal, error) {
+	db.lock()
+	defer db.unlock()
+	pr := PrIf(false)
+	pr("GetAnimal:", id)
+	rows := db.stmtSelectSpecificAnimal.QueryRow(id)
+	result := db.scanAnimal(rows)
+	pr("result:", INDENT, result)
 	return result, db.err
 }
 
@@ -208,5 +199,10 @@ func (db Database) failIfError(err error) {
 	if err != nil {
 		BadState("<1Serious error has occurred:", err)
 	}
+}
 
+func (db Database) preparedStatement(sqlStr string) *sql.Stmt {
+	stmt, err := db.db.Prepare(sqlStr)
+	db.failIfError(err)
+	return stmt
 }
