@@ -192,8 +192,10 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	m.Col(4)
 	for i := 1; i < 12; i++ {
-		Todo("figure out how to make this call thread safe via lock")
-		anim := Db().GetAnimal(i)
+		anim, err := Db().GetAnimal(i)
+		if err != nil {
+			Pr("what do we do with unexpected errors?", INDENT, err)
+		}
 		if anim == nil {
 			continue
 		}

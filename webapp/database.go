@@ -9,6 +9,7 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	_ "github.com/mattn/go-sqlite3"
+	"sync"
 )
 
 type DatabaseStruct struct {
@@ -16,6 +17,7 @@ type DatabaseStruct struct {
 	err            error
 	dataSourceName string
 	db             *sql.DB
+	theLock        sync.Mutex
 }
 
 type Database = *DatabaseStruct
@@ -52,48 +54,40 @@ func (db Database) SetDataSourceName(dataSourceName string) {
 	Alert("<1Setting data source name:", dataSourceName, CurrentDirectory())
 }
 
-func (db Database) Open() {
+func (db Database) Open() error {
 	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
 	CheckState(db.dataSourceName != "", "<1No call to SetDataSourceName made")
 	database, err := sql.Open("sqlite3", db.dataSourceName)
 	db.db = database
-	if db.SetError(err) {
+	if db.setError(err) {
 		db.state = dbStateFailed
-		return
+	} else {
+		db.state = dbStateOpen
+		db.createTables()
 	}
-	db.state = dbStateOpen
-	db.CreateTables()
+	return db.err
 }
 
-func (db Database) Close() {
+func (db Database) Close() error {
 	if db.state == dbStateOpen {
-		db.err = db.db.Close()
+		db.lock()
+		defer db.unlock()
+		db.setError(db.db.Close())
 		db.state = dbStateClosed
 	}
+	return db.err
 }
 
-func (db Database) SetError(e error) bool {
-	db.err = e
-	if db.HasError() {
-		Alert("<1#50Setting database error:", INDENT, e)
+// If no registered error exists, set it.  Return true if registered error exists afterwards.
+func (db Database) setError(err error) bool {
+	if err != nil {
+		if db.err != nil {
+			db.err = err
+			Alert("<1#50Setting database error:", INDENT, err)
+		}
+		return true
 	}
-	return db.HasError()
-}
-
-func (db Database) HasError() bool {
-	return db.err != nil
-}
-
-func (db Database) ClearError() Database {
-	db.err = nil
-	return db
-}
-
-func (db Database) AssertOk() Database {
-	if db.HasError() {
-		BadState("<1DatabaseSqlite has an error:", db.err)
-	}
-	return db
+	return false
 }
 
 func SQLiteExperiment() {
@@ -103,19 +97,17 @@ func SQLiteExperiment() {
 	// We're running from within the webapp subdirectory...
 	d.SetDataSourceName("../sqlite/jeff_experiment.db")
 	d.Open()
-	d.AssertOk()
 
 	Pr("opened db")
 	d.DeleteAllRowsInTable("animal")
 	for i := 0; i < 20; i++ {
 		a := RandomAnimal()
 		d.AddAnimal(a)
-		d.AssertOk()
 		Pr("added animal:", INDENT, a)
 	}
 }
 
-func (db Database) CreateTables() {
+func (db Database) createTables() {
 	database := db.db
 	Todo("!Add support for prepared statements")
 	{
@@ -130,66 +122,91 @@ func (db Database) CreateTables() {
      campaign_balance INT 
      );`
 		_, err := database.Exec(create)
-		db.SetError(err)
-		db.AssertOk()
+		db.setError(err)
 	}
 }
 
-func (db Database) DeleteAllRowsInTable(name string) {
+func (db Database) DeleteAllRowsInTable(name string) error {
+	db.lock()
+	defer db.unlock()
 	database := db.db
 	Todo("are semicolons needed in sql commands?")
 	_, err := database.Exec(`DELETE FROM ` + name)
-	db.SetError(err)
-	db.AssertOk()
+	db.setError(err)
+	return db.err
 }
 
-func (db Database) AddAnimal(a AnimalBuilder) {
-	db.ClearError()
+func (db Database) AddAnimal(a AnimalBuilder) error {
+	db.lock()
+	defer db.unlock()
 	result, err := db.db.Exec(`INSERT INTO animal (name, summary, details, campaign_target, campaign_balance) VALUES(?,?,?,?,?)`,
 		a.Name(), a.Summary(), a.Details(), a.CampaignTarget(), a.CampaignBalance())
-	if !db.SetError(err) {
+	if !db.setError(err) {
 		id, err2 := result.LastInsertId()
-		if !db.SetError(err2) {
+		if !db.setError(err2) {
 			a.SetId(id)
 		}
 	}
+	return db.err
 }
 
-func (db Database) GetAnimal(id int) Animal {
+func (db Database) GetAnimal(id int) (Animal, error) {
+	db.lock()
+	defer db.unlock()
 	Pr("GetAnimal:", id)
-	db.ClearError()
 
 	// See https://go.dev/doc/database/prepared-statements
 
 	database := db.db
 	const sqlStr string = ` SELECT * FROM animal WHERE uid = ?;`
 	stmt, err := database.Prepare(sqlStr)
-
-	db.SetError(err)
-	db.AssertOk()
+	db.failIfError(err)
 
 	// Execute the prepared statement, passing in an id value for the
 	// parameter whose placeholder is ?
 
-	//var id int
-	var name string
-	var summary string
-	var details string
-	var campaignTarget int
-	var campaignBalance int
+	Todo("what receivers can we use here? Can we point directly to the golang dataclasses?")
+	ab := NewAnimal()
+	//var name string
+	//var summary string
+	//var details string
+	//var campaignTarget int
+	//var campaignBalance int
 
+	Todo("figure out how best to read in fields using SQL.")
 	//name, summary, details, campaign_target, campaign_balance
 	rows := stmt.QueryRow(id)
-	err = rows.Scan(&id, &name, &summary, &details, &campaignTarget, &campaignBalance)
+	err = rows.Scan(&ab.Zid, &ab.Zname, &ab.Zsummary, &ab.Zdetails, &ab.ZcampaignTarget, &ab.ZcampaignBalance)
 
+	var result Animal
 	if err != nil && err != sql.ErrNoRows {
-		db.SetError(err)
+		db.setError(err)
 	} else if err != sql.ErrNoRows {
-		ab := NewAnimal()
-		ab.SetId(int64(id))
-		ab.SetName(name).SetSummary(summary).SetDetails(details).SetCampaignBalance(int32(campaignBalance)).SetCampaignTarget(int32(campaignTarget))
+
+		//ab.SetId(int64(id))
+		//ab.SetName(name).SetSummary(summary).SetDetails(details).SetCampaignBalance(int32(campaignBalance)).SetCampaignTarget(int32(campaignTarget))
 		Pr("returning:", ab)
-		return ab.Build()
+		result = ab.Build()
 	}
-	return nil
+	return result, db.err
+}
+
+// Acquire the lock on the database, and clear the error register.
+func (db Database) lock() {
+	if db.state != dbStateOpen {
+		BadState("<1Illegal state:", db.state)
+	}
+	db.theLock.Lock()
+	db.err = nil
+}
+
+func (db Database) unlock() {
+	db.theLock.Unlock()
+}
+
+func (db Database) failIfError(err error) {
+	if err != nil {
+		BadState("<1Serious error has occurred:", err)
+	}
+
 }
