@@ -48,27 +48,27 @@ func Db() Database {
 	return singletonDatabase
 }
 
-func (d Database) flushChanges() {
+func (db Database) flushChanges() {
 	Alert("#50<1Flushing changes")
-	for _, mt := range d.memTables {
+	for _, mt := range db.memTables {
 		if mt.modified {
-			p := d.getSimFile(mt)
+			p := db.getSimFile(mt)
 			p.WriteStringM(mt.table.CompactString())
 			mt.modified = false
 		}
 	}
-	d.changesWrittenTime = CurrentTimeMs()
+	db.changesWrittenTime = CurrentTimeMs()
 }
 
 // This method does nothing in this version
-func (d Database) SetDataSourceName(dataSourceName string) {
-	CheckState(d.state == dbStateNew, "Illegal state:", d.state)
+func (db Database) SetDataSourceName(dataSourceName string) {
+	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
 }
 
-func (d Database) Open() {
-	CheckState(d.state == dbStateNew, "Illegal state:", d.state)
-	d.state = dbStateOpen
-	d.createTables()
+func (db Database) Open() {
+	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
+	db.state = dbStateOpen
+	db.createTables()
 }
 
 func (db Database) Close() {
@@ -80,17 +80,17 @@ func (db Database) Close() {
 	}
 }
 
-func (d Database) setError(e error) bool {
+func (db Database) setError(e error) bool {
 	if e != nil {
-		if d.err != nil {
-			d.err = e
+		if db.err != nil {
+			db.err = e
 			Alert("<1#50Setting database error:", INDENT, e)
 		}
 	}
-	return d.err != nil
+	return db.err != nil
 }
 
-func (d Database) createTables() {
+func (db Database) createTables() {
 }
 
 func (db Database) GetAnimal(id int) (Animal, error) {
@@ -98,7 +98,6 @@ func (db Database) GetAnimal(id int) (Animal, error) {
 	defer db.unlock()
 	mp := db.getTable("animal")
 	obj := mp.GetData(id, DefaultAnimal)
-	Todo("does defer statement interfere with db.err?")
 	return obj.(Animal), db.err
 }
 
@@ -118,18 +117,18 @@ const SECONDS = 1000
 const MINUTES = SECONDS * 60
 const HOURS = MINUTES * 60
 
-func (d Database) setModified(mt MemTable) {
+func (db Database) setModified(mt MemTable) {
 	mt.modified = true
 	currTime := CurrentTimeMs()
-	elapsed := currTime - d.changesWrittenTime
+	elapsed := currTime - db.changesWrittenTime
 	Pr("setting table modified:", mt.name, "ms since written:", elapsed)
 	if elapsed > SECONDS*20 {
-		d.flushChanges()
+		db.flushChanges()
 	}
 }
 
-func (d Database) flushTable(mt MemTable) {
-	p := d.getSimFile(mt)
+func (db Database) flushTable(mt MemTable) {
+	p := db.getSimFile(mt)
 	p.WriteStringM(mt.table.CompactString())
 }
 
@@ -151,23 +150,23 @@ func SQLiteExperiment() {
 	d.flushChanges()
 }
 
-func (d Database) getTable(name string) MemTable {
-	mt := d.memTables[name]
+func (db Database) getTable(name string) MemTable {
+	mt := db.memTables[name]
 	if mt == nil {
 		mt = NewMemTable(name)
-		d.memTables[name] = mt
-		p := d.getSimFile(mt)
+		db.memTables[name] = mt
+		p := db.getSimFile(mt)
 		mt.table = JSMapFromFileIfExistsM(p)
 	}
 	return mt
 }
 
-func (d Database) getSimFile(m MemTable) Path {
-	if d.simFilesPath.Empty() {
-		d.simFilesPath = NewPathM("simulated_db")
-		d.simFilesPath.MkDirsM()
+func (db Database) getSimFile(m MemTable) Path {
+	if db.simFilesPath.Empty() {
+		db.simFilesPath = NewPathM("simulated_db")
+		db.simFilesPath.MkDirsM()
 	}
-	return d.simFilesPath.JoinM(m.name + ".json")
+	return db.simFilesPath.JoinM(m.name + ".json")
 }
 
 type MemTableStruct struct {
