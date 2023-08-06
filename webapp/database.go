@@ -8,11 +8,13 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"reflect"
+	"sync"
 )
 
 type DatabaseStruct struct {
 	state              int
 	err                error
+	theLock            sync.Mutex
 	memTables          map[string]MemTable
 	simFilesPath       Path
 	changesWrittenTime int64
@@ -24,7 +26,6 @@ const (
 	dbStateNew = iota
 	dbStateOpen
 	dbStateClosed
-	dbStateFailed
 )
 
 var singletonDatabase Database
@@ -47,7 +48,7 @@ func Db() Database {
 	return singletonDatabase
 }
 
-func (d Database) FlushChanges() {
+func (d Database) flushChanges() {
 	Alert("#50<1Flushing changes")
 	for _, mt := range d.memTables {
 		if mt.modified {
@@ -67,56 +68,50 @@ func (d Database) SetDataSourceName(dataSourceName string) {
 func (d Database) Open() {
 	CheckState(d.state == dbStateNew, "Illegal state:", d.state)
 	d.state = dbStateOpen
-	d.CreateTables()
+	d.createTables()
 }
 
-func (d Database) Close() {
-	d.state = dbStateClosed
-}
-
-func (d Database) SetError(e error) bool {
-	d.err = e
-	if d.HasError() {
-		Alert("<1#50Setting database error:", INDENT, e)
+func (db Database) Close() {
+	if db.state == dbStateOpen {
+		db.lock()
+		defer db.unlock()
+		db.flushChanges()
+		db.state = dbStateClosed
 	}
-	return d.HasError()
 }
 
-func (d Database) HasError() bool {
+func (d Database) setError(e error) bool {
+	if e != nil {
+		if d.err != nil {
+			d.err = e
+			Alert("<1#50Setting database error:", INDENT, e)
+		}
+	}
 	return d.err != nil
 }
 
-func (d Database) ClearError() Database {
-	d.err = nil
-	return d
+func (d Database) createTables() {
 }
 
-func (d Database) AssertOk() Database {
-	if d.HasError() {
-		BadState("<1DatabaseSqlite has an error:", d.err)
-	}
-	return d
-}
-
-func (d Database) CreateTables() {
-}
-
-func (d Database) GetAnimal(id int) Animal {
-	d.ClearError()
-	mp := d.getTable("animal")
+func (db Database) GetAnimal(id int) (Animal, error) {
+	db.lock()
+	defer db.unlock()
+	mp := db.getTable("animal")
 	obj := mp.GetData(id, DefaultAnimal)
-	return obj.(Animal)
+	Todo("does defer statement interfere with db.err?")
+	return obj.(Animal), db.err
 }
 
-func (d Database) AddAnimal(a AnimalBuilder) {
-	d.ClearError()
-	mp := d.getTable("animal")
+func (db Database) AddAnimal(a AnimalBuilder) {
+	db.lock()
+	defer db.unlock()
+	mp := db.getTable("animal")
 	id := mp.nextUniqueKey()
 	a.SetId(int64(id))
 	mp.Put(id, a.Build())
 	Todo("write modified table periodically")
 	Todo("always writing")
-	d.setModified(mp)
+	db.setModified(mp)
 }
 
 const SECONDS = 1000
@@ -129,11 +124,11 @@ func (d Database) setModified(mt MemTable) {
 	elapsed := currTime - d.changesWrittenTime
 	Pr("setting table modified:", mt.name, "ms since written:", elapsed)
 	if elapsed > SECONDS*20 {
-		d.FlushChanges()
+		d.flushChanges()
 	}
 }
 
-func (d Database) FlushTable(mt MemTable) {
+func (d Database) flushTable(mt MemTable) {
 	p := d.getSimFile(mt)
 	p.WriteStringM(mt.table.CompactString())
 }
@@ -145,17 +140,15 @@ func SQLiteExperiment() {
 	// We're running from within the webapp subdirectory...
 	d.SetDataSourceName("../sqlite/jeff_experiment.db")
 	d.Open()
-	d.AssertOk()
 
 	Pr("opened db")
 
 	for i := 0; i < 100; i++ {
 		a := RandomAnimal()
 		d.AddAnimal(a)
-		d.AssertOk()
 		Pr("added animal:", INDENT, a)
 	}
-	d.FlushChanges()
+	d.flushChanges()
 }
 
 func (d Database) getTable(name string) MemTable {
@@ -258,4 +251,23 @@ func argToMemtableValue(val any) JSMap {
 		BadArg("illegal value:", val, "type:", reflect.TypeOf(val))
 	}
 	return strKey
+}
+
+// Acquire the lock on the database, and clear the error register.
+func (db Database) lock() {
+	if db.state != dbStateOpen {
+		BadState("<1Illegal state:", db.state)
+	}
+	db.theLock.Lock()
+	db.err = nil
+}
+
+func (db Database) unlock() {
+	db.theLock.Unlock()
+}
+
+func (db Database) failIfError(err error) {
+	if err != nil {
+		BadState("<1Serious error has occurred:", err)
+	}
 }
