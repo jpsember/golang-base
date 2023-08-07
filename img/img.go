@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"image"
 	"image/draw"
+	"image/png"
 )
 
 import (
@@ -112,8 +113,8 @@ func (ji JImage) AsType(desiredType JImageType) (JImage, error) {
 	} else {
 		var m draw.Image
 		switch desiredType {
-		case TypeRGBA:
-			m = image.NewRGBA(image.Rect(0, 0, ji.Size().X, ji.Size().Y))
+		case TypeNRGBA:
+			m = image.NewNRGBA(image.Rect(0, 0, ji.Size().X, ji.Size().Y))
 		}
 		if m != nil {
 			draw.Draw(m, m.Bounds(), ji.Image(), image.Point{}, draw.Src)
@@ -125,4 +126,15 @@ func (ji JImage) AsType(desiredType JImageType) (JImage, error) {
 	} else {
 		return result, nil
 	}
+}
+
+func (ji JImage) ToPNG() ([]byte, error) {
+	if ji.Type() != TypeNRGBA {
+		return nil, Error("Cannot convert to PNG", ji.ToJson())
+	}
+
+	var bb bytes.Buffer
+	err := png.Encode(&bb, ji.Image())
+	Todo("wrap an error here?")
+	return bb.Bytes(), err
 }

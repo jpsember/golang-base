@@ -1,14 +1,9 @@
 package main
 
 import (
-	"bufio"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	"github.com/jpsember/golang-base/img"
-	"github.com/sunshineplan/imgconv"
-	"image"
-	"image/draw"
-	"os"
 )
 
 func main() {
@@ -50,66 +45,20 @@ func (oper *ImgOper) Perform(app *App) {
 
 	// Reading this image using go's standard image library produces a strange format:
 	bytes := p.ReadBytesM()
-	stdLibraryImage := CheckOkWith(img.DecodeImage(bytes))
-	Pr("original (std lib), info:", stdLibraryImage.ToJson())
-
-	// Reading it with the 3rd party produces the same format:
-	originalImage := CheckOkWith(imgconv.Open(p.String()))
-	Pr("original (3rd party), info:", img.GetImageInfo(originalImage))
+	originalImage := CheckOkWith(img.DecodeImage(bytes))
+	Pr("original (std lib), info:", originalImage.ToJson())
 
 	{
-		orig := img.JImageOf(originalImage)
-
-		targ, err := orig.AsType(img.TypeRGBA)
+		targ, err := originalImage.AsType(img.TypeNRGBA)
 		CheckOk(err)
 
-		targetFile := CheckOkWith(os.Create("_SKIP_image_of_type.png"))
+		targetPath := NewPathM("_SKIP_image_of_type.png")
 
-		writer := bufio.NewWriter(targetFile)
-		CheckOk(imgconv.Write(writer, targ.Image(), &imgconv.FormatOption{Format: imgconv.PNG}))
-		writer.Flush()
+		pngBytes := CheckOkWith(targ.ToPNG())
+		targetPath.WriteBytesM(pngBytes)
 
 		Pr("converted:", img.GetImageInfo(targ.Image()))
 		return
 	}
-
-	{
-
-		// We construct a target image of our desired format, and redraw the source image into it;
-		// This hopefully yields an image of the type we want.
-
-		// See:
-		// https://stackoverflow.com/questions/47535474/convert-image-from-image-ycbcr-to-image-rgba
-		b := stdLibraryImage.Image().Bounds()
-		m := image.NewRGBA(image.Rect(0, 0, b.Dx(), b.Dy()))
-		draw.Draw(m, m.Bounds(), stdLibraryImage.Image(), b.Min, draw.Src)
-		redrawnImage := img.JImageOf(m)
-		Pr("redrawn using img/draw, info:", redrawnImage.ToJson())
-
-		// Write the resulting image as PNG.
-		targetFile := CheckOkWith(os.Create("_SKIP_redrawn.png"))
-		defer targetFile.Close()
-
-		writer := bufio.NewWriter(targetFile)
-		CheckOk(imgconv.Write(writer, redrawnImage.Image(), &imgconv.FormatOption{Format: imgconv.PNG}))
-		writer.Flush()
-	}
-
-	// Resize the image to a particular width, preserving the aspect ratio.
-	modifiedImage := imgconv.Resize(originalImage, &imgconv.ResizeOption{Width: originalImage.Bounds().Dx()})
-
-	// The resize operation has changed the image format!
-	Pr("modified, info:", img.GetImageInfo(modifiedImage))
-
-	// Write the resulting image as PNG.
-	targetFile := CheckOkWith(os.Create("_SKIP_result.png"))
-	defer targetFile.Close()
-
-	writer := bufio.NewWriter(targetFile)
-	CheckOk(imgconv.Write(writer, modifiedImage, &imgconv.FormatOption{Format: imgconv.PNG}))
-	writer.Flush()
-
-	convertedImage := CheckOkWith(imgconv.Open("_SKIP_result.png"))
-	Pr("converted, info:", img.GetImageInfo(convertedImage))
 
 }
