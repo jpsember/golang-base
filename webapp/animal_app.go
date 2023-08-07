@@ -43,6 +43,18 @@ func (oper AjaxOper) Perform(app *App) {
 	db.SetDataSourceName("../sqlite/jeff_experiment.db")
 	db.Open()
 
+	if false && Alert("blob experiment") {
+		data := []byte{
+			2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
+		}
+		for i := 0; i < 10; i++ {
+			Pr("inserting:", i)
+			bl, err := db.InsertBlob(data)
+			Pr("result:", INDENT, bl, CR, err)
+		}
+		Halt()
+	}
+
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")

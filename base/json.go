@@ -296,7 +296,13 @@ func toHex(target []byte, value int, digits int) []byte {
 func ToJSEntity(value any) JSEntity {
 	var val JSEntity
 	switch v := value.(type) {
+	case uint:
+		val = MakeJInteger(int64(v))
 	case int:
+		val = MakeJInteger(int64(v))
+	case uint8:
+		val = MakeJInteger(int64(v))
+	case int8:
 		val = MakeJInteger(int64(v))
 	case int32:
 		val = MakeJInteger(int64(v))
@@ -304,7 +310,7 @@ func ToJSEntity(value any) JSEntity {
 		val = MakeJInteger(int64(v))
 	case int64:
 		val = MakeJInteger(v)
-	case uint:
+	case uint64:
 		val = MakeJInteger(int64(v))
 	case float32:
 		val = MakeJFloat(float64(v))

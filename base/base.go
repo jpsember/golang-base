@@ -157,9 +157,13 @@ func auxPanic(skipCount int, prefix string, message ...any) {
 	msg := CallerLocation(prefixInfo.skipCount+messageInfo.skipCount+skipCount+1) + " *** " + prefixInfo.key + "! " + messageInfo.key
 
 	if !testAlertState {
+		Todo("Panic doesn't exit the program, so this is misnamed")
 		// Print the panic to stdout in case it doesn't later get printed in this convenient way for some other reason
 		fmt.Println(msg)
-		panic(msg)
+		debug.PrintStack()
+		os.Exit(1)
+		//Pr("panicking with:", msg)
+		//panic(msg)
 	} else {
 		TestPanicMessageLog.WriteString(msg + "\n")
 	}
@@ -551,7 +555,7 @@ func processAlertForMultipleSessions(info alertInfo) bool {
 }
 
 func CurrentTimeMs() int64 {
-	return int64(time.Now().Unix())
+	return time.Now().Unix()
 }
 
 func SleepMs(ms int) {

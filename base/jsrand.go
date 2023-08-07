@@ -2,6 +2,7 @@ package base
 
 import (
 	"math/rand"
+	"time"
 )
 
 type jsRandStruct struct {
@@ -25,10 +26,14 @@ func (r JSRand) SetSeed(seed int) JSRand {
 func (r JSRand) Rand() *rand.Rand {
 	if !r.built {
 		if r.seed == 0 {
-			r.seed = CurrentTimeMs()
+			// This global counter is used to avoid generating the same seed if multiple Rand()'s are generated in a very short period
+			extraRandTicker++
+			r.seed = time.Now().UnixNano() + extraRandTicker
 		}
 		r.random = rand.New(rand.NewSource(r.seed))
 		r.built = true
 	}
 	return r.random
 }
+
+var extraRandTicker int64

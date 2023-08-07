@@ -2,7 +2,11 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"strings"
+	"sync"
 )
+
+type BlobId = string
 
 type Currency = int32
 
@@ -23,3 +27,22 @@ func CurrencyToString(amount Currency) string {
 	pr("returning:", result)
 	return result
 }
+
+func GenerateBlobId() BlobId {
+	alph := "0123456789abcdef"
+	sb := strings.Builder{}
+	lock.Lock()
+	defer lock.Unlock()
+	r := ourRand.Rand()
+	for i := 0; i < 32; i++ {
+		x := r.Intn(16)
+		sb.WriteByte(alph[x])
+		if i == 8 || i == 13 || i == 18 || i == 23 {
+			sb.WriteByte('-')
+		}
+	}
+	return sb.String()
+}
+
+var ourRand = NewJSRand()
+var lock sync.Mutex
