@@ -55,6 +55,10 @@ func JImageOf(image image.Image) JImage {
 	return t
 }
 
+func (ji JImage) Image() image.Image {
+	return ji.image
+}
+
 func (ji JImage) Type() JImageType {
 
 	if ji.imageType == typeUnitialized {
