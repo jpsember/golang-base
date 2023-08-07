@@ -12,6 +12,8 @@ dgen.sh
   done \
 )
 
+go mod tidy
+
 echo
 echo Unit tests
 echo
