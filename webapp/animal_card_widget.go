@@ -52,8 +52,8 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		picCounter++
 		imgUrl := IntToString(MyMod(picCounter, 3)) + ".jpg"
 		Todo("!add support for image based on particular animal")
-		m.Comment("animal image").VoidTag(`img class="card-img-top" src="`, imgUrl, `"`)
-		//m.Pr(`<img class="card-img-top" src="0.jpg">`).Cr()
+		m.Comment("animal image").VoidTag(`jimg class="card-jimg-top" src="`, imgUrl, `"`)
+		//m.Pr(`<jimg class="card-jimg-top" src="0.jpg">`).Cr()
 
 		// Display title and brief summary
 		m.Comments("title and summary").
