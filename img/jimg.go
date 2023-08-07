@@ -2,14 +2,11 @@ package img
 
 import (
 	"bytes"
-	"image"
-	"image/draw"
-	"image/png"
-)
-
-import (
 	. "github.com/jpsember/golang-base/base"
+	"golang.org/x/image/draw"
+	"image"
 	_ "image/jpeg"
+	"image/png"
 	// Package image/jpeg is not used explicitly in the code below,
 	// but is imported for its initialization side-effect, which allows
 	// image.Decode to understand JPEG formatted images. Uncomment these
@@ -19,13 +16,14 @@ import (
 )
 
 func DecodeImage(imgbytes []byte) (JImage, error) {
-
 	img, format, err := image.Decode(bytes.NewReader(imgbytes))
 	var jmg JImage
 	if err == nil {
 		jmg = JImageOf(img)
 	}
-	Pr("format:", format)
+	if false {
+		Pr("format:", format)
+	}
 	return jmg, err
 }
 
@@ -48,12 +46,26 @@ const (
 	TypeUnknown = -1
 )
 
-func JImageOf(image image.Image) JImage {
+var itmap = map[JImageType]string{
+	TypeNRGBA:   "NRGBA",
+	TypeCMYK:    "CMYK",
+	TypeYCbCr:   "YCbCr",
+	TypeUnknown: "Unknown",
+}
 
-	Todo("discard coordinate system, e.g., bounds not at zero?")
-	CheckNotNil(image)
+func ImageTypeStr(imgType JImageType) string {
+	result := itmap[imgType]
+	if result == "" {
+		result = "???"
+	}
+	return result
+}
+
+func JImageOf(img image.Image) JImage {
+	CheckNotNil(img)
+	CheckArg(img.Bounds().Min == image.Point{}, "origin of image is not at (0,0)")
 	t := &JImageStruct{
-		image: image,
+		image: img,
 	}
 	return t
 }
@@ -95,7 +107,7 @@ func (ji JImage) Size() IPoint {
 func (ji JImage) ToJson() JSMap {
 	m := NewJSMap()
 	m.Put("", "JImage")
-	m.Put("type", int(ji.Type()))
+	m.Put("type", ImageTypeStr(ji.Type()))
 	m.Put("size", ji.Size())
 	return m
 }
@@ -132,20 +144,19 @@ func (ji JImage) ToPNG() ([]byte, error) {
 	if ji.Type() != TypeNRGBA {
 		return nil, Error("Cannot convert to PNG", ji.ToJson())
 	}
-
 	var bb bytes.Buffer
 	err := png.Encode(&bb, ji.Image())
-	Todo("wrap an error here?")
+	if err != nil {
+		Pr("Failed to encode image as PNG")
+	}
 	return bb.Bytes(), err
 }
 
 func (ji JImage) ScaledTo(size IPoint) JImage {
 
-	Todo("the standard library can't scale an image.")
 	var targetX, targetY int
 
 	origSize := ji.Size()
-	Pr("scale, size:", size, "image size:", origSize)
 	if size.X == 0 {
 		if size.Y > 0 {
 			targetY = size.Y
@@ -158,8 +169,8 @@ func (ji JImage) ScaledTo(size IPoint) JImage {
 		}
 	}
 	CheckArg(targetX > 0 && targetY > 0, "Cannot scale image of size", ji.Size(), "to", size)
-
-	m := image.NewNRGBA(image.Rect(0, 0, targetX, targetY))
-	draw.Draw(m, m.Bounds(), ji.Image(), image.Point{}, draw.Src)
-	return JImageOf(m)
+	scaledImage := image.NewNRGBA(image.Rect(0, 0, targetX, targetY))
+	inputImage := ji.Image()
+	draw.ApproxBiLinear.Scale(scaledImage, scaledImage.Bounds(), inputImage, inputImage.Bounds(), draw.Over, nil)
+	return JImageOf(scaledImage)
 }

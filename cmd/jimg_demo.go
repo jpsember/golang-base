@@ -46,20 +46,17 @@ func (oper *ImgOper) Perform(app *App) {
 	// Reading this image using go's standard image library produces a strange format:
 	bytes := p.ReadBytesM()
 	originalImage := CheckOkWith(img.DecodeImage(bytes))
-	Pr("original (std lib), info:", originalImage.ToJson())
+	Pr("original:", INDENT, originalImage.ToJson())
 
-	{
-		targ, err := originalImage.AsType(img.TypeNRGBA)
-		CheckOk(err)
+	targ, err := originalImage.AsType(img.TypeNRGBA)
+	CheckOk(err)
 
-		targ = targ.ScaledTo(IPointWith(80, 0))
-		targetPath := NewPathM("_SKIP_scaled.png")
+	targ = targ.ScaledTo(IPointWith(80, 0))
+	targetPath := NewPathM("_SKIP_scaled.png")
 
-		pngBytes := CheckOkWith(targ.ToPNG())
-		targetPath.WriteBytesM(pngBytes)
+	pngBytes := CheckOkWith(targ.ToPNG())
+	targetPath.WriteBytesM(pngBytes)
 
-		Pr("converted:", img.GetImageInfo(targ.Image()))
-		return
-	}
-
+	Pr("converted:", INDENT, img.GetImageInfo(targ.Image()))
+	return
 }

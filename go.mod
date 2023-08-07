@@ -5,3 +5,8 @@ go 1.20
 require golang.org/x/crypto v0.10.0
 
 require github.com/mattn/go-sqlite3 v1.14.17
+
+require (
+	golang.org/x/image v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
+)
