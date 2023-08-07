@@ -52,7 +52,8 @@ func (oper *ImgOper) Perform(app *App) {
 		targ, err := originalImage.AsType(img.TypeNRGBA)
 		CheckOk(err)
 
-		targetPath := NewPathM("_SKIP_image_of_type.png")
+		targ = targ.ScaledTo(IPointWith(80, 0))
+		targetPath := NewPathM("_SKIP_scaled.png")
 
 		pngBytes := CheckOkWith(targ.ToPNG())
 		targetPath.WriteBytesM(pngBytes)

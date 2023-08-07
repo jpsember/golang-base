@@ -138,3 +138,28 @@ func (ji JImage) ToPNG() ([]byte, error) {
 	Todo("wrap an error here?")
 	return bb.Bytes(), err
 }
+
+func (ji JImage) ScaledTo(size IPoint) JImage {
+
+	Todo("the standard library can't scale an image.")
+	var targetX, targetY int
+
+	origSize := ji.Size()
+	Pr("scale, size:", size, "image size:", origSize)
+	if size.X == 0 {
+		if size.Y > 0 {
+			targetY = size.Y
+			targetX = MaxInt(1, (origSize.X*targetY)/origSize.Y)
+		}
+	} else {
+		if size.X > 0 {
+			targetX = size.X
+			targetY = MaxInt(1, (origSize.Y*targetX)/origSize.X)
+		}
+	}
+	CheckArg(targetX > 0 && targetY > 0, "Cannot scale image of size", ji.Size(), "to", size)
+
+	m := image.NewNRGBA(image.Rect(0, 0, targetX, targetY))
+	draw.Draw(m, m.Bounds(), ji.Image(), image.Point{}, draw.Src)
+	return JImageOf(m)
+}
