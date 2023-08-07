@@ -2,7 +2,6 @@ package img
 
 import (
 	"bytes"
-	"github.com/jpsember/golang-base/webserv"
 	"image"
 )
 
@@ -31,7 +30,7 @@ func DecodeImage(imgbytes []byte) (JImage, error) {
 type JImageStruct struct {
 	image     image.Image
 	imageType JImageType
-	size      webserv.IPoint
+	size      IPoint
 }
 
 type JImage = *JImageStruct
@@ -81,10 +80,10 @@ func (ji JImage) Type() JImageType {
 	return ji.imageType
 }
 
-func (ji JImage) Size() webserv.IPoint {
-	if ji.size == webserv.IPointZero {
+func (ji JImage) Size() IPoint {
+	if ji.size == IPointZero {
 		b := ji.image.Bounds()
-		ji.size = webserv.IPointWith(b.Dx(), b.Dy())
+		ji.size = IPointWith(b.Dx(), b.Dy())
 	}
 	return ji.size
 }
