@@ -3,6 +3,7 @@ package img
 import (
 	"bytes"
 	"image"
+	"image/draw"
 )
 
 import (
@@ -47,6 +48,8 @@ const (
 )
 
 func JImageOf(image image.Image) JImage {
+
+	Todo("discard coordinate system, e.g., bounds not at zero?")
 	CheckNotNil(image)
 	t := &JImageStruct{
 		image: image,
@@ -99,4 +102,27 @@ func (ji JImage) ToJson() JSMap {
 func GetImageInfo(image image.Image) JSMap {
 	ji := JImageOf(image)
 	return ji.ToJson()
+}
+
+func (ji JImage) AsType(desiredType JImageType) (JImage, error) {
+	var result JImage
+	errstring := "unsupported image type"
+	if ji.Type() == desiredType {
+		result = ji
+	} else {
+		var m draw.Image
+		switch desiredType {
+		case TypeRGBA:
+			m = image.NewRGBA(image.Rect(0, 0, ji.Size().X, ji.Size().Y))
+		}
+		if m != nil {
+			draw.Draw(m, m.Bounds(), ji.Image(), image.Point{}, draw.Src)
+			result = JImageOf(m)
+		}
+	}
+	if result == nil {
+		return nil, Error(errstring)
+	} else {
+		return result, nil
+	}
 }

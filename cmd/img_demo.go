@@ -58,6 +58,22 @@ func (oper *ImgOper) Perform(app *App) {
 	Pr("original (3rd party), info:", img.GetImageInfo(originalImage))
 
 	{
+		orig := img.JImageOf(originalImage)
+
+		targ, err := orig.AsType(img.TypeRGBA)
+		CheckOk(err)
+
+		targetFile := CheckOkWith(os.Create("_SKIP_image_of_type.png"))
+
+		writer := bufio.NewWriter(targetFile)
+		CheckOk(imgconv.Write(writer, targ.Image(), &imgconv.FormatOption{Format: imgconv.PNG}))
+		writer.Flush()
+
+		Pr("converted:", img.GetImageInfo(targ.Image()))
+		return
+	}
+
+	{
 
 		// We construct a target image of our desired format, and redraw the source image into it;
 		// This hopefully yields an image of the type we want.
