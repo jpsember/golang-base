@@ -40,7 +40,6 @@ func (oper *ImgOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper *ImgOper) Perform(app *App) {
-
 	pth := NewPathM("img/resources/0.jpg")
 	pth.ReadBytesM()
 }
