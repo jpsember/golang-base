@@ -3,7 +3,7 @@ package main
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/img"
+	"github.com/jpsember/golang-base/jimg"
 )
 
 func main() {
@@ -22,7 +22,7 @@ type ImgOper struct {
 }
 
 func (oper *ImgOper) UserCommand() string {
-	return "img"
+	return "jimg"
 }
 
 func (oper *ImgOper) GetHelp(bp *BasePrinter) {
@@ -41,14 +41,14 @@ func (oper *ImgOper) ProcessArgs(c *CmdLineArgs) {
 
 func (oper *ImgOper) Perform(app *App) {
 
-	p := NewPathM("img/resources/balloons.jpg")
+	p := NewPathM("jimg/resources/balloons.jpg")
 
 	// Reading this image using go's standard image library produces a strange format:
 	bytes := p.ReadBytesM()
-	originalImage := CheckOkWith(img.DecodeImage(bytes))
+	originalImage := CheckOkWith(jimg.DecodeImage(bytes))
 	Pr("original:", INDENT, originalImage.ToJson())
 
-	targ, err := originalImage.AsType(img.TypeNRGBA)
+	targ, err := originalImage.AsType(jimg.TypeNRGBA)
 	CheckOk(err)
 
 	targ = targ.ScaledTo(IPointWith(80, 0))
@@ -57,6 +57,6 @@ func (oper *ImgOper) Perform(app *App) {
 	pngBytes := CheckOkWith(targ.ToPNG())
 	targetPath.WriteBytesM(pngBytes)
 
-	Pr("converted:", INDENT, img.GetImageInfo(targ.Image()))
+	Pr("converted:", INDENT, jimg.GetImageInfo(targ.Image()))
 	return
 }
