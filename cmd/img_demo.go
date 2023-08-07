@@ -4,6 +4,7 @@ import (
 	"bufio"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/img"
 	"github.com/sunshineplan/imgconv"
 	"os"
 )
@@ -44,10 +45,12 @@ func (oper *ImgOper) ProcessArgs(c *CmdLineArgs) {
 func (oper *ImgOper) Perform(app *App) {
 
 	// Read the original image
-	originalImage := CheckOkWith(imgconv.Open("img/resources/0.jpg"))
+	originalImage := CheckOkWith(imgconv.Open("img/resources/balloons.jpg"))
 
 	// Resize the image to a particular width, preserving the aspect ratio.
 	modifiedImage := imgconv.Resize(originalImage, &imgconv.ResizeOption{Width: 40})
+
+	Pr("modified, info:", img.GetImageInfo(modifiedImage))
 
 	// Write the resulting image as PNG.
 	targetFile := CheckOkWith(os.Create("_SKIP_result.png"))
@@ -55,6 +58,9 @@ func (oper *ImgOper) Perform(app *App) {
 
 	writer := bufio.NewWriter(targetFile)
 	CheckOk(imgconv.Write(writer, modifiedImage, &imgconv.FormatOption{Format: imgconv.PNG}))
-
 	writer.Flush()
+
+	convertedImage := CheckOkWith(imgconv.Open("_SKIP_result.png"))
+	Pr("converted, info:", img.GetImageInfo(convertedImage))
+
 }

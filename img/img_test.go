@@ -9,7 +9,7 @@ import (
 
 func TestReadJpg(t *testing.T) {
 	j := jt.Newz(t)
-	p := NewPathM("resources/sample.png")
+	p := NewPathM("resources/balloons.jpg")
 	bytes := p.ReadBytesM()
 	i, err := img.DecodeImage(bytes)
 	CheckOk(err)

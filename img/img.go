@@ -2,6 +2,7 @@ package img
 
 import (
 	"bytes"
+	"github.com/jpsember/golang-base/webserv"
 	"image"
 )
 
@@ -30,6 +31,7 @@ func DecodeImage(imgbytes []byte) (JImage, error) {
 type JImageStruct struct {
 	image     image.Image
 	imageType JImageType
+	size      webserv.IPoint
 }
 
 type JImage = *JImageStruct
@@ -75,9 +77,23 @@ func (ji JImage) Type() JImageType {
 	return ji.imageType
 }
 
+func (ji JImage) Size() webserv.IPoint {
+	if ji.size == webserv.IPointZero {
+		b := ji.image.Bounds()
+		ji.size = webserv.IPointWith(b.Dx(), b.Dy())
+	}
+	return ji.size
+}
+
 func (ji JImage) ToJson() JSMap {
 	m := NewJSMap()
 	m.Put("", "JImage")
 	m.Put("type", int(ji.Type()))
+	m.Put("size", ji.Size())
 	return m
+}
+
+func GetImageInfo(image image.Image) JSMap {
+	ji := JImageOf(image)
+	return ji.ToJson()
 }

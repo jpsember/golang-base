@@ -1,6 +1,9 @@
 package webserv
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/jpsember/golang-base/base"
+)
 
 type IPoint struct {
 	X int
@@ -15,6 +18,22 @@ var IPointZero = IPoint{}
 
 func (p IPoint) String() string {
 	return fmt.Sprintf("[x:%v y:%v]", p.X, p.Y)
+}
+
+// Make it support the DataClass interface
+
+func (p IPoint) ToJson() base.JSEntity {
+	return base.NewJSList().Add(p.X).Add(p.Y)
+}
+
+func (p IPoint) Parse(source base.JSEntity) base.DataClass {
+	lst := source.AsJSList()
+	x := lst.Get(0).AsInteger()
+	y := lst.Get(1).AsInteger()
+	return IPoint{
+		X: int(x),
+		Y: int(y),
+	}
 }
 
 type Size struct {
