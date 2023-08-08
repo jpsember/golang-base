@@ -654,6 +654,10 @@ func MyMod(value int, divisor int) int {
 	return k
 }
 
+// ------------------------------------------------------------------------------------
+// Strack traces
+// ------------------------------------------------------------------------------------
+
 type StackTraceStruct struct {
 	Preamble       string
 	Content        string
@@ -665,12 +669,11 @@ type StackTraceStruct struct {
 type StackTrace = *StackTraceStruct
 
 func GenerateStackTrace(skipFactor int) StackTrace {
-	t := NewStackTrace(string(debug.Stack()), 2+skipFactor)
-	return t
+	return NewStackTrace(string(debug.Stack()), 2+skipFactor)
 }
 
 func NewStackTrace(content string, skipFactor int) StackTrace {
-	Pr("NewStackTrace with content:", INDENT, Quoted(content))
+	//Pr("NewStackTrace with content:", INDENT, Quoted(content))
 	t := &StackTraceStruct{}
 	t.SkipFactor = skipFactor
 	t.parse(content)
@@ -686,21 +689,32 @@ func (st StackTrace) String() string {
 }
 
 func (st StackTrace) parse(content string) {
-	repoDir, err := FindRepoDir()
+
+	// If the paths we parse lie within the current git repo, we'll show only their filenames.
+	//
 	var repoDirPrefix string
-	if err == nil {
+	if repoDir, err := FindRepoDir(); err == nil {
 		repoDirPrefix = repoDir.String()
 	}
 
 	st.Content = content
-	lns := strings.Split(content, "\n")
 
 	skipped := 0
 	rows := NewArray[string]()
+	Pr("what is prefix, exactly?")
 	prefix := ""
-	for _, val := range lns {
+
+	for _, val := range strings.Split(content, "\n") {
 		result := val
 		for {
+			// The first line in the stack trace seems to always be something like 'goroutine 1 [running]:', so
+			// it doesn't follow the pattern of
+			//
+			//     {package name} {name + arguments of caller function}
+			//     {file where function was called}:{line number within file}  +{relative position of the function within the stack frame}
+			//
+			// ...so, store it as a 'preamble'
+			//
 			if strings.HasPrefix(val, "goroutine ") {
 				st.Preamble = val
 				result = ""
