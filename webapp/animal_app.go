@@ -3,9 +3,11 @@ package webapp
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
+	"log"
+	"os"
+	"runtime/debug"
 
 	. "github.com/jpsember/golang-base/webserv"
-	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -33,8 +35,62 @@ func (oper AjaxOper) GetHelp(bp *BasePrinter) {
 func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 }
 
+func ShowStackTrace() {
+	//Pr("printing stack:")
+	//debug.PrintStack()
+	Pr("generating stack:")
+	y := debug.Stack()
+	x := string(y)
+	lns := strings.Split(x, "\n")
+
+	prefix := ""
+	for _, val := range lns {
+		result := val
+		for {
+			if strings.HasPrefix(val, "goroutine ") {
+				result = ""
+				break
+			}
+
+			if strings.HasPrefix(val, "\t") {
+				val := strings.TrimSpace(val)
+				cols := strings.Fields(val)
+				if len(cols) != 2 {
+					break
+				}
+				result = cols[0]
+				break
+			}
+			j := strings.LastIndex(val, "(")
+			if j < 0 {
+				break
+			}
+			q := strings.LastIndex(val[0:j], ".")
+			if q < 0 {
+				break
+			}
+			prefix = val[q+1 : j]
+			result = ""
+			break
+		}
+		if result != "" {
+			Pr(result + " " + prefix)
+		}
+	}
+	//Pr(CurrentDirectory())
+	Pr("animal_app.go:89")
+	Pr("zero.go:89")
+
+	//Pr(lns)
+	os.Exit(1)
+}
 func (oper AjaxOper) Perform(app *App) {
 
+	Die("wtf")
+	if true && Alert("stack trace experiment") {
+		Pr(GenerateStackTrace(0))
+		return
+	}
 	if false && Alert("Performing sql experiment") {
 		SQLiteExperiment()
 		return

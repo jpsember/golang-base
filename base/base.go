@@ -154,13 +154,15 @@ func auxPanic(skipCount int, prefix string, message ...any) {
 	messageStr := ToString(message...)
 	messageInfo := extractAlertInfo(messageStr)
 
-	msg := CallerLocation(prefixInfo.skipCount+messageInfo.skipCount+skipCount+1) + " *** " + prefixInfo.key + "! " + messageInfo.key
+	netSkipCount := prefixInfo.skipCount + messageInfo.skipCount + skipCount + 1
+	msg := CallerLocation(netSkipCount) + " *** " + prefixInfo.key + "! " + messageInfo.key
 
 	if !testAlertState {
 		Todo("Panic doesn't exit the program, so this is misnamed")
 		// Print the panic to stdout in case it doesn't later get printed in this convenient way for some other reason
 		fmt.Println(msg)
-		debug.PrintStack()
+		Pr("Include message with first item printed")
+		Pr(GenerateStackTrace(netSkipCount))
 		os.Exit(1)
 		//Pr("panicking with:", msg)
 		//panic(msg)
@@ -629,4 +631,90 @@ func MyMod(value int, divisor int) int {
 		k += divisor
 	}
 	return k
+}
+
+type StackTraceStruct struct {
+	Preamble   string
+	Content    string
+	SkipFactor int
+	Rows       []string
+}
+
+type StackTrace = *StackTraceStruct
+
+func GenerateStackTrace(skipFactor int) StackTrace {
+	t := NewStackTrace(string(debug.Stack()), 2+skipFactor)
+	return t
+}
+
+func NewStackTrace(content string, skipFactor int) StackTrace {
+	t := &StackTraceStruct{}
+	t.SkipFactor = skipFactor
+	t.parse(content)
+	return t
+}
+
+func (st StackTrace) String() string {
+	return strings.Join(st.Rows, "\n")
+}
+
+func (st StackTrace) parse(content string) {
+	projDir, err := FindProjectDir()
+
+	projDirPrefix := "!!!!"
+	if err != nil {
+		//Pr("Can't find project directory, current directory:", CurrentDirectory())
+	} else {
+		projDirPrefix = projDir.String()
+	}
+
+	st.Content = content
+	lns := strings.Split(content, "\n")
+
+	skipped := 0
+	rows := NewArray[string]()
+	prefix := ""
+	for _, val := range lns {
+		result := val
+		for {
+			if strings.HasPrefix(val, "goroutine ") {
+				st.Preamble = val
+				result = ""
+				break
+			}
+
+			if strings.HasPrefix(val, "\t") {
+				val := strings.TrimSpace(val)
+				cols := strings.Fields(val)
+				if len(cols) != 2 {
+					break
+				}
+				result = cols[0]
+				result = strings.TrimPrefix(result, projDirPrefix)
+
+				xp := NewPathM(result)
+				result = xp.Base()
+				break
+			}
+			j := strings.LastIndex(val, "(")
+			if j < 0 {
+				break
+			}
+			q := strings.LastIndex(val[0:j], ".")
+			if q < 0 {
+				break
+			}
+			prefix = val[q+1 : j]
+			result = ""
+			break
+		}
+		if result != "" {
+			if skipped < st.SkipFactor {
+				skipped++
+			} else {
+				rows.Add(result + ` ` + prefix)
+			}
+		}
+	}
+	st.Rows = rows.Array()
 }
