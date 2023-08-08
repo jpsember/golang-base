@@ -155,17 +155,14 @@ func auxPanic(skipCount int, prefix string, message ...any) {
 	messageInfo := extractAlertInfo(messageStr)
 
 	netSkipCount := prefixInfo.skipCount + messageInfo.skipCount + skipCount + 1
-	msg := CallerLocation(netSkipCount) + " *** " + prefixInfo.key + "! " + messageInfo.key
+	msg := "*** " + prefixInfo.key + "! " + messageInfo.key
 
 	if !testAlertState {
 		Todo("Panic doesn't exit the program, so this is misnamed")
 		// Print the panic to stdout in case it doesn't later get printed in this convenient way for some other reason
 		fmt.Println(msg)
-		Pr("Include message with first item printed")
-		Pr(GenerateStackTrace(netSkipCount))
+		fmt.Println(GenerateStackTrace(netSkipCount))
 		os.Exit(1)
-		//Pr("panicking with:", msg)
-		//panic(msg)
 	} else {
 		TestPanicMessageLog.WriteString(msg + "\n")
 	}
@@ -659,13 +656,10 @@ func (st StackTrace) String() string {
 }
 
 func (st StackTrace) parse(content string) {
-	projDir, err := FindProjectDir()
-
-	projDirPrefix := "!!!!"
-	if err != nil {
-		//Pr("Can't find project directory, current directory:", CurrentDirectory())
-	} else {
-		projDirPrefix = projDir.String()
+	repoDir, err := FindRepoDir()
+	var repoDirPrefix string
+	if err == nil {
+		repoDirPrefix = repoDir.String()
 	}
 
 	st.Content = content
@@ -690,7 +684,7 @@ func (st StackTrace) parse(content string) {
 					break
 				}
 				result = cols[0]
-				result = strings.TrimPrefix(result, projDirPrefix)
+				result = strings.TrimPrefix(result, repoDirPrefix)
 
 				xp := NewPathM(result)
 				result = xp.Base()
