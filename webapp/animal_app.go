@@ -87,7 +87,7 @@ func ShowStackTrace() {
 func (oper AjaxOper) Perform(app *App) {
 
 	Die("wtf")
-	if true && Alert("stack trace experiment") {
+	if false && Alert("stack trace experiment") {
 		Pr(GenerateStackTrace(0))
 		return
 	}
@@ -95,6 +95,12 @@ func (oper AjaxOper) Perform(app *App) {
 		SQLiteExperiment()
 		return
 	}
+	j := 7
+	if Alert("testing div by zero panic") {
+		j = 4
+	}
+	Pr(14 / (j - 4))
+
 	db := CreateDatabase()
 	db.SetDataSourceName("../sqlite/jeff_experiment.db")
 	db.Open()
@@ -128,22 +134,9 @@ func (oper AjaxOper) Perform(app *App) {
 	var keyPath = keyDir.JoinM(ourUrl + ".key")
 	Pr("URL:", INDENT, `https://`+ourUrl)
 
-	// If there is a bug that causes *every* request to fail, only generate the stack trace once
-	Todo("!Clean up this 'fail only once' code")
 	http.HandleFunc("/",
 		func(w http.ResponseWriter, req *http.Request) {
-			//if panicked {
-			//	w.Write([]byte("panic has occurred"))
-			//	return
-			//}
-			//panicked = true
-			//defer func() {
-			//	if panicked {
-			//		w.Write([]byte("panic has occurred"))
-			//	}
-			//}()
 			oper.handle(w, req)
-			//panicked = false
 		})
 
 	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
@@ -151,10 +144,7 @@ func (oper AjaxOper) Perform(app *App) {
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
-
 }
-
-var panicked bool
 
 // A handler such as this must be thread safe!
 func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {

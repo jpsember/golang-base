@@ -59,7 +59,7 @@ func CallerLocation(skipCount int) string {
 }
 
 func Die(message ...any) {
-	auxPanic(1, "Dying", message...)
+	auxExit(1, "Dying", message...)
 }
 
 func Halt(message ...any) {
@@ -70,16 +70,16 @@ func Halt(message ...any) {
 		Pr(text)
 		os.Exit(1)
 	} else {
-		TestPanicMessageLog.WriteString(text + "\n")
+		TestAbortMessageLog.WriteString(text + "\n")
 	}
 }
 
 func NotSupported(message ...any) {
-	auxPanic(1, "Not supported", message...)
+	auxExit(1, "Not supported", message...)
 }
 
 func NotImplemented(message ...any) {
-	auxPanic(1, "Not implemented", message...)
+	auxExit(1, "Not implemented", message...)
 }
 
 func isNil(value any) bool {
@@ -88,31 +88,31 @@ func isNil(value any) bool {
 
 func CheckNotNil[T any](value T, message ...any) T {
 	if isNil(value) {
-		auxPanic(1, "Argument is nil", message...)
+		auxExit(1, "Argument is nil", message...)
 	}
 	return value
 }
 
 func CheckNonEmpty(s string, message ...any) string {
 	if s == "" {
-		auxPanicWithArgument(1, "String is empty", s, message...)
+		auxAbortWithArgument(1, "String is empty", s, message...)
 	}
 	return s
 }
 
 func CheckArg(valid bool, message ...any) bool {
 	if !valid {
-		auxPanic(1, "Bad argument", message...)
+		auxExit(1, "Bad argument", message...)
 	}
 	return valid
 }
 
 func BadArg(message ...any) {
-	auxPanic(1, "Bad argument", message...)
+	auxExit(1, "Bad argument", message...)
 }
 
 func BadState(message ...any) {
-	auxPanic(1, "Bad state", message...)
+	auxExit(1, "Bad state", message...)
 }
 
 // Given an error, panic if it is not nil
@@ -130,23 +130,23 @@ func auxCheckOk(skipCount int, err error, message ...any) {
 	if err != nil {
 		messageStr := ToString(message...)
 		messageInfo := extractAlertInfo(messageStr)
-		auxPanicWithArgument(1+skipCount+messageInfo.skipCount, "Unexpected error", err.Error(), messageInfo.key)
+		auxAbortWithArgument(1+skipCount+messageInfo.skipCount, "Unexpected error", err.Error(), messageInfo.key)
 	}
 }
 
-func auxPanicWithArgument(skipCount int, prefix string, argument string, message ...any) {
+func auxAbortWithArgument(skipCount int, prefix string, argument string, message ...any) {
 	messageStr := ToString(message...)
 	messageInfo := extractAlertInfo(messageStr)
-	auxPanic(1+skipCount+messageInfo.skipCount, prefix, Quoted(argument)+" "+messageInfo.key)
+	auxExit(1+skipCount+messageInfo.skipCount, prefix, Quoted(argument)+" "+messageInfo.key)
 }
 
 func CheckState(valid bool, message ...any) {
 	if !valid {
-		auxPanic(1, "Invalid state", message...)
+		auxExit(1, "Invalid state", message...)
 	}
 }
 
-func auxPanic(skipCount int, prefix string, message ...any) {
+func auxExit(skipCount int, prefix string, message ...any) {
 	// Both the prefix and the message can contain skip information, so
 	// parse and sum them
 
@@ -158,24 +158,23 @@ func auxPanic(skipCount int, prefix string, message ...any) {
 	msg := "*** " + prefixInfo.key + "! " + messageInfo.key
 
 	if !testAlertState {
-		Todo("Panic doesn't exit the program, so this is misnamed")
-		// Print the panic to stdout in case it doesn't later get printed in this convenient way for some other reason
+		// Print the message to stdout in case it doesn't later get printed in this convenient way
 		fmt.Println(msg)
 		fmt.Println(GenerateStackTrace(netSkipCount))
 		os.Exit(1)
 	} else {
-		TestPanicMessageLog.WriteString(msg + "\n")
+		TestAbortMessageLog.WriteString(msg + "\n")
 	}
 }
 
 // True if we're performing unit tests on Alerts, Assertions
 var testAlertState bool
-var TestPanicMessageLog = strings.Builder{}
+var TestAbortMessageLog = strings.Builder{}
 var TestAlertDuration int64
 
 func CheckNil(result any, message ...any) {
 	if result != nil {
-		auxPanicWithArgument(1, "Result is not nil", ToString(result), message...)
+		auxAbortWithArgument(1, "Result is not nil", ToString(result), message...)
 	}
 }
 
@@ -247,7 +246,7 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	if !testAlertState {
 		fmt.Println(text)
 	} else {
-		TestPanicMessageLog.WriteString(text + "\n")
+		TestAbortMessageLog.WriteString(text + "\n")
 	}
 }
 
@@ -548,7 +547,7 @@ func processAlertForMultipleSessions(info alertInfo) bool {
 	m.Put("r", currTime)
 	priorityAlertMap.Put(info.key, m)
 	if !testAlertState {
-		priorityAlertPersistPath.WriteStringM(priorityAlertMap.String())
+		priorityAlertPersistPath.WriteStringM(priorityAlertMap.CompactString())
 	}
 	return true
 }

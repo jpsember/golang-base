@@ -19,7 +19,7 @@ func TestPanics(t *testing.T) {
 	defer SetTestAlertInfoState(false)
 
 	s := "lorem ipsum"
-	TestPanicMessageLog.Reset()
+	TestAbortMessageLog.Reset()
 
 	CheckArg(false, s)
 	var str *string
@@ -36,7 +36,7 @@ func TestPanics(t *testing.T) {
 	expression := NewPathM("alpha/bravo")
 	CheckNil(expression, s)
 
-	j.AssertMessage(TestPanicMessageLog.String())
+	j.AssertMessage(TestAbortMessageLog.String())
 }
 
 // This test is very sensitive to line numbers; if this file changes, the hash might need
@@ -47,7 +47,7 @@ func TestAlerts(t *testing.T) {
 	SetTestAlertInfoState(true)
 	defer SetTestAlertInfoState(false)
 
-	TestPanicMessageLog.Reset()
+	TestAbortMessageLog.Reset()
 
 	Alert("Normal message")
 	Alert("-This shouldn't appear")
@@ -73,7 +73,7 @@ func TestAlerts(t *testing.T) {
 	f1("this is an alert without a skip")
 	f1("<1 this is an alert with a skip of 1")
 
-	j.AssertMessage(TestPanicMessageLog.String())
+	j.AssertMessage(TestAbortMessageLog.String())
 }
 
 const minute = 60 * 1000
