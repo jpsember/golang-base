@@ -86,20 +86,18 @@ func ShowStackTrace() {
 }
 func (oper AjaxOper) Perform(app *App) {
 
-	Die("wtf")
-	if false && Alert("stack trace experiment") {
-		Pr(GenerateStackTrace(0))
-		return
-	}
 	if false && Alert("Performing sql experiment") {
 		SQLiteExperiment()
 		return
 	}
-	j := 7
-	if Alert("testing div by zero panic") {
-		j = 4
+
+	if Alert("testing a panic") {
+		j := 7
+		if true {
+			j = 4
+		}
+		Pr(14 / (j - 4))
 	}
-	Pr(14 / (j - 4))
 
 	db := CreateDatabase()
 	db.SetDataSourceName("../sqlite/jeff_experiment.db")

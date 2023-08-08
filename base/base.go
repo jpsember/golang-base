@@ -58,28 +58,24 @@ func CallerLocation(skipCount int) string {
 	return line[j:cutoff]
 }
 
+func Panic(message ...any) {
+	auxAbort(1, "Panic", message...)
+}
+
 func Die(message ...any) {
-	auxExit(1, "Dying", message...)
+	auxAbort(1, "Dying", message...)
 }
 
 func Halt(message ...any) {
-	str := ToString(message...)
-	alertInfo := extractAlertInfo(str)
-	text := CallerLocation(1+alertInfo.skipCount) + " *** Halting! " + alertInfo.key
-	if !testAlertState {
-		Pr(text)
-		os.Exit(1)
-	} else {
-		TestAbortMessageLog.WriteString(text + "\n")
-	}
+	auxAbort(1, "Halting", message...)
 }
 
 func NotSupported(message ...any) {
-	auxExit(1, "Not supported", message...)
+	auxAbort(1, "Not supported", message...)
 }
 
 func NotImplemented(message ...any) {
-	auxExit(1, "Not implemented", message...)
+	auxAbort(1, "Not implemented", message...)
 }
 
 func isNil(value any) bool {
@@ -88,7 +84,7 @@ func isNil(value any) bool {
 
 func CheckNotNil[T any](value T, message ...any) T {
 	if isNil(value) {
-		auxExit(1, "Argument is nil", message...)
+		auxAbort(1, "Argument is nil", message...)
 	}
 	return value
 }
@@ -102,17 +98,17 @@ func CheckNonEmpty(s string, message ...any) string {
 
 func CheckArg(valid bool, message ...any) bool {
 	if !valid {
-		auxExit(1, "Bad argument", message...)
+		auxAbort(1, "Bad argument", message...)
 	}
 	return valid
 }
 
 func BadArg(message ...any) {
-	auxExit(1, "Bad argument", message...)
+	auxAbort(1, "Bad argument", message...)
 }
 
 func BadState(message ...any) {
-	auxExit(1, "Bad state", message...)
+	auxAbort(1, "Bad state", message...)
 }
 
 // Given an error, panic if it is not nil
@@ -137,16 +133,16 @@ func auxCheckOk(skipCount int, err error, message ...any) {
 func auxAbortWithArgument(skipCount int, prefix string, argument string, message ...any) {
 	messageStr := ToString(message...)
 	messageInfo := extractAlertInfo(messageStr)
-	auxExit(1+skipCount+messageInfo.skipCount, prefix, Quoted(argument)+" "+messageInfo.key)
+	auxAbort(1+skipCount+messageInfo.skipCount, prefix, Quoted(argument)+" "+messageInfo.key)
 }
 
 func CheckState(valid bool, message ...any) {
 	if !valid {
-		auxExit(1, "Invalid state", message...)
+		auxAbort(1, "Invalid state", message...)
 	}
 }
 
-func auxExit(skipCount int, prefix string, message ...any) {
+func auxAbort(skipCount int, prefix string, message ...any) {
 	// Both the prefix and the message can contain skip information, so
 	// parse and sum them
 
@@ -160,7 +156,36 @@ func auxExit(skipCount int, prefix string, message ...any) {
 	if !testAlertState {
 		// Print the message to stdout in case it doesn't later get printed in this convenient way
 		fmt.Println(msg)
-		fmt.Println(GenerateStackTrace(netSkipCount))
+		st := GenerateStackTrace(netSkipCount)
+		if strings.HasPrefix(prefix, "Halting") {
+			st.MaxRowsPrinted = 1
+		}
+
+		// If we're exiting as the result of a panic, omit some rows:
+		// The one starting with "panic({"
+		if strings.HasPrefix(prefix, "Panic") {
+			// Omit every row through the one with "panic(...", as well as any immediately following
+			// that have the prefix "panic.go"
+			newFirstRow := 0
+			foundPanic := false
+			for i, v := range st.Rows {
+				if foundPanic {
+					if !strings.HasPrefix(v, "panic.go") {
+						break
+					}
+					newFirstRow++
+				} else if strings.HasPrefix(v, "panic(") {
+					foundPanic = true
+					newFirstRow = i + 1
+				}
+			}
+      if !foundPanic {
+        Pr("...did not find a stack trace row beginning with 'panic('...")
+      }
+			h := len(st.Rows)
+			st.Rows = st.Rows[MinInt(newFirstRow, h):h]
+		}
+		fmt.Println(st)
 		os.Exit(1)
 	} else {
 		TestAbortMessageLog.WriteString(msg + "\n")
@@ -630,10 +655,11 @@ func MyMod(value int, divisor int) int {
 }
 
 type StackTraceStruct struct {
-	Preamble   string
-	Content    string
-	SkipFactor int
-	Rows       []string
+	Preamble       string
+	Content        string
+	SkipFactor     int
+	Rows           []string
+	MaxRowsPrinted int
 }
 
 type StackTrace = *StackTraceStruct
@@ -651,7 +677,11 @@ func NewStackTrace(content string, skipFactor int) StackTrace {
 }
 
 func (st StackTrace) String() string {
-	return strings.Join(st.Rows, "\n")
+	rows := st.Rows
+	if st.MaxRowsPrinted > 0 {
+		rows = rows[0:MinInt(st.MaxRowsPrinted, len(rows))]
+	}
+	return strings.Join(rows, "\n")
 }
 
 func (st StackTrace) parse(content string) {
@@ -710,4 +740,15 @@ func (st StackTrace) parse(content string) {
 		}
 	}
 	st.Rows = rows.Array()
+}
+
+// Wrap a main function so that we can modify the display of any panic stack traces that occur.
+func WrapMain(mainFunc func()) {
+	Todo("!We may want the option to not exit the program after displaying the panic's stack trace")
+	defer func() {
+		if r := recover(); r != nil {
+			Panic()
+		}
+	}()
+	mainFunc()
 }

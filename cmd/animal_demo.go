@@ -1,11 +1,16 @@
 package main
 
 import (
+	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/webapp"
 )
 
 func main() {
+	WrapMain(auxMain)
+}
+
+func auxMain() {
 	//ClearAlertHistory()
 	//SetWidgetDebugRendering()
 

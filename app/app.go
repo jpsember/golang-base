@@ -139,12 +139,6 @@ func (a *App) hasMultipleOperations() bool {
 }
 
 func (a *App) Start() {
-	defer func() {
-		if r := recover(); r != nil {
-			Die("<3Panic occurred")
-		}
-	}()
-
 	a.auxStart()
 	if a.error() {
 		fmt.Fprintln(os.Stderr, "*** "+ToString(a.errorMessage...))
