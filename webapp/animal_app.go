@@ -91,7 +91,7 @@ func (oper AjaxOper) Perform(app *App) {
 		return
 	}
 
-	if Alert("testing a panic") {
+	if false && Alert("testing a panic") {
 		j := 7
 		if true {
 			j = 4
@@ -103,7 +103,8 @@ func (oper AjaxOper) Perform(app *App) {
 	db.SetDataSourceName("../sqlite/jeff_experiment.db")
 	db.Open()
 
-	if false && Alert("blob experiment") {
+	Todo("Verify reading blobs back")
+	if true && Alert("blob experiment") {
 		data := []byte{
 			2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
 		}

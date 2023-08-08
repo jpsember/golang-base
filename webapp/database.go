@@ -69,7 +69,7 @@ func (db Database) Open() error {
 		db.state = dbStateFailed
 	} else {
 		db.state = dbStateOpen
-    // We must create the tables *before* preparing any statements!
+		// We must create the tables *before* preparing any statements!
 		db.createTables()
 		db.prepareStatements()
 	}
@@ -234,7 +234,7 @@ func (db Database) InsertBlob(blob []byte) (Blob, error) {
 	attempt := 0
 	for {
 		attempt++
-		CheckState(attempt < 50)
+		CheckState(attempt < 50, "failed to choose a unique blob id!")
 		bb.SetId(string(GenerateBlobId()))
 		pr("blob id:", bb.Id())
 		rows := db.stmtSelectSpecificBlob.QueryRow(bb.Id())

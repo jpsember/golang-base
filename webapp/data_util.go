@@ -34,7 +34,13 @@ func GenerateBlobId() BlobId {
 	lock.Lock()
 	defer lock.Unlock()
 	r := ourRand.Rand()
-	for i := 0; i < 32; i++ {
+
+	blobIdLength := 32
+	if !Alert("choosing smaller blob length") {
+		blobIdLength = 1
+	}
+
+	for i := 0; i < blobIdLength; i++ {
 		x := r.Intn(16)
 		sb.WriteByte(alph[x])
 		if i == 8 || i == 13 || i == 18 || i == 23 {
