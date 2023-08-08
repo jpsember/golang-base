@@ -179,9 +179,9 @@ func auxAbort(skipCount int, prefix string, message ...any) {
 					newFirstRow = i + 1
 				}
 			}
-      if !foundPanic {
-        Pr("...did not find a stack trace row beginning with 'panic('...")
-      }
+			if !foundPanic {
+				Pr("...did not find a stack trace row beginning with 'panic('...")
+			}
 			h := len(st.Rows)
 			st.Rows = st.Rows[MinInt(newFirstRow, h):h]
 		}
@@ -670,6 +670,7 @@ func GenerateStackTrace(skipFactor int) StackTrace {
 }
 
 func NewStackTrace(content string, skipFactor int) StackTrace {
+	Pr("NewStackTrace with content:", INDENT, Quoted(content))
 	t := &StackTraceStruct{}
 	t.SkipFactor = skipFactor
 	t.parse(content)
@@ -714,7 +715,8 @@ func (st StackTrace) parse(content string) {
 				}
 				result = cols[0]
 				result = strings.TrimPrefix(result, repoDirPrefix)
-
+				Pr("trimmed:", Quoted(cols[0]), " prefix:", repoDirPrefix)
+				Pr("result :", Quoted(result))
 				xp := NewPathM(result)
 				result = xp.Base()
 				break
@@ -751,4 +753,12 @@ func WrapMain(mainFunc func()) {
 		}
 	}()
 	mainFunc()
+}
+
+func CausePanic() int {
+	sum := 0
+	for i := -3; i < 3; i++ {
+		sum += 10 / i
+	}
+	return sum
 }
