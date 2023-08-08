@@ -1,6 +1,7 @@
 package webapp
 
 import (
+	"bytes"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	"log"
@@ -112,6 +113,10 @@ func (oper AjaxOper) Perform(app *App) {
 			Pr("inserting:", i)
 			bl, err := db.InsertBlob(data)
 			Pr("result:", INDENT, bl, CR, err)
+
+			Pr("verifying:")
+			blob, err := db.ReadBlob(StringToBlobId(bl.Id()))
+			CheckState(bytes.Equal(data, blob.Data()))
 		}
 		Halt()
 	}

@@ -6,7 +6,20 @@ import (
 	"sync"
 )
 
-type BlobId = string
+type BlobId string
+
+const blobIdLength = 32 + 4 // includes 4 dashes
+
+func (b BlobId) String() string {
+	return string(b)
+}
+
+func StringToBlobId(s string) BlobId {
+	if len(s) != blobIdLength {
+		BadArg("<1Not a legal blob id:", Quoted(s))
+	}
+	return BlobId(s)
+}
 
 type Currency = int32
 
@@ -35,19 +48,14 @@ func GenerateBlobId() BlobId {
 	defer lock.Unlock()
 	r := ourRand.Rand()
 
-	blobIdLength := 32
-	if !Alert("choosing smaller blob length") {
-		blobIdLength = 1
-	}
-
-	for i := 0; i < blobIdLength; i++ {
+	for i := 0; i < blobIdLength-4; i++ {
 		x := r.Intn(16)
 		sb.WriteByte(alph[x])
 		if i == 8 || i == 13 || i == 18 || i == 23 {
 			sb.WriteByte('-')
 		}
 	}
-	return sb.String()
+	return StringToBlobId(sb.String())
 }
 
 var ourRand = NewJSRand()

@@ -98,6 +98,10 @@ func (db Database) setError(err error) bool {
 	return false
 }
 
+func (db Database) ok() bool {
+	return db.err == nil
+}
+
 func SQLiteExperiment() {
 	Pr("running SQLiteExperiment")
 
@@ -249,6 +253,20 @@ func (db Database) InsertBlob(blob []byte) (Blob, error) {
 
 	_, err := db.db.Exec(`INSERT INTO `+tableNameBlob+` (id, data) VALUES(?,?)`, bb.Id(), bb.Data())
 	return bb.Build(), err
+}
+
+func (db Database) ReadBlob(blobId BlobId) (Blob, error) {
+	db.lock()
+	defer db.unlock()
+
+	idStr := blobId
+	rows := db.stmtSelectSpecificBlob.QueryRow(idStr)
+	bb := db.scanBlob(rows)
+	var b Blob
+	if db.ok() {
+		b = bb.Build()
+	}
+	return b, db.err
 }
 
 func (db Database) scanBlob(rows *sql.Row) BlobBuilder {
