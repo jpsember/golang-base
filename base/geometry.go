@@ -1,6 +1,9 @@
 package base
 
-import "math"
+import (
+	"image"
+	"math"
+)
 
 // ------------------------------------------------------------------------------------
 // 2D points (int-valued)
@@ -103,3 +106,20 @@ func RectWithFloat(x float64, y float64, w float64, h float64) Rect {
 }
 
 var RectZero = Rect{}
+
+func (r Rect) ToImageRectangle() image.Rectangle {
+	return image.Rectangle{
+		Min: image.Point{
+			X: r.Location.X,
+			Y: r.Location.Y,
+		},
+		Max: image.Point{
+			X: r.Location.X + r.Size.X,
+			Y: r.Location.Y + r.Size.Y,
+		},
+	}
+}
+
+func RectWithImageRect(src image.Rectangle) Rect {
+	return RectWith(src.Min.X, src.Min.Y, src.Dx(), src.Dy())
+}

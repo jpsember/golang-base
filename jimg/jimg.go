@@ -1,6 +1,7 @@
 package jimg
 
 import (
+	"bufio"
 	"bytes"
 	. "github.com/jpsember/golang-base/base"
 	"golang.org/x/image/draw"
@@ -173,6 +174,15 @@ func (ji JImage) ScaledTo(size IPoint) JImage {
 	inputImage := ji.Image()
 	draw.ApproxBiLinear.Scale(scaledImage, scaledImage.Bounds(), inputImage, inputImage.Bounds(), draw.Over, nil)
 	return JImageOf(scaledImage)
+}
+
+func (ji JImage) EncodePNG() ([]byte, error) {
+	w := bytes.Buffer{}
+	err := png.Encode(bufio.NewWriter(&w), ji.Image())
+	if err == nil {
+		return w.Bytes(), nil
+	}
+	return nil, err
 }
 
 //func (ji JImage) FitTo(size IPoint, strategy int) JImage {

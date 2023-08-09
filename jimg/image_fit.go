@@ -26,14 +26,14 @@ func NewImageFit() ImageFit {
 }
 
 func (m ImageFit) WithSourceSize(sourceSize IPoint) ImageFit {
-
+	Todo("This shouldn't be fluid, as it is the last thing called to invoke the calculation")
 	sourceSize.AssertPositive()
 	targetSize := m.TargetSize.AssertPositive()
 
-	w := float64(targetSize.X)
-	h := float64(targetSize.Y)
-	u := float64(sourceSize.X)
-	v := float64(sourceSize.Y)
+	w := float64(sourceSize.X)
+	h := float64(sourceSize.Y)
+	u := float64(targetSize.X)
+	v := float64(targetSize.Y)
 
 	lambdaCrop := float64(1)
 	lambdaLbox := float64(1)
@@ -55,6 +55,7 @@ func (m ImageFit) WithSourceSize(sourceSize IPoint) ImageFit {
 		lambdaCrop = lambdaLbox
 		lambdaLbox = temp
 	}
+	Pr("aspect src:", sourceAspect, "target:", targetAspect)
 
 	// I apply a cost function c as a function of the scale factor s:
 	//
@@ -73,6 +74,11 @@ func (m ImageFit) WithSourceSize(sourceSize IPoint) ImageFit {
 
 	m.targetRectangle = RectWithFloat((u-resultWidth)*.5, (v-resultHeight)*.5, resultWidth,
 		resultHeight).AssertValid()
+	Pr("targetRect:", m.targetRectangle)
+	Pr("u,v:", u, v)
+	Pr("w,h:", w, h)
+	Pr("lambda crop:", lambdaCrop, "lbox:", lambdaLbox)
+	Pr("resultW,H:", resultWidth, resultHeight)
 	return m
 }
 

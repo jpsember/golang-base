@@ -22,7 +22,7 @@ var Dashes = "------------------------------------------------------------------
 func CallerLocation(skipCount int) string {
 	st := GenerateStackTrace(skipCount + 1)
 	if len(st.Elements) != 0 {
-		return st.Elements[0].String()
+		return st.Elements[0].StringBrief()
 	}
 	return "<no location available!>"
 }
@@ -626,7 +626,8 @@ type stackTraceElementStruct struct {
 	CalleeLineNumber   int
 	StackFramePosition string
 	raw0, raw1         string
-	formatted          string
+	formattedLong      string
+	formattedBrief     string
 }
 type stackTraceElement = *stackTraceElementStruct
 
@@ -638,8 +639,8 @@ func init() {
 	}
 }
 
-func (e stackTraceElement) String() string {
-	if e.formatted == "" {
+func (e stackTraceElement) prepareStrings() {
+	if e.formattedLong == "" {
 
 		{
 			val := e.raw0
@@ -673,9 +674,20 @@ func (e stackTraceElement) String() string {
 		}
 
 		// Convert the stack trace element to a display version
-		e.formatted = e.CalleeFile + ":" + IntToString(e.CalleeLineNumber)
+		s1 := e.CalleeFile + ":" + IntToString(e.CalleeLineNumber)
+		e.formattedBrief = s1
+		e.formattedLong = s1 + Spaces(24-len(s1)) + " " + e.CallerFunction
 	}
-	return e.formatted
+}
+
+func (e stackTraceElement) StringDetailed() string {
+	e.prepareStrings()
+	return e.formattedLong
+}
+
+func (e stackTraceElement) StringBrief() string {
+	e.prepareStrings()
+	return e.formattedBrief
 }
 
 type StackTrace = *StackTraceStruct
@@ -698,7 +710,7 @@ func (st StackTrace) String() string {
 	}
 	sb := strings.Builder{}
 	for _, x := range elem {
-		sb.WriteString(x.String())
+		sb.WriteString(x.StringDetailed())
 		sb.WriteByte('\n')
 	}
 	return sb.String()
