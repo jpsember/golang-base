@@ -142,6 +142,8 @@ func CheckState(valid bool, message ...any) {
 	}
 }
 
+var nestedAbortFlag bool
+
 func auxAbort(skipCount int, prefix string, message ...any) {
 	// Both the prefix and the message can contain skip information, so
 	// parse and sum them
@@ -156,36 +158,42 @@ func auxAbort(skipCount int, prefix string, message ...any) {
 	if !testAlertState {
 		// Print the message to stdout in case it doesn't later get printed in this convenient way
 		fmt.Println(msg)
-		st := GenerateStackTrace(netSkipCount)
-		if strings.HasPrefix(prefix, "Halting") {
-			st.MaxRowsPrinted = 1
-		}
+		if nestedAbortFlag {
+			fmt.Println("Nested exception:", INDENT, string(debug.Stack()))
+		} else {
+			nestedAbortFlag = true
+			st := GenerateStackTrace(netSkipCount)
+			if strings.HasPrefix(prefix, "Halting") {
+				st.MaxRowsPrinted = 1
+			}
 
-		// If we're exiting as the result of a panic, omit some rows:
-		// The one starting with "panic({"
-		if strings.HasPrefix(prefix, "Panic") {
-			// Omit every row through the one with "panic(...", as well as any immediately following
-			// that have the prefix "panic.go"
-			newFirstRow := 0
-			foundPanic := false
-			for i, v := range st.Rows {
-				if foundPanic {
-					if !strings.HasPrefix(v, "panic.go") {
-						break
+			// If we're exiting as the result of a panic, omit some rows:
+			// The one starting with "panic({"
+			if strings.HasPrefix(prefix, "Panic") {
+				// Omit every row through the one with "panic(...", as well as any immediately following
+				// that have the prefix "panic.go"
+				newFirstRow := 0
+				foundPanic := false
+				for i, v := range st.Rows {
+					if foundPanic {
+						if !strings.HasPrefix(v, "panic.go") {
+							break
+						}
+						newFirstRow++
+					} else if strings.HasPrefix(v, "panic(") {
+						foundPanic = true
+						newFirstRow = i + 1
 					}
-					newFirstRow++
-				} else if strings.HasPrefix(v, "panic(") {
-					foundPanic = true
-					newFirstRow = i + 1
 				}
+				if !foundPanic {
+					Pr("...did not find a stack trace row beginning with 'panic('...")
+				}
+				h := len(st.Rows)
+				st.Rows = st.Rows[MinInt(newFirstRow, h):h]
 			}
-			if !foundPanic {
-				Pr("...did not find a stack trace row beginning with 'panic('...")
-			}
-			h := len(st.Rows)
-			st.Rows = st.Rows[MinInt(newFirstRow, h):h]
+			fmt.Println(st)
+			nestedAbortFlag = false
 		}
-		fmt.Println(st)
 		os.Exit(1)
 	} else {
 		TestAbortMessageLog.WriteString(msg + "\n")
@@ -664,6 +672,29 @@ type StackTraceStruct struct {
 	SkipFactor     int
 	Rows           []string
 	MaxRowsPrinted int
+	Elements       []stackTraceElement
+}
+
+//     {package name} {name + arguments of caller function}
+//     {file where function was called}:{line number within file}  +{relative position of the function within the stack frame}
+
+type stackTraceElement struct {
+	Package            string
+	CallerFunction     string
+	CallerArguments    string
+	CalleeFile         string
+	CalleeLineNumber   int
+	StackFramePosition string
+}
+
+func (e stackTraceElement) String() string {
+	return NewJSMap().Put("1 Package", e.Package). //
+							Put("2 CallerFunction", e.CallerFunction).         //
+							Put("3 CallerArguments", e.CallerArguments).       //
+							Put("4 CalleeFile", e.CalleeFile).                 //
+							Put("5 LineNum", e.CalleeLineNumber).              //
+							Put("6 StackFramePosition", e.StackFramePosition). //
+							String()
 }
 
 type StackTrace = *StackTraceStruct
@@ -688,7 +719,52 @@ func (st StackTrace) String() string {
 	return strings.Join(rows, "\n")
 }
 
+func quickVerify(flag bool) {
+	CheckState(flag)
+	if !flag {
+		panic("flag has failed")
+	}
+}
+
+func strRemainder(str string, startIndex int) string {
+	q := len(str)
+	//Pr("str remainder:", Quoted(str), "len:", q, "startIndex:", startIndex)
+	quickVerify(startIndex <= q)
+	CheckArg(startIndex >= 0 && startIndex <= q)
+	return str[startIndex:q]
+}
+
+//func IndexFrom(str string, startIndex int, substr string) int {
+//	quickVerify(startIndex >= 0 && startIndex <= len(str))
+//	rem := strRemainder(str, startIndex)
+//	k := strings.Index(rem, substr)
+//	if k >= 0 {
+//		k += startIndex
+//	}
+//	return k
+//}
+
+func strFirst(str string, substr string) int {
+	k := strings.Index(str, substr)
+	CheckArg(k >= 0, "string doesn't contain substr:", str, substr)
+	return k
+}
+func strLastIndex(str string, substr string) int {
+	k := strings.LastIndex(str, substr)
+	if k < 0 {
+		CheckArg(k >= 0, "string doesn't contain substring:", Quoted(str), Quoted(substr))
+	}
+	//quickVerify(k >= 0)
+	return k
+}
+
+func strFirstFrom(str string, from int, substr string) int {
+	remainder := str[from:len(str)]
+	return strFirst(remainder, substr) + from
+}
 func (st StackTrace) parse(content string) {
+
+	content = strings.TrimSpace(content)
 
 	// If the paths we parse lie within the current git repo, we'll show only their filenames.
 	//
@@ -701,60 +777,163 @@ func (st StackTrace) parse(content string) {
 
 	skipped := 0
 	rows := NewArray[string]()
-	Pr("what is prefix, exactly?")
-	prefix := ""
 
-	for _, val := range strings.Split(content, "\n") {
-		result := val
-		for {
-			// The first line in the stack trace seems to always be something like 'goroutine 1 [running]:', so
-			// it doesn't follow the pattern of
-			//
-			//     {package name} {name + arguments of caller function}
-			//     {file where function was called}:{line number within file}  +{relative position of the function within the stack frame}
-			//
-			// ...so, store it as a 'preamble'
-			//
-			if strings.HasPrefix(val, "goroutine ") {
-				st.Preamble = val
-				result = ""
-				break
-			}
+	lines := strings.Split(content, "\n")
 
-			if strings.HasPrefix(val, "\t") {
-				val := strings.TrimSpace(val)
-				cols := strings.Fields(val)
-				if len(cols) != 2 {
-					break
-				}
-				result = cols[0]
-				result = strings.TrimPrefix(result, repoDirPrefix)
-				Pr("trimmed:", Quoted(cols[0]), " prefix:", repoDirPrefix)
-				Pr("result :", Quoted(result))
-				xp := NewPathM(result)
-				result = xp.Base()
-				break
+	// The first line in the stack trace seems to always be something like 'goroutine 1 [running]:'
+	//
+	// The remaining 2n lines have this format:
+	//
+	//     {package name} {name + arguments of caller function}
+	//     {file where function was called}:{line number within file}  +{relative position of the function within the stack frame}
+	//
+	//
+	quickVerify(len(lines)%2 == 1)
+	st.Preamble = lines[0]
+	quickVerify(strings.HasPrefix(st.Preamble, "goroutine"))
+	for cursor := 1; cursor < len(lines); cursor += 2 {
+		elem := stackTraceElement{}
+
+		{
+			val := lines[cursor+0]
+
+			Pr("processing first line in pair:", INDENT, val)
+
+			i := strings.LastIndex(val, "/")
+			if i >= 0 {
+				i = strFirstFrom(val, i, ".")
+				elem.Package = val[0:i]
 			}
-			j := strings.LastIndex(val, "(")
-			if j < 0 {
-				break
-			}
-			q := strings.LastIndex(val[0:j], ".")
-			if q < 0 {
-				break
-			}
-			prefix = val[q+1 : j]
-			result = ""
-			break
+			j := strLastIndex(val, "(")
+			elem.CallerFunction = val[i+1 : j]
+			elem.CallerArguments = strRemainder(val, j)
 		}
-		if result != "" {
-			if skipped < st.SkipFactor {
-				skipped++
-			} else {
-				rows.Add(result + ` ` + prefix)
+		{
+			val := strings.TrimSpace(lines[cursor+1])
+			Pr("processing second line in pair:", INDENT, val)
+			i := strFirst(val, ":")
+			callerPath := val[0:i]
+			callerPath = strings.TrimPrefix(callerPath, repoDirPrefix)
+			elem.CalleeFile = NewPathM(callerPath).Base()
+
+			rem := strRemainder(val, i+1)
+			j := strings.Index(rem, "+0x")
+			if j >= 0 {
+				elem.StackFramePosition = strRemainder(val, j)
+				rem = rem[0:j]
 			}
+			//j := strFirstFrom(val+seek, i, seek)
+			elem.CalleeLineNumber = ParseIntM(strings.TrimSpace(rem))
+			//elem.StackFramePosition = strRemainder(val, j)
+		}
+		//j := strLastIndex(val, "(")
+		//
+		//packageAndMethod := val[0:j]
+		//Pr("packageAndMethod:", packageAndMethod)
+		//
+		//h := strLastIndex(packageAndMethod, "/")
+		//
+		//packageName := packageAndMethod[0:h]
+		//Pr("packageName:", packageName)
+		//
+		//callerNameAndArgs := strRemainder(packageAndMethod, h+1)
+		//Pr("callerNameAndArgs:", callerNameAndArgs)
+		//
+		//h2 := strLastIndex(callerNameAndArgs, "(")
+		//args := strRemainder(callerNameAndArgs, h2)
+		//callerName := callerNameAndArgs[0:h2]
+		//
+		////}
+		////h := strings.LastIndex(packageAndMethod,"/)
+		////arguments := val[j:valLen]
+		//
+		//Pr("parsing:", val)
+		//Pr("...pkg/method:", packageAndMethod)
+		//Pr("...pkg:", packageName)
+		//Pr("...callerNameAndArgs:", callerNameAndArgs)
+		//Pr("callerName:", callerName)
+		//Pr("args:", args)
+		//
+		////val = strings.TrimSpace(lines[cursor+1])
+		////
+		////q := strings.LastIndex(val[0:j], ".")
+		////quickVerify(q > 0)
+		////functionName := val[q+1 : j]
+		////Pr("functionName:", functionName)
+		//
+		//val2 := strings.TrimSpace(lines[cursor+1])
+		//cols := strings.Fields(val2)
+		//quickVerify(len(cols) == 2)
+		//callerPathWithLineNum := cols[0]
+		//j2 := strings.Index(callerPathWithLineNum, ":")
+		//quickVerify(j2 > 0)
+		//callerPath := callerPathWithLineNum[0:j2]
+		//callerPath = strings.TrimPrefix(callerPath, repoDirPrefix)
+		//callerLineNum := ParseIntM(strRemainder(callerPathWithLineNum, j2+1))
+		////callerPath = strings.TrimPrefix(callerPath, repoDirPrefix)
+		////xp := NewPathM(callerPath)
+		////callerFilename := xp.Base()
+		//
+		//elem := stackTraceElement{
+		//	Package:            packageName,
+		//	CallerFunction:     callerName,
+		//	CallerArguments:    args,
+		//	CalleeFile:         NewPathM(callerPath),
+		//	CalleeLineNumber:   callerLineNum,
+		//	StackFramePosition: cols[1],
+		//}
+
+		Pr("parsed elem:", INDENT, elem)
+		if skipped < st.SkipFactor {
+			skipped++
+		} else {
+			rows.Add(ToString(elem))
 		}
 	}
+	//Pr("what is prefix, exactly?")
+	//prefix := ""
+	//
+	//for _, val := range strings.Split(content, "\n") {
+	//	result := val
+	//	for {
+	//		// The first line in the stack trace seems to always be something like 'goroutine 1 [running]:', so
+	//		// it doesn't follow the pattern of
+	//		//
+	//		//     {package name} {name + arguments of caller function}
+	//		//     {file where function was called}:{line number within file}  +{relative position of the function within the stack frame}
+	//		//
+	//		// ...so, store it as a 'preamble'
+	//		//
+	//		if strings.HasPrefix(val, "goroutine ") {
+	//			st.Preamble = val
+	//			result = ""
+	//			break
+	//		}
+	//
+	//		if strings.HasPrefix(val, "\t") {
+	//			val := strings.TrimSpace(val)
+	//			cols := strings.Fields(val)
+	//			if len(cols) != 2 {
+	//				break
+	//			}
+	//			result = cols[0]
+	//			result = strings.TrimPrefix(result, repoDirPrefix)
+	//			Pr("trimmed:", Quoted(cols[0]), " prefix:", repoDirPrefix)
+	//			Pr("result :", Quoted(result))
+	//			xp := NewPathM(result)
+	//			result = xp.Base()
+	//			break
+	//		}
+	//
+	//	}
+	//	if result != "" {
+	//		if skipped < st.SkipFactor {
+	//			skipped++
+	//		} else {
+	//			rows.Add(result + ` ` + prefix)
+	//		}
+	//	}
+	//}
 	st.Rows = rows.Array()
 }
 
