@@ -687,12 +687,6 @@ func (st StackTrace) String() string {
 	return strings.Join(rows, "\n")
 }
 
-func strRemainderz(str string, startIndex int) string {
-	q := len(str)
-	CheckArg(startIndex >= 0 && startIndex <= q)
-	return str[startIndex:q]
-}
-
 func strFirst(str string, substr string) int {
 	k := strings.Index(str, substr)
 	CheckArg(k >= 0, "string doesn't contain substr:", str, substr)
@@ -781,7 +775,7 @@ func (st StackTrace) parse(content string) {
 			}
 			j := strLastIndex(val, "(")
 			elem.CallerFunction = val[i+1 : j]
-			elem.CallerArguments = strRemainder(val, j)
+			elem.CallerArguments = val[j:]
 		}
 		{
 			val := strings.TrimSpace(lines[cursor+1])
@@ -791,10 +785,10 @@ func (st StackTrace) parse(content string) {
 			elem.CalleeFile = NewPathM(callerPath).Base()
 
 			// If there is a stack frame position, it will be preceded by +0x
-			rem := strRemainder(val, i+1)
+			rem := val[i+1:]
 			j := strings.Index(rem, "+0x")
 			if j >= 0 {
-				elem.StackFramePosition = strRemainder(val, j)
+				elem.StackFramePosition = val[j:]
 				rem = rem[0:j]
 			}
 			elem.CalleeLineNumber = ParseIntM(strings.TrimSpace(rem))
