@@ -86,53 +86,10 @@ func ShowStackTrace() {
 	os.Exit(1)
 }
 
-func foo() {
-	Pr("enter foo")
-	defer func() {
-		Pr("enter foo defer")
-		if r := recover(); r != nil {
-			st := GenerateStackTrace(1)
-			Pr("recovered panic; stack trace:", CR, st)
-		}
-		Pr("exit foo defer")
-	}()
-	Pr("causing panic")
-
-	CausePanic()
-
-	Pr("should not get this far")
-}
-
-func bar() {
-	Pr("this is bar")
-}
-
 func (oper AjaxOper) Perform(app *App) {
-
-	if true && Alert("Testing Panic() method") {
-		Panic("panicking to exit program")
-	}
-	if false && Alert("Seeing how panics can act as exceptions") {
-		Pr("caller location:")
-		Pr(CallerLocation(0))
-
-		Pr("calling function that will throw an exception")
-		foo()
-		bar()
-		Halt("Done panic experiment")
-
-	}
 	if false && Alert("Performing sql experiment") {
 		SQLiteExperiment()
 		return
-	}
-
-	if false && Alert("testing a panic") {
-		j := 7
-		if true {
-			j = 4
-		}
-		Pr(14 / (j - 4))
 	}
 
 	db := CreateDatabase()
