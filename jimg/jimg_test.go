@@ -22,18 +22,47 @@ func TestConvertImageFormat(t *testing.T) {
 	j.AssertMessage(img2.ToJson())
 }
 
-func TestImageFit(t *testing.T) {
-	j := jt.Newz(t)
-
-	sourceSize := IPointWith(689, 694)
-	targetSize := IPointWith(100, 200)
-
+func imageFit(j jt.JTest, sourceSize IPoint, targetSize IPoint) {
 	tf := jimg.NewImageFit()
-	tf.Strategy = jimg.LETTERBOX
+	tf.SourceSize = sourceSize
 	tf.TargetSize = targetSize
 
-	tf.WithSourceSize(sourceSize)
-	j.AssertMessage(tf.TargetRect())
+	mp := NewJSMap()
+	mp.PutNumberedKey("Source size", sourceSize)
+	mp.PutNumberedKey("Target size", targetSize)
+
+	for i := 0; i <= 10; i++ {
+		cropFactor := float64(i) / 10.0
+		padFactor := 1.0 - cropFactor
+		if cropFactor == padFactor {
+			continue
+		}
+		m2 := NewJSMap()
+		m2.PutNumberedKey("crop", cropFactor)
+		m2.PutNumberedKey("pad", padFactor)
+
+		tf.FactorCropH = cropFactor
+		tf.FactorCropV = cropFactor
+		tf.FactorPadH = padFactor
+		tf.FactorPadV = padFactor
+
+		tf.Optimize()
+
+		m2.PutNumberedKey("scale", tf.ScaleFactor)
+		m2.PutNumberedKey("scaled src", tf.ScaledSourceRect.ToJson())
+		mp.PutNumbered(m2)
+	}
+	j.AssertMessage(mp.String())
+}
+
+func TestImageFit(t *testing.T) {
+	j := jt.New(t)
+	imageFit(j, IPointWith(1800, 2400), IPointWith(600, 400))
+}
+
+func TestImageFit2(t *testing.T) {
+	j := jt.New(t)
+	imageFit(j, IPointWith(2000, 1200), IPointWith(1000, 1000))
 }
 
 func pt(x int, y int) image.Point {
@@ -66,14 +95,15 @@ func TestPlotIntoImage(t *testing.T) {
 	} else {
 
 		fit := jimg.NewImageFit()
-		fit.Strategy = jimg.CROP
 		fit.TargetSize = ourdst.Size
-		fit.WithSourceSize(srcSize)
-		r := fit.TargetRect()
+		fit.SourceSize = srcSize
+		fit.Optimize()
+		r := fit.ScaledSourceRect
+
 		Pr("target size:", ourdst.Size)
 
 		//do unit test on TestImageFit()
-		Pr("target rect:", r)
+		Pr("scaled source rect:", r)
 		// Draw with scaling (and appropriate cropping?)
 
 		sr := rect(0, 0, srcSize.X, srcSize.Y)

@@ -4,84 +4,85 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
-type ImageFitStrategy int
-
-const (
-	CROP ImageFitStrategy = iota
-	LETTERBOX
-	HYBRID
-)
-
 type ImageFitStruct struct {
-	TargetSize      IPoint
-	Strategy        ImageFitStrategy
-	targetRectangle Rect
+	TargetSize       IPoint
+	SourceSize       IPoint
+	targetRectangle  Rect
+	FactorCropH      float64
+	FactorCropV      float64
+	FactorPadH       float64
+	FactorPadV       float64
+	ScaleFactor      float64
+	ScaledSourceRect Rect
 }
 
 type ImageFit = *ImageFitStruct
 
 func NewImageFit() ImageFit {
-	t := &ImageFitStruct{}
+	t := &ImageFitStruct{
+		FactorCropH: .66,
+		FactorCropV: .66,
+		FactorPadH:  .33,
+		FactorPadV:  .33,
+	}
 	return t
 }
 
-func (m ImageFit) WithSourceSize(sourceSize IPoint) ImageFit {
-	Todo("This shouldn't be fluid, as it is the last thing called to invoke the calculation")
-	sourceSize.AssertPositive()
-	targetSize := m.TargetSize.AssertPositive()
+func (m ImageFit) Optimize() {
+	c := m.FactorCropH
+	d := m.FactorPadV
+	e := m.FactorPadH
+	f := m.FactorCropV
 
-	w := float64(sourceSize.X)
-	h := float64(sourceSize.Y)
-	u := float64(targetSize.X)
-	v := float64(targetSize.Y)
+	u := float64(m.TargetSize.X)
+	v := float64(m.TargetSize.Y)
+	w := float64(m.SourceSize.X)
+	h := float64(m.SourceSize.Y)
 
-	lambdaCrop := float64(1)
-	lambdaLbox := float64(1)
+	pr := PrIf(true)
 
-	switch m.Strategy {
-	default:
-		BadArg("strategy:", m.Strategy)
-	case CROP:
-		lambdaLbox = 0
-	case LETTERBOX:
-		lambdaCrop = 0
-	case HYBRID:
+	pr("Crop/Pad factors:", c, d, e, f)
+
+	var s float64
+	targetAspect := aspectRatioFromSize(m.TargetSize)
+	sourceAspect := aspectRatioFromSize(m.SourceSize)
+	if targetAspect > sourceAspect {
+		pr("u:", u, "c:", c, "d:", d, "w:", w)
+		if c <= 0 {
+			s = v / h
+		} else {
+			s = (u * (c - d)) / (2 * c * w)
+		}
+	} else {
+		if f <= 0 {
+			s = u / w
+		} else {
+			s = (v * (e + f)) / (2 * f * h)
+		}
 	}
+	pr("sourceAsp:", sourceAspect)
+	pr("targetAsp:", targetAspect)
+	pr("scale factor:", s)
 
-	sourceAspect := h / w
-	targetAspect := v / u
-	if sourceAspect < targetAspect {
-		temp := lambdaCrop
-		lambdaCrop = lambdaLbox
-		lambdaLbox = temp
-	}
-	Pr("aspect src:", sourceAspect, "target:", targetAspect)
+	m.ScaleFactor = s
 
-	// I apply a cost function c as a function of the scale factor s:
-	//
-	//  c(s)   L_c(u - sw)^2 + L_l(v - sh)^2
-	//
-	// and take the derivative to find when c(s) is minimized, to yield optimal scale s*:
-	//
-	//  s* = L_c(wu) + L_l(hv)
-	//       -------------------
-	//       L_c(w^2) + L_l(h^2)
-	//
-	s := (lambdaCrop*w*u + lambdaLbox*h*v) / (lambdaCrop*w*w + lambdaLbox*h*h)
-
-	resultWidth := s * w
-	resultHeight := s * h
-
-	m.targetRectangle = RectWithFloat((u-resultWidth)*.5, (v-resultHeight)*.5, resultWidth,
-		resultHeight).AssertValid()
-	Pr("targetRect:", m.targetRectangle)
-	Pr("u,v:", u, v)
-	Pr("w,h:", w, h)
-	Pr("lambda crop:", lambdaCrop, "lbox:", lambdaLbox)
-	Pr("resultW,H:", resultWidth, resultHeight)
-	return m
+	sx := (u - (s * w)) / 2
+	sy := (v - (s * h)) / 2
+	sw := sx + s*w
+	sh := sy + s*h
+	m.ScaledSourceRect = RectWithFloat(sx, sy, sw, sh)
+	pr("scaled source rect:", m.ScaledSourceRect)
 }
 
 func (m ImageFit) TargetRect() Rect {
 	return m.targetRectangle.AssertValid()
+}
+
+func aspectRatioFromSize(size IPoint) float64 {
+	return aspectRatio(size.X, size.Y)
+}
+
+func aspectRatio(width int, height int) float64 {
+	CheckArg(width > 0 && height > 0)
+	return float64(height) / float64(width)
 }
