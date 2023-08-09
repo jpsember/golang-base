@@ -21,8 +21,8 @@ var Dashes = "------------------------------------------------------------------
 // A skipCount of zero returns the immediate caller's location.
 func CallerLocation(skipCount int) string {
 	st := GenerateStackTrace(skipCount + 1)
-	if len(st.Rows) != 0 {
-		return st.Rows[0]
+	if len(st.Elements) != 0 {
+		return st.Elements[0].String()
 	}
 	return "<no location available!>"
 }
@@ -134,31 +134,6 @@ func auxAbort(skipCount int, prefix string, message ...any) {
 			st := GenerateStackTrace(netSkipCount)
 			if strings.HasPrefix(prefix, "Halting") {
 				st.MaxRowsPrinted = 1
-			}
-
-			// If we're exiting as the result of a panic, omit some rows:
-			// The one starting with "panic({"
-			if strings.HasPrefix(prefix, "Panic") {
-				// Omit every row through the one with "panic(...", as well as any immediately following
-				// that have the prefix "panic.go"
-				newFirstRow := 0
-				foundPanic := false
-				for i, v := range st.Rows {
-					if foundPanic {
-						if !strings.HasPrefix(v, "panic.go") {
-							break
-						}
-						newFirstRow++
-					} else if strings.HasPrefix(v, "panic(") {
-						foundPanic = true
-						newFirstRow = i + 1
-					}
-				}
-				if !foundPanic {
-					Pr("...did not find a stack trace row beginning with 'panic('...")
-				}
-				h := len(st.Rows)
-				st.Rows = st.Rows[MinInt(newFirstRow, h):h]
 			}
 			fmt.Println(st)
 			nestedAbortFlag = false
@@ -639,31 +614,68 @@ type StackTraceStruct struct {
 	Preamble       string
 	Content        string
 	SkipFactor     int
-	Rows           []string
 	MaxRowsPrinted int
 	Elements       []stackTraceElement
 }
 
-//     {package name} {name + arguments of caller function}
-//     {file where function was called}:{line number within file}  +{relative position of the function within the stack frame}
-
-type stackTraceElement struct {
+type stackTraceElementStruct struct {
 	Package            string
 	CallerFunction     string
 	CallerArguments    string
 	CalleeFile         string
 	CalleeLineNumber   int
 	StackFramePosition string
+	raw0, raw1         string
+	formatted          string
+}
+type stackTraceElement = *stackTraceElementStruct
+
+var repoDirOrEmpty string
+
+func init() {
+	if x, ok := FindRepoDir(); ok == nil {
+		repoDirOrEmpty = x.String()
+	}
 }
 
 func (e stackTraceElement) String() string {
-	return NewJSMap().Put("1 Package", e.Package). //
-							Put("2 CallerFunction", e.CallerFunction).         //
-							Put("3 CallerArguments", e.CallerArguments).       //
-							Put("4 CalleeFile", e.CalleeFile).                 //
-							Put("5 LineNum", e.CalleeLineNumber).              //
-							Put("6 StackFramePosition", e.StackFramePosition). //
-							String()
+	if e.formatted == "" {
+
+		{
+			val := e.raw0
+
+			// If there is a package, it will end at the first . following the last /
+			i := strings.LastIndex(val, "/")
+			if i >= 0 {
+				i = strFirstFrom(val, i, ".")
+				e.Package = val[0:i]
+			}
+			j := strLastIndex(val, "(")
+			e.CallerFunction = val[i+1 : j]
+			e.CallerArguments = val[j:]
+		}
+		{
+			val := strings.TrimSpace(e.raw1)
+			i := strFirst(val, ":")
+			callerPath := val[0:i]
+
+			callerPath = strings.TrimPrefix(callerPath, repoDirOrEmpty)
+			e.CalleeFile = NewPathM(callerPath).Base()
+
+			// If there is a stack frame position, it will be preceded by +0x
+			rem := val[i+1:]
+			j := strings.Index(rem, "+0x")
+			if j >= 0 {
+				e.StackFramePosition = val[j:]
+				rem = rem[0:j]
+			}
+			e.CalleeLineNumber = ParseIntM(strings.TrimSpace(rem))
+		}
+
+		// Convert the stack trace element to a display version
+		e.formatted = e.CalleeFile + ":" + IntToString(e.CalleeLineNumber)
+	}
+	return e.formatted
 }
 
 type StackTrace = *StackTraceStruct
@@ -680,11 +692,16 @@ func NewStackTrace(content string, skipFactor int) StackTrace {
 }
 
 func (st StackTrace) String() string {
-	rows := st.Rows
+	elem := st.Elements
 	if st.MaxRowsPrinted > 0 {
-		rows = rows[0:MinInt(st.MaxRowsPrinted, len(rows))]
+		elem = elem[0:MinInt(st.MaxRowsPrinted, len(elem))]
 	}
-	return strings.Join(rows, "\n")
+	sb := strings.Builder{}
+	for _, x := range elem {
+		sb.WriteString(x.String())
+		sb.WriteByte('\n')
+	}
+	return sb.String()
 }
 
 func strFirst(str string, substr string) int {
@@ -706,21 +723,12 @@ func strFirstFrom(str string, from int, substr string) int {
 }
 
 func (st StackTrace) parse(content string) {
-
-	Pr("Do lazy parsing of rows")
 	content = strings.TrimSpace(content)
-
-	// If the paths we parse lie within the current git repo, we'll show only their filenames.
-	//
-	var repoDirPrefix string
-	if repoDir, err := FindRepoDir(); err == nil {
-		repoDirPrefix = repoDir.String()
-	}
 
 	st.Content = content
 
 	skipped := 0
-	rows := NewArray[string]()
+	elements := []stackTraceElement{}
 
 	lines := strings.Split(content, "\n")
 
@@ -761,54 +769,21 @@ func (st StackTrace) parse(content string) {
 	st.Preamble = lines[0]
 
 	for cursor := 1; cursor < len(lines); cursor += 2 {
-
-		elem := stackTraceElement{}
-
-		{
-			val := lines[cursor+0]
-
-			// If there is a package, it will end at the first . following the last /
-			i := strings.LastIndex(val, "/")
-			if i >= 0 {
-				i = strFirstFrom(val, i, ".")
-				elem.Package = val[0:i]
-			}
-			j := strLastIndex(val, "(")
-			elem.CallerFunction = val[i+1 : j]
-			elem.CallerArguments = val[j:]
-		}
-		{
-			val := strings.TrimSpace(lines[cursor+1])
-			i := strFirst(val, ":")
-			callerPath := val[0:i]
-			callerPath = strings.TrimPrefix(callerPath, repoDirPrefix)
-			elem.CalleeFile = NewPathM(callerPath).Base()
-
-			// If there is a stack frame position, it will be preceded by +0x
-			rem := val[i+1:]
-			j := strings.Index(rem, "+0x")
-			if j >= 0 {
-				elem.StackFramePosition = val[j:]
-				rem = rem[0:j]
-			}
-			elem.CalleeLineNumber = ParseIntM(strings.TrimSpace(rem))
-		}
-
 		if skipped < st.SkipFactor {
 			skipped++
 		} else {
-			// Convert the stack trace element to a display version
-			s := elem.CalleeFile + ":" + IntToString(elem.CalleeLineNumber)
-			rows.Add(s)
+			elements = append(elements,
+				&stackTraceElementStruct{
+					raw0: lines[cursor+0],
+					raw1: lines[cursor+1],
+				})
 		}
 	}
-
-	st.Rows = rows.Array()
+	st.Elements = elements
 }
 
 // Wrap a main function so that we can modify the display of any panic stack traces that occur.
 func WrapMain(mainFunc func()) {
-	Todo("refactor CallerLocation to use GenerateStackTrace parsing")
 	Todo("!We may want the option to not exit the program after displaying the panic's stack trace")
 	defer func() {
 		if r := recover(); r != nil {

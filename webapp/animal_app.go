@@ -109,7 +109,10 @@ func bar() {
 
 func (oper AjaxOper) Perform(app *App) {
 
-	if true && Alert("Seeing how panics can act as exceptions") {
+	if true && Alert("Testing Panic() method") {
+		Panic("panicking to exit program")
+	}
+	if false && Alert("Seeing how panics can act as exceptions") {
 		Pr("caller location:")
 		Pr(CallerLocation(0))
 
