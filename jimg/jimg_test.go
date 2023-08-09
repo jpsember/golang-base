@@ -8,12 +8,33 @@ import (
 )
 
 func TestReadJpg(t *testing.T) {
+	j := jt.New(t)
+	img := readYCbCrImage()
+	j.AssertMessage(img.ToJson())
+}
+
+func TestConvertImageFormat(t *testing.T) {
+	j := jt.New(t)
+	img := readYCbCrImage()
+	img2 := CheckOkWith(img.AsType(jimg.TypeNRGBA))
+	j.AssertMessage(img2.ToJson())
+}
+
+func TestImageFit(t *testing.T) {
 	j := jt.Newz(t)
+
+	tf := jimg.NewImageFit()
+	tf.Strategy = jimg.CROP
+	tf.TargetSize = IPointWith(100, 200)
+
+	tf.WithSourceSize(IPointWith(120, 202))
+	j.AssertMessage(tf.TargetRect())
+}
+
+func readYCbCrImage() jimg.JImage {
 	p := NewPathM("resources/balloons.jpg")
 	bytes := p.ReadBytesM()
-	i, err := jimg.DecodeImage(bytes)
+	img, err := jimg.DecodeImage(bytes)
 	CheckOk(err)
-
-	Pr("image:", INDENT, i.ToJson())
-	j.AssertTrue(true)
+	return img
 }

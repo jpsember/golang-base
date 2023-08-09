@@ -1,5 +1,7 @@
 package base
 
+import "math"
+
 // ------------------------------------------------------------------------------------
 // 2D points (int-valued)
 // ------------------------------------------------------------------------------------
@@ -31,7 +33,22 @@ func IPointWith(x int, y int) IPoint {
 	return IPoint{X: x, Y: y}
 }
 
+func IPointWithFloat(x float64, y float64) IPoint {
+	return IPointWith(int(math.Round(x)), int(math.Round(x)))
+}
+
 var IPointZero = IPoint{}
+
+func (p IPoint) IsPositive() bool {
+	return p.X > 0 && p.Y > 0
+
+}
+func (p IPoint) AssertPositive() IPoint {
+	if !p.IsPositive() {
+		BadArg("<1IPoint coordinates are not both positive:", p)
+	}
+	return p
+}
 
 // ------------------------------------------------------------------------------------
 // Rectangle (int-valued)
@@ -59,13 +76,28 @@ func (r Rect) Parse(source JSEntity) DataClass {
 }
 
 func (r Rect) IsValid() bool {
-	return r.Size.X > 0 && r.Size.Y > 0
+	return r.Size.IsPositive()
+}
+
+func (r Rect) AssertValid() Rect {
+	if !r.IsValid() {
+		BadArg("<1Rect isn't valid:", INDENT, r)
+	}
+	return r
 }
 
 func RectWith(x int, y int, w int, h int) Rect {
 	r := Rect{
 		Location: IPoint{X: x, Y: y},
 		Size:     IPoint{X: w, Y: h},
+	}
+	return r
+}
+
+func RectWithFloat(x float64, y float64, w float64, h float64) Rect {
+	r := Rect{
+		Location: IPointWithFloat(x, y),
+		Size:     IPointWithFloat(w, h),
 	}
 	return r
 }
