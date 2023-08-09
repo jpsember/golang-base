@@ -91,8 +91,8 @@ func foo() {
 	defer func() {
 		Pr("enter foo defer")
 		if r := recover(); r != nil {
-			st := GenerateStackTrace(0)
-			Pr("recovered panic; stack trace:", INDENT, st)
+			st := GenerateStackTrace(1)
+			Pr("recovered panic; stack trace:", CR, st)
 		}
 		Pr("exit foo defer")
 	}()
@@ -110,6 +110,9 @@ func bar() {
 func (oper AjaxOper) Perform(app *App) {
 
 	if true && Alert("Seeing how panics can act as exceptions") {
+		Pr("caller location:")
+		Pr(CallerLocation(0))
+
 		Pr("calling function that will throw an exception")
 		foo()
 		bar()

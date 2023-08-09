@@ -20,42 +20,11 @@ var Dashes = "------------------------------------------------------------------
 // Returns source filename (without its path) and the line number, e.g., "foo.go:78".
 // A skipCount of zero returns the immediate caller's location.
 func CallerLocation(skipCount int) string {
-	var db = false
-
-	w := string(debug.Stack())
-	if db {
-		Pr("debug.Stack:\n", Dashes, w, Dashes)
+	st := GenerateStackTrace(skipCount + 1)
+	if len(st.Rows) != 0 {
+		return st.Rows[0]
 	}
-	lines := strings.Split(w, "\n")
-	if db {
-		Pr("lines:\n", Dashes)
-		for _, x := range lines {
-			Pr("[" + x + "]")
-		}
-	}
-
-	cursor := 2 + (2+skipCount)*2
-	if cursor >= len(lines) {
-		return "<cannot parse debug_loc (0)>"
-	}
-	line := strings.TrimSpace(lines[cursor])
-	if db {
-		Pr("line:\n", line)
-	}
-
-	// Trim the +0xHHH from the end (if there is one)
-	cutoff := strings.LastIndex(line, " +0x")
-	if cutoff < 0 {
-		cutoff = len(line)
-	}
-
-	// Trim any path components up to last '/'
-	j := 0
-	i := strings.LastIndex(line, "/")
-	if i < cutoff {
-		j = i + 1
-	}
-	return line[j:cutoff]
+	return "<no location available!>"
 }
 
 func Panic(message ...any) {
@@ -704,7 +673,6 @@ func GenerateStackTrace(skipFactor int) StackTrace {
 }
 
 func NewStackTrace(content string, skipFactor int) StackTrace {
-	//Pr("NewStackTrace with content:", INDENT, Quoted(content))
 	t := &StackTraceStruct{}
 	t.SkipFactor = skipFactor
 	t.parse(content)
@@ -719,30 +687,11 @@ func (st StackTrace) String() string {
 	return strings.Join(rows, "\n")
 }
 
-func quickVerify(flag bool) {
-	CheckState(flag)
-	if !flag {
-		panic("flag has failed")
-	}
-}
-
-func strRemainder(str string, startIndex int) string {
+func strRemainderz(str string, startIndex int) string {
 	q := len(str)
-	//Pr("str remainder:", Quoted(str), "len:", q, "startIndex:", startIndex)
-	quickVerify(startIndex <= q)
 	CheckArg(startIndex >= 0 && startIndex <= q)
 	return str[startIndex:q]
 }
-
-//func IndexFrom(str string, startIndex int, substr string) int {
-//	quickVerify(startIndex >= 0 && startIndex <= len(str))
-//	rem := strRemainder(str, startIndex)
-//	k := strings.Index(rem, substr)
-//	if k >= 0 {
-//		k += startIndex
-//	}
-//	return k
-//}
 
 func strFirst(str string, substr string) int {
 	k := strings.Index(str, substr)
@@ -754,16 +703,17 @@ func strLastIndex(str string, substr string) int {
 	if k < 0 {
 		CheckArg(k >= 0, "string doesn't contain substring:", Quoted(str), Quoted(substr))
 	}
-	//quickVerify(k >= 0)
 	return k
 }
 
 func strFirstFrom(str string, from int, substr string) int {
-	remainder := str[from:len(str)]
+	remainder := str[from:]
 	return strFirst(remainder, substr) + from
 }
+
 func (st StackTrace) parse(content string) {
 
+	Pr("Do lazy parsing of rows")
 	content = strings.TrimSpace(content)
 
 	// If the paths we parse lie within the current git repo, we'll show only their filenames.
@@ -780,25 +730,50 @@ func (st StackTrace) parse(content string) {
 
 	lines := strings.Split(content, "\n")
 
-	// The first line in the stack trace seems to always be something like 'goroutine 1 [running]:'
+	// The first line in the stack trace, which we will call the preamble, is something like 'goroutine 1 [running]:'
 	//
-	// The remaining 2n lines have this format:
+	// The remaining 2n lines form pairs, where each has this format:
 	//
 	//     {package name} {name + arguments of caller function}
 	//     {file where function was called}:{line number within file}  +{relative position of the function within the stack frame}
 	//
+	// Here is a typical stack trace pair:
 	//
-	quickVerify(len(lines)%2 == 1)
+	// runtime/debug.Stack()
+	//         /usr/local/go/src/runtime/debug/stack.go:24 +0x65
+	//
+	// package:  "runtime/debug"
+	// method:   "Stack"
+	// args:     "()"
+	//
+	// filename: "/usr/local/go/src/runtime/debug/stack.go"
+	// line num: "24"
+	// offset:   "+0x65"
+	//
+	// Here are some peculiar examples of the first element of the pair:
+	//
+	// github.com/jpsember/golang-base/base.(*StackTraceStruct).parse(0xc0000725a0, {0xc00013a900?, 0x1000?})
+	//
+	// package:  "github.com/jpsember/golang-base/base"
+	// method:   "(*StackTraceStruct).parse"
+	// args:     "(0xc0000725a0, {0xc00013a900?, 0x1000?})"
+	//
+	// panic({0x1004bc580, 0x1007e6e90})
+	//
+	// package:  ""
+	// method:   "panic"
+	// args:     "({0x1004bc580, 0x1007e6e90})"
+	//
 	st.Preamble = lines[0]
-	quickVerify(strings.HasPrefix(st.Preamble, "goroutine"))
+
 	for cursor := 1; cursor < len(lines); cursor += 2 {
+
 		elem := stackTraceElement{}
 
 		{
 			val := lines[cursor+0]
 
-			Pr("processing first line in pair:", INDENT, val)
-
+			// If there is a package, it will end at the first . following the last /
 			i := strings.LastIndex(val, "/")
 			if i >= 0 {
 				i = strFirstFrom(val, i, ".")
@@ -810,135 +785,36 @@ func (st StackTrace) parse(content string) {
 		}
 		{
 			val := strings.TrimSpace(lines[cursor+1])
-			Pr("processing second line in pair:", INDENT, val)
 			i := strFirst(val, ":")
 			callerPath := val[0:i]
 			callerPath = strings.TrimPrefix(callerPath, repoDirPrefix)
 			elem.CalleeFile = NewPathM(callerPath).Base()
 
+			// If there is a stack frame position, it will be preceded by +0x
 			rem := strRemainder(val, i+1)
 			j := strings.Index(rem, "+0x")
 			if j >= 0 {
 				elem.StackFramePosition = strRemainder(val, j)
 				rem = rem[0:j]
 			}
-			//j := strFirstFrom(val+seek, i, seek)
 			elem.CalleeLineNumber = ParseIntM(strings.TrimSpace(rem))
-			//elem.StackFramePosition = strRemainder(val, j)
 		}
-		//j := strLastIndex(val, "(")
-		//
-		//packageAndMethod := val[0:j]
-		//Pr("packageAndMethod:", packageAndMethod)
-		//
-		//h := strLastIndex(packageAndMethod, "/")
-		//
-		//packageName := packageAndMethod[0:h]
-		//Pr("packageName:", packageName)
-		//
-		//callerNameAndArgs := strRemainder(packageAndMethod, h+1)
-		//Pr("callerNameAndArgs:", callerNameAndArgs)
-		//
-		//h2 := strLastIndex(callerNameAndArgs, "(")
-		//args := strRemainder(callerNameAndArgs, h2)
-		//callerName := callerNameAndArgs[0:h2]
-		//
-		////}
-		////h := strings.LastIndex(packageAndMethod,"/)
-		////arguments := val[j:valLen]
-		//
-		//Pr("parsing:", val)
-		//Pr("...pkg/method:", packageAndMethod)
-		//Pr("...pkg:", packageName)
-		//Pr("...callerNameAndArgs:", callerNameAndArgs)
-		//Pr("callerName:", callerName)
-		//Pr("args:", args)
-		//
-		////val = strings.TrimSpace(lines[cursor+1])
-		////
-		////q := strings.LastIndex(val[0:j], ".")
-		////quickVerify(q > 0)
-		////functionName := val[q+1 : j]
-		////Pr("functionName:", functionName)
-		//
-		//val2 := strings.TrimSpace(lines[cursor+1])
-		//cols := strings.Fields(val2)
-		//quickVerify(len(cols) == 2)
-		//callerPathWithLineNum := cols[0]
-		//j2 := strings.Index(callerPathWithLineNum, ":")
-		//quickVerify(j2 > 0)
-		//callerPath := callerPathWithLineNum[0:j2]
-		//callerPath = strings.TrimPrefix(callerPath, repoDirPrefix)
-		//callerLineNum := ParseIntM(strRemainder(callerPathWithLineNum, j2+1))
-		////callerPath = strings.TrimPrefix(callerPath, repoDirPrefix)
-		////xp := NewPathM(callerPath)
-		////callerFilename := xp.Base()
-		//
-		//elem := stackTraceElement{
-		//	Package:            packageName,
-		//	CallerFunction:     callerName,
-		//	CallerArguments:    args,
-		//	CalleeFile:         NewPathM(callerPath),
-		//	CalleeLineNumber:   callerLineNum,
-		//	StackFramePosition: cols[1],
-		//}
 
-		Pr("parsed elem:", INDENT, elem)
 		if skipped < st.SkipFactor {
 			skipped++
 		} else {
-			rows.Add(ToString(elem))
+			// Convert the stack trace element to a display version
+			s := elem.CalleeFile + ":" + IntToString(elem.CalleeLineNumber)
+			rows.Add(s)
 		}
 	}
-	//Pr("what is prefix, exactly?")
-	//prefix := ""
-	//
-	//for _, val := range strings.Split(content, "\n") {
-	//	result := val
-	//	for {
-	//		// The first line in the stack trace seems to always be something like 'goroutine 1 [running]:', so
-	//		// it doesn't follow the pattern of
-	//		//
-	//		//     {package name} {name + arguments of caller function}
-	//		//     {file where function was called}:{line number within file}  +{relative position of the function within the stack frame}
-	//		//
-	//		// ...so, store it as a 'preamble'
-	//		//
-	//		if strings.HasPrefix(val, "goroutine ") {
-	//			st.Preamble = val
-	//			result = ""
-	//			break
-	//		}
-	//
-	//		if strings.HasPrefix(val, "\t") {
-	//			val := strings.TrimSpace(val)
-	//			cols := strings.Fields(val)
-	//			if len(cols) != 2 {
-	//				break
-	//			}
-	//			result = cols[0]
-	//			result = strings.TrimPrefix(result, repoDirPrefix)
-	//			Pr("trimmed:", Quoted(cols[0]), " prefix:", repoDirPrefix)
-	//			Pr("result :", Quoted(result))
-	//			xp := NewPathM(result)
-	//			result = xp.Base()
-	//			break
-	//		}
-	//
-	//	}
-	//	if result != "" {
-	//		if skipped < st.SkipFactor {
-	//			skipped++
-	//		} else {
-	//			rows.Add(result + ` ` + prefix)
-	//		}
-	//	}
-	//}
+
 	st.Rows = rows.Array()
 }
 
 // Wrap a main function so that we can modify the display of any panic stack traces that occur.
 func WrapMain(mainFunc func()) {
+	Todo("refactor CallerLocation to use GenerateStackTrace parsing")
 	Todo("!We may want the option to not exit the program after displaying the panic's stack trace")
 	defer func() {
 		if r := recover(); r != nil {
