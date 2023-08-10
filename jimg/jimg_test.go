@@ -193,3 +193,48 @@ func TestPlotBalloons(t *testing.T) {
 	writeImg(dstImage, "_SKIP_"+t.Name()+".png")
 
 }
+
+func TestScaleBalloons(t *testing.T) {
+	j := jt.Newz(t)
+	_ = j
+
+	srcImage := getBalloon()
+	srcSize := srcImage.Size() // 420 x 315
+
+	// Determine a target rectangle, one with a different aspect ratio
+	tgtSize := IPointWith(800, 380)
+
+	destGoImage := image.NewNRGBA(RectWithSize(tgtSize).ToImageRectangle())
+	dstImage := jimg.JImageOf(destGoImage)
+
+	scale, plotRect := FitRectToRect(srcSize, tgtSize, 1)
+	Pr("fitRecttoRect, scale:", scale, CR, "plotRect:", INDENT, plotRect)
+
+	m := NewJSMap()
+	m.PutNumberedKey("source size", srcSize)
+	m.PutNumberedKey("target size", tgtSize)
+	m.PutNumberedKey("scale", scale)
+	m.PutNumberedKey("target rect", plotRect)
+	Pr(m)
+
+	draw.BiLinear.Scale(destGoImage, plotRect.ToImageRectangle(), srcImage.Image(), RectWithSize(srcSize).ToImageRectangle(), draw.Src, nil)
+
+	//if false {
+	//	//chunk := RectWith(196, 114, 294-196, 240-114)
+	//
+	//	draw.BiLinear.Scale(destGoImage, RectWithSize(chunk.Size).ToImageRectangle(), srcImage.Image(),
+	//		chunk.ToImageRectangle(), draw.Src, nil)
+	//
+	//	draw.BiLinear.Scale(destGoImage, RectWithSize(chunk.Size).MoveBy(-20, -20).ToImageRectangle(), srcImage.Image(),
+	//		chunk.ToImageRectangle(), draw.Src, nil)
+	//
+	//	draw.BiLinear.Scale(destGoImage, RectWithSize(chunk.Size).MoveBy(tgtSize.X-chunk.Size.X, tgtSize.Y-chunk.Size.Y).ToImageRectangle(), srcImage.Image(),
+	//		chunk.ToImageRectangle(), draw.Src, nil)
+	//
+	//	Pr("plot rect:", plotRect)
+	//	draw.BiLinear.Scale(destGoImage, plotRect.ToImageRectangle(), srcImage.Image(), RectWithSize(srcSize).ToImageRectangle(), draw.Src, nil)
+	//}
+
+	Todo("Do I need to set the origin to zero before saving?")
+	writeImg(dstImage, "_SKIP_"+t.Name()+"_"+IntToString(tgtSize.X)+"_"+IntToString(tgtSize.Y)+".png")
+}

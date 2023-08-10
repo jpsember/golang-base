@@ -138,6 +138,10 @@ func RectWithSize(size IPoint) Rect {
 	}
 }
 
+func (r Rect) MoveBy(x int, y int) Rect {
+	return RectWith(r.Location.X+x, r.Location.Y+y, r.Size.X, r.Size.Y)
+}
+
 func RectWithLocationAndSize(origin IPoint, size IPoint) Rect {
 	return Rect{
 		Location: origin,
@@ -164,8 +168,8 @@ func FitRectToRect(srcSize IPoint, targSize IPoint, factor float64) (float64, Re
 	Todo("!Have an FPoint class for this")
 	srcWidth := float64(srcSize.X)
 	srcHeight := float64(srcSize.Y)
-	targWidth := float64(srcSize.X)
-	targHeight := float64(srcSize.Y)
+	targWidth := float64(targSize.X)
+	targHeight := float64(targSize.Y)
 
 	srcAspect := srcSize.AspectRatio()
 	targAspect := targSize.AspectRatio()
