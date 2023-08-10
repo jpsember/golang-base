@@ -9,6 +9,13 @@ import (
 	"testing"
 )
 
+func TestColorStuff(t *testing.T) {
+	j := jt.New(t)
+	img := readImage("resources/balloons.jpg")
+	img = CheckOkWith(img.AsDefaultType())
+	j.AssertMessage(img.ToJson())
+}
+
 func TestReadJpg(t *testing.T) {
 	j := jt.New(t)
 	img := readYCbCrImage()
@@ -84,25 +91,38 @@ func TestPlotIntoImage(t *testing.T) {
 
 	dogSize := pt(689, 694)
 	_ = dogSize
-	dstBounds := rect(0, 0, dogSize.X, dogSize.Y/3)
+	dstBounds := rect(0, 0, dogSize.X, 232)
 	dst := image.NewRGBA(dstBounds)
+	_ = dst.Pix
 	ourdst := RectWithImageRect(dstBounds)
 
 	Todo("It leaves an alpha channel which is a bit misleading...")
 	Todo("Feature to convert alpha pixels to purple or something")
 
 	_, r := jimg.FitRectToRect(RectWithSize(srcSize), ourdst, 1.0)
+
+	jimg.SetPurple(dst)
 	Todo("strange black band")
 
 	Pr("target size:", ourdst.Size)
 
 	//do unit test on TestImageFit()
 	Pr("scaled source rect:", r)
+
 	// Draw with scaling (and appropriate cropping?)
 
 	sr := rect(0, 0, srcSize.X, srcSize.Y)
 	Todo("investigate Over vs Src")
-	draw.ApproxBiLinear.Scale(dst, r.ToImageRectangle(), srcImage.Image(), sr, draw.Src, nil)
+
+	tr := r.ToImageRectangle()
+	Pr("target rect end:", tr.Size().Y)
+	Pr("src rect end   :", sr.Size().Y)
+
+	Pr("target rect:", tr)
+	Pr("source rect:", sr)
+
+	draw.BiLinear.Scale(dst, tr, srcImage.Image(), sr, draw.Over, nil)
+	//draw.ApproxBiLinear.Scale(dst, tr, srcImage.Image(), sr, draw.Over, nil)
 
 	dstImage := jimg.JImageOf(dst)
 	writeImg(dstImage, "_SKIP_"+t.Name()+".png")

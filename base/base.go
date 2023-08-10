@@ -172,6 +172,13 @@ func Info(arg any) string {
 	return fmt.Sprint("Value[", arg, "],Type[", reflect.TypeOf(arg), "]")
 }
 
+func TypeOf(arg any) string {
+	if arg == nil {
+		return "<nil>"
+	}
+	return fmt.Sprint(reflect.TypeOf(arg))
+}
+
 // Print an alert if an alert with its key hasn't already been printed.
 // The key is printed, along with the additional message components.
 // If the key has a prefix '!', it is a "low priority" alert - if the key already

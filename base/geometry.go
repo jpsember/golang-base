@@ -14,6 +14,10 @@ type IPoint struct {
 	Y int
 }
 
+func (p IPoint) Product() int {
+	return p.X * p.Y
+}
+
 func (p IPoint) String() string {
 	return p.ToJson().AsJSList().CompactString()
 }
