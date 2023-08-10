@@ -31,8 +31,11 @@ func imageFit(j jt.JTest, sourceSize IPoint, targetSize IPoint) {
 	mp.PutNumberedKey("Source size", sourceSize)
 	mp.PutNumberedKey("Target size", targetSize)
 
-	for i := 0; i <= 10; i++ {
-		cropFactor := float64(i) / 10.0
+	for i := 0; i <= 100; i++ {
+		j := float64(i) / 100.0
+
+		cropFactor := (.28 * (1.0 - j)) + (.29 * j)
+		//cropFactor := float64(i) / 100.0
 		padFactor := 1.0 - cropFactor
 		if cropFactor == padFactor {
 			continue
@@ -57,12 +60,45 @@ func imageFit(j jt.JTest, sourceSize IPoint, targetSize IPoint) {
 
 func TestImageFit(t *testing.T) {
 	j := jt.New(t)
-	imageFit(j, IPointWith(1800, 2400), IPointWith(600, 400))
+	imageFit(j, IPointWith(1800, 2400), IPointWith(600, 500))
 }
 
 func TestImageFit2(t *testing.T) {
-	j := jt.New(t)
-	imageFit(j, IPointWith(2000, 1200), IPointWith(1000, 1000))
+	j := jt.Newz(t)
+	imageFit(j, IPointWith(1000, 600), IPointWith(2000, 3000))
+}
+
+func TestImageFit3(t *testing.T) {
+	j := jt.Newz(t)
+
+	sourceSize := IPointWith(2000, 1000)
+	targetSize := IPointWith(600, 500)
+
+	tf := jimg.NewImageFit()
+	tf.SourceSize = sourceSize
+	tf.TargetSize = targetSize
+
+	mp := NewJSMap()
+	mp.PutNumberedKey("Source size", sourceSize)
+	mp.PutNumberedKey("Target size", targetSize)
+
+	cropFactor := 0.1
+	padFactor := 0.9
+
+	tf.FactorCropH = cropFactor
+	tf.FactorCropV = cropFactor
+
+	tf.FactorPadH = padFactor
+	tf.FactorPadV = padFactor
+
+	mp.PutNumberedKey("crop", cropFactor)
+	mp.PutNumberedKey("pad", padFactor)
+
+	tf.Optimize()
+
+	mp.PutNumberedKey("scale", tf.ScaleFactor)
+	mp.PutNumberedKey("scaled src", tf.ScaledSourceRect.ToJson())
+	j.AssertMessage(mp.String())
 }
 
 func pt(x int, y int) image.Point {
