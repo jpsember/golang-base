@@ -12,9 +12,13 @@ import (
 
 func TestColorStuff(t *testing.T) {
 	j := jt.New(t)
+	j.AssertMessage(getBalloon().ToJson())
+}
+
+func getBalloon() jimg.JImage {
 	img := readImage("resources/balloons.jpg")
 	img = CheckOkWith(img.AsDefaultType())
-	j.AssertMessage(img.ToJson())
+	return img
 }
 
 func TestReadJpg(t *testing.T) {
@@ -42,7 +46,7 @@ func imageFit(j jt.JTest, sourceSize IPoint, targetSize IPoint) {
 		m2 := NewJSMap()
 		m2.PutNumberedKey("t", t)
 
-		scaleFactor, scaledRect := FitRectToRect(RectWithLocationAndSize(IPointZero, sourceSize), RectWithLocationAndSize(IPointZero, targetSize),
+		scaleFactor, scaledRect := FitRectToRect(sourceSize, targetSize,
 			t)
 
 		m2.PutNumberedKey("scale", scaleFactor)
@@ -90,21 +94,15 @@ func TestPlotIntoImage(t *testing.T) {
 	srcSize := srcImage.Size()
 	Pr(srcSize)
 
-	dogSize := pt(689, 694)
-	_ = dogSize
-	dstBounds := rect(0, 0, dogSize.X, 232)
-	dst := image.NewRGBA(dstBounds)
-	_ = dst.Pix
-	ourdst := RectWithImageRect(dstBounds)
+	dstSize := IPointWith(680, 232)
+	dst := image.NewRGBA(RectWithSize(dstSize).ToImageRectangle())
 
 	Todo("It leaves an alpha channel which is a bit misleading...")
 	Todo("Feature to convert alpha pixels to purple or something")
 
-	_, r := FitRectToRect(RectWithSize(srcSize), ourdst, 1.0)
+	_, r := FitRectToRect(srcSize, dstSize, 1.0)
 
 	Todo("strange black band")
-
-	Pr("target size:", ourdst.Size)
 
 	//do unit test on TestImageFit()
 	Pr("scaled source rect:", r)
@@ -145,31 +143,6 @@ func writeImg(img jimg.JImage, filename string) {
 	p.WriteBytesM(by)
 }
 
-func plotAt(targetSize IPoint, srcImage jimg.JImage, x int, y int) {
-
-	w := 420
-	h := 315
-
-	sf := 1.5
-
-	targetGoRect := rect(200, 200, scl(w, sf), scl(h, sf))
-	destGoImage := image.NewNRGBA(targetGoRect)
-
-	srcSize := srcImage.Size() // 420 x 315
-	sourceGoRect := RectWithSize(srcSize).ToImageRectangle()
-
-	//targetGoRect := RectWith(x, y, scl(srcSize.X, sf), scl(srcSize.Y, sf)).ToImageRectangle()
-
-	draw.BiLinear.Scale(destGoImage, targetGoRect, srcImage.Image(), sourceGoRect, draw.Over, nil)
-
-	dstImage := jimg.JImageOf(destGoImage)
-	dstImage.SetTransparentPurple()
-
-	Todo("Do I need to set the origin to zero before saving?")
-	writeImg(dstImage, "_SKIP_plotAt_"+IntToString(x)+"_"+IntToString(y)+".png")
-
-}
-
 func scl(value int, factor float64) int {
 	return int(math.Round(float64(value) * factor))
 }
@@ -178,20 +151,11 @@ func TestPlotBalloons(t *testing.T) {
 	j := jt.Newz(t)
 	_ = j
 
-	srcImage := readImage("resources/balloons.jpg")
-	srcImage = srcImage.AsDefaultTypeM()
+	srcImage := getBalloon()
 	srcSize := srcImage.Size() // 420 x 315
 	Pr(srcSize)
 
 	targetSize := IPointWith(scl(srcSize.X, 1.4), scl(srcSize.Y, 1.4))
-	Pr("target size:", targetSize)
-
-	{
-		ts := IPointWith(scl(srcSize.X, 1.4), scl(srcSize.Y, 1.4))
-		plotAt(ts, srcImage, 250, 250)
-
-		Halt()
-	}
 
 	sourceRect := RectWithSize(srcSize)
 	targetRect := RectWithSize(targetSize)
@@ -202,7 +166,7 @@ func TestPlotBalloons(t *testing.T) {
 
 	// Plot image into dest at a different offset
 
-	scale, plotRect := FitRectToRect(sourceRect, targetRect, 0)
+	scale, plotRect := FitRectToRect(srcSize, targetSize, 0)
 
 	m := NewJSMap()
 	m.PutNumberedKey("source rect", sourceRect)
@@ -228,45 +192,4 @@ func TestPlotBalloons(t *testing.T) {
 	Todo("Do I need to set the origin to zero before saving?")
 	writeImg(dstImage, "_SKIP_"+t.Name()+".png")
 
-	//
-	//
-	//
-	//
-	//dogSize := pt(689, 694)
-	//_ = dogSize
-	//dstBounds := rect(0, 0, dogSize.X, 232)
-	//dst := image.NewRGBA(dstBounds)
-	//_ = dst.Pix
-	//ourdst := RectWithImageRect(dstBounds)
-	//
-	//Todo("It leaves an alpha channel which is a bit misleading...")
-	//Todo("Feature to convert alpha pixels to purple or something")
-	//
-	//_, r := jimg.FitRectToRect(RectWithSize(srcSize), ourdst, 1.0)
-	//
-	//jimg.SetPurple(dst)
-	//Todo("strange black band")
-	//
-	//Pr("target size:", ourdst.Size)
-	//
-	////do unit test on TestImageFit()
-	//Pr("scaled source rect:", r)
-	//
-	//// Draw with scaling (and appropriate cropping?)
-	//
-	//sr := rect(0, 0, srcSize.X, srcSize.Y)
-	//Todo("investigate Over vs Src")
-	//
-	//tr := r.ToImageRectangle()
-	//Pr("target rect end:", tr.Size().Y)
-	//Pr("src rect end   :", sr.Size().Y)
-	//
-	//Pr("target rect:", tr)
-	//Pr("source rect:", sr)
-	//
-	//draw.BiLinear.Scale(dst, tr, srcImage.Image(), sr, draw.Over, nil)
-	////draw.ApproxBiLinear.Scale(dst, tr, srcImage.Image(), sr, draw.Over, nil)
-	//
-	//dstImage := jimg.JImageOf(dst)
-	//writeImg(dstImage, "_SKIP_"+t.Name()+".png")
 }

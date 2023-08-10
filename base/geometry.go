@@ -153,18 +153,22 @@ func (r Rect) AspectRatio() float64 {
 	return r.Size.AspectRatio()
 }
 
-func FitRectToRect(src Rect, targ Rect, factor float64) (float64, Rect) {
-	Todo("better to assume origins of rects are at 0,0?")
-	src.AssertValid()
-	targ.AssertValid()
+// Perform scaling, cropping, and/or padding to align a source rectangle to a target rectangle.
+// The factor ranges from 0: maximum padding to 1: maximum cropping.  Returns the scaling factor
+// applied, and the bounds of the scaled source image within the target rectangle's coordinate system.
+// Both source and target rectangles are assumed to have their origins at 0,0.
+func FitRectToRect(srcSize IPoint, targSize IPoint, factor float64) (float64, Rect) {
+	srcSize.AssertPositive()
+	targSize.AssertPositive()
 
-	srcWidth := float64(src.Size.X)
-	srcHeight := float64(src.Size.Y)
-	targWidth := float64(targ.Size.X)
-	targHeight := float64(targ.Size.Y)
+	Todo("!Have an FPoint class for this")
+	srcWidth := float64(srcSize.X)
+	srcHeight := float64(srcSize.Y)
+	targWidth := float64(srcSize.X)
+	targHeight := float64(srcSize.Y)
 
-	srcAspect := src.AspectRatio()
-	targAspect := targ.AspectRatio()
+	srcAspect := srcSize.AspectRatio()
+	targAspect := targSize.AspectRatio()
 	scaleMin := targWidth / srcWidth
 	scaleMax := targHeight / srcHeight
 	if targAspect < srcAspect {
@@ -177,8 +181,8 @@ func FitRectToRect(src Rect, targ Rect, factor float64) (float64, Rect) {
 	scaledHeight := scale * srcHeight
 
 	resultRect := RectWithFloat(
-		float64(targ.Location.X)+(targWidth-scaledWidth)/2,
-		float64(targ.Location.Y)+(targHeight-scaledHeight)/2,
+		(targWidth-scaledWidth)/2,
+		(targHeight-scaledHeight)/2,
 		scaledWidth, scaledHeight)
 
 	return scale, resultRect
