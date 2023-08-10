@@ -37,7 +37,7 @@ func IPointWith(x int, y int) IPoint {
 }
 
 func IPointWithFloat(x float64, y float64) IPoint {
-	return IPointWith(int(math.Round(x)), int(math.Round(x)))
+	return IPointWith(int(math.Round(x)), int(math.Round(y)))
 }
 
 var IPointZero = IPoint{}
@@ -51,6 +51,10 @@ func (p IPoint) AssertPositive() IPoint {
 		BadArg("<1IPoint coordinates are not both positive:", p)
 	}
 	return p
+}
+
+func (p IPoint) AspectRatio() float64 {
+	return float64(p.Y) / float64(p.X)
 }
 
 // ------------------------------------------------------------------------------------
@@ -122,4 +126,25 @@ func (r Rect) ToImageRectangle() image.Rectangle {
 
 func RectWithImageRect(src image.Rectangle) Rect {
 	return RectWith(src.Min.X, src.Min.Y, src.Dx(), src.Dy())
+}
+
+func RectWithSize(size IPoint) Rect {
+	return Rect{
+		Size: size,
+	}
+}
+
+func RectWithLocationAndSize(origin IPoint, size IPoint) Rect {
+	return Rect{
+		Location: origin,
+		Size:     size,
+	}
+}
+
+func (r Rect) MidPoint() IPoint {
+	return IPointWith(r.Location.X+r.Size.X/2, r.Location.Y+r.Size.Y/2)
+}
+
+func (r Rect) AspectRatio() float64 {
+	return r.Size.AspectRatio()
 }

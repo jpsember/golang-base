@@ -23,82 +23,45 @@ func TestConvertImageFormat(t *testing.T) {
 }
 
 func imageFit(j jt.JTest, sourceSize IPoint, targetSize IPoint) {
-	tf := jimg.NewImageFit()
-	tf.SourceSize = sourceSize
-	tf.TargetSize = targetSize
 
 	mp := NewJSMap()
 	mp.PutNumberedKey("Source size", sourceSize)
 	mp.PutNumberedKey("Target size", targetSize)
 
-	for i := 0; i <= 100; i++ {
-		j := float64(i) / 100.0
+	for i := 0; i <= 100; i += 10 {
+		t := float64(i) / 100.0
 
-		cropFactor := (.28 * (1.0 - j)) + (.29 * j)
-		//cropFactor := float64(i) / 100.0
-		padFactor := 1.0 - cropFactor
-		if cropFactor == padFactor {
-			continue
-		}
 		m2 := NewJSMap()
-		m2.PutNumberedKey("crop", cropFactor)
-		m2.PutNumberedKey("pad", padFactor)
+		m2.PutNumberedKey("t", t)
 
-		tf.FactorCropH = cropFactor
-		tf.FactorCropV = cropFactor
-		tf.FactorPadH = padFactor
-		tf.FactorPadV = padFactor
+		scaleFactor, scaledRect := jimg.FitRectToRect(RectWithLocationAndSize(IPointZero, sourceSize), RectWithLocationAndSize(IPointZero, targetSize),
+			t)
 
-		tf.Optimize()
-
-		m2.PutNumberedKey("scale", tf.ScaleFactor)
-		m2.PutNumberedKey("scaled src", tf.ScaledSourceRect.ToJson())
+		m2.PutNumberedKey("scale", scaleFactor)
+		m2.PutNumberedKey("scaled rect", scaledRect.ToJson())
 		mp.PutNumbered(m2)
 	}
 	j.AssertMessage(mp.String())
 }
 
-func TestImageFit(t *testing.T) {
-	j := jt.New(t)
+func TestImageFitPortraitToLandscape(t *testing.T) {
+	j := jt.Newz(t)
 	imageFit(j, IPointWith(1800, 2400), IPointWith(600, 500))
 }
 
-func TestImageFit2(t *testing.T) {
-	j := jt.Newz(t)
-	imageFit(j, IPointWith(1000, 600), IPointWith(2000, 3000))
+func TestImageFitLandscapeToPortrait(t *testing.T) {
+	j := jt.New(t)
+	imageFit(j, IPointWith(1000, 600), IPointWith(500, 1200))
 }
 
-func TestImageFit3(t *testing.T) {
-	j := jt.Newz(t)
+func TestImageFitEqual(t *testing.T) {
+	j := jt.New(t)
+	imageFit(j, IPointWith(1000, 600), IPointWith(1000, 600))
+}
 
-	sourceSize := IPointWith(2000, 1000)
-	targetSize := IPointWith(600, 500)
-
-	tf := jimg.NewImageFit()
-	tf.SourceSize = sourceSize
-	tf.TargetSize = targetSize
-
-	mp := NewJSMap()
-	mp.PutNumberedKey("Source size", sourceSize)
-	mp.PutNumberedKey("Target size", targetSize)
-
-	cropFactor := 0.1
-	padFactor := 0.9
-
-	tf.FactorCropH = cropFactor
-	tf.FactorCropV = cropFactor
-
-	tf.FactorPadH = padFactor
-	tf.FactorPadV = padFactor
-
-	mp.PutNumberedKey("crop", cropFactor)
-	mp.PutNumberedKey("pad", padFactor)
-
-	tf.Optimize()
-
-	mp.PutNumberedKey("scale", tf.ScaleFactor)
-	mp.PutNumberedKey("scaled src", tf.ScaledSourceRect.ToJson())
-	j.AssertMessage(mp.String())
+func TestImageFitSimilar(t *testing.T) {
+	j := jt.New(t)
+	imageFit(j, IPointWith(1000, 600), IPointWith(200, 120))
 }
 
 func pt(x int, y int) image.Point {
@@ -121,35 +84,28 @@ func TestPlotIntoImage(t *testing.T) {
 
 	dogSize := pt(689, 694)
 	_ = dogSize
-	dstBounds := rect(0, 0, dogSize.X/3, dogSize.Y/3)
+	dstBounds := rect(0, 0, dogSize.X, dogSize.Y/3)
 	dst := image.NewRGBA(dstBounds)
 	ourdst := RectWithImageRect(dstBounds)
 
-	if false {
-		// Draw without scaling, but with appropriate cropping
-		draw.Draw(dst, dstBounds, srcImage.Image(), pt(50, 100), draw.Src)
-	} else {
+	Todo("It leaves an alpha channel which is a bit misleading...")
+	Todo("Feature to convert alpha pixels to purple or something")
 
-		fit := jimg.NewImageFit()
-		fit.TargetSize = ourdst.Size
-		fit.SourceSize = srcSize
-		fit.Optimize()
-		r := fit.ScaledSourceRect
+	_, r := jimg.FitRectToRect(RectWithSize(srcSize), ourdst, 1.0)
+	Todo("strange black band")
 
-		Pr("target size:", ourdst.Size)
+	Pr("target size:", ourdst.Size)
 
-		//do unit test on TestImageFit()
-		Pr("scaled source rect:", r)
-		// Draw with scaling (and appropriate cropping?)
+	//do unit test on TestImageFit()
+	Pr("scaled source rect:", r)
+	// Draw with scaling (and appropriate cropping?)
 
-		sr := rect(0, 0, srcSize.X, srcSize.Y)
-		draw.ApproxBiLinear.Scale(dst, r.ToImageRectangle(), srcImage.Image(), sr, draw.Over, nil)
-	}
+	sr := rect(0, 0, srcSize.X, srcSize.Y)
+	Todo("investigate Over vs Src")
+	draw.ApproxBiLinear.Scale(dst, r.ToImageRectangle(), srcImage.Image(), sr, draw.Src, nil)
 
 	dstImage := jimg.JImageOf(dst)
 	writeImg(dstImage, "_SKIP_"+t.Name()+".png")
-
-	//func Draw(dst Image, r image.Rectangle, src image.Image, sp image.Point, op Op)
 }
 
 func readImage(filename string) jimg.JImage {
