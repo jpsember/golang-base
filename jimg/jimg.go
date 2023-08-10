@@ -84,9 +84,13 @@ func ImageTypeStr(imgType JImageType) string {
 	return result
 }
 
+var zer = image.Point{}
+
 func JImageOf(img image.Image) JImage {
 	CheckNotNil(img)
-	CheckArg(img.Bounds().Min == image.Point{}, "origin of image is not at (0,0)")
+	if img.Bounds().Min != zer {
+		Pr("origin of image is not at (0,0);", img.Bounds())
+	}
 	t := &JImageStruct{
 		image: img,
 	}
@@ -147,6 +151,10 @@ func GetImageInfo(image image.Image) JSMap {
 
 func (ji JImage) AsDefaultType() (JImage, error) {
 	return ji.AsType(TypeNRGBA)
+}
+
+func (ji JImage) AsDefaultTypeM() JImage {
+	return CheckOkWith(ji.AsType(TypeNRGBA))
 }
 
 func (ji JImage) NRGBA() *image.NRGBA {
@@ -224,10 +232,19 @@ func (ji JImage) EncodePNG() ([]byte, error) {
 	return nil, err
 }
 
-func SetPurple(img *image.RGBA) {
+var purple = []byte{
+	0xc6, 0x64, 0xed, 0xff,
+}
+
+func (ji JImage) SetTransparentPurple() {
+	img := ji.NRGBA()
 	pix := img.Pix
 	h := len(pix)
 	for i := 0; i < h; i += 4 {
-
+		if pix[i+3] != 0xff {
+			for j, val := range purple {
+				pix[i+j] = val
+			}
+		}
 	}
 }
