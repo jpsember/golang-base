@@ -1,7 +1,6 @@
 package jimg
 
 import (
-	"bufio"
 	"bytes"
 	. "github.com/jpsember/golang-base/base"
 	"golang.org/x/image/draw"
@@ -228,12 +227,10 @@ func (ji JImage) EncodePNG() ([]byte, error) {
 	var result []byte
 	for {
 		byteBuffer := bytes.Buffer{}
-		writer := bufio.NewWriter(&byteBuffer)
-		err = png.Encode(writer, ji.Image())
+		err = png.Encode(&byteBuffer, ji.Image())
 		if err != nil {
 			break
 		}
-		err = writer.Flush()
 		if err == nil {
 			result = byteBuffer.Bytes()
 		}
