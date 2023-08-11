@@ -103,7 +103,7 @@ func auxPlotIntoImage(j jt.JTest, imageName string, dstSize IPoint,
 	mp.Put("src size", srcSize)
 
 	if j.Verbose() {
-		Todo("Delete other temporary files, _SKIP_....")
+		deleteTemporaryImages()
 	}
 
 	for pass := 0; pass <= 4; pass++ {
@@ -140,4 +140,19 @@ func auxPlotIntoImage(j jt.JTest, imageName string, dstSize IPoint,
 		}
 	}
 	j.AssertMessage(mp)
+}
+
+var imagesDeletedFlag bool
+
+// Delete all png, jpg files in the current directory that have the prefix "_SKIP_".
+func deleteTemporaryImages() {
+	if imagesDeletedFlag {
+		return
+	}
+	imagesDeletedFlag = true
+	for _, f := range NewDirWalk(CurrentDirectory()).IncludeExtensions("png", "jpg").FilesRelative() {
+		if strings.HasPrefix(f.String(), "_SKIP_") {
+			f.DeleteFileM()
+		}
+	}
 }
