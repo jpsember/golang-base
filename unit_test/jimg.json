@@ -1,3 +1,8 @@
 {                  "ColorStuff" : 3972,
-  "ImageFitPortraitToLandscape" : 2343
+           "ConvertImageFormat" : 3972,
+                "ImageFitEqual" : 8836,
+  "ImageFitLandscapeToPortrait" : 3378,
+  "ImageFitPortraitToLandscape" : 3345,
+              "ImageFitSimilar" : 5462,
+                      "ReadJpg" : 7192
 }

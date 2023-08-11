@@ -6,7 +6,6 @@ import (
 	"github.com/jpsember/golang-base/jt"
 	"golang.org/x/image/draw"
 	"image"
-	"math"
 	"testing"
 )
 
@@ -40,7 +39,7 @@ func imageFit(j jt.JTest, sourceSize IPoint, targetSize IPoint) {
 	mp.PutNumberedKey("Source size", sourceSize)
 	mp.PutNumberedKey("Target size", targetSize)
 
-	for i := 0; i <= 100; i += 10 {
+	for i := 0; i <= 100; i += 25 {
 		t := float64(i) / 100.0
 
 		m2 := NewJSMap()
@@ -57,7 +56,7 @@ func imageFit(j jt.JTest, sourceSize IPoint, targetSize IPoint) {
 }
 
 func TestImageFitPortraitToLandscape(t *testing.T) {
-	j := jt.Newz(t)
+	j := jt.New(t)
 	imageFit(j, IPointWith(1800, 2400), IPointWith(600, 500))
 }
 
@@ -86,7 +85,7 @@ func rect(x int, y int, w int, h int) image.Rectangle {
 }
 
 func TestPlotIntoImage(t *testing.T) {
-	j := jt.Newz(t)
+	j := jt.New(t)
 	_ = j
 
 	srcImage := readImage("resources/0.jpg")
@@ -95,37 +94,28 @@ func TestPlotIntoImage(t *testing.T) {
 	Pr(srcSize)
 
 	dstSize := IPointWith(680, 232)
-	dst := image.NewRGBA(RectWithSize(dstSize).ToImageRectangle())
 
-	Todo("It leaves an alpha channel which is a bit misleading...")
-	Todo("Feature to convert alpha pixels to purple or something")
+	for pass := 0; pass <= 4; pass++ {
+		factor := float64(pass) / 4.0
 
-	_, r := FitRectToRect(srcSize, dstSize, 1.0)
+		dst := image.NewNRGBA(RectWithSize(dstSize).ToImageRectangle())
 
-	Todo("strange black band")
+		_, r := FitRectToRect(srcSize, dstSize, factor)
 
-	//do unit test on TestImageFit()
-	Pr("scaled source rect:", r)
+		// Draw with scaling (and appropriate cropping?)
+		sr := rect(0, 0, srcSize.X, srcSize.Y)
+		Todo("investigate Over vs Src")
 
-	// Draw with scaling (and appropriate cropping?)
+		tr := r.ToImageRectangle()
 
-	sr := rect(0, 0, srcSize.X, srcSize.Y)
-	Todo("investigate Over vs Src")
+		draw.BiLinear.Scale(dst, tr, srcImage.Image(), sr, draw.Over, nil)
+		//draw.ApproxBiLinear.Scale(dst, tr, srcImage.Image(), sr, draw.Over, nil)
 
-	tr := r.ToImageRectangle()
-	Pr("target rect end:", tr.Size().Y)
-	Pr("src rect end   :", sr.Size().Y)
+		dstImage := jimg.JImageOf(dst)
+		dstImage.SetTransparentPurple()
 
-	Pr("target rect:", tr)
-	Pr("source rect:", sr)
-
-	draw.BiLinear.Scale(dst, tr, srcImage.Image(), sr, draw.Over, nil)
-	//draw.ApproxBiLinear.Scale(dst, tr, srcImage.Image(), sr, draw.Over, nil)
-
-	dstImage := jimg.JImageOf(dst)
-	dstImage.SetTransparentPurple()
-
-	writeImg(dstImage, "_SKIP_"+t.Name()+".png")
+		writeImg(dstImage, "_SKIP_"+t.Name()+"_"+IntToString(pass)+".png")
+	}
 }
 
 func readImage(filename string) jimg.JImage {
@@ -141,87 +131,4 @@ func writeImg(img jimg.JImage, filename string) {
 	p := NewPathM(filename)
 	by := CheckOkWith(img.EncodePNG())
 	p.WriteBytesM(by)
-}
-
-func scl(value int, factor float64) int {
-	return int(math.Round(float64(value) * factor))
-}
-
-func TestPlotBalloons(t *testing.T) {
-	j := jt.Newz(t)
-	_ = j
-
-	srcImage := getBalloon()
-	srcSize := srcImage.Size() // 420 x 315
-	Pr(srcSize)
-
-	targetSize := IPointWith(scl(srcSize.X, 1.4), scl(srcSize.Y, 1.4))
-
-	sourceRect := RectWithSize(srcSize)
-	targetRect := RectWithSize(targetSize)
-	targetGoRect := targetRect.ToImageRectangle()
-	Pr("target go rect:", targetGoRect)
-
-	destGoImage := image.NewNRGBA(targetGoRect)
-
-	// Plot image into dest at a different offset
-
-	scale, plotRect := FitRectToRect(srcSize, targetSize, 0)
-
-	m := NewJSMap()
-	m.PutNumberedKey("source rect", sourceRect)
-	m.PutNumberedKey("target rect", targetRect)
-	m.PutNumberedKey("scale", scale)
-	m.PutNumberedKey("plot rect", plotRect)
-	Pr(m)
-
-	destGoRect := plotRect.ToImageRectangle()
-	Pr("dest go rect:", destGoRect)
-
-	sourceGoRect := sourceRect.ToImageRectangle()
-	Pr("calling draw.Scale; source image:", srcImage.Image().Bounds())
-	Pr("destination image:", destGoImage.Bounds())
-	Pr("source rect:", sourceGoRect)
-	Pr("destin rect:", destGoRect)
-
-	draw.BiLinear.Scale(destGoImage, destGoRect, srcImage.Image(), sourceGoRect, draw.Over, nil)
-
-	dstImage := jimg.JImageOf(destGoImage)
-	dstImage.SetTransparentPurple()
-
-	Todo("Do I need to set the origin to zero before saving?")
-	writeImg(dstImage, "_SKIP_"+t.Name()+".png")
-
-}
-
-func TestScaleBalloons(t *testing.T) {
-	j := jt.Newz(t)
-	_ = j
-
-	srcImage := getBalloon()
-	srcSize := srcImage.Size() // 420 x 315
-
-	for i := 0; i < 40; i++ {
-		Pr(DASHES, "i:", i)
-		// Determine a target rectangle, one with a different aspect ratio
-		tgtSize := IPointWith(140, 80-i)
-
-		destGoImage := image.NewNRGBA(RectWithSize(tgtSize).ToImageRectangle())
-		dstImage := jimg.JImageOf(destGoImage)
-
-		scale, plotRect := FitRectToRect(srcSize, tgtSize, 1)
-		Pr("fitRecttoRect, scale:", scale, CR, "plotRect:", INDENT, plotRect)
-
-		m := NewJSMap()
-		m.PutNumberedKey("source size", srcSize)
-		m.PutNumberedKey("target size", tgtSize)
-		m.PutNumberedKey("scale", scale)
-		m.PutNumberedKey("target rect", plotRect)
-		Pr(m)
-
-		draw.BiLinear.Scale(destGoImage, plotRect.ToImageRectangle(), srcImage.Image(), RectWithSize(srcSize).ToImageRectangle(), draw.Src, nil)
-
-		writeImg(dstImage, "_SKIP_"+t.Name()+"_"+IntToString(i)+".png")
-	}
-
 }
