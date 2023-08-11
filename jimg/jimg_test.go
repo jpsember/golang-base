@@ -1,23 +1,19 @@
 package jimg_test
 
 import (
+	"fmt"
 	. "github.com/jpsember/golang-base/base"
 	"github.com/jpsember/golang-base/jimg"
 	"github.com/jpsember/golang-base/jt"
 	"golang.org/x/image/draw"
 	"image"
+	"strings"
 	"testing"
 )
 
 func TestColorStuff(t *testing.T) {
 	j := jt.New(t)
-	j.AssertMessage(getBalloon().ToJson())
-}
-
-func getBalloon() jimg.JImage {
-	img := readImage("resources/balloons.jpg")
-	img = CheckOkWith(img.AsDefaultType())
-	return img
+	j.AssertMessage(readYCbCrImage().ToJson())
 }
 
 func TestReadJpg(t *testing.T) {
@@ -33,89 +29,41 @@ func TestConvertImageFormat(t *testing.T) {
 	j.AssertMessage(img2.ToJson())
 }
 
-func imageFit(j jt.JTest, sourceSize IPoint, targetSize IPoint) {
-
-	mp := NewJSMap()
-	mp.PutNumberedKey("Source size", sourceSize)
-	mp.PutNumberedKey("Target size", targetSize)
-
-	for i := 0; i <= 100; i += 25 {
-		t := float64(i) / 100.0
-
-		m2 := NewJSMap()
-		m2.PutNumberedKey("t", t)
-
-		scaleFactor, scaledRect := FitRectToRect(sourceSize, targetSize,
-			t)
-
-		m2.PutNumberedKey("scale", scaleFactor)
-		m2.PutNumberedKey("scaled rect", scaledRect.ToJson())
-		mp.PutNumbered(m2)
-	}
-	j.AssertMessage(mp.String())
-}
-
 func TestImageFitPortraitToLandscape(t *testing.T) {
 	j := jt.New(t)
-	imageFit(j, IPointWith(1800, 2400), IPointWith(600, 500))
+	auxPlotIntoImage(j, "portrait.jpg", IPointWith(600, 500), 0, 1, .5, .5, .5, .5)
 }
 
 func TestImageFitLandscapeToPortrait(t *testing.T) {
 	j := jt.New(t)
-	imageFit(j, IPointWith(1000, 600), IPointWith(500, 1200))
+	auxPlotIntoImage(j, "landscape.jpg", IPointWith(500, 1200), 0, 1, .5, .5, .5, .5)
 }
 
 func TestImageFitEqual(t *testing.T) {
 	j := jt.New(t)
-	imageFit(j, IPointWith(1000, 600), IPointWith(1000, 600))
+	auxPlotIntoImage(j, "landscape.jpg", IPointWith(500, 400), .5, .5, .5, .5, .5, .5)
 }
 
 func TestImageFitSimilar(t *testing.T) {
 	j := jt.New(t)
-	imageFit(j, IPointWith(1000, 600), IPointWith(200, 120))
+	auxPlotIntoImage(j, "landscape.jpg", IPointWith(750, 600), .5, .5, .5, .5, .5, .5)
 }
 
-func pt(x int, y int) image.Point {
-	return image.Point{X: x, Y: y}
-}
-
-func rect(x int, y int, w int, h int) image.Rectangle {
-	return image.Rectangle{
-		Min: pt(x, y), Max: pt(x+w, y+h)}
-}
-
-func TestPlotIntoImage(t *testing.T) {
+func TestImageFitPadVsCrop(t *testing.T) {
 	j := jt.New(t)
-	_ = j
+	auxPlotIntoImage(j, "landscape.jpg", IPointWith(300, 800), 0, 1, .5, .5, .5, .5)
+}
 
-	srcImage := readImage("resources/0.jpg")
-	srcImage = CheckOkWith(srcImage.AsType(jimg.TypeNRGBA))
-	srcSize := srcImage.Size()
-	Pr(srcSize)
+func TestImageFitHorzBias(t *testing.T) {
+	j := jt.New(t)
+	auxPlotIntoImage(j, "landscape.jpg", IPointWith(500, 1200),
+		1, 1, -1, 1, 0, 0)
+}
 
-	dstSize := IPointWith(680, 232)
-
-	for pass := 0; pass <= 4; pass++ {
-		factor := float64(pass) / 4.0
-
-		dst := image.NewNRGBA(RectWithSize(dstSize).ToImageRectangle())
-
-		_, r := FitRectToRect(srcSize, dstSize, factor)
-
-		// Draw with scaling (and appropriate cropping?)
-		sr := rect(0, 0, srcSize.X, srcSize.Y)
-		Todo("investigate Over vs Src")
-
-		tr := r.ToImageRectangle()
-
-		draw.BiLinear.Scale(dst, tr, srcImage.Image(), sr, draw.Over, nil)
-		//draw.ApproxBiLinear.Scale(dst, tr, srcImage.Image(), sr, draw.Over, nil)
-
-		dstImage := jimg.JImageOf(dst)
-		dstImage.SetTransparentPurple()
-
-		writeImg(dstImage, "_SKIP_"+t.Name()+"_"+IntToString(pass)+".png")
-	}
+func TestImageFitVertBias(t *testing.T) {
+	j := jt.New(t)
+	auxPlotIntoImage(j, "portrait.jpg", IPointWith(1200, 500),
+		1, 1, 0, 0, -1, 1)
 }
 
 func readImage(filename string) jimg.JImage {
@@ -131,4 +79,65 @@ func writeImg(img jimg.JImage, filename string) {
 	p := NewPathM(filename)
 	by := CheckOkWith(img.EncodePNG())
 	p.WriteBytesM(by)
+}
+
+func interp(t float64, v0 float64, v1 float64) float64 {
+	return v1*t + (1-t)*v0
+}
+
+func fstr(value float64) string {
+	return fmt.Sprintf("%5.2f", value)
+
+}
+
+func auxPlotIntoImage(j jt.JTest, imageName string, dstSize IPoint,
+	padVsCropBiasMin float64, padVsCropBiasMax float64,
+	horzBiasMin float64, horzBiasMax float64,
+	vertBiasMin float64, vertBiasMax float64) {
+
+	mp := NewJSMap()
+
+	srcImage := CheckOkWith(readImage("resources/" + imageName).AsType(jimg.TypeNRGBA))
+	srcSize := srcImage.Size()
+
+	mp.Put("src size", srcSize)
+
+	if j.Verbose() {
+		Todo("Delete other temporary files, _SKIP_....")
+	}
+
+	for pass := 0; pass <= 4; pass++ {
+		factor := float64(pass) / 4.0
+
+		m2 := NewJSMap()
+		mp.PutNumberedKey("pass", m2)
+
+		padVsCrop := interp(factor, padVsCropBiasMin, padVsCropBiasMax)
+		horzBias := interp(factor, horzBiasMin, horzBiasMax)
+		vertBias := interp(factor, vertBiasMin, vertBiasMax)
+
+		m2.Put("pad vs crop", fstr(padVsCrop))
+		m2.Put("horz bias", fstr(horzBias))
+		m2.Put("vert bias", fstr(vertBias))
+
+		_, r := FitRectToRect(srcSize, dstSize, padVsCrop, horzBias, vertBias)
+		m2.Put("target rect", r)
+
+		if j.Verbose() {
+			dst := image.NewNRGBA(RectWithSize(dstSize).ToImageRectangle())
+
+			//sr := rect(0, 0, srcSize.X, srcSize.Y)
+			Todo("investigate Over vs Src")
+
+			tr := r.ToImageRectangle()
+			draw.BiLinear.Scale(dst, tr, srcImage.Image(), srcImage.Image().Bounds(), draw.Over, nil)
+			//draw.ApproxBiLinear.Scale(dst, tr, srcImage.Image(), sr, draw.Over, nil)
+
+			dstImage := jimg.JImageOf(dst)
+			dstImage.SetTransparentPurple()
+
+			writeImg(dstImage, "_SKIP_"+strings.TrimPrefix(j.Name(), "Test")+"_"+IntToString(pass)+".png")
+		}
+	}
+	j.AssertMessage(mp)
 }

@@ -227,7 +227,16 @@ func (ji JImage) EncodePNG() ([]byte, error) {
 	var result []byte
 	for {
 		byteBuffer := bytes.Buffer{}
-		err = png.Encode(&byteBuffer, ji.Image())
+
+		// See https://stackoverflow.com/questions/46437169/png-encoding-with-go-is-slow
+		if Todo("using no-compression png encoder") {
+			enc := &png.Encoder{
+				CompressionLevel: png.NoCompression,
+			}
+			err = enc.Encode(&byteBuffer, ji.Image())
+		} else {
+			err = png.Encode(&byteBuffer, ji.Image())
+		}
 		if err != nil {
 			break
 		}

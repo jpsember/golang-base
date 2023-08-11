@@ -158,10 +158,14 @@ func (r Rect) AspectRatio() float64 {
 }
 
 // Perform scaling, cropping, and/or padding to align a source rectangle to a target rectangle.
-// The factor ranges from 0: maximum padding to 1: maximum cropping.  Returns the scaling factor
-// applied, and the bounds of the scaled source image within the target rectangle's coordinate system.
-// Both source and target rectangles are assumed to have their origins at 0,0.
-func FitRectToRect(srcSize IPoint, targSize IPoint, factor float64) (float64, Rect) {
+// The padVsCrop ranges from 0: maximum padding to 1: maximum cropping.
+// The horzBias and vertBias take effect if the dimension is being cropped, and ranges from -1 ... 1,
+// where 0 causes the image to be centered along that dimension.
+// A vertBias of e.g. .25 favors cropping lower parts of the image, the intuition being that a portrait
+// input will have a person's face in the upper part.
+// Returns the scaling factor applied, and the bounds of the scaled source image within the target
+// rectangle's coordinate system.  Both source and target rectangles are assumed to have origins at 0,0.
+func FitRectToRect(srcSize IPoint, targSize IPoint, padVsCropBias float64, horzBias float64, vertBias float64) (float64, Rect) {
 	srcSize.AssertPositive()
 	targSize.AssertPositive()
 
@@ -176,17 +180,31 @@ func FitRectToRect(srcSize IPoint, targSize IPoint, factor float64) (float64, Re
 	scaleMin := targWidth / srcWidth
 	scaleMax := targHeight / srcHeight
 	if targAspect < srcAspect {
-		factor = 1 - factor
+		padVsCropBias = 1 - padVsCropBias
 	}
 
-	scale := (1-factor)*scaleMin + factor*scaleMax
+	scale := (1-padVsCropBias)*scaleMin + padVsCropBias*scaleMax
 
 	scaledWidth := scale * srcWidth
 	scaledHeight := scale * srcHeight
 
+	cropWidth := scaledWidth - targWidth
+	cropHeight := scaledHeight - targHeight
+
+	cropBiasHorzValue := 0.0
+	cropBiasVertValue := 0.0
+
+	if cropWidth > 0 {
+		cropBiasHorzValue = horzBias
+	}
+
+	if cropHeight > 0 {
+		cropBiasVertValue = vertBias
+	}
+
 	resultRect := RectWithFloat(
-		(targWidth-scaledWidth)/2,
-		(targHeight-scaledHeight)/2,
+		-cropWidth*((cropBiasHorzValue*.5)+.5),
+		-cropHeight*((cropBiasVertValue*.5)+.5),
 		scaledWidth, scaledHeight)
 
 	return scale, resultRect
