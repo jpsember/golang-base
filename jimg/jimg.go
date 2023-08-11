@@ -224,12 +224,22 @@ func (ji JImage) ScaledTo(size IPoint) JImage {
 }
 
 func (ji JImage) EncodePNG() ([]byte, error) {
-	w := bytes.Buffer{}
-	err := png.Encode(bufio.NewWriter(&w), ji.Image())
-	if err == nil {
-		return w.Bytes(), nil
+	var err error
+	var result []byte
+	for {
+		byteBuffer := bytes.Buffer{}
+		writer := bufio.NewWriter(&byteBuffer)
+		err = png.Encode(writer, ji.Image())
+		if err != nil {
+			break
+		}
+		err = writer.Flush()
+		if err == nil {
+			result = byteBuffer.Bytes()
+		}
+		break
 	}
-	return nil, err
+	return result, err
 }
 
 var purple = []byte{
