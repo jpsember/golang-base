@@ -250,6 +250,9 @@ func (b *BasePrinter) AppendBool(v bool) *BasePrinter {
 // Append a floating point value, fixed width, without scientific notation.
 func (b *BasePrinter) AppendFloat(dblVal float64) *BasePrinter {
 	var formattedValue = fmt.Sprintf("%v ", dblVal)
+	if Alert("temp") {
+		return b.AppendString(formattedValue)
+	}
 	var allZerosSuffix = ".0000 "
 	var newVal = strings.TrimSuffix(formattedValue, allZerosSuffix)
 	if newVal != formattedValue {

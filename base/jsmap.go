@@ -149,6 +149,12 @@ func (m JSMap) PutNumbered(value any) *JSMapStruct {
 	return m.Put(key, value)
 }
 
+func (m JSMap) PutNumberedKey(key string, value any) *JSMapStruct {
+	var numKeys = len(m.wrappedMap)
+	key2 := fmt.Sprintf("%3d %s", numKeys, key)
+	return m.Put(key2, value)
+}
+
 func (p *JSONParser) ParseMap() (*JSMapStruct, error) {
 	p.adjustNest(1)
 	var ourMap = make(map[string]JSEntity)

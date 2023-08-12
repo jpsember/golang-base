@@ -1,0 +1,6 @@
+class {
+   // Unique id
+   string id;
+
+   *byte data;
+}

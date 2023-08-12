@@ -27,6 +27,28 @@ func DecodeImage(imgbytes []byte) (JImage, error) {
 	return jmg, err
 }
 
+// ------------------------------------------------------------------------------------
+// Some notes about colors.
+// ------------------------------------------------------------------------------------
+
+// From  color.go:
+
+// NRGBA represents a non-alpha-premultiplied 32-bit color.
+//
+// type NRGBA struct {
+//	 R, G, B, A uint8
+// }
+//
+// RGBA represents a traditional 32-bit alpha-premultiplied color, having 8
+// bits for each of red, green, blue and alpha.
+//
+// An alpha-premultiplied color component C has been scaled by alpha (A), so
+// has valid values 0 <= C <= A.
+//
+// So we want to be dealing with NRGBA colors, which are 8-bit per component,
+// and unless alpha channel is to be used, its alpha values should all be FF.
+//
+
 type JImageStruct struct {
 	image     image.Image
 	imageType JImageType
@@ -46,7 +68,7 @@ const (
 	TypeUnknown = -1
 )
 
-var itmap = map[JImageType]string{
+var imageTypeToStringMap = map[JImageType]string{
 	TypeNRGBA:   "NRGBA",
 	TypeCMYK:    "CMYK",
 	TypeYCbCr:   "YCbCr",
@@ -54,16 +76,20 @@ var itmap = map[JImageType]string{
 }
 
 func ImageTypeStr(imgType JImageType) string {
-	result := itmap[imgType]
+	result := imageTypeToStringMap[imgType]
 	if result == "" {
 		result = "???"
 	}
 	return result
 }
 
+var zer = image.Point{}
+
 func JImageOf(img image.Image) JImage {
 	CheckNotNil(img)
-	CheckArg(img.Bounds().Min == image.Point{}, "origin of image is not at (0,0)")
+	if img.Bounds().Min != zer {
+		Pr("origin of image is not at (0,0);", img.Bounds())
+	}
 	t := &JImageStruct{
 		image: img,
 	}
@@ -109,12 +135,33 @@ func (ji JImage) ToJson() JSMap {
 	m.Put("", "JImage")
 	m.Put("type", ImageTypeStr(ji.Type()))
 	m.Put("size", ji.Size())
+	if ji.Type() == TypeNRGBA {
+		w := ji.NRGBA()
+		m.Put("opaque", w.Opaque())
+		Todo("What happens if we try to encode as jpeg with some transparent pixels?")
+	}
 	return m
 }
 
 func GetImageInfo(image image.Image) JSMap {
 	ji := JImageOf(image)
 	return ji.ToJson()
+}
+
+func (ji JImage) AsDefaultType() (JImage, error) {
+	return ji.AsType(TypeNRGBA)
+}
+
+func (ji JImage) AsDefaultTypeM() JImage {
+	return CheckOkWith(ji.AsType(TypeNRGBA))
+}
+
+func (ji JImage) NRGBA() *image.NRGBA {
+	result, ok := ji.image.(*image.NRGBA)
+	if !ok {
+		BadArg("<1JImage does not contain an image.NRGBA:", TypeOf(ji.image))
+	}
+	return result
 }
 
 func (ji JImage) AsType(desiredType JImageType) (JImage, error) {
@@ -173,4 +220,47 @@ func (ji JImage) ScaledTo(size IPoint) JImage {
 	inputImage := ji.Image()
 	draw.ApproxBiLinear.Scale(scaledImage, scaledImage.Bounds(), inputImage, inputImage.Bounds(), draw.Over, nil)
 	return JImageOf(scaledImage)
+}
+
+func (ji JImage) EncodePNG() ([]byte, error) {
+	var err error
+	var result []byte
+	for {
+		byteBuffer := bytes.Buffer{}
+
+		// See https://stackoverflow.com/questions/46437169/png-encoding-with-go-is-slow
+		if Todo("using no-compression png encoder") {
+			enc := &png.Encoder{
+				CompressionLevel: png.NoCompression,
+			}
+			err = enc.Encode(&byteBuffer, ji.Image())
+		} else {
+			err = png.Encode(&byteBuffer, ji.Image())
+		}
+		if err != nil {
+			break
+		}
+		if err == nil {
+			result = byteBuffer.Bytes()
+		}
+		break
+	}
+	return result, err
+}
+
+var purple = []byte{
+	0xc6, 0x64, 0xed, 0xff,
+}
+
+func (ji JImage) SetTransparentPurple() {
+	img := ji.NRGBA()
+	pix := img.Pix
+	h := len(pix)
+	for i := 0; i < h; i += 4 {
+		if pix[i+3] != 0xff {
+			for j, val := range purple {
+				pix[i+j] = val
+			}
+		}
+	}
 }

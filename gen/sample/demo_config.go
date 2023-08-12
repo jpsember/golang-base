@@ -8,7 +8,7 @@ type sDemoConfig struct {
 	simulate bool
 	name     string
 	greeting string
-	target   int32
+	target   int
 }
 
 type DemoConfigBuilderObj struct {
@@ -27,7 +27,7 @@ type DemoConfig interface {
 	Simulate() bool
 	Name() string
 	Greeting() string
-	Target() int32
+	Target() int
 	Build() DemoConfig
 	ToBuilder() DemoConfigBuilder
 }
@@ -63,7 +63,7 @@ func (v *sDemoConfig) Greeting() string {
 	return v.greeting
 }
 
-func (v *sDemoConfig) Target() int32 {
+func (v *sDemoConfig) Target() int {
 	return v.target
 }
 
@@ -91,7 +91,7 @@ func (v *sDemoConfig) Parse(source JSEntity) DataClass {
 	n.simulate = s.OptBool("simulate", false)
 	n.name = s.OptString("name", "")
 	n.greeting = s.OptString("greeting", "hello")
-	n.target = s.OptInt32("target", 12)
+	n.target = s.OptInt("target", 12)
 	return n
 }
 
@@ -116,7 +116,7 @@ func (v DemoConfigBuilder) Greeting() string {
 	return v.greeting
 }
 
-func (v DemoConfigBuilder) Target() int32 {
+func (v DemoConfigBuilder) Target() int {
 	return v.target
 }
 
@@ -135,7 +135,7 @@ func (v DemoConfigBuilder) SetGreeting(greeting string) DemoConfigBuilder {
 	return v
 }
 
-func (v DemoConfigBuilder) SetTarget(target int32) DemoConfigBuilder {
+func (v DemoConfigBuilder) SetTarget(target int) DemoConfigBuilder {
 	v.target = target
 	return v
 }

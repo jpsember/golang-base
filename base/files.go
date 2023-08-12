@@ -157,9 +157,20 @@ func FindProjectDir() (Path, error) {
 	return cachedProjectDir, cachedProjectDirErr
 }
 
+func FindRepoDir() (Path, error) {
+	if !cachedRepoDirFlag {
+		cachedRepoDir, cachedRepoDirErr = AscendToDirectoryContainingFile("", ".git")
+		cachedRepoDirFlag = true
+	}
+	return cachedRepoDir, cachedRepoDirErr
+}
+
 var cachedProjectDirFlag bool
 var cachedProjectDir Path
 var cachedProjectDirErr error
+var cachedRepoDirFlag bool
+var cachedRepoDir Path
+var cachedRepoDirErr error
 
 type Closeable interface {
 	Close() error

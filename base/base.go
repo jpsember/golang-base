@@ -20,66 +20,31 @@ var Dashes = "------------------------------------------------------------------
 // Returns source filename (without its path) and the line number, e.g., "foo.go:78".
 // A skipCount of zero returns the immediate caller's location.
 func CallerLocation(skipCount int) string {
-	var db = false
+	st := GenerateStackTrace(skipCount + 1)
+	if len(st.Elements) != 0 {
+		return st.Elements[0].StringBrief()
+	}
+	return "<no location available!>"
+}
 
-	w := string(debug.Stack())
-	if db {
-		Pr("debug.Stack:\n", Dashes, w, Dashes)
-	}
-	lines := strings.Split(w, "\n")
-	if db {
-		Pr("lines:\n", Dashes)
-		for _, x := range lines {
-			Pr("[" + x + "]")
-		}
-	}
-
-	cursor := 2 + (2+skipCount)*2
-	if cursor >= len(lines) {
-		return "<cannot parse debug_loc (0)>"
-	}
-	line := strings.TrimSpace(lines[cursor])
-	if db {
-		Pr("line:\n", line)
-	}
-
-	// Trim the +0xHHH from the end (if there is one)
-	cutoff := strings.LastIndex(line, " +0x")
-	if cutoff < 0 {
-		cutoff = len(line)
-	}
-
-	// Trim any path components up to last '/'
-	j := 0
-	i := strings.LastIndex(line, "/")
-	if i < cutoff {
-		j = i + 1
-	}
-	return line[j:cutoff]
+func Panic(message ...any) {
+	auxAbort(1, "Panic", message...)
 }
 
 func Die(message ...any) {
-	auxPanic(1, "Dying", message...)
+	auxAbort(1, "Dying", message...)
 }
 
 func Halt(message ...any) {
-	str := ToString(message...)
-	alertInfo := extractAlertInfo(str)
-	text := CallerLocation(1+alertInfo.skipCount) + " *** Halting! " + alertInfo.key
-	if !testAlertState {
-		Pr(text)
-		os.Exit(1)
-	} else {
-		TestPanicMessageLog.WriteString(text + "\n")
-	}
+	auxAbort(1, "Halting", message...)
 }
 
 func NotSupported(message ...any) {
-	auxPanic(1, "Not supported", message...)
+	auxAbort(1, "Not supported", message...)
 }
 
 func NotImplemented(message ...any) {
-	auxPanic(1, "Not implemented", message...)
+	auxAbort(1, "Not implemented", message...)
 }
 
 func isNil(value any) bool {
@@ -88,31 +53,31 @@ func isNil(value any) bool {
 
 func CheckNotNil[T any](value T, message ...any) T {
 	if isNil(value) {
-		auxPanic(1, "Argument is nil", message...)
+		auxAbort(1, "Argument is nil", message...)
 	}
 	return value
 }
 
 func CheckNonEmpty(s string, message ...any) string {
 	if s == "" {
-		auxPanicWithArgument(1, "String is empty", s, message...)
+		auxAbortWithArgument(1, "String is empty", s, message...)
 	}
 	return s
 }
 
 func CheckArg(valid bool, message ...any) bool {
 	if !valid {
-		auxPanic(1, "Bad argument", message...)
+		auxAbort(1, "Bad argument", message...)
 	}
 	return valid
 }
 
 func BadArg(message ...any) {
-	auxPanic(1, "Bad argument", message...)
+	auxAbort(1, "Bad argument", message...)
 }
 
 func BadState(message ...any) {
-	auxPanic(1, "Bad state", message...)
+	auxAbort(1, "Bad state", message...)
 }
 
 // Given an error, panic if it is not nil
@@ -130,23 +95,25 @@ func auxCheckOk(skipCount int, err error, message ...any) {
 	if err != nil {
 		messageStr := ToString(message...)
 		messageInfo := extractAlertInfo(messageStr)
-		auxPanicWithArgument(1+skipCount+messageInfo.skipCount, "Unexpected error", err.Error(), messageInfo.key)
+		auxAbortWithArgument(1+skipCount+messageInfo.skipCount, "Unexpected error", err.Error(), messageInfo.key)
 	}
 }
 
-func auxPanicWithArgument(skipCount int, prefix string, argument string, message ...any) {
+func auxAbortWithArgument(skipCount int, prefix string, argument string, message ...any) {
 	messageStr := ToString(message...)
 	messageInfo := extractAlertInfo(messageStr)
-	auxPanic(1+skipCount+messageInfo.skipCount, prefix, Quoted(argument)+" "+messageInfo.key)
+	auxAbort(1+skipCount+messageInfo.skipCount, prefix, Quoted(argument)+" "+messageInfo.key)
 }
 
 func CheckState(valid bool, message ...any) {
 	if !valid {
-		auxPanic(1, "Invalid state", message...)
+		auxAbort(1, "Invalid state", message...)
 	}
 }
 
-func auxPanic(skipCount int, prefix string, message ...any) {
+var nestedAbortFlag bool
+
+func auxAbort(skipCount int, prefix string, message ...any) {
 	// Both the prefix and the message can contain skip information, so
 	// parse and sum them
 
@@ -154,25 +121,37 @@ func auxPanic(skipCount int, prefix string, message ...any) {
 	messageStr := ToString(message...)
 	messageInfo := extractAlertInfo(messageStr)
 
-	msg := CallerLocation(prefixInfo.skipCount+messageInfo.skipCount+skipCount+1) + " *** " + prefixInfo.key + "! " + messageInfo.key
+	netSkipCount := prefixInfo.skipCount + messageInfo.skipCount + skipCount + 1
+	msg := "*** " + prefixInfo.key + "! " + messageInfo.key
 
 	if !testAlertState {
-		// Print the panic to stdout in case it doesn't later get printed in this convenient way for some other reason
+		// Print the message to stdout in case it doesn't later get printed in this convenient way
 		fmt.Println(msg)
-		panic(msg)
+		if nestedAbortFlag {
+			fmt.Println("Nested exception:", INDENT, string(debug.Stack()))
+		} else {
+			nestedAbortFlag = true
+			st := GenerateStackTrace(netSkipCount)
+			if strings.HasPrefix(prefix, "Halting") {
+				st.MaxRowsPrinted = 1
+			}
+			fmt.Println(st)
+			nestedAbortFlag = false
+		}
+		os.Exit(1)
 	} else {
-		TestPanicMessageLog.WriteString(msg + "\n")
+		TestAbortMessageLog.WriteString(msg + "\n")
 	}
 }
 
 // True if we're performing unit tests on Alerts, Assertions
 var testAlertState bool
-var TestPanicMessageLog = strings.Builder{}
+var TestAbortMessageLog = strings.Builder{}
 var TestAlertDuration int64
 
 func CheckNil(result any, message ...any) {
 	if result != nil {
-		auxPanicWithArgument(1, "Result is not nil", ToString(result), message...)
+		auxAbortWithArgument(1, "Result is not nil", ToString(result), message...)
 	}
 }
 
@@ -191,6 +170,13 @@ func Info(arg any) string {
 	}
 	// Avoid calling BasePrinter for this, since it might cause endless recursion
 	return fmt.Sprint("Value[", arg, "],Type[", reflect.TypeOf(arg), "]")
+}
+
+func TypeOf(arg any) string {
+	if arg == nil {
+		return "<nil>"
+	}
+	return fmt.Sprint(reflect.TypeOf(arg))
 }
 
 // Print an alert if an alert with its key hasn't already been printed.
@@ -244,7 +230,7 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	if !testAlertState {
 		fmt.Println(text)
 	} else {
-		TestPanicMessageLog.WriteString(text + "\n")
+		TestAbortMessageLog.WriteString(text + "\n")
 	}
 }
 
@@ -545,13 +531,13 @@ func processAlertForMultipleSessions(info alertInfo) bool {
 	m.Put("r", currTime)
 	priorityAlertMap.Put(info.key, m)
 	if !testAlertState {
-		priorityAlertPersistPath.WriteStringM(priorityAlertMap.String())
+		priorityAlertPersistPath.WriteStringM(priorityAlertMap.CompactString())
 	}
 	return true
 }
 
 func CurrentTimeMs() int64 {
-	return int64(time.Now().Unix())
+	return time.Now().Unix()
 }
 
 func SleepMs(ms int) {
@@ -625,4 +611,211 @@ func MyMod(value int, divisor int) int {
 		k += divisor
 	}
 	return k
+}
+
+// ------------------------------------------------------------------------------------
+// Strack traces
+// ------------------------------------------------------------------------------------
+
+type StackTraceStruct struct {
+	Preamble       string
+	Content        string
+	SkipFactor     int
+	MaxRowsPrinted int
+	Elements       []stackTraceElement
+}
+
+type stackTraceElementStruct struct {
+	Package            string
+	CallerFunction     string
+	CallerArguments    string
+	CalleeFile         string
+	CalleeLineNumber   int
+	StackFramePosition string
+	raw0, raw1         string
+	formattedLong      string
+	formattedBrief     string
+}
+type stackTraceElement = *stackTraceElementStruct
+
+var repoDirOrEmpty string
+
+func init() {
+	if x, ok := FindRepoDir(); ok == nil {
+		repoDirOrEmpty = x.String()
+	}
+}
+
+func (e stackTraceElement) prepareStrings() {
+	if e.formattedLong == "" {
+
+		{
+			val := e.raw0
+
+			// If there is a package, it will end at the first . following the last /
+			i := strings.LastIndex(val, "/")
+			if i >= 0 {
+				i = strFirstFrom(val, i, ".")
+				e.Package = val[0:i]
+			}
+			j := strLastIndex(val, "(")
+			e.CallerFunction = val[i+1 : j]
+			e.CallerArguments = val[j:]
+		}
+		{
+			val := strings.TrimSpace(e.raw1)
+			i := strFirst(val, ":")
+			callerPath := val[0:i]
+
+			callerPath = strings.TrimPrefix(callerPath, repoDirOrEmpty)
+			e.CalleeFile = NewPathM(callerPath).Base()
+
+			// If there is a stack frame position, it will be preceded by +0x
+			rem := val[i+1:]
+			j := strings.Index(rem, "+0x")
+			if j >= 0 {
+				e.StackFramePosition = val[j:]
+				rem = rem[0:j]
+			}
+			e.CalleeLineNumber = ParseIntM(strings.TrimSpace(rem))
+		}
+
+		// Convert the stack trace element to a display version
+		s1 := e.CalleeFile + ":" + IntToString(e.CalleeLineNumber)
+		e.formattedBrief = s1
+		e.formattedLong = s1 + Spaces(24-len(s1)) + " " + e.CallerFunction
+	}
+}
+
+func (e stackTraceElement) StringDetailed() string {
+	e.prepareStrings()
+	return e.formattedLong
+}
+
+func (e stackTraceElement) StringBrief() string {
+	e.prepareStrings()
+	return e.formattedBrief
+}
+
+type StackTrace = *StackTraceStruct
+
+func GenerateStackTrace(skipFactor int) StackTrace {
+	return NewStackTrace(string(debug.Stack()), 2+skipFactor)
+}
+
+func NewStackTrace(content string, skipFactor int) StackTrace {
+	t := &StackTraceStruct{}
+	t.SkipFactor = skipFactor
+	t.parse(content)
+	return t
+}
+
+func (st StackTrace) String() string {
+	elem := st.Elements
+	if st.MaxRowsPrinted > 0 {
+		elem = elem[0:MinInt(st.MaxRowsPrinted, len(elem))]
+	}
+	sb := strings.Builder{}
+	for _, x := range elem {
+		sb.WriteString(x.StringDetailed())
+		sb.WriteByte('\n')
+	}
+	return sb.String()
+}
+
+func strFirst(str string, substr string) int {
+	k := strings.Index(str, substr)
+	CheckArg(k >= 0, "string doesn't contain substr:", str, substr)
+	return k
+}
+func strLastIndex(str string, substr string) int {
+	k := strings.LastIndex(str, substr)
+	if k < 0 {
+		CheckArg(k >= 0, "string doesn't contain substring:", Quoted(str), Quoted(substr))
+	}
+	return k
+}
+
+func strFirstFrom(str string, from int, substr string) int {
+	remainder := str[from:]
+	return strFirst(remainder, substr) + from
+}
+
+func (st StackTrace) parse(content string) {
+	content = strings.TrimSpace(content)
+
+	st.Content = content
+
+	skipped := 0
+	elements := []stackTraceElement{}
+
+	lines := strings.Split(content, "\n")
+
+	// The first line in the stack trace, which we will call the preamble, is something like 'goroutine 1 [running]:'
+	//
+	// The remaining 2n lines form pairs, where each has this format:
+	//
+	//     {package name} {name + arguments of caller function}
+	//     {file where function was called}:{line number within file}  +{relative position of the function within the stack frame}
+	//
+	// Here is a typical stack trace pair:
+	//
+	// runtime/debug.Stack()
+	//         /usr/local/go/src/runtime/debug/stack.go:24 +0x65
+	//
+	// package:  "runtime/debug"
+	// method:   "Stack"
+	// args:     "()"
+	//
+	// filename: "/usr/local/go/src/runtime/debug/stack.go"
+	// line num: "24"
+	// offset:   "+0x65"
+	//
+	// Here are some peculiar examples of the first element of the pair:
+	//
+	// github.com/jpsember/golang-base/base.(*StackTraceStruct).parse(0xc0000725a0, {0xc00013a900?, 0x1000?})
+	//
+	// package:  "github.com/jpsember/golang-base/base"
+	// method:   "(*StackTraceStruct).parse"
+	// args:     "(0xc0000725a0, {0xc00013a900?, 0x1000?})"
+	//
+	// panic({0x1004bc580, 0x1007e6e90})
+	//
+	// package:  ""
+	// method:   "panic"
+	// args:     "({0x1004bc580, 0x1007e6e90})"
+	//
+	st.Preamble = lines[0]
+
+	for cursor := 1; cursor < len(lines); cursor += 2 {
+		if skipped < st.SkipFactor {
+			skipped++
+		} else {
+			elements = append(elements,
+				&stackTraceElementStruct{
+					raw0: lines[cursor+0],
+					raw1: lines[cursor+1],
+				})
+		}
+	}
+	st.Elements = elements
+}
+
+// Wrap a main function so that we can modify the display of any panic stack traces that occur.
+func WrapMain(mainFunc func()) {
+	Todo("!We may want the option to not exit the program after displaying the panic's stack trace")
+	defer func() {
+		if r := recover(); r != nil {
+			Panic()
+		}
+	}()
+	mainFunc()
+}
+
+func CausePanic() int {
+	sum := 0
+	for i := -3; i < 3; i++ {
+		sum += 10 / i
+	}
+	return sum
 }

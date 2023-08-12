@@ -1,11 +1,14 @@
 package webapp
 
 import (
+	"bytes"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
+	"log"
+	"os"
+	"runtime/debug"
 
 	. "github.com/jpsember/golang-base/webserv"
-	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -33,15 +36,82 @@ func (oper AjaxOper) GetHelp(bp *BasePrinter) {
 func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 }
 
-func (oper AjaxOper) Perform(app *App) {
+func ShowStackTrace() {
+	//Pr("printing stack:")
+	//debug.PrintStack()
+	Pr("generating stack:")
+	y := debug.Stack()
+	x := string(y)
+	lns := strings.Split(x, "\n")
 
+	prefix := ""
+	for _, val := range lns {
+		result := val
+		for {
+			if strings.HasPrefix(val, "goroutine ") {
+				result = ""
+				break
+			}
+
+			if strings.HasPrefix(val, "\t") {
+				val := strings.TrimSpace(val)
+				cols := strings.Fields(val)
+				if len(cols) != 2 {
+					break
+				}
+				result = cols[0]
+				break
+			}
+			j := strings.LastIndex(val, "(")
+			if j < 0 {
+				break
+			}
+			q := strings.LastIndex(val[0:j], ".")
+			if q < 0 {
+				break
+			}
+			prefix = val[q+1 : j]
+			result = ""
+			break
+		}
+		if result != "" {
+			Pr(result + " " + prefix)
+		}
+	}
+	//Pr(CurrentDirectory())
+	Pr("animal_app.go:89")
+	Pr("zero.go:89")
+
+	//Pr(lns)
+	os.Exit(1)
+}
+
+func (oper AjaxOper) Perform(app *App) {
 	if false && Alert("Performing sql experiment") {
 		SQLiteExperiment()
 		return
 	}
+
 	db := CreateDatabase()
 	db.SetDataSourceName("../sqlite/jeff_experiment.db")
 	db.Open()
+
+	Todo("Verify reading blobs back")
+	if false && Alert("blob experiment") {
+		data := []byte{
+			2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
+		}
+		for i := 0; i < 10; i++ {
+			Pr("inserting:", i)
+			bl, err := db.InsertBlob(data)
+			Pr("result:", INDENT, bl, CR, err)
+
+			Pr("verifying:")
+			blob, err := db.ReadBlob(StringToBlobId(bl.Id()))
+			CheckState(bytes.Equal(data, blob.Data()))
+		}
+		Halt()
+	}
 
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
@@ -60,22 +130,9 @@ func (oper AjaxOper) Perform(app *App) {
 	var keyPath = keyDir.JoinM(ourUrl + ".key")
 	Pr("URL:", INDENT, `https://`+ourUrl)
 
-	// If there is a bug that causes *every* request to fail, only generate the stack trace once
-	Todo("!Clean up this 'fail only once' code")
 	http.HandleFunc("/",
 		func(w http.ResponseWriter, req *http.Request) {
-			//if panicked {
-			//	w.Write([]byte("panic has occurred"))
-			//	return
-			//}
-			//panicked = true
-			//defer func() {
-			//	if panicked {
-			//		w.Write([]byte("panic has occurred"))
-			//	}
-			//}()
 			oper.handle(w, req)
-			//panicked = false
 		})
 
 	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
@@ -83,10 +140,7 @@ func (oper AjaxOper) Perform(app *App) {
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
-
 }
-
-var panicked bool
 
 // A handler such as this must be thread safe!
 func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
