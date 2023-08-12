@@ -1,6 +1,7 @@
 package webapp
 
 import (
+	"bytes"
 	. "github.com/jpsember/golang-base/base"
 	"strings"
 	"sync"
@@ -8,7 +9,7 @@ import (
 
 type BlobId string
 
-const blobIdLength = 32 + 4 // includes 4 dashes
+const blobIdLength = 10
 
 func (b BlobId) String() string {
 	return string(b)
@@ -48,15 +49,27 @@ func GenerateBlobId() BlobId {
 	defer lock.Unlock()
 	r := ourRand.Rand()
 
-	for i := 0; i < blobIdLength-4; i++ {
+	for i := 0; i < blobIdLength; i++ {
 		x := r.Intn(16)
 		sb.WriteByte(alph[x])
-		if i == 8 || i == 13 || i == 18 || i == 23 {
-			sb.WriteByte('-')
-		}
 	}
 	return StringToBlobId(sb.String())
 }
 
 var ourRand = NewJSRand()
 var lock sync.Mutex
+
+func PerformBlobExperiment(db Database) {
+	data := []byte{
+		2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
+	}
+	for i := 0; i < 10; i++ {
+		Pr("inserting:", i)
+		bl, err := db.InsertBlob(data)
+		Pr("result:", INDENT, bl, CR, err)
+
+		Pr("verifying:")
+		blob, err := db.ReadBlob(StringToBlobId(bl.Id()))
+		CheckState(bytes.Equal(data, blob.Data()))
+	}
+}

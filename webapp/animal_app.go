@@ -1,7 +1,6 @@
 package webapp
 
 import (
-	"bytes"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	"log"
@@ -96,20 +95,8 @@ func (oper AjaxOper) Perform(app *App) {
 	db.SetDataSourceName("../sqlite/jeff_experiment.db")
 	db.Open()
 
-	Todo("Verify reading blobs back")
 	if false && Alert("blob experiment") {
-		data := []byte{
-			2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
-		}
-		for i := 0; i < 10; i++ {
-			Pr("inserting:", i)
-			bl, err := db.InsertBlob(data)
-			Pr("result:", INDENT, bl, CR, err)
-
-			Pr("verifying:")
-			blob, err := db.ReadBlob(StringToBlobId(bl.Id()))
-			CheckState(bytes.Equal(data, blob.Data()))
-		}
+		PerformBlobExperiment(db)
 		Halt()
 	}
 
