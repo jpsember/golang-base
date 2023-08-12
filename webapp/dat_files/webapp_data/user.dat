@@ -1,0 +1,9 @@
+class {
+    // Unique id
+    long id;
+
+    string name;
+    enum UserState state;
+    string email;
+    string password;
+}
