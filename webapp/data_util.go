@@ -21,7 +21,7 @@ func StringToBlobId(s string) BlobId {
 	return BlobId(s)
 }
 
-type Currency = int32
+type Currency = int
 
 const DollarsToCurrency = 100
 

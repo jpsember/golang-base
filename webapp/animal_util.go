@@ -12,8 +12,8 @@ func RandomAnimal() webapp_data.AnimalBuilder {
 	a.SetName(RandomText(r, 20, false))
 	a.SetSummary(RandomText(r, Ternary(false, 300, 20), false))
 	a.SetDetails(RandomText(r, Ternary(false, 2000, 20), true))
-	a.SetCampaignTarget(int32((r.Int63n(10) + 2) * 50 * DollarsToCurrency))
-	a.SetCampaignBalance(r.Int31n(a.CampaignTarget()))
+	a.SetCampaignTarget(int((r.Intn(10) + 2) * 50 * DollarsToCurrency))
+	a.SetCampaignBalance(r.Intn(a.CampaignTarget()))
 	return a
 }
 

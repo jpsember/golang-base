@@ -161,12 +161,16 @@ func (db Database) getTable(name string) MemTable {
 	return mt
 }
 
-func (db Database) getSimFile(m MemTable) Path {
+func (db Database) getSimDir() Path {
 	if db.simFilesPath.Empty() {
 		db.simFilesPath = NewPathM("simulated_db")
 		db.simFilesPath.MkDirsM()
 	}
-	return db.simFilesPath.JoinM(m.name + ".json")
+	return db.simFilesPath
+}
+
+func (db Database) getSimFile(m MemTable) Path {
+	return db.getSimDir().JoinM(m.name + ".json")
 }
 
 type MemTableStruct struct {
@@ -269,4 +273,55 @@ func (db Database) failIfError(err error) {
 	if err != nil {
 		BadState("<1Serious error has occurred:", err)
 	}
+}
+
+func (db Database) InsertBlob(blob []byte) (Blob, error) {
+	db.lock()
+	defer db.unlock()
+
+	bb := NewBlob()
+	bb.SetData(blob)
+
+	// Pick a unique blob id (one not already in the blob table)
+
+	pr := PrIf(true)
+	pr("choosing unique blob id")
+	attempt := 0
+	for {
+		attempt++
+		CheckState(attempt < 50, "failed to choose a unique blob id!")
+		blobId := GenerateBlobId()
+		bb.SetId(blobId.String())
+		pr("blob id:", bb.Id())
+		p := db.getBlobPath(blobId)
+		if !p.Exists() {
+			break
+		}
+		pr("blob is already in database, attempting again")
+	}
+	Pr("attempting to insert:", INDENT, bb)
+
+	db.writeBlob(bb)
+	return bb.Build(), nil
+}
+
+func (db Database) ReadBlob(blobId BlobId) (Blob, error) {
+	db.lock()
+	defer db.unlock()
+	pth := db.getBlobPath(blobId)
+	if !pth.Exists() {
+		return nil, Error("no such blob:", blobId)
+	}
+	idStr := blobId.String()
+	bb := NewBlob().SetId(idStr).SetData(pth.ReadBytesM())
+	return bb.Build(), nil
+}
+
+func (db Database) getBlobPath(blobId BlobId) Path {
+	return db.getSimDir().JoinM(blobId.String() + ".bin")
+}
+
+func (db Database) writeBlob(blob Blob) {
+	pth := db.getBlobPath(StringToBlobId(blob.Id()))
+	pth.WriteBytesM(blob.Data())
 }
