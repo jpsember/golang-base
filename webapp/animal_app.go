@@ -3,6 +3,7 @@ package webapp
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"log"
 	"os"
 	"runtime/debug"
@@ -135,7 +136,11 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 	pr("handler, request:", req.RequestURI)
 
 	sess := DetermineSession(oper.sessionManager, w, req, true)
-	pr("determined session:", sess != nil)
+	if sess.AppData == nil {
+		oper.AssignUserToSession(sess)
+	}
+
+	//pr("determined session" )
 
 	url, err := url.Parse(req.RequestURI)
 	if err == nil {
@@ -144,7 +149,7 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		if path == "/ajax" {
 			sess.HandleAjaxRequest(w, req)
 		} else if path == "/" {
-			oper.processFullPageRequest(w, req)
+			oper.processFullPageRequest(sess, w, req)
 		} else {
 			pr("handling resource request for:", path)
 			err = sess.HandleResourceRequest(w, req, oper.resources)
@@ -160,18 +165,11 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Request) {
+func (oper AjaxOper) processFullPageRequest(sess Session, w http.ResponseWriter, req *http.Request) {
 	// Construct a session if none found, and a widget for a full webpage
-	sess := DetermineSession(oper.sessionManager, w, req, true)
+	//sess := DetermineSession(oper.sessionManager, w, req, true)
 	sess.Mutex.Lock()
 	defer sess.Mutex.Unlock()
-	// If this is a new session, store our operation within it
-	if sess.AppData == nil {
-		sess.AppData = oper
-		Todo("!Allow header to have constant text")
-		sess.State.Put("header_text", "This is ajax_demo.go").
-			Put("header_text_2", "8 columns").Put("header_text_3", "4 columns").Put("bird", "").Put("zebra", "")
-	}
 
 	if sess.PageWidget == nil {
 		oper.constructPageWidget(sess)
@@ -223,6 +221,15 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	m.Id(WidgetIdPage)
 	widget := m.Open()
 	sess.PageWidget = widget
+
+	userInfo, ok := sess.AppData.(SessionUserInfo)
+	CheckState(ok, "no SessionUserInfo found in sess AppData:", INDENT, sess.AppData)
+
+	user := userInfo.User
+	Todo("have convention of prefixing enums with e.g. 'UserState_'")
+	if user.State() == webapp_data.UnknownUser {
+		Pr("the user is unknown")
+	}
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
@@ -282,6 +289,19 @@ Multiple line feeds:
 	m.Label("Animal").AddInput("zebra")
 
 	m.Close()
+}
+
+// A new session was created; assign an 'unknown' user to it
+func (oper AjaxOper) AssignUserToSession(sess Session) {
+	Todo("SessionUserInfo maybe can just be replaced by a User ptr")
+	x := NewSessionUserInfo()
+	x.User = webapp_data.NewUser().Build()
+	sess.AppData = x
+	{
+		Todo("!Allow header to have constant text")
+		sess.State.Put("header_text", "This is ajax_demo.go").
+			Put("header_text_2", "8 columns").Put("header_text_3", "4 columns").Put("bird", "").Put("zebra", "")
+	}
 }
 
 func birdListener(sess any, widget Widget) {
@@ -352,4 +372,15 @@ func checkboxListener(sess any, widget Widget) {
 
 	s.State.Put(wid, newVal)
 	// Repainting isn't necessary, as the web page has already done this
+}
+
+type SessionUserInfoStruct struct {
+	User webapp_data.User
+}
+
+type SessionUserInfo = *SessionUserInfoStruct
+
+func NewSessionUserInfo() SessionUserInfo {
+	t := &SessionUserInfoStruct{}
+	return t
 }
