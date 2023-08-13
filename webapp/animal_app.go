@@ -222,11 +222,10 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	widget := m.Open()
 	sess.PageWidget = widget
 
-	userInfo, ok := sess.AppData.(SessionUserInfo)
-	CheckState(ok, "no SessionUserInfo found in sess AppData:", INDENT, sess.AppData)
+	user, ok := sess.AppData.(webapp_data.User)
+	CheckState(ok, "no User found in sess AppData:", INDENT, sess.AppData)
 
-	user := userInfo.User
-	Todo("have convention of prefixing enums with e.g. 'UserState_'")
+	Todo("!have convention of prefixing enums with e.g. 'UserState_'")
 	if user.State() == webapp_data.UnknownUser {
 		Pr("the user is unknown")
 	}
@@ -293,19 +292,11 @@ Multiple line feeds:
 
 // A new session was created; assign an 'unknown' user to it
 func (oper AjaxOper) AssignUserToSession(sess Session) {
-	Todo("SessionUserInfo maybe can just be replaced by a User ptr")
-	x := NewSessionUserInfo()
-	x.User = webapp_data.NewUser().Build()
-	sess.AppData = x
-	{
-		Todo("!Allow header to have constant text")
-		sess.State.Put("header_text", "This is ajax_demo.go").
-			Put("header_text_2", "8 columns").Put("header_text_3", "4 columns").Put("bird", "").Put("zebra", "")
-	}
+	sess.AppData = webapp_data.NewUser().Build()
 }
 
 func birdListener(sess any, widget Widget) {
-	// Todo("can we have sessions produce listener functions with appropriate handling of sess any?")
+	Todo("?can we have sessions produce listener functions with appropriate handling of sess any?")
 	s := sess.(Session)
 	newVal := s.GetValueString()
 	if !s.Ok() {
@@ -372,15 +363,4 @@ func checkboxListener(sess any, widget Widget) {
 
 	s.State.Put(wid, newVal)
 	// Repainting isn't necessary, as the web page has already done this
-}
-
-type SessionUserInfoStruct struct {
-	User webapp_data.User
-}
-
-type SessionUserInfo = *SessionUserInfoStruct
-
-func NewSessionUserInfo() SessionUserInfo {
-	t := &SessionUserInfoStruct{}
-	return t
 }
