@@ -84,6 +84,7 @@ var ErrorUserNameIllegalCharacters = Error("Your name has illegal characters")
 var ErrorEmptyUserPassword = Error("Please enter a password")
 var ErrorUserPasswordLength = Error("Password must be between 8 and 20 characters")
 var ErrorUserPasswordIllegalCharacters = Error("Password must not contain spaces")
+var ErrorUserPasswordsDontMatch = Error("The two passwords don't match")
 
 const USER_PASSWORD_MIN_LENGTH = 8
 const USER_PASSWORD_MAX_LENGTH = 20

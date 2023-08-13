@@ -15,8 +15,8 @@ func CreateLandingPage(sess Session) {
 	{
 		m.Col(12)
 		m.Label("User name").Id("user_name").Listener(userNameListener).AddInput()
-		Todo("Option for password version of input field")
 		m.Label("Password").Id("user_pwd").Listener(userPwdListener).AddPassword()
+		m.Label("Password Again").Id("user_pwd_verify").Listener(verifyUserPwdListener).AddPassword()
 		m.Col(6)
 		m.AddSpace()
 		m.Listener(signInListener)
@@ -73,6 +73,25 @@ func userPwdListener(s Session, widget Widget) error {
 	return validateUserPwd(s, widget, value, true)
 }
 
+func validateMatchingPassword(s Session, widget Widget, value string, emptyOk bool) error {
+	if emptyOk && value == "" {
+		return nil
+	}
+	var err error
+	value1 := s.State.OptString("user_pwd", "")
+	if value1 != value {
+		err = Ternary(value == "", ErrorEmptyUserPassword, ErrorUserPasswordsDontMatch)
+	}
+	s.State.Put(WidgetId(widget), value)
+	s.SetWidgetProblem(widget, err)
+	return err
+}
+
+func verifyUserPwdListener(s Session, widget Widget) error {
+	value := s.GetValueString()
+	return validateMatchingPassword(s, widget, value, true)
+}
+
 func signInListener(s Session, widget Widget) error {
 	pr := PrIf(false)
 	pr("state:", INDENT, s.State)
@@ -82,8 +101,9 @@ func signInListener(s Session, widget Widget) error {
 
 	err1 := validateUserName(s, browserUserName, s.State.OptString("user_name", ""), false)
 	err2 := validateUserPwd(s, browserPassword, s.State.OptString("user_pwd", ""), false)
+	err3 := validateMatchingPassword(s, getWidget(s, "user_pwd_verify"), s.State.OptString("user_pwd_verify", ""), false)
 
-	pr("user_name err:", err1, "user_pwd err:", err2)
+	pr("user_name err:", err1, "user_pwd err:", err2, "user_pwd_verify err:", err3)
 	Todo("if everything worked out, change the displayed page / login state?")
-	return err1
+	return nil
 }
