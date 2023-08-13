@@ -51,35 +51,34 @@ func userPwdListener(sess any, widget Widget) {
 }
 
 func signInListener(sess any, widget Widget) {
+
 	s := sess.(Session)
 
-	//wid := s.GetWidgetId()
+	pr := PrIf(true)
 
-	Pr("state:", INDENT, s.State)
+	pr("state:", INDENT, s.State)
 
-	wUserName := getWidget(s, "user_name")
-	wPwd := getWidget(s, "user_pwd")
+	// When user modifies a widget in the browser, the Ajax call stores that user value directly
+	// into the state, without any validation.  So we must be sure to perform validation on it, and
+	// restore (in some way) whatever value was there before
 
-	if Alert("verifying changing state and repainting widget is sufficient") {
-		s.State.Put("user_name", "Hello")
-		s.Repaint(wUserName)
-		return
-	}
+	browserUserName := getWidget(s, "user_name")
+	browserPassword := getWidget(s, "user_pwd")
 
-	Pr("wUserName:", Info(wUserName))
+	Todo("have utility method to read widget value from state")
 
 	userName := s.State.OptString("user_name", "")
 	pwd := s.State.OptString("user_pwd", "")
 
-	s.ClearWidgetProblem(wUserName)
-	s.ClearWidgetProblem(wPwd)
+	s.ClearWidgetProblem(browserUserName)
+	s.ClearWidgetProblem(browserPassword)
 	if userName == "" {
-		s.SetWidgetProblem(wUserName, "Please enter your name")
-		s.Repaint(wUserName)
+		s.SetWidgetProblem(browserUserName, "Please enter your name")
+		s.Repaint(browserUserName)
 	}
 	if pwd == "" {
-		s.SetWidgetProblem(wPwd, "Please enter your password")
-		s.Repaint(wPwd)
+		s.SetWidgetProblem(browserPassword, "Please enter your password")
+		s.Repaint(browserPassword)
 	}
 	//Pr("user_name readValue:",
 	//	wUserName.ReadValue())
