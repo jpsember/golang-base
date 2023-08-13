@@ -12,6 +12,11 @@ type Widget interface {
 	GetChildren() []Widget
 }
 
+// This general type of listener can serve as a validator as well
+type WidgetListener func(sess any, widget Widget) error
+
+//var WidgetErrorUnknown = Error("unknown")
+
 type WidgetMap = map[string]Widget
 
 const MaxColumns = 12
@@ -27,3 +32,7 @@ const (
 	SizeLarge
 	SizeHuge
 )
+
+func WidgetId(widget Widget) string {
+	return widget.Base().Id
+}

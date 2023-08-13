@@ -4,8 +4,6 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
-type WidgetListener func(sess any, widget Widget)
-
 // The simplest concrete Widget implementation
 type BaseWidgetObj struct {
 	Id            string

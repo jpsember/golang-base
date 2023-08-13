@@ -73,3 +73,30 @@ func PerformBlobExperiment(db Database) {
 		CheckState(bytes.Equal(data, blob.Data()))
 	}
 }
+
+const USER_NAME_MAX_LENGTH = 20
+
+// var ErrorNone = Error("")
+var ErrorEmptyUserName = Error("Please enter your name")
+var ErrorUserNameTooLong = Error("Your name is too long")
+var ErrorUserNameIllegalCharacters = Error("Your name has illegal characters")
+
+var UserNameValidatorRegExp = Regexp(`^[a-zA-Z0-9_]+(?: [a-zA-Z0-9_]+)*$`)
+
+func ValidateUserName(userName string, emptyOk bool) (string, error) {
+	userName = strings.TrimSpace(userName)
+	Todo("?Replace two or more spaces by a single space")
+	validatedName := userName
+	var err error
+
+	if userName == "" {
+		if !emptyOk {
+			err = ErrorEmptyUserName
+		}
+	} else if len(userName) > USER_NAME_MAX_LENGTH {
+		err = ErrorUserNameTooLong
+	} else if !UserNameValidatorRegExp.MatchString(userName) {
+		err = ErrorUserNameIllegalCharacters
+	}
+	return validatedName, err
+}

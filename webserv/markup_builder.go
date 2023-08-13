@@ -242,7 +242,7 @@ func (b MarkupBuilder) VerifyEnd(expectedStackSize int, widget Widget) {
 	s := b.tagStack.Size()
 	if s != expectedStackSize {
 		BadState("<1tag stack size", s, "!=", expectedStackSize, INDENT,
-			"after widget:", widget.Base().Id, Info(widget))
+			"after widget:", WidgetId(widget), Info(widget))
 	}
 }
 

@@ -147,6 +147,7 @@ func (s Session) processClientMessage() {
 	// At present, we will assume that the request consists of a single widget id, and perhaps a single value
 	// for that widget
 	//
+	Hey(s)
 	widget := s.GetWidget()
 	b := widget.Base()
 
@@ -159,11 +160,19 @@ func (s Session) processClientMessage() {
 		//s.SetRequestProblem("no listener for id", b.Id)
 		return
 	}
-	if !widget.Base().Enabled() {
+	if !b.Enabled() {
 		s.SetRequestProblem("widget is disabled", b.Id)
 		return
 	}
+	Hey(s)
+
 	listener(s, widget)
+	Hey(s)
+
+}
+
+func Hey(s Session) {
+	Pr(CallerLocation(1), "state:", s.State.OptString("user_name", "<none>"))
 }
 
 func (s Session) processClientInfo(infoString string) {
@@ -272,12 +281,12 @@ func (s Session) GetWidgetId() string {
 
 // Read request's widget value as a string
 func (s Session) GetValueString() string {
-	id, err := getSingleValue(s.widgetValues)
+	value, err := getSingleValue(s.widgetValues)
 	if err != nil {
 		s.SetRequestProblem("Unable to get widget value")
 		return ""
 	}
-	return id
+	return value
 }
 
 // Read request's widget value as a boolean
@@ -307,15 +316,17 @@ func (s Session) GetWidget() Widget {
 }
 
 func getProblemId(w Widget) string {
-	return w.Base().Id + ".problem"
+	return WidgetId(w) + ".problem"
 }
 
 func (s Session) ClearWidgetProblem(widget Widget) {
+	Todo("We should probably repaint the widget if there was a problem displayed")
 	key := getProblemId(widget)
 	s.State.Delete(key)
 }
 
 func (s Session) SetWidgetProblem(widget Widget, s2 string) {
+	Todo("We should maybe repaint the widget if we are setting a problem")
 	CheckArg(s2 != "")
 	key := getProblemId(widget)
 	s.State.Put(key, s2)

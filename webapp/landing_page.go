@@ -30,37 +30,57 @@ func getWidget(sess Session, id string) Widget {
 	return sess.WidgetManager().Get(id)
 }
 
-func userNameListener(sess any, widget Widget) {
-	Pr("userNameListener", widget.Base().Id)
+func userNameListener(sess any, widget Widget) error {
+	pr := PrIf(true)
+	pr("userNameListener", WidgetId(widget))
 	s := sess.(Session)
-	Todo("some redundancy here, as the id and value are found in the ajax args...")
-	wid := s.GetWidgetId()
-	s.State.Put(wid, s.GetValueString())
-	s.ClearWidgetProblem(widget)
-	s.Repaint(widget)
+
+	//Todo("some redundancy here, as the id and value are found in the ajax args...")
+	//wid := s.GetWidgetId()
+
+	// It is here in the listener that we read the 'client requested' value for the widget
+	// from the ajax parameters, and write it to the state.  We could send it through a validation here...
+
+	// Maybe a two-stage validation, one that allows empty fields?
+
+	value := s.GetValueString()
+	pr("value:", value)
+	value, err := ValidateUserName(value, true)
+	pr("validated:", value, "error:", err)
+
+	Todo("Utility function for the following boilerplate?")
+	// We want to update the state even if the name is illegal, so user can see what he typed in
+	s.State.Put(WidgetId(widget), value)
+
+	if err != nil {
+		s.SetWidgetProblem(widget, err.Error())
+		Todo("Must repaint after problem")
+		s.Repaint(widget)
+	} else {
+		s.ClearWidgetProblem(widget)
+		s.Repaint(widget)
+	}
+	return err
 }
 
-func userPwdListener(sess any, widget Widget) {
-	Pr("userPwdListener", widget.Base().Id)
+func userPwdListener(sess any, widget Widget) error {
+	Pr("userPwdListener", WidgetId(widget))
 	s := sess.(Session)
 	wid := s.GetWidgetId()
 	s.State.Put(wid, s.GetValueString())
 	Todo("if clearing the problem, it should repaint")
 	s.ClearWidgetProblem(widget)
 	s.Repaint(widget)
+	return nil
 }
 
-func signInListener(sess any, widget Widget) {
+func signInListener(sess any, widget Widget) error {
 
 	s := sess.(Session)
 
 	pr := PrIf(true)
 
 	pr("state:", INDENT, s.State)
-
-	// When user modifies a widget in the browser, the Ajax call stores that user value directly
-	// into the state, without any validation.  So we must be sure to perform validation on it, and
-	// restore (in some way) whatever value was there before
 
 	browserUserName := getWidget(s, "user_name")
 	browserPassword := getWidget(s, "user_pwd")
@@ -70,15 +90,22 @@ func signInListener(sess any, widget Widget) {
 	userName := s.State.OptString("user_name", "")
 	pwd := s.State.OptString("user_pwd", "")
 
-	s.ClearWidgetProblem(browserUserName)
-	s.ClearWidgetProblem(browserPassword)
-	if userName == "" {
-		s.SetWidgetProblem(browserUserName, "Please enter your name")
-		s.Repaint(browserUserName)
+	_, err := ValidateUserName(userName, false)
+	if err != nil {
+		s.SetWidgetProblem(browserUserName, err.Error())
+	} else {
+		s.ClearWidgetProblem(browserUserName)
 	}
+
+	s.ClearWidgetProblem(browserPassword)
+	//if userName == "" {
+	//	s.SetWidgetProblem(browserUserName, "Please enter your name")
+	//	s.Repaint(browserUserName)
+	//}
 	if pwd == "" {
 		s.SetWidgetProblem(browserPassword, "Please enter your password")
 		s.Repaint(browserPassword)
 	}
-
+	Todo("if everything worked out, change the displayed page / login state?")
+	return nil
 }

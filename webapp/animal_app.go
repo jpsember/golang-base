@@ -291,13 +291,10 @@ func (oper AjaxOper) AssignUserToSession(sess Session) {
 	sess.AppData = webapp_data.NewUser().Build()
 }
 
-func birdListener(sess any, widget Widget) {
+func birdListener(sess any, widget Widget) error {
 	Todo("?can we have sessions produce listener functions with appropriate handling of sess any?")
 	s := sess.(Session)
 	newVal := s.GetValueString()
-	if !s.Ok() {
-		return
-	}
 	b := widget.Base()
 	s.ClearWidgetProblem(widget)
 	s.State.Put(b.Id, newVal)
@@ -306,21 +303,22 @@ func birdListener(sess any, widget Widget) {
 		s.SetWidgetProblem(widget, "No parrots, please!")
 	}
 	s.Repaint(widget)
+	return nil
 }
 
-func zebraListener(sess any, widget Widget) {
+func zebraListener(sess any, widget Widget) error {
 
 	s := sess.(Session)
 
 	// Get the requested new value for the widget
 	newVal := s.GetValueString()
-	if !s.Ok() {
-		return
-	}
 
 	// Store this as the new value for this widget within the session state map
-	s.State.Put(widget.Base().Id, newVal)
-	s.Repaint(widget.Base())
+	s.State.Put(WidgetId(widget), newVal)
+
+	if !Alert("we probably don't need to repaint the widget") {
+		s.Repaint(widget)
+	}
 
 	// Increment the alert class, and update its message
 	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
@@ -331,9 +329,10 @@ func zebraListener(sess any, widget Widget) {
 		strings.TrimSpace(newVal+" "+
 			RandomText(myRand.Rand(), 55, false)))
 	s.Repaint(alertWidget)
+	return nil
 }
 
-func buttonListener(sess any, widget Widget) {
+func buttonListener(sess any, widget Widget) error {
 	s := sess.(Session)
 	wid := s.GetWidgetId()
 	newVal := "Clicked: " + wid
@@ -345,18 +344,19 @@ func buttonListener(sess any, widget Widget) {
 	s.State.Put(alertWidget.Id,
 		strings.TrimSpace(newVal))
 	s.Repaint(alertWidget)
+	return nil
 }
 
-func checkboxListener(sess any, widget Widget) {
+func checkboxListener(sess any, widget Widget) error {
 	s := sess.(Session)
 	wid := s.GetWidgetId()
 
 	// Get the requested new value for the widget
 	newVal := s.GetValueBoolean()
-	if !s.Ok() {
-		return
-	}
+
+	Todo("It is safe to not check if there was a RequestProblem, as any state changes will still go through validation...")
 
 	s.State.Put(wid, newVal)
 	// Repainting isn't necessary, as the web page has already done this
+	return nil
 }

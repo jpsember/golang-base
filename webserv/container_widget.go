@@ -49,7 +49,7 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	pr("adding widget to container:", INDENT, w)
 	cols := w.columns
 	if cols == 0 {
-		BadState("no pending columns for widget:", c.Base().Id)
+		BadState("no pending columns for widget:", WidgetId(c))
 	}
 	cell := GridCell{
 		Width: cols,
