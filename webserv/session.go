@@ -147,7 +147,6 @@ func (s Session) processClientMessage() {
 	// At present, we will assume that the request consists of a single widget id, and perhaps a single value
 	// for that widget
 	//
-	Hey(s)
 	widget := s.GetWidget()
 	b := widget.Base()
 
@@ -164,15 +163,8 @@ func (s Session) processClientMessage() {
 		s.SetRequestProblem("widget is disabled", b.Id)
 		return
 	}
-	Hey(s)
 
 	listener(s, widget)
-	Hey(s)
-
-}
-
-func Hey(s Session) {
-	Pr(CallerLocation(1), "state:", s.State.OptString("user_name", "<none>"))
 }
 
 func (s Session) processClientInfo(infoString string) {
@@ -320,16 +312,26 @@ func getProblemId(w Widget) string {
 }
 
 func (s Session) ClearWidgetProblem(widget Widget) {
-	Todo("We should probably repaint the widget if there was a problem displayed")
-	key := getProblemId(widget)
-	s.State.Delete(key)
+	s.auxSetWidgetProblem(widget, "")
 }
 
-func (s Session) SetWidgetProblem(widget Widget, s2 string) {
-	Todo("We should maybe repaint the widget if we are setting a problem")
-	CheckArg(s2 != "")
+func (s Session) SetWidgetProblem(widget Widget, problemText string) {
+	CheckArg(problemText != "")
+	s.auxSetWidgetProblem(widget, problemText)
+}
+
+func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {
 	key := getProblemId(widget)
-	s.State.Put(key, s2)
+	state := s.State
+	existingProblem := state.OptString(key, "")
+	if existingProblem != problemText {
+		if problemText == "" {
+			state.Delete(key)
+		} else {
+			state.Put(key, problemText)
+		}
+		s.Repaint(widget)
+	}
 }
 
 // Include javascript call within page to get client's display properties.

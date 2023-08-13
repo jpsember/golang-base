@@ -31,17 +31,12 @@ func getWidget(sess Session, id string) Widget {
 }
 
 func userNameListener(sess any, widget Widget) error {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("userNameListener", WidgetId(widget))
 	s := sess.(Session)
 
-	//Todo("some redundancy here, as the id and value are found in the ajax args...")
-	//wid := s.GetWidgetId()
-
 	// It is here in the listener that we read the 'client requested' value for the widget
-	// from the ajax parameters, and write it to the state.  We could send it through a validation here...
-
-	// Maybe a two-stage validation, one that allows empty fields?
+	// from the ajax parameters, and write it to the state.  We will validate it here.
 
 	value := s.GetValueString()
 	pr("value:", value)
@@ -54,28 +49,30 @@ func userNameListener(sess any, widget Widget) error {
 
 	if err != nil {
 		s.SetWidgetProblem(widget, err.Error())
-		Todo("Must repaint after problem")
-		s.Repaint(widget)
 	} else {
 		s.ClearWidgetProblem(widget)
-		s.Repaint(widget)
 	}
 	return err
 }
 
 func userPwdListener(sess any, widget Widget) error {
-	Pr("userPwdListener", WidgetId(widget))
 	s := sess.(Session)
-	wid := s.GetWidgetId()
-	s.State.Put(wid, s.GetValueString())
-	Todo("if clearing the problem, it should repaint")
-	s.ClearWidgetProblem(widget)
-	s.Repaint(widget)
+
+	value := s.GetValueString()
+	value, err := ValidateUserPassword(value, true)
+
+	s.State.Put(WidgetId(widget), s.GetValueString())
+	if err != nil {
+		s.SetWidgetProblem(widget, err.Error())
+	} else {
+		s.ClearWidgetProblem(widget)
+	}
 	return nil
 }
 
 func signInListener(sess any, widget Widget) error {
 
+	Todo("extract code so we can call the (similar) validation code for individual widgets as well as the signIn")
 	s := sess.(Session)
 
 	pr := PrIf(true)

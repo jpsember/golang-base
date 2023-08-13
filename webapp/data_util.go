@@ -81,7 +81,15 @@ var ErrorEmptyUserName = Error("Please enter your name")
 var ErrorUserNameTooLong = Error("Your name is too long")
 var ErrorUserNameIllegalCharacters = Error("Your name has illegal characters")
 
+var ErrorEmptyUserPassword = Error("Please enter a password")
+var ErrorUserPasswordLength = Error("Password must be between 8 and 20 characters")
+var ErrorUserPasswordIllegalCharacters = Error("Password must not contain spaces")
+
+const USER_PASSWORD_MIN_LENGTH = 8
+const USER_PASSWORD_MAX_LENGTH = 20
+
 var UserNameValidatorRegExp = Regexp(`^[a-zA-Z0-9_]+(?: [a-zA-Z0-9_]+)*$`)
+var UserPasswordValidatorRegExp = Regexp(`^[^ ]+$`)
 
 func ValidateUserName(userName string, emptyOk bool) (string, error) {
 	userName = strings.TrimSpace(userName)
@@ -97,6 +105,24 @@ func ValidateUserName(userName string, emptyOk bool) (string, error) {
 		err = ErrorUserNameTooLong
 	} else if !UserNameValidatorRegExp.MatchString(userName) {
 		err = ErrorUserNameIllegalCharacters
+	}
+	return validatedName, err
+}
+
+func ValidateUserPassword(password string, emptyOk bool) (string, error) {
+	password = strings.TrimSpace(password)
+	validatedName := password
+	var err error
+
+	x := len(password)
+	if x == 0 {
+		if !emptyOk {
+			err = ErrorEmptyUserPassword
+		}
+	} else if x < USER_PASSWORD_MIN_LENGTH || x > USER_PASSWORD_MAX_LENGTH {
+		err = ErrorUserPasswordLength
+	} else if !UserPasswordValidatorRegExp.MatchString(password) {
+		err = ErrorUserPasswordIllegalCharacters
 	}
 	return validatedName, err
 }
