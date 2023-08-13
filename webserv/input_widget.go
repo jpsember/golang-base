@@ -79,3 +79,15 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.A(`</div>`)
 	m.Cr()
 }
+
+//
+//func (w InputWidget) WriteValue(v JSEntity) {
+//	NotImplemented("WriteValue")
+//}
+//
+//func (w InputWidget) ReadValue() JSEntity {
+//	value := WidgetStringValue(state, w.Id)
+//	return
+//	NotImplemented("ReadValue")
+//	return JBoolFalse
+//}

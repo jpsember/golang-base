@@ -25,6 +25,7 @@ func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	var textContent string
 
+	Todo("have utility method for this, useful for Heading too")
 	sc := b.StaticContent()
 	hasStaticContent := sc != nil
 	if hasStaticContent {

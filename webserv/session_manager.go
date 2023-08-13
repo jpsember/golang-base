@@ -60,10 +60,7 @@ func (s *inMemorySessionMap) CreateSession() Session {
 
 // Get a string value from session state map
 func WidgetStringValue(state JSMap, id string) string {
-	if !state.HasKey(id) {
-		return "??? #" + id + " ???"
-	}
-	return state.GetString(id)
+	return state.OptString(id, "")
 }
 
 // Get a boolean value from session state map

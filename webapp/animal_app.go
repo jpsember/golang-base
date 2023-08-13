@@ -218,7 +218,7 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	CheckState(ok, "no User found in sess AppData:", INDENT, sess.AppData)
 
 	Todo("!have convention of prefixing enums with e.g. 'UserState_'")
-	if user.State() == webapp_data.UnknownUser {
+	if true && user.State() == webapp_data.UnknownUser {
 		Pr("the user is unknown")
 		CreateLandingPage(sess)
 		return
@@ -228,7 +228,7 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	alertWidget.SetVisible(false)
 	m.Add(alertWidget)
 
-	m.Size(SizeLarge).Text("This is the header text").AddHeading()
+	m.Size(SizeLarge).Label("This is the header text").AddHeading()
 
 	heading := NewHeadingWidget("header_text", 1)
 	m.Add(heading)
@@ -247,9 +247,9 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	}
 
 	m.Col(4)
-	m.Text("uniform delta").AddText()
+	m.Label("uniform delta").AddText()
 	m.Col(8)
-	m.Id("x58").Text(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
+	m.Id("x58").Label(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
 
 	m.Col(2).AddSpace()
 	m.Col(3).AddSpace()
@@ -263,15 +263,15 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	m.Col(6)
 	m.Open()
-	m.Id("x59").Text(`Label for X59`).Listener(checkboxListener).AddCheckbox()
-	m.Id("x60").Text(`With fruit`).Listener(checkboxListener).AddSwitch()
+	m.Id("x59").Label(`Label for X59`).Listener(checkboxListener).AddCheckbox()
+	m.Id("x60").Label(`With fruit`).Listener(checkboxListener).AddSwitch()
 	m.Close()
 
 	m.Col(4)
-	m.Id("launch").Text(`Launch`).Listener(buttonListener).AddButton()
+	m.Id("launch").Label(`Launch`).Listener(buttonListener).AddButton()
 
 	m.Col(8)
-	m.Text(`Sample text; is 5 < 26? A line feed
+	m.Label(`Sample text; is 5 < 26? A line feed
 "Quoted string"
 Multiple line feeds:
 

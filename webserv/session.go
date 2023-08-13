@@ -155,7 +155,8 @@ func (s Session) processClientMessage() {
 	}
 	listener := b.Listener
 	if listener == nil {
-		s.SetRequestProblem("no listener for id", b.Id)
+		Todo("?Is it ok to have no listener?")
+		//s.SetRequestProblem("no listener for id", b.Id)
 		return
 	}
 	if !widget.GetBaseWidget().Enabled() {

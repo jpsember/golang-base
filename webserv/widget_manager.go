@@ -18,13 +18,14 @@ type WidgetManagerObj struct {
 	pendingListener             WidgetListener
 	parentStack                 *Array[Widget]
 	pendingSize                 WidgetSize
-	pendingText                 string
-	pendingId                   string
-	pendingLabel                string
-	anonymousIdCounter          int
+	//pendingText                 string
+	pendingId          string
+	pendingLabel       string
+	anonymousIdCounter int
 }
 
 func NewWidgetManager() WidgetManager {
+	Alert("!The widget ReadValue and WriteValue don't seem to be supported; are they necessary?")
 	w := WidgetManagerObj{
 		parentStack: NewArray[Widget](),
 		widgetMap:   make(map[string]Widget),
@@ -218,10 +219,10 @@ func (m WidgetManager) DefaultString(value string) WidgetManager {
 	return m
 }
 
-func (m WidgetManager) Text(value string) WidgetManager {
-	m.pendingText = value
-	return m
-}
+//func (m WidgetManager) Text(value string) WidgetManager {
+//	m.pendingText = value
+//	return m
+//}
 
 func (m WidgetManager) Label(value string) WidgetManager {
 	CheckState(m.pendingLabel == "")
@@ -271,11 +272,11 @@ func (m WidgetManager) ConsumePendingFloatingPointFlag() bool {
 	return v
 }
 
-func (m WidgetManager) consumePendingText() string {
-	lbl := m.pendingText
-	m.pendingText = ""
-	return lbl
-}
+//func (m WidgetManager) consumePendingText() string {
+//	lbl := m.pendingText
+//	m.pendingText = ""
+//	return lbl
+//}
 
 func (m WidgetManager) consumePendingLabel() string {
 	lbl := m.pendingLabel
@@ -314,7 +315,7 @@ func (m WidgetManager) clearPendingComponentFields() {
 	// If some values were not used, issue warnings
 	verifyUsed(m.mPendingDefaultIntValue == 0, "pendingDefaultIntValue")
 	verifyUsed(m.mPendingStringDefaultValue == "", "mPendingStringDefaultValue")
-	verifyUsed(m.pendingText == "", "pendingText")
+	//verifyUsed(m.pendingText == "", "pendingText")
 	verifyUsed(m.pendingLabel == "", "pendingLabel")
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
 	verifyUsed(m.pendingListener == nil, "pendingListener")
@@ -324,7 +325,7 @@ func (m WidgetManager) clearPendingComponentFields() {
 	m.mPendingDefaultIntValue = 0
 	m.mPendingBooleanDefaultValue = false
 	m.mPendingStringDefaultValue = ""
-	m.pendingText = ""
+	//m.pendingText = ""
 	m.mPendingFloatingPointFlag = false
 }
 
@@ -400,7 +401,8 @@ func (m WidgetManager) AddHeading() WidgetManager {
 
 	Todo("duplicated code here with AddText")
 
-	staticContent := m.consumePendingText()
+	staticContent := m.consumePendingLabel()
+	Pr("addHeading, static content:", staticContent)
 	hasStaticContent := staticContent != ""
 	if hasStaticContent {
 		CheckState(m.pendingId == "", "specify id OR static content")
@@ -430,7 +432,7 @@ func (m WidgetManager) AddText() WidgetManager {
 	var w TextWidget
 	// The text can either be expressed as a string (static content),
 	// or an id (dynamic content, read from session state)
-	staticContent := m.consumePendingText()
+	staticContent := m.consumePendingLabel()
 	hasStaticContent := staticContent != ""
 	if hasStaticContent {
 		CheckState(m.pendingId == "", "specify id OR static content")
@@ -450,7 +452,7 @@ func (m WidgetManager) AddButton() ButtonWidget {
 	m.assignPendingListener(w)
 	m.Log("Adding button, id:", w.Id)
 	Todo("confusion: Label, or Text here?")
-	w.Label = NewHtmlString(m.consumePendingText())
+	w.Label = NewHtmlString(m.consumePendingLabel())
 	m.Add(w)
 	return w
 }
@@ -468,7 +470,7 @@ func (m WidgetManager) AddSwitch() CheckboxWidget {
 }
 
 func (m WidgetManager) checkboxHelper(switchFlag bool) CheckboxWidget {
-	w := NewCheckboxWidget(switchFlag, m.consumePendingId(), NewHtmlString(m.consumePendingText()))
+	w := NewCheckboxWidget(switchFlag, m.consumePendingId(), NewHtmlString(m.consumePendingLabel()))
 	m.assignPendingListener(w)
 	m.Add(w)
 	return w
