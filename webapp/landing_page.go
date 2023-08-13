@@ -30,17 +30,15 @@ func getWidget(sess Session, id string) Widget {
 	return sess.WidgetManager().Get(id)
 }
 
-func userNameListener(sess any, widget Widget) error {
-	pr := PrIf(false)
-	pr("userNameListener", WidgetId(widget))
-	s := sess.(Session)
+func validateUserName(s Session, widget Widget, value string, emptyOk bool) error {
+	pr := PrIf(true)
+	pr("validateUserName")
 
 	// It is here in the listener that we read the 'client requested' value for the widget
 	// from the ajax parameters, and write it to the state.  We will validate it here.
 
-	value := s.GetValueString()
 	pr("value:", value)
-	value, err := ValidateUserName(value, true)
+	value, err := ValidateUserName(value, emptyOk)
 	pr("validated:", value, "error:", err)
 
 	Todo("Utility function for the following boilerplate?")
@@ -55,54 +53,53 @@ func userNameListener(sess any, widget Widget) error {
 	return err
 }
 
-func userPwdListener(sess any, widget Widget) error {
+func userNameListener(sess any, widget Widget) error {
+	pr := PrIf(false)
+	pr("userNameListener", WidgetId(widget))
 	s := sess.(Session)
 
-	value := s.GetValueString()
-	value, err := ValidateUserPassword(value, true)
+	// It is here in the listener that we read the 'client requested' value for the widget
+	// from the ajax parameters, and write it to the state.  We will validate it here.
 
-	s.State.Put(WidgetId(widget), s.GetValueString())
+	value := s.GetValueString()
+	return validateUserName(s, widget, value, true)
+}
+
+func validateUserPwd(s Session, widget Widget, value string, emptyOk bool) error {
+	pr := PrIf(false)
+	pr("validateUserPwd:", value)
+
+	value, err := ValidateUserPassword(value, emptyOk)
+	pr("afterward:", value, "err:", err)
+
+	s.State.Put(WidgetId(widget), value)
 	if err != nil {
 		s.SetWidgetProblem(widget, err.Error())
 	} else {
 		s.ClearWidgetProblem(widget)
 	}
-	return nil
+	return err
+}
+
+func userPwdListener(sess any, widget Widget) error {
+	s := sess.(Session)
+	value := s.GetValueString()
+	return validateUserPwd(s, widget, value, true)
 }
 
 func signInListener(sess any, widget Widget) error {
-
-	Todo("extract code so we can call the (similar) validation code for individual widgets as well as the signIn")
 	s := sess.(Session)
 
 	pr := PrIf(true)
-
 	pr("state:", INDENT, s.State)
 
 	browserUserName := getWidget(s, "user_name")
 	browserPassword := getWidget(s, "user_pwd")
 
-	Todo("have utility method to read widget value from state")
+	err1 := validateUserName(s, browserUserName, s.State.OptString("user_name", ""), false)
+	err2 := validateUserPwd(s, browserPassword, s.State.OptString("user_pwd", ""), false)
 
-	userName := s.State.OptString("user_name", "")
-	pwd := s.State.OptString("user_pwd", "")
-
-	_, err := ValidateUserName(userName, false)
-	if err != nil {
-		s.SetWidgetProblem(browserUserName, err.Error())
-	} else {
-		s.ClearWidgetProblem(browserUserName)
-	}
-
-	s.ClearWidgetProblem(browserPassword)
-	//if userName == "" {
-	//	s.SetWidgetProblem(browserUserName, "Please enter your name")
-	//	s.Repaint(browserUserName)
-	//}
-	if pwd == "" {
-		s.SetWidgetProblem(browserPassword, "Please enter your password")
-		s.Repaint(browserPassword)
-	}
+	pr("user_name err:", err1, "user_pwd err:", err2)
 	Todo("if everything worked out, change the displayed page / login state?")
-	return nil
+	return err1
 }

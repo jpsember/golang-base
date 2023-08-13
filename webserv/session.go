@@ -242,6 +242,7 @@ func (s Session) discardRequest() {
 func (s Session) SetRequestProblem(message ...any) Session {
 	if s.requestProblem == "" {
 		s.requestProblem = "Problem with ajax request: " + ToString(message...)
+		Alert("<2 setting request problem:", s.requestProblem)
 	}
 	return s
 }
