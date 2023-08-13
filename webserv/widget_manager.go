@@ -2,7 +2,6 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"strings"
 )
 
 type WidgetManagerObj struct {
@@ -18,10 +17,9 @@ type WidgetManagerObj struct {
 	pendingListener             WidgetListener
 	parentStack                 *Array[Widget]
 	pendingSize                 WidgetSize
-	//pendingText                 string
-	pendingId          string
-	pendingLabel       string
-	anonymousIdCounter int
+	pendingId                   string
+	pendingLabel                string
+	anonymousIdCounter          int
 }
 
 func NewWidgetManager() WidgetManager {
@@ -52,114 +50,6 @@ func (m WidgetManager) Get(id string) Widget {
 func (m WidgetManager) find(id string) Widget {
 	return m.widgetMap[id]
 }
-
-// ------------------------------------------------------------------
-// Accessing widget values
-// ------------------------------------------------------------------
-
-/**
- * Set widgets' values. Used to restore app widgets to a previously saved
- * state
- */
-func (m WidgetManager) SetWidgetValues(js *JSMapStruct) {
-	for id, val := range js.WrappedMap() {
-		if m.Exists(id) {
-			m.Get(id).WriteValue(val)
-		}
-	}
-}
-
-/**
- * Read widgets' values. Doesn't include widgets that have no ids, or whose
- * ids start with "."
- */
-func (m WidgetManager) ReadWidgetValues() *JSMapStruct {
-	mp := NewJSMap()
-
-	for id, w := range m.widgetMap {
-		if strings.HasPrefix(id, ".") {
-			continue
-		}
-		v := w.ReadValue()
-		if v != nil {
-			mp.Put(id, v)
-		}
-	}
-	return mp
-}
-
-/**
- * Get value of string-valued widget
- */
-func (m WidgetManager) Vs(id string) string {
-	return m.Get(id).ReadValue().AsString()
-}
-
-/**
- * Set value of string-valued widget
- */
-func (m WidgetManager) Sets(id string, v string) {
-	m.Get(id).WriteValue(JString(v))
-}
-
-/**
- * Get value of boolean-valued widget
- */
-func (m WidgetManager) Vb(id string) bool {
-	result := false
-	g := m.Get(id)
-	if g != nil {
-		result = g.ReadValue().AsBool()
-	}
-	return result
-}
-
-/**
- * Set value of boolean-valued widget
- */
-func (m WidgetManager) Setb(id string, boolValue bool) bool {
-	m.Get(id).WriteValue(JBool(boolValue))
-	return boolValue
-}
-
-/**
- * Toggle value of boolean-valued widget
- */
-func (m WidgetManager) Toggle(id string) bool {
-	return m.Setb(id, !m.Vb(id))
-}
-
-/**
- * Get value of integer-valued widget
- */
-func (m WidgetManager) Vi(id string) int {
-	return int(m.Get(id).ReadValue().AsInteger())
-}
-
-/**
- * Set value of integer-valued widget
- */
-func (m WidgetManager) Seti(id string, v int) int {
-	m.Get(id).WriteValue(JInteger(v))
-	return v
-}
-
-/**
- * Get value of float-valued widget
- */
-func (m WidgetManager) Vf(id string) float64 {
-	return m.Get(id).ReadValue().AsFloat()
-}
-
-/**
- * Set value of double-valued widget
- */
-func (m WidgetManager) SetF(id string, v float64) float64 {
-	m.Get(id).WriteValue(JFloat(v))
-	return v
-}
-
-// ------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------
 // Constructing widgets
@@ -219,11 +109,6 @@ func (m WidgetManager) DefaultString(value string) WidgetManager {
 	return m
 }
 
-//func (m WidgetManager) Text(value string) WidgetManager {
-//	m.pendingText = value
-//	return m
-//}
-
 func (m WidgetManager) Label(value string) WidgetManager {
 	CheckState(m.pendingLabel == "")
 	m.pendingLabel = value
@@ -272,12 +157,6 @@ func (m WidgetManager) ConsumePendingFloatingPointFlag() bool {
 	return v
 }
 
-//func (m WidgetManager) consumePendingText() string {
-//	lbl := m.pendingText
-//	m.pendingText = ""
-//	return lbl
-//}
-
 func (m WidgetManager) consumePendingLabel() string {
 	lbl := m.pendingLabel
 	m.pendingLabel = ""
@@ -311,11 +190,9 @@ func verifyUsed(flag bool, name string) {
 }
 
 func (m WidgetManager) clearPendingComponentFields() {
-	Todo("!incorporate skip values into 'BadState', other assertions")
 	// If some values were not used, issue warnings
 	verifyUsed(m.mPendingDefaultIntValue == 0, "pendingDefaultIntValue")
 	verifyUsed(m.mPendingStringDefaultValue == "", "mPendingStringDefaultValue")
-	//verifyUsed(m.pendingText == "", "pendingText")
 	verifyUsed(m.pendingLabel == "", "pendingLabel")
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
 	verifyUsed(m.pendingListener == nil, "pendingListener")
@@ -325,7 +202,6 @@ func (m WidgetManager) clearPendingComponentFields() {
 	m.mPendingDefaultIntValue = 0
 	m.mPendingBooleanDefaultValue = false
 	m.mPendingStringDefaultValue = ""
-	//m.pendingText = ""
 	m.mPendingFloatingPointFlag = false
 }
 
