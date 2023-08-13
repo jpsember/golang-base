@@ -24,20 +24,7 @@ func (w HeadingWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if !w.Visible() {
 		m.RenderInvisible(w)
 	} else {
-
-		var textContent string
-
-		Todo("have utility method for this, useful for Heading too")
-		sc := w.StaticContent()
-		hasStaticContent := sc != nil
-		if hasStaticContent {
-			textContent = sc.(string)
-		} else {
-			textContent = WidgetStringValue(state, w.Id)
-			//state.OptString(w.Id, "")
-		}
-
-		//value := WidgetStringValue(state, w.Id)
+		textContent, _ := GetStaticOrDynamicLabel(w, state)
 		tag := widgetSizeToHeadingTag(w.size)
 		m.A(`<`, tag, ` id='`, w.Id, `'>`)
 		m.Escape(textContent)

@@ -31,7 +31,7 @@ func getWidget(sess Session, id string) Widget {
 }
 
 func validateUserName(s Session, widget Widget, value string, emptyOk bool) error {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("validateUserName")
 
 	// It is here in the listener that we read the 'client requested' value for the widget
@@ -41,22 +41,25 @@ func validateUserName(s Session, widget Widget, value string, emptyOk bool) erro
 	value, err := ValidateUserName(value, emptyOk)
 	pr("validated:", value, "error:", err)
 
-	Todo("Utility function for the following boilerplate?")
 	// We want to update the state even if the name is illegal, so user can see what he typed in
 	s.State.Put(WidgetId(widget), value)
 
+	setOrClearWidgetProblem(s, widget, err)
+
+	return err
+}
+
+func setOrClearWidgetProblem(s Session, widget Widget, err error) {
 	if err != nil {
 		s.SetWidgetProblem(widget, err.Error())
 	} else {
 		s.ClearWidgetProblem(widget)
 	}
-	return err
 }
 
-func userNameListener(sess any, widget Widget) error {
+func userNameListener(s Session, widget Widget) error {
 	pr := PrIf(false)
 	pr("userNameListener", WidgetId(widget))
-	s := sess.(Session)
 
 	// It is here in the listener that we read the 'client requested' value for the widget
 	// from the ajax parameters, and write it to the state.  We will validate it here.
@@ -68,29 +71,20 @@ func userNameListener(sess any, widget Widget) error {
 func validateUserPwd(s Session, widget Widget, value string, emptyOk bool) error {
 	pr := PrIf(false)
 	pr("validateUserPwd:", value)
-
 	value, err := ValidateUserPassword(value, emptyOk)
 	pr("afterward:", value, "err:", err)
-
 	s.State.Put(WidgetId(widget), value)
-	if err != nil {
-		s.SetWidgetProblem(widget, err.Error())
-	} else {
-		s.ClearWidgetProblem(widget)
-	}
+	setOrClearWidgetProblem(s, widget, err)
 	return err
 }
 
-func userPwdListener(sess any, widget Widget) error {
-	s := sess.(Session)
+func userPwdListener(s Session, widget Widget) error {
 	value := s.GetValueString()
 	return validateUserPwd(s, widget, value, true)
 }
 
-func signInListener(sess any, widget Widget) error {
-	s := sess.(Session)
-
-	pr := PrIf(true)
+func signInListener(s Session, widget Widget) error {
+	pr := PrIf(false)
 	pr("state:", INDENT, s.State)
 
 	browserUserName := getWidget(s, "user_name")

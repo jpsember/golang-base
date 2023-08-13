@@ -272,22 +272,26 @@ func (m WidgetManager) AddInput() WidgetManager {
 	return m.Add(t)
 }
 
-func (m WidgetManager) AddHeading() WidgetManager {
-
-	Todo("duplicated code here with AddText")
-
+// Utility method to determine the label and id for text fields (text fields, headings).
+// The label can either be expressed as a string (static content),
+// or an id (dynamic content, read from session state).  If static, there should *not* be
+// a pending id.
+func (m WidgetManager) getStaticContentAndId() (string, string) {
 	staticContent := m.consumePendingLabel()
-	Pr("addHeading, static content:", staticContent)
 	hasStaticContent := staticContent != ""
 	if hasStaticContent {
 		CheckState(m.pendingId == "", "specify id OR static content")
 	}
 	id := m.consumeOptionalPendingId()
+	return staticContent, id
+}
+
+func (m WidgetManager) AddHeading() WidgetManager {
+	staticContent, id := m.getStaticContentAndId()
 	w := NewHeadingWidget(id, m.consumePendingSize())
-	if hasStaticContent {
+	if staticContent != "" {
 		w.SetStaticContent(staticContent)
 	}
-
 	return m.Add(w)
 }
 
@@ -301,20 +305,9 @@ func (m WidgetManager) assignPendingListener(widget Widget) {
 }
 
 func (m WidgetManager) AddText() WidgetManager {
-
-	Todo("duplicated code here with AddHeading")
-
-	var w TextWidget
-	// The text can either be expressed as a string (static content),
-	// or an id (dynamic content, read from session state)
-	staticContent := m.consumePendingLabel()
-	hasStaticContent := staticContent != ""
-	if hasStaticContent {
-		CheckState(m.pendingId == "", "specify id OR static content")
-	}
-	id := m.consumeOptionalPendingId()
-	w = NewTextWidget(id)
-	if hasStaticContent {
+	staticContent, id := m.getStaticContentAndId()
+	w := NewTextWidget(id)
+	if staticContent != "" {
 		w.SetStaticContent(staticContent)
 	}
 	m.Log("Adding text, id:", w.Id)
@@ -326,7 +319,6 @@ func (m WidgetManager) AddButton() ButtonWidget {
 	w.Id = m.consumePendingId()
 	m.assignPendingListener(w)
 	m.Log("Adding button, id:", w.Id)
-	Todo("confusion: Label, or Text here?")
 	w.Label = NewHtmlString(m.consumePendingLabel())
 	m.Add(w)
 	return w
@@ -367,4 +359,15 @@ var WidgetDebugRenderingFlag bool
 func SetWidgetDebugRendering() {
 	Alert("<1 Setting widget debug rendering")
 	WidgetDebugRenderingFlag = true
+}
+
+func GetStaticOrDynamicLabel(widget Widget, state JSMap) (string, bool) {
+	w := widget.Base()
+	Todo("?we are assuming static content is a string here")
+	textContent := widget.Base().StaticContent().(string)
+	hasStatic := textContent != ""
+	if !hasStatic {
+		textContent = WidgetStringValue(state, w.Id)
+	}
+	return textContent, hasStatic
 }

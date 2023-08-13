@@ -17,25 +17,26 @@ func NewTextWidget(id string) TextWidget {
 }
 
 func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	b := w.Base()
+	// b := w.Base()
 	if !w.Visible() {
 		m.RenderInvisible(w)
 		return
 	}
 
-	var textContent string
-
-	Todo("have utility method for this, useful for Heading too")
-	sc := b.StaticContent()
-	hasStaticContent := sc != nil
-	if hasStaticContent {
-		textContent = sc.(string)
-	} else {
-		textContent = state.OptString(w.Id, "")
-	}
+	textContent, wasStatic := GetStaticOrDynamicLabel(w, state)
+	//var textContent string
+	//
+	//Todo("have utility method for this, useful for Heading too")
+	//sc := b.StaticContent()
+	//hasStaticContent := sc != nil
+	//if hasStaticContent {
+	//	textContent = sc.(string)
+	//} else {
+	//	textContent = state.OptString(w.Id, "")
+	//}
 
 	h := NewHtmlString(textContent)
-	if hasStaticContent {
+	if wasStatic {
 		m.OpenTag(`div`)
 	} else {
 		m.OpenTag(`div id='` + w.Id + `'`)

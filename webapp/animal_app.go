@@ -4,11 +4,8 @@ import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
-	"log"
-	"os"
-	"runtime/debug"
-
 	. "github.com/jpsember/golang-base/webserv"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -35,57 +32,8 @@ func (oper AjaxOper) GetHelp(bp *BasePrinter) {
 func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
 }
 
-func ShowStackTrace() {
-	//Pr("printing stack:")
-	//debug.PrintStack()
-	Pr("generating stack:")
-	y := debug.Stack()
-	x := string(y)
-	lns := strings.Split(x, "\n")
-
-	prefix := ""
-	for _, val := range lns {
-		result := val
-		for {
-			if strings.HasPrefix(val, "goroutine ") {
-				result = ""
-				break
-			}
-
-			if strings.HasPrefix(val, "\t") {
-				val := strings.TrimSpace(val)
-				cols := strings.Fields(val)
-				if len(cols) != 2 {
-					break
-				}
-				result = cols[0]
-				break
-			}
-			j := strings.LastIndex(val, "(")
-			if j < 0 {
-				break
-			}
-			q := strings.LastIndex(val[0:j], ".")
-			if q < 0 {
-				break
-			}
-			prefix = val[q+1 : j]
-			result = ""
-			break
-		}
-		if result != "" {
-			Pr(result + " " + prefix)
-		}
-	}
-	//Pr(CurrentDirectory())
-	Pr("animal_app.go:89")
-	Pr("zero.go:89")
-
-	//Pr(lns)
-	os.Exit(1)
-}
-
 func (oper AjaxOper) Perform(app *App) {
+	//ClearAlertHistory()
 	if false && Alert("Performing sql experiment") {
 		SQLiteExperiment()
 		return
@@ -219,7 +167,6 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	Todo("!have convention of prefixing enums with e.g. 'UserState_'")
 	if true && user.State() == webapp_data.UnknownUser {
-		Pr("the user is unknown")
 		CreateLandingPage(sess)
 		return
 	}
@@ -291,9 +238,8 @@ func (oper AjaxOper) AssignUserToSession(sess Session) {
 	sess.AppData = webapp_data.NewUser().Build()
 }
 
-func birdListener(sess any, widget Widget) error {
+func birdListener(s Session, widget Widget) error {
 	Todo("?can we have sessions produce listener functions with appropriate handling of sess any?")
-	s := sess.(Session)
 	newVal := s.GetValueString()
 	b := widget.Base()
 	s.ClearWidgetProblem(widget)
@@ -306,9 +252,7 @@ func birdListener(sess any, widget Widget) error {
 	return nil
 }
 
-func zebraListener(sess any, widget Widget) error {
-
-	s := sess.(Session)
+func zebraListener(s Session, widget Widget) error {
 
 	// Get the requested new value for the widget
 	newVal := s.GetValueString()
@@ -332,8 +276,7 @@ func zebraListener(sess any, widget Widget) error {
 	return nil
 }
 
-func buttonListener(sess any, widget Widget) error {
-	s := sess.(Session)
+func buttonListener(s Session, widget Widget) error {
 	wid := s.GetWidgetId()
 	newVal := "Clicked: " + wid
 
@@ -347,8 +290,7 @@ func buttonListener(sess any, widget Widget) error {
 	return nil
 }
 
-func checkboxListener(sess any, widget Widget) error {
-	s := sess.(Session)
+func checkboxListener(s Session, widget Widget) error {
 	wid := s.GetWidgetId()
 
 	// Get the requested new value for the widget

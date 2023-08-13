@@ -13,12 +13,7 @@ type Widget interface {
 }
 
 // This general type of listener can serve as a validator as well
-type WidgetListener func(sess any, widget Widget) error
-
-// Can we pass an actual session to the listener?
-type WidgetListener2 func(sess Session, widget Widget) error
-
-//var WidgetErrorUnknown = Error("unknown")
+type WidgetListener func(sess Session, widget Widget) error
 
 type WidgetMap = map[string]Widget
 
