@@ -15,7 +15,7 @@ func CreateLandingPage(sess Session) {
 	{
 		m.Col(12)
 		m.Label("User name").Id("user_name").Listener(userNameListener).AddInput()
-		Todo("!Option for password version of input field")
+		Todo("Option for password version of input field")
 		m.Label("Password").Id("user_pwd").Listener(userPwdListener).AddInput()
 		m.Col(6)
 		m.AddSpace()
@@ -43,18 +43,8 @@ func validateUserName(s Session, widget Widget, value string, emptyOk bool) erro
 
 	// We want to update the state even if the name is illegal, so user can see what he typed in
 	s.State.Put(WidgetId(widget), value)
-
-	setOrClearWidgetProblem(s, widget, err)
-
+	s.SetWidgetProblem(widget, err)
 	return err
-}
-
-func setOrClearWidgetProblem(s Session, widget Widget, err error) {
-	if err != nil {
-		s.SetWidgetProblem(widget, err.Error())
-	} else {
-		s.ClearWidgetProblem(widget)
-	}
 }
 
 func userNameListener(s Session, widget Widget) error {
@@ -74,7 +64,7 @@ func validateUserPwd(s Session, widget Widget, value string, emptyOk bool) error
 	value, err := ValidateUserPassword(value, emptyOk)
 	pr("afterward:", value, "err:", err)
 	s.State.Put(WidgetId(widget), value)
-	setOrClearWidgetProblem(s, widget, err)
+	s.SetWidgetProblem(widget, err)
 	return err
 }
 

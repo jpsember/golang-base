@@ -312,13 +312,19 @@ func getProblemId(w Widget) string {
 	return WidgetId(w) + ".problem"
 }
 
-func (s Session) ClearWidgetProblem(widget Widget) {
-	s.auxSetWidgetProblem(widget, "")
-}
-
-func (s Session) SetWidgetProblem(widget Widget, problemText string) {
-	CheckArg(problemText != "")
-	s.auxSetWidgetProblem(widget, problemText)
+func (s Session) SetWidgetProblem(widget Widget, problem any) {
+	var text string
+	if problem != nil {
+		switch t := problem.(type) {
+		case string:
+			text = t
+		case error:
+			text = t.Error()
+		default:
+			BadArg("<1Unsupported type")
+		}
+	}
+	s.auxSetWidgetProblem(widget, text)
 }
 
 func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {

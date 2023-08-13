@@ -242,7 +242,7 @@ func birdListener(s Session, widget Widget) error {
 	Todo("?can we have sessions produce listener functions with appropriate handling of sess any?")
 	newVal := s.GetValueString()
 	b := widget.Base()
-	s.ClearWidgetProblem(widget)
+	s.SetWidgetProblem(widget, nil)
 	s.State.Put(b.Id, newVal)
 	Todo("!do validation as a global function somewhere")
 	if newVal == "parrot" {
