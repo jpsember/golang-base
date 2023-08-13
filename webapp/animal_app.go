@@ -298,7 +298,7 @@ func birdListener(sess any, widget Widget) {
 	if !s.Ok() {
 		return
 	}
-	b := widget.GetBaseWidget()
+	b := widget.Base()
 	s.ClearWidgetProblem(widget)
 	s.State.Put(b.Id, newVal)
 	Todo("!do validation as a global function somewhere")
@@ -319,8 +319,8 @@ func zebraListener(sess any, widget Widget) {
 	}
 
 	// Store this as the new value for this widget within the session state map
-	s.State.Put(widget.GetBaseWidget().Id, newVal)
-	s.Repaint(widget.GetBaseWidget())
+	s.State.Put(widget.Base().Id, newVal)
+	s.Repaint(widget.Base())
 
 	// Increment the alert class, and update its message
 	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal

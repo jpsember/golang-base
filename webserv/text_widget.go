@@ -17,7 +17,7 @@ func NewTextWidget(id string) TextWidget {
 }
 
 func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	b := w.GetBaseWidget()
+	b := w.Base()
 	if !w.Visible() {
 		m.RenderInvisible(w)
 		return

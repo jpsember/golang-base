@@ -28,7 +28,7 @@ func OpenAnimalCardWidget(m WidgetManager, baseId string, animal Animal, viewBut
 
 func newAnimalCardWidget(widgetId string, animal Animal) AnimalCardWidget {
 	w := AnimalCardWidgetObj{}
-	w.GetBaseWidget().Id = widgetId
+	w.Base().Id = widgetId
 	w.animal = animal
 	w.children = NewArray[Widget]()
 	return &w

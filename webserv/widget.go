@@ -6,10 +6,8 @@ import (
 
 // The interface that all widgets must support
 type Widget interface {
-	WriteValue(v JSEntity)
-	ReadValue() JSEntity
+	Base() BaseWidget
 	RenderTo(m MarkupBuilder, state JSMap)
-	GetBaseWidget() BaseWidget
 	AddChild(c Widget, manager WidgetManager)
 	GetChildren() []Widget
 }

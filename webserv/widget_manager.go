@@ -23,7 +23,6 @@ type WidgetManagerObj struct {
 }
 
 func NewWidgetManager() WidgetManager {
-	Alert("!The widget ReadValue and WriteValue don't seem to be supported; are they necessary?")
 	w := WidgetManagerObj{
 		parentStack: NewArray[Widget](),
 		widgetMap:   make(map[string]Widget),
@@ -209,7 +208,7 @@ func (m WidgetManager) clearPendingComponentFields() {
  * Add widget to the hierarchy
  */
 func (m WidgetManager) Add(widget Widget) WidgetManager {
-	b := widget.GetBaseWidget()
+	b := widget.Base()
 	id := b.Id
 	if id != "" {
 		if m.Exists(id) {
@@ -294,9 +293,9 @@ func (m WidgetManager) AddHeading() WidgetManager {
 
 func (m WidgetManager) assignPendingListener(widget Widget) {
 	if m.pendingListener != nil {
-		b := widget.GetBaseWidget()
-		CheckState(widget.GetBaseWidget().Listener == nil, "Widget", b.Id, "already has a listener")
-		widget.GetBaseWidget().Listener = m.pendingListener
+		b := widget.Base()
+		CheckState(widget.Base().Listener == nil, "Widget", b.Id, "already has a listener")
+		widget.Base().Listener = m.pendingListener
 		m.pendingListener = nil
 	}
 }

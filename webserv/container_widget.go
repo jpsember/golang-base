@@ -49,7 +49,7 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	pr("adding widget to container:", INDENT, w)
 	cols := w.columns
 	if cols == 0 {
-		BadState("no pending columns for widget:", c.GetBaseWidget().Id)
+		BadState("no pending columns for widget:", c.Base().Id)
 	}
 	cell := GridCell{
 		Width: cols,
@@ -86,7 +86,7 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 				prevPoint = IPointWith(0, cell.Location.Y)
 			}
 
-			b := child.GetBaseWidget()
+			b := child.Base()
 			s := `div class="col-sm-` + IntToString(cell.Width) + `"`
 			if WidgetDebugRenderingFlag {
 				s += ` style="background-color:` + DebugColor(b.IdHashcode()) + `;`

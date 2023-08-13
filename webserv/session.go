@@ -63,7 +63,7 @@ func (s Session) ToJson() *JSMapStruct {
 
 // Mark a widget for repainting.
 func (s Session) Repaint(w Widget) {
-	b := w.GetBaseWidget()
+	b := w.Base()
 	pr := PrIf(debRepaint)
 	id := b.Id
 	pr("Repaint:", id)
@@ -148,7 +148,7 @@ func (s Session) processClientMessage() {
 	// for that widget
 	//
 	widget := s.GetWidget()
-	b := widget.GetBaseWidget()
+	b := widget.Base()
 
 	if !s.Ok() {
 		return
@@ -159,7 +159,7 @@ func (s Session) processClientMessage() {
 		//s.SetRequestProblem("no listener for id", b.Id)
 		return
 	}
-	if !widget.GetBaseWidget().Enabled() {
+	if !widget.Base().Enabled() {
 		s.SetRequestProblem("widget is disabled", b.Id)
 		return
 	}
@@ -176,7 +176,7 @@ func (s Session) processClientInfo(infoString string) {
 }
 
 func (s Session) processRepaintFlags(debugDepth int, w Widget, refmap JSMap, repaint bool) {
-	b := w.GetBaseWidget()
+	b := w.Base()
 	id := b.Id
 	pr := PrIf(debRepaint)
 	pr(Dots(debugDepth*4)+IntToString(debugDepth), "repaint, flag:", repaint, "id:", id)
@@ -307,7 +307,7 @@ func (s Session) GetWidget() Widget {
 }
 
 func getProblemId(w Widget) string {
-	return w.GetBaseWidget().Id + ".problem"
+	return w.Base().Id + ".problem"
 }
 
 func (s Session) ClearWidgetProblem(widget Widget) {

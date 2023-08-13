@@ -15,7 +15,7 @@ type CheckboxWidget = *CheckboxWidgetObj
 
 func NewCheckboxWidget(switchFlag bool, id string, label HtmlString) CheckboxWidget {
 	w := CheckboxWidgetObj{}
-	w.GetBaseWidget().Id = id
+	w.Base().Id = id
 	w.Label = label
 	w.switchFlag = switchFlag
 	return &w

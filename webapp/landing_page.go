@@ -31,7 +31,7 @@ func getWidget(sess Session, id string) Widget {
 }
 
 func userNameListener(sess any, widget Widget) {
-	Pr("userNameListener", widget.GetBaseWidget().Id)
+	Pr("userNameListener", widget.Base().Id)
 	s := sess.(Session)
 	Todo("some redundancy here, as the id and value are found in the ajax args...")
 	wid := s.GetWidgetId()
@@ -41,7 +41,7 @@ func userNameListener(sess any, widget Widget) {
 }
 
 func userPwdListener(sess any, widget Widget) {
-	Pr("userPwdListener", widget.GetBaseWidget().Id)
+	Pr("userPwdListener", widget.Base().Id)
 	s := sess.(Session)
 	wid := s.GetWidgetId()
 	s.State.Put(wid, s.GetValueString())
@@ -80,11 +80,5 @@ func signInListener(sess any, widget Widget) {
 		s.SetWidgetProblem(browserPassword, "Please enter your password")
 		s.Repaint(browserPassword)
 	}
-	//Pr("user_name readValue:",
-	//	wUserName.ReadValue())
-	////wUser := s.WidgetManager().Get("user_name")
-	////wPwd := s.WidgetManager().Get("user_pwd")
-	//Pr("user_name value:", wUser.ReadValue().AsString())
-	//Pr("user_pwd value:", wPwd.ReadValue().AsString())
 
 }

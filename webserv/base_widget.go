@@ -25,7 +25,7 @@ func NewBaseWidget(id string) BaseWidget {
 	return t
 }
 
-func (w BaseWidget) GetBaseWidget() BaseWidget {
+func (w BaseWidget) Base() BaseWidget {
 	return w
 }
 
@@ -35,10 +35,6 @@ func (w BaseWidget) SetStaticContent(content any) {
 
 func (w BaseWidget) StaticContent() any {
 	return w.staticContent
-}
-
-func (w BaseWidget) WriteValue(v JSEntity) {
-	NotImplemented("WriteValue")
 }
 
 func (w BaseWidget) Visible() bool {
@@ -55,11 +51,6 @@ func (w BaseWidget) Enabled() bool {
 
 func (w BaseWidget) SetEnabled(s bool) {
 	w.disabled = !s
-}
-
-func (w BaseWidget) ReadValue() JSEntity {
-	NotImplemented("ReadValue")
-	return JBoolFalse
 }
 
 func (w BaseWidget) AddChild(c Widget, manager WidgetManager) {
