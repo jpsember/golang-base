@@ -60,6 +60,12 @@ func signInListener(sess any, widget Widget) {
 	wUserName := getWidget(s, "user_name")
 	wPwd := getWidget(s, "user_pwd")
 
+	if Alert("verifying changing state and repainting widget is sufficient") {
+		s.State.Put("user_name", "Hello")
+		s.Repaint(wUserName)
+		return
+	}
+
 	Pr("wUserName:", Info(wUserName))
 
 	userName := s.State.OptString("user_name", "")
