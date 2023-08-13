@@ -266,10 +266,18 @@ func (m WidgetManager) currentPanel() Widget {
 }
 
 func (m WidgetManager) AddInput() WidgetManager {
+	return m.auxAddInput(false)
+}
+
+func (m WidgetManager) auxAddInput(password bool) WidgetManager {
 	id := m.consumeOptionalPendingId()
-	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()))
+	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()), password)
 	m.assignPendingListener(t)
 	return m.Add(t)
+}
+
+func (m WidgetManager) AddPassword() WidgetManager {
+	return m.auxAddInput(true)
 }
 
 // Utility method to determine the label and id for text fields (text fields, headings).

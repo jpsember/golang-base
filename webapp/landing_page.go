@@ -16,7 +16,7 @@ func CreateLandingPage(sess Session) {
 		m.Col(12)
 		m.Label("User name").Id("user_name").Listener(userNameListener).AddInput()
 		Todo("Option for password version of input field")
-		m.Label("Password").Id("user_pwd").Listener(userPwdListener).AddInput()
+		m.Label("Password").Id("user_pwd").Listener(userPwdListener).AddPassword()
 		m.Col(6)
 		m.AddSpace()
 		m.Listener(signInListener)
