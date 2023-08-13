@@ -5,6 +5,13 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
+const (
+	id_user_name       = "user_name"
+	id_user_pwd_verify = "user_pwd_verify"
+	id_user_pwd        = "user_pwd"
+	id_sign_in         = "sign_in"
+)
+
 func CreateLandingPage(sess Session) {
 
 	m := sess.WidgetManager()
@@ -14,13 +21,13 @@ func CreateLandingPage(sess Session) {
 	m.Col(6).Open()
 	{
 		m.Col(12)
-		m.Label("User name").Id("user_name").Listener(userNameListener).AddInput()
-		m.Label("Password").Id("user_pwd").Listener(userPwdListener).AddPassword()
-		m.Label("Password Again").Id("user_pwd_verify").Listener(verifyUserPwdListener).AddPassword()
+		m.Label("User name").Id(id_user_name).Listener(userNameListener).AddInput()
+		m.Label("Password").Id(id_user_pwd).Listener(userPwdListener).AddPassword()
+		m.Label("Password Again").Id(id_user_pwd_verify).Listener(verifyUserPwdListener).AddPassword()
 		m.Col(6)
 		m.AddSpace()
 		m.Listener(signInListener)
-		m.Id("sign_in").Label("Sign In").AddButton()
+		m.Id(id_sign_in).Label("Sign In").AddButton()
 	}
 	m.Close()
 
@@ -78,7 +85,7 @@ func validateMatchingPassword(s Session, widget Widget, value string, emptyOk bo
 		return nil
 	}
 	var err error
-	value1 := s.State.OptString("user_pwd", "")
+	value1 := s.State.OptString(id_user_pwd, "")
 	if value1 != value {
 		err = Ternary(value == "", ErrorEmptyUserPassword, ErrorUserPasswordsDontMatch)
 	}
@@ -96,12 +103,12 @@ func signInListener(s Session, widget Widget) error {
 	pr := PrIf(false)
 	pr("state:", INDENT, s.State)
 
-	browserUserName := getWidget(s, "user_name")
-	browserPassword := getWidget(s, "user_pwd")
+	browserUserName := getWidget(s, id_user_name)
+	browserPassword := getWidget(s, id_user_pwd)
 
-	err1 := validateUserName(s, browserUserName, s.State.OptString("user_name", ""), false)
-	err2 := validateUserPwd(s, browserPassword, s.State.OptString("user_pwd", ""), false)
-	err3 := validateMatchingPassword(s, getWidget(s, "user_pwd_verify"), s.State.OptString("user_pwd_verify", ""), false)
+	err1 := validateUserName(s, browserUserName, s.State.OptString(id_user_name, ""), false)
+	err2 := validateUserPwd(s, browserPassword, s.State.OptString(id_user_pwd, ""), false)
+	err3 := validateMatchingPassword(s, getWidget(s, id_user_pwd_verify), s.State.OptString(id_user_pwd_verify, ""), false)
 
 	pr("user_name err:", err1, "user_pwd err:", err2, "user_pwd_verify err:", err3)
 	Todo("if everything worked out, change the displayed page / login state?")
