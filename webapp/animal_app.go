@@ -9,7 +9,6 @@ import (
 	"runtime/debug"
 
 	. "github.com/jpsember/golang-base/webserv"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"strings"
@@ -138,9 +137,8 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 	sess := DetermineSession(oper.sessionManager, w, req, true)
 	if sess.AppData == nil {
 		oper.AssignUserToSession(sess)
+		oper.constructPageWidget(sess)
 	}
-
-	//pr("determined session" )
 
 	url, err := url.Parse(req.RequestURI)
 	if err == nil {
@@ -171,9 +169,6 @@ func (oper AjaxOper) processFullPageRequest(sess Session, w http.ResponseWriter,
 	sess.Mutex.Lock()
 	defer sess.Mutex.Unlock()
 
-	if sess.PageWidget == nil {
-		oper.constructPageWidget(sess)
-	}
 	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
@@ -207,17 +202,14 @@ func (oper AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 const WidgetIdPage = "page"
 
 var alertWidget AlertWidget
-var myRand = rand.New(rand.NewSource(1234))
-
-func GetOperFromSession(session Session) AjaxOper {
-	return session.AppData.(AjaxOper)
-}
+var myRand = NewJSRand().SetSeed(1234)
 
 // Assign a widget heirarchy to a session
 func (oper AjaxOper) constructPageWidget(sess Session) {
 	m := sess.WidgetManager()
 	//m.AlertVerbose()
 
+	Todo("?Clarify when we need to *remove* old widgets")
 	m.Id(WidgetIdPage)
 	widget := m.Open()
 	sess.PageWidget = widget
@@ -228,11 +220,15 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	Todo("!have convention of prefixing enums with e.g. 'UserState_'")
 	if user.State() == webapp_data.UnknownUser {
 		Pr("the user is unknown")
+		CreateLandingPage(sess)
+		return
 	}
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
 	m.Add(alertWidget)
+
+	m.Size(SizeLarge).Text("This is the header text").AddHeading()
 
 	heading := NewHeadingWidget("header_text", 1)
 	m.Add(heading)
@@ -262,8 +258,8 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	m.Col(6)
 	m.Listener(birdListener)
-	m.Label("Bird")
-	m.AddInput("bird")
+	m.Label("Bird").Id("bird")
+	m.AddInput()
 
 	m.Col(6)
 	m.Open()
@@ -285,7 +281,7 @@ Multiple line feeds:
 
 	m.Col(4)
 	m.Listener(zebraListener)
-	m.Label("Animal").AddInput("zebra")
+	m.Label("Animal").Id("zebra").AddInput()
 
 	m.Close()
 }
@@ -333,7 +329,7 @@ func zebraListener(sess any, widget Widget) {
 
 	s.State.Put(alertWidget.Id,
 		strings.TrimSpace(newVal+" "+
-			RandomText(myRand, 55, false)))
+			RandomText(myRand.Rand(), 55, false)))
 	s.Repaint(alertWidget)
 }
 

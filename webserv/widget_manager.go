@@ -389,15 +389,29 @@ func (m WidgetManager) currentPanel() Widget {
 	return m.parentStack.Last()
 }
 
-func (m WidgetManager) AddInput(id string) WidgetManager {
+func (m WidgetManager) AddInput() WidgetManager {
+	id := m.consumeOptionalPendingId()
 	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()))
 	m.assignPendingListener(t)
 	return m.Add(t)
 }
 
-func (m WidgetManager) AddHeading(id string) WidgetManager {
-	t := NewHeadingWidget(id, m.consumePendingSize())
-	return m.Add(t)
+func (m WidgetManager) AddHeading() WidgetManager {
+
+	Todo("duplicated code here with AddText")
+
+	staticContent := m.consumePendingText()
+	hasStaticContent := staticContent != ""
+	if hasStaticContent {
+		CheckState(m.pendingId == "", "specify id OR static content")
+	}
+	id := m.consumeOptionalPendingId()
+	w := NewHeadingWidget(id, m.consumePendingSize())
+	if hasStaticContent {
+		w.SetStaticContent(staticContent)
+	}
+
+	return m.Add(w)
 }
 
 func (m WidgetManager) assignPendingListener(widget Widget) {
@@ -410,6 +424,8 @@ func (m WidgetManager) assignPendingListener(widget Widget) {
 }
 
 func (m WidgetManager) AddText() WidgetManager {
+
+	Todo("duplicated code here with AddHeading")
 
 	var w TextWidget
 	// The text can either be expressed as a string (static content),
@@ -433,6 +449,7 @@ func (m WidgetManager) AddButton() ButtonWidget {
 	w.Id = m.consumePendingId()
 	m.assignPendingListener(w)
 	m.Log("Adding button, id:", w.Id)
+	Todo("confusion: Label, or Text here?")
 	w.Label = NewHtmlString(m.consumePendingText())
 	m.Add(w)
 	return w
