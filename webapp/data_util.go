@@ -74,9 +74,20 @@ func PerformBlobExperiment(db Database) {
 	}
 }
 
+type ValidateFlag int
+
+const (
+	VALIDATE_EMPTYOK       ValidateFlag = 1 << iota // A blank value is ok
+	VALIDATE_ONLY_NONEMPTY                          // Check only that the value isn't blank
+	F2
+)
+
+func (f ValidateFlag) Has(bits ValidateFlag) bool {
+	return (f & bits) == bits
+}
+
 const USER_NAME_MAX_LENGTH = 20
 
-// var ErrorNone = Error("")
 var ErrorEmptyUserName = Error("Please enter your name")
 var ErrorUserNameTooLong = Error("Your name is too long")
 var ErrorUserNameIllegalCharacters = Error("Your name has illegal characters")
@@ -94,14 +105,14 @@ var UserNameValidatorRegExp = Regexp(`^[a-zA-Z0-9_]+(?: [a-zA-Z0-9_]+)*$`)
 var UserPasswordValidatorRegExp = Regexp(`^[^ ]+$`)
 var EmailValidatorRegExp = Regexp(`^[^@]+@[^@]+$`)
 
-func ValidateUserName(userName string, emptyOk bool) (string, error) {
+func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 	userName = strings.TrimSpace(userName)
 	Todo("?Replace two or more spaces by a single space")
 	validatedName := userName
 	var err error
 
 	if userName == "" {
-		if !emptyOk {
+		if !flag.Has(VALIDATE_EMPTYOK) {
 			err = ErrorEmptyUserName
 		}
 	} else if len(userName) > USER_NAME_MAX_LENGTH {
@@ -112,7 +123,7 @@ func ValidateUserName(userName string, emptyOk bool) (string, error) {
 	return validatedName, err
 }
 
-func ValidateUserPassword(password string, emptyOk bool) (string, error) {
+func ValidateUserPassword(password string, flag ValidateFlag) (string, error) {
 	text := password
 	text = strings.TrimSpace(text)
 	validatedName := text
@@ -120,18 +131,20 @@ func ValidateUserPassword(password string, emptyOk bool) (string, error) {
 
 	x := len(text)
 	if x == 0 {
-		if !emptyOk {
+		if !flag.Has(VALIDATE_EMPTYOK) {
 			err = ErrorEmptyUserPassword
 		}
-	} else if x < USER_PASSWORD_MIN_LENGTH || x > USER_PASSWORD_MAX_LENGTH {
-		err = ErrorUserPasswordLength
-	} else if !UserPasswordValidatorRegExp.MatchString(text) {
-		err = ErrorUserPasswordIllegalCharacters
+	} else if !flag.Has(VALIDATE_ONLY_NONEMPTY) {
+		if x < USER_PASSWORD_MIN_LENGTH || x > USER_PASSWORD_MAX_LENGTH {
+			err = ErrorUserPasswordLength
+		} else if !UserPasswordValidatorRegExp.MatchString(text) {
+			err = ErrorUserPasswordIllegalCharacters
+		}
 	}
 	return validatedName, err
 }
 
-func ValidateEmailAddress(emailAddress string, emptyOk bool) (string, error) {
+func ValidateEmailAddress(emailAddress string, flag ValidateFlag) (string, error) {
 	text := emailAddress
 	text = strings.TrimSpace(text)
 	validatedEmail := text
@@ -139,13 +152,15 @@ func ValidateEmailAddress(emailAddress string, emptyOk bool) (string, error) {
 
 	x := len(text)
 	if x == 0 {
-		if !emptyOk {
+		if !flag.Has(VALIDATE_EMPTYOK) {
 			err = ErrorEmptyUserEmail
 		}
-	} else if x < USER_PASSWORD_MIN_LENGTH || x > USER_PASSWORD_MAX_LENGTH {
-		err = ErrorUserPasswordLength
-	} else if !UserPasswordValidatorRegExp.MatchString(text) {
-		err = ErrorUserPasswordIllegalCharacters
+	} else if !flag.Has(VALIDATE_ONLY_NONEMPTY) {
+		if x < USER_PASSWORD_MIN_LENGTH || x > USER_PASSWORD_MAX_LENGTH {
+			err = ErrorUserPasswordLength
+		} else if !UserPasswordValidatorRegExp.MatchString(text) {
+			err = ErrorUserPasswordIllegalCharacters
+		}
 	}
 	return validatedEmail, err
 }

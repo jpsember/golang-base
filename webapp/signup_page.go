@@ -43,10 +43,10 @@ func getWidget(sess Session, id string) Widget {
 func validateUserName(s Session, widget Widget) error {
 	// It is here in the listener that we read the 'client requested' value for the widget
 	// from the ajax parameters, and write it to the state.  We will validate it here.
-	return auxValidateUserName(s, widget, s.GetValueString(), true)
+	return auxValidateUserName(s, widget, s.GetValueString(), VALIDATE_EMPTYOK)
 }
 
-func auxValidateUserName(s Session, widget Widget, value string, emptyOk bool) error {
+func auxValidateUserName(s Session, widget Widget, value string, flag ValidateFlag) error {
 	pr := PrIf(false)
 	pr("auxValidateUserName")
 
@@ -54,7 +54,7 @@ func auxValidateUserName(s Session, widget Widget, value string, emptyOk bool) e
 	// from the ajax parameters, and write it to the state.  We will validate it here.
 
 	pr("value:", value)
-	value, err := ValidateUserName(value, emptyOk)
+	value, err := ValidateUserName(value, flag)
 	pr("validated:", value, "error:", err)
 
 	// We want to update the state even if the name is illegal, so user can see what he typed in
@@ -65,13 +65,13 @@ func auxValidateUserName(s Session, widget Widget, value string, emptyOk bool) e
 
 func validateUserPwd(s Session, widget Widget) error {
 	value := s.GetValueString()
-	return auxValidateUserPwd(s, widget, value, true)
+	return auxValidateUserPwd(s, widget, value, VALIDATE_EMPTYOK)
 }
 
-func auxValidateUserPwd(s Session, widget Widget, value string, emptyOk bool) error {
+func auxValidateUserPwd(s Session, widget Widget, value string, flag ValidateFlag) error {
 	pr := PrIf(false)
 	pr("auxValidateUserPwd:", value)
-	value, err := ValidateUserPassword(value, emptyOk)
+	value, err := ValidateUserPassword(value, flag)
 	pr("afterward:", value, "err:", err)
 	s.State.Put(WidgetId(widget), value)
 	s.SetWidgetProblem(widget, err)
@@ -80,11 +80,11 @@ func auxValidateUserPwd(s Session, widget Widget, value string, emptyOk bool) er
 
 func validateMatchPwd(s Session, widget Widget) error {
 	value := s.GetValueString()
-	return auxValidateMatchPwd(s, widget, value, true)
+	return auxValidateMatchPwd(s, widget, value, VALIDATE_EMPTYOK)
 }
 
-func auxValidateMatchPwd(s Session, widget Widget, value string, emptyOk bool) error {
-	if emptyOk && value == "" {
+func auxValidateMatchPwd(s Session, widget Widget, value string, flag ValidateFlag) error {
+	if flag.Has(VALIDATE_EMPTYOK) && value == "" {
 		return nil
 	}
 	var err error
@@ -99,14 +99,14 @@ func auxValidateMatchPwd(s Session, widget Widget, value string, emptyOk bool) e
 
 func validateEmail(s Session, widget Widget) error {
 	value := s.GetValueString()
-	return auxValidateEmail(s, widget, value, true)
+	return auxValidateEmail(s, widget, value, VALIDATE_EMPTYOK)
 }
 
-func auxValidateEmail(s Session, widget Widget, value string, emptyOk bool) error {
-	if emptyOk && value == "" {
+func auxValidateEmail(s Session, widget Widget, value string, flag ValidateFlag) error {
+	if flag.Has(VALIDATE_EMPTYOK) && value == "" {
 		return nil
 	}
-	value, err := ValidateEmailAddress(value, emptyOk)
+	value, err := ValidateEmailAddress(value, flag)
 
 	s.State.Put(WidgetId(widget), value)
 	s.SetWidgetProblem(widget, err)
@@ -118,10 +118,10 @@ func signUpListener(s Session, widget Widget) error {
 	pr := PrIf(false)
 	pr("state:", INDENT, s.State)
 
-	auxValidateUserName(s, getWidget(s, id_user_name), s.State.OptString(id_user_name, ""), false)
-	auxValidateUserPwd(s, getWidget(s, id_user_pwd), s.State.OptString(id_user_pwd, ""), false)
-	auxValidateMatchPwd(s, getWidget(s, id_user_pwd_verify), s.State.OptString(id_user_pwd_verify, ""), false)
-	auxValidateEmail(s, getWidget(s, id_user_email), s.State.OptString(id_user_email, ""), false)
+	auxValidateUserName(s, getWidget(s, id_user_name), s.State.OptString(id_user_name, ""), 0)
+	auxValidateUserPwd(s, getWidget(s, id_user_pwd), s.State.OptString(id_user_pwd, ""), 0)
+	auxValidateMatchPwd(s, getWidget(s, id_user_pwd_verify), s.State.OptString(id_user_pwd_verify, ""), 0)
+	auxValidateEmail(s, getWidget(s, id_user_email), s.State.OptString(id_user_email, ""), 0)
 
 	Todo("if everything worked out, change the displayed page / login state?")
 	return nil

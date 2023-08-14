@@ -30,8 +30,9 @@ func (p LandingPage) Generate() {
 	m.Open()
 	{
 		m.Col(12)
-		m.Label("User name").Id(id_user_name).Listener(validateUserName).AddInput()
-		m.Label("Password").Id(id_user_pwd).Listener(validateUserPwd).AddPassword()
+		m.Label("User name").Id(id_user_name).Listener(
+			p.validateUserName).AddInput()
+		m.Label("Password").Id(id_user_pwd).Listener(p.validateUserPwd).AddPassword()
 		m.Listener(p.signInListener).Label("Sign In").AddButton()
 	}
 	m.Close()
@@ -42,6 +43,15 @@ func (p LandingPage) Generate() {
 		m.Label("Sign Up").AddButton()
 	}
 	m.Close()
+}
+
+func (p LandingPage) validateUserName(s Session, widget Widget) error {
+	return auxValidateUserName(s, widget, s.GetValueString(), VALIDATE_ONLY_NONEMPTY)
+}
+
+func (p LandingPage) validateUserPwd(s Session, widget Widget) error {
+	value := s.GetValueString()
+	return auxValidateUserPwd(s, widget, value, VALIDATE_ONLY_NONEMPTY)
 }
 
 func (p LandingPage) signInListener(s Session, widget Widget) error {
