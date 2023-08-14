@@ -167,8 +167,7 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 
 	Todo("!have convention of prefixing enums with e.g. 'UserState_'")
 	if true && user.State() == webapp_data.UnknownUser {
-		GenerateLandingView(sess)
-		//GenerateSignUpView(sess)
+		NewLandingPage(sess, widget).Generate()
 		return
 	}
 

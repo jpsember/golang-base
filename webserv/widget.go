@@ -34,3 +34,19 @@ const (
 func WidgetId(widget Widget) string {
 	return widget.Base().Id
 }
+
+func WidgetErrorCount(root Widget, state JSMap) int {
+	count := 0
+	return auxWidgetErrorCount(count, root, state)
+}
+
+func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
+	problemId := w.Base().Id + ".problem"
+	if state.OptString(problemId, "") != "" {
+		count++
+	}
+	for _, child := range w.GetChildren() {
+		count = auxWidgetErrorCount(count, child, state)
+	}
+	return count
+}
