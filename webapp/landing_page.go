@@ -39,7 +39,7 @@ func (p LandingPage) Generate() {
 	m.Open()
 	{
 		Todo("does it reset columns to 12?")
-		m.Listener(signUpListener)
+		m.Listener(p.signUpListener)
 		m.Label("Sign Up").AddButton()
 	}
 	m.Close()
@@ -73,5 +73,10 @@ func (p LandingPage) signInListener(s Session, widget Widget) error {
 		Pr("no errors, continuing")
 		Todo("if everything worked out, change the displayed page / login state?")
 	}
+	return nil
+}
+
+func (p LandingPage) signUpListener(s Session, widget Widget) error {
+	Todo("Switch pages here")
 	return nil
 }
