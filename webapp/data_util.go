@@ -82,6 +82,7 @@ var ErrorUserNameTooLong = Error("Your name is too long")
 var ErrorUserNameIllegalCharacters = Error("Your name has illegal characters")
 
 var ErrorEmptyUserPassword = Error("Please enter a password")
+var ErrorEmptyUserEmail = Error("Please enter an email address")
 var ErrorUserPasswordLength = Error("Password must be between 8 and 20 characters")
 var ErrorUserPasswordIllegalCharacters = Error("Password must not contain spaces")
 var ErrorUserPasswordsDontMatch = Error("The two passwords don't match")
@@ -91,6 +92,7 @@ const USER_PASSWORD_MAX_LENGTH = 20
 
 var UserNameValidatorRegExp = Regexp(`^[a-zA-Z0-9_]+(?: [a-zA-Z0-9_]+)*$`)
 var UserPasswordValidatorRegExp = Regexp(`^[^ ]+$`)
+var EmailValidatorRegExp = Regexp(`^[^@]+@[^@]+$`)
 
 func ValidateUserName(userName string, emptyOk bool) (string, error) {
 	userName = strings.TrimSpace(userName)
@@ -111,19 +113,39 @@ func ValidateUserName(userName string, emptyOk bool) (string, error) {
 }
 
 func ValidateUserPassword(password string, emptyOk bool) (string, error) {
-	password = strings.TrimSpace(password)
-	validatedName := password
+	text := password
+	text = strings.TrimSpace(text)
+	validatedName := text
 	var err error
 
-	x := len(password)
+	x := len(text)
 	if x == 0 {
 		if !emptyOk {
 			err = ErrorEmptyUserPassword
 		}
 	} else if x < USER_PASSWORD_MIN_LENGTH || x > USER_PASSWORD_MAX_LENGTH {
 		err = ErrorUserPasswordLength
-	} else if !UserPasswordValidatorRegExp.MatchString(password) {
+	} else if !UserPasswordValidatorRegExp.MatchString(text) {
 		err = ErrorUserPasswordIllegalCharacters
 	}
 	return validatedName, err
+}
+
+func ValidateEmailAddress(emailAddress string, emptyOk bool) (string, error) {
+	text := emailAddress
+	text = strings.TrimSpace(text)
+	validatedEmail := text
+	var err error
+
+	x := len(text)
+	if x == 0 {
+		if !emptyOk {
+			err = ErrorEmptyUserEmail
+		}
+	} else if x < USER_PASSWORD_MIN_LENGTH || x > USER_PASSWORD_MAX_LENGTH {
+		err = ErrorUserPasswordLength
+	} else if !UserPasswordValidatorRegExp.MatchString(text) {
+		err = ErrorUserPasswordIllegalCharacters
+	}
+	return validatedEmail, err
 }

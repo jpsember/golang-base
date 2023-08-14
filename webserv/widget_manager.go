@@ -314,7 +314,7 @@ func (m WidgetManager) assignPendingListener(widget Widget) {
 
 func (m WidgetManager) AddText() WidgetManager {
 	staticContent, id := m.getStaticContentAndId()
-	w := NewTextWidget(id)
+	w := NewTextWidget(id, m.consumePendingSize())
 	if staticContent != "" {
 		w.SetStaticContent(staticContent)
 	}
@@ -324,7 +324,7 @@ func (m WidgetManager) AddText() WidgetManager {
 
 func (m WidgetManager) AddButton() ButtonWidget {
 	w := NewButtonWidget(m.consumePendingSize())
-	w.Id = m.consumePendingId()
+	w.Id = m.consumeOptionalPendingId()
 	m.assignPendingListener(w)
 	m.Log("Adding button, id:", w.Id)
 	w.Label = NewHtmlString(m.consumePendingLabel())

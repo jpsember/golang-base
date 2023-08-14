@@ -5,112 +5,47 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-const (
-	id_user_name       = "user_name"
-	id_user_pwd_verify = "user_pwd_verify"
-	id_user_pwd        = "user_pwd"
-	id_sign_in         = "sign_in"
-)
-
-func CreateLandingPage(sess Session) {
+func GenerateLandingView(sess Session) {
 
 	m := sess.WidgetManager()
 
 	m.Col(12)
 	m.Label("Landing Page").Size(SizeLarge).AddHeading()
-	m.Col(6).Open()
+	m.Col(6)
+	m.Open()
 	{
 		m.Col(12)
-		m.Label("User name").Id(id_user_name).Listener(userNameListener).AddInput()
-		m.Label("Password").Id(id_user_pwd).Listener(userPwdListener).AddPassword()
-		m.Label("Password Again").Id(id_user_pwd_verify).Listener(verifyUserPwdListener).AddPassword()
-		m.Col(6)
-		m.AddSpace()
-		m.Listener(signInListener)
-		m.Id(id_sign_in).Label("Sign In").AddButton()
+		m.Label("User name").Id(id_user_name).Listener(validateUserName).AddInput()
+		m.Label("Password").Id(id_user_pwd).Listener(validateUserPwd).AddPassword()
+		m.Listener(signInListener).Label("Sign In").AddButton()
+	}
+	m.Close()
+	m.Open()
+	{
+		Todo("does it reset columns to 12?")
+		m.Listener(signUpListener)
+		m.Label("Sign Up").AddButton()
 	}
 	m.Close()
 
 }
 
-func getWidget(sess Session, id string) Widget {
-	return sess.WidgetManager().Get(id)
-}
-
-func validateUserName(s Session, widget Widget, value string, emptyOk bool) error {
-	pr := PrIf(false)
-	pr("validateUserName")
-
-	// It is here in the listener that we read the 'client requested' value for the widget
-	// from the ajax parameters, and write it to the state.  We will validate it here.
-
-	pr("value:", value)
-	value, err := ValidateUserName(value, emptyOk)
-	pr("validated:", value, "error:", err)
-
-	// We want to update the state even if the name is illegal, so user can see what he typed in
-	s.State.Put(WidgetId(widget), value)
-	s.SetWidgetProblem(widget, err)
-	return err
-}
-
-func userNameListener(s Session, widget Widget) error {
-	pr := PrIf(false)
-	pr("userNameListener", WidgetId(widget))
-
-	// It is here in the listener that we read the 'client requested' value for the widget
-	// from the ajax parameters, and write it to the state.  We will validate it here.
-
-	value := s.GetValueString()
-	return validateUserName(s, widget, value, true)
-}
-
-func validateUserPwd(s Session, widget Widget, value string, emptyOk bool) error {
-	pr := PrIf(false)
-	pr("validateUserPwd:", value)
-	value, err := ValidateUserPassword(value, emptyOk)
-	pr("afterward:", value, "err:", err)
-	s.State.Put(WidgetId(widget), value)
-	s.SetWidgetProblem(widget, err)
-	return err
-}
-
-func userPwdListener(s Session, widget Widget) error {
-	value := s.GetValueString()
-	return validateUserPwd(s, widget, value, true)
-}
-
-func validateMatchingPassword(s Session, widget Widget, value string, emptyOk bool) error {
-	if emptyOk && value == "" {
-		return nil
-	}
-	var err error
-	value1 := s.State.OptString(id_user_pwd, "")
-	if value1 != value {
-		err = Ternary(value == "", ErrorEmptyUserPassword, ErrorUserPasswordsDontMatch)
-	}
-	s.State.Put(WidgetId(widget), value)
-	s.SetWidgetProblem(widget, err)
-	return err
-}
-
-func verifyUserPwdListener(s Session, widget Widget) error {
-	value := s.GetValueString()
-	return validateMatchingPassword(s, widget, value, true)
-}
-
 func signInListener(s Session, widget Widget) error {
-	pr := PrIf(false)
-	pr("state:", INDENT, s.State)
 
-	browserUserName := getWidget(s, id_user_name)
-	browserPassword := getWidget(s, id_user_pwd)
+	userName := s.State.OptString(id_user_name, "")
+	pwd := s.State.OptString(id_user_pwd, "")
+	Todo("ability to read value using widget id")
+	if userName == "" {
+		s.SetWidgetProblem(getWidget(s, id_user_name), ErrorEmptyUserName)
+	}
+	if pwd == "" {
+		s.SetWidgetProblem(getWidget(s, id_user_pwd), ErrorEmptyUserPassword)
 
-	err1 := validateUserName(s, browserUserName, s.State.OptString(id_user_name, ""), false)
-	err2 := validateUserPwd(s, browserPassword, s.State.OptString(id_user_pwd, ""), false)
-	err3 := validateMatchingPassword(s, getWidget(s, id_user_pwd_verify), s.State.OptString(id_user_pwd_verify, ""), false)
+	}
 
-	pr("user_name err:", err1, "user_pwd err:", err2, "user_pwd_verify err:", err3)
-	Todo("if everything worked out, change the displayed page / login state?")
+	//if s.NoErrors()
+	{
+		Todo("if everything worked out, change the displayed page / login state?")
+	}
 	return nil
 }
