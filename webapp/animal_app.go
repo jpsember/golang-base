@@ -19,20 +19,21 @@ type AnimalOperStruct struct {
 	FullWidth      bool // If true, page occupies full width of screen
 	TopPadding     int  // If nonzero, adds padding to top of page
 }
-type AjaxOper = *AnimalOperStruct
 
-func (oper AjaxOper) UserCommand() string {
+type AnimalOper = *AnimalOperStruct
+
+func (oper AnimalOper) UserCommand() string {
 	return "widgets"
 }
 
-func (oper AjaxOper) GetHelp(bp *BasePrinter) {
+func (oper AnimalOper) GetHelp(bp *BasePrinter) {
 	bp.Pr("Demonstrates a web server with AJAX manipulating Widget UI elements")
 }
 
-func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
+func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
-func (oper AjaxOper) Perform(app *App) {
+func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
 	if false && Alert("Performing sql experiment") {
 		SQLiteExperiment()
@@ -83,7 +84,7 @@ func (oper AjaxOper) Perform(app *App) {
 }
 
 // A handler such as this must be thread safe!
-func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
+func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	pr := PrIf(false)
 	pr("handler, request:", req.RequestURI)
 
@@ -126,7 +127,7 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (oper AjaxOper) processFullPageRequest(sess Session, w http.ResponseWriter, req *http.Request) {
+func (oper AnimalOper) processFullPageRequest(sess Session, w http.ResponseWriter, req *http.Request) {
 	// Construct a session if none found, and a widget for a full webpage
 	//sess := DetermineSession(oper.sessionManager, w, req, true)
 	sess.Mutex.Lock()
@@ -141,7 +142,7 @@ func (oper AjaxOper) processFullPageRequest(sess Session, w http.ResponseWriter,
 }
 
 // Generate the biolerplate header and scripts markup
-func (oper AjaxOper) writeHeader(bp MarkupBuilder) {
+func (oper AnimalOper) writeHeader(bp MarkupBuilder) {
 	bp.A(oper.headerMarkup)
 	bp.OpenTag("body")
 	containerClass := "container"
@@ -155,7 +156,7 @@ func (oper AjaxOper) writeHeader(bp MarkupBuilder) {
 }
 
 // Generate the boilerplate footer markup, then write the page to the response
-func (oper AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
+func (oper AnimalOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 	bp.CloseTag() // page container
 	bp.CloseTag() // body
 	bp.A(`</html>`).Cr()
@@ -168,7 +169,7 @@ var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
 
 // Assign a widget heirarchy to a session
-func (oper AjaxOper) constructPageWidget(sess Session) {
+func (oper AnimalOper) constructPageWidget(sess Session) {
 	m := sess.WidgetManager()
 	//m.AlertVerbose()
 
@@ -180,6 +181,6 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 }
 
 // A new session was created; assign an 'unknown' user to it
-func (oper AjaxOper) AssignUserToSession(sess Session) {
+func (oper AnimalOper) AssignUserToSession(sess Session) {
 	sess.AppData = webapp_data.NewUser().Build()
 }

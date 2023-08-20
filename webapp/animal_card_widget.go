@@ -6,9 +6,6 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-//. "github.com/jpsember/golang-base/webserv/base_widget"
-//
-
 // A Widget that displays editable text
 type AnimalCardWidgetObj struct {
 	BaseWidgetObj
