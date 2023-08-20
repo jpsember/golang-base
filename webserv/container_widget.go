@@ -38,9 +38,8 @@ func NewContainerWidget(id string) ContainerWidget {
 	w.Id = id
 	return &w
 }
-
-func (w ContainerWidget) GetChildren() []Widget {
-	return w.children.Array()
+func (w ContainerWidget) Children() *Array[Widget] {
+	return w.children
 }
 
 func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {

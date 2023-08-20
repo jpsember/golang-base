@@ -27,6 +27,12 @@ func (w BaseWidget) Base() BaseWidget {
 	return w
 }
 
+var emptyChildrenList = NewArray[Widget]().Lock()
+
+func (w BaseWidget) Children() *Array[Widget] {
+	return emptyChildrenList
+}
+
 func (w BaseWidget) SetStaticContent(content any) {
 	w.staticContent = content
 }

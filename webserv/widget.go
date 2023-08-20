@@ -8,8 +8,8 @@ import (
 type Widget interface {
 	Base() BaseWidget
 	RenderTo(m MarkupBuilder, state JSMap)
+	Children() *Array[Widget]
 	AddChild(c Widget, manager WidgetManager)
-	GetChildren() []Widget
 }
 
 // This general type of listener can serve as a validator as well
@@ -45,7 +45,7 @@ func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
 	if state.OptString(problemId, "") != "" {
 		count++
 	}
-	for _, child := range w.GetChildren() {
+	for _, child := range w.Children().Array() {
 		count = auxWidgetErrorCount(count, child, state)
 	}
 	return count

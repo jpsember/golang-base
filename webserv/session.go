@@ -199,7 +199,7 @@ func (s Session) processRepaintFlags(debugDepth int, w Widget, refmap JSMap, rep
 		refmap.Put(id, m.String())
 	}
 
-	for _, c := range w.GetChildren() {
+	for _, c := range w.Children().Array() {
 		s.processRepaintFlags(1+debugDepth, c, refmap, repaint)
 	}
 }

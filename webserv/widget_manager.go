@@ -236,7 +236,9 @@ func (m WidgetManager) With(container Widget) WidgetManager {
 	pr("current widget map:", INDENT, m.WidgetMapSummary())
 	pr("removing all child widgets")
 	// Discard any existing child widgets
-	m.RemoveWidgets(container.GetChildren())
+  Todo("Remove widgets should accept an Array ptr, not a slice")
+	m.RemoveWidgets(container.Children().Array())
+	container.Children().Clear()
 	pr("after removal, current widget map:", INDENT, m.WidgetMapSummary())
 
 	m.parentStack.Clear()
@@ -392,8 +394,7 @@ func (m WidgetManager) Remove(widget Widget) WidgetManager {
 	id := WidgetId(widget)
 	if m.Exists(id) {
 		delete(m.widgetMap, id)
-		m.RemoveWidgets(widget.GetChildren())
-		widget.ClearChildren()
+		m.RemoveWidgets(widget.Children().Array())
 	}
 	return m
 }
