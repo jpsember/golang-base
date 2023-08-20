@@ -449,6 +449,6 @@ func (m WidgetManager) Repaint(w Widget) {
 	}
 }
 
-func (m WidgetManager) ClearRepaintSet() {
+func (m WidgetManager) clearRepaintSet() {
 	m.repaintSet = NewSet[string]()
 }

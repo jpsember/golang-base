@@ -75,7 +75,7 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 	s.request = req
 	s.requestProblem = ""
 	s.parseAjaxRequest(req)
-	s.WidgetManager().ClearRepaintSet()
+	s.WidgetManager().clearRepaintSet()
 	s.processClientMessage()
 	s.sendAjaxResponse()
 }
@@ -223,8 +223,7 @@ func (s Session) discardRequest() {
 	s.requestProblem = ""
 	s.widgetValues = nil
 	s.widgetIds = nil
-  Todo("Make ClearRepaintSet package vis")
-	s.WidgetManager().ClearRepaintSet()
+	s.WidgetManager().clearRepaintSet()
 	s.Mutex.Unlock()
 }
 
