@@ -24,7 +24,7 @@ func NewAnimalFeedPage(sess Session, parentWidget Widget) AnimalFeedPage {
 func (p AnimalFeedPage) Generate() {
 
 	m := p.sess.WidgetManager()
-	m.With(p.parentWidget, true)
+	m.With(p.parentWidget, p.sess)
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
