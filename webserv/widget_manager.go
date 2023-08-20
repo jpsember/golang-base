@@ -225,6 +225,8 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	return m
 }
 
+// Have subsequent WidgetManager operations operate on a particular container widget.
+// If repainter is non nil, the container is marked for repainting.
 func (m WidgetManager) With(container Widget, repainter Session) WidgetManager {
 	pr := PrIf(false)
 	id := WidgetId(container)
@@ -240,13 +242,11 @@ func (m WidgetManager) With(container Widget, repainter Session) WidgetManager {
 	pr("current widget map:", INDENT, m.WidgetMapSummary())
 	pr("removing all child widgets")
 	// Discard any existing child widgets
-	Todo("Remove widgets should accept an Array ptr, not a slice")
-	m.RemoveWidgets(container.Children().Array())
+	m.removeWidgets(container.Children())
 	container.Children().Clear()
 	pr("after removal, current widget map:", INDENT, m.WidgetMapSummary())
 
 	m.parentStack.Clear()
-	pr("storing container as sole parent in stack")
 	m.parentStack.Add(container)
 	return m
 }
@@ -387,8 +387,8 @@ func (m WidgetManager) AllocateAnonymousId() string {
 	return "." + IntToString(m.anonymousIdCounter)
 }
 
-func (m WidgetManager) RemoveWidgets(widgets []Widget) {
-	for _, widget := range widgets {
+func (m WidgetManager) removeWidgets(widgets *Array[Widget]) {
+	for _, widget := range widgets.Array() {
 		m.Remove(widget)
 	}
 }
@@ -398,7 +398,7 @@ func (m WidgetManager) Remove(widget Widget) WidgetManager {
 	id := WidgetId(widget)
 	if m.Exists(id) {
 		delete(m.widgetMap, id)
-		m.RemoveWidgets(widget.Children().Array())
+		m.removeWidgets(widget.Children())
 	}
 	return m
 }
