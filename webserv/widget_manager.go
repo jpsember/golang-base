@@ -6,6 +6,7 @@ import (
 
 type WidgetManagerObj struct {
 	BaseObject
+	Session                     *SessionStruct
 	widgetMap                   WidgetMap
 	mComboChoices               *Array[string]
 	mPendingBooleanDefaultValue bool
@@ -22,8 +23,9 @@ type WidgetManagerObj struct {
 	anonymousIdCounter          int
 }
 
-func NewWidgetManager() WidgetManager {
+func NewWidgetManager(session Session) WidgetManager {
 	w := WidgetManagerObj{
+		Session:     session,
 		parentStack: NewArray[Widget](),
 		widgetMap:   make(map[string]Widget),
 	}
@@ -226,8 +228,9 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 }
 
 // Have subsequent WidgetManager operations operate on a particular container widget.
-// If repainter is non nil, the container is marked for repainting.
-func (m WidgetManager) With(container Widget, repainter Session) WidgetManager {
+// If repaint is true, the container is marked for repainting.
+func (m WidgetManager) With(container Widget, repaint bool) WidgetManager {
+	Todo("repaint is probably always going to be true, so get rid of the parameter")
 	pr := PrIf(false)
 	id := WidgetId(container)
 	pr(VERT_SP, "With:", id, "at:", CallerLocation(1))
@@ -235,8 +238,8 @@ func (m WidgetManager) With(container Widget, repainter Session) WidgetManager {
 	Todo("Would be great if could refer to widget OR its id")
 	CheckState(m.Exists(id))
 
-	if repainter != nil {
-		repainter.Repaint(container)
+	if repaint {
+		m.Session.Repaint(container)
 	}
 
 	pr("current widget map:", INDENT, m.WidgetMapSummary())

@@ -45,7 +45,7 @@ func NewSession() Session {
 // Get WidgetManager for this session, creating one if necessary
 func (s Session) WidgetManager() WidgetManager {
 	if s.widgetManager == nil {
-		s.widgetManager = NewWidgetManager()
+		s.widgetManager = NewWidgetManager(s)
 	}
 	return s.widgetManager
 }

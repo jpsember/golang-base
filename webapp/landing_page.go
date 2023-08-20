@@ -21,9 +21,9 @@ func NewLandingPage(sess Session, parentWidget Widget) LandingPage {
 }
 
 func (p LandingPage) Generate() {
-	Todo("!It would be convenient if a WidgetManager had a pointer to its associated Session; but does that produce memory leaks?")
+	Todo("It would be convenient if a WidgetManager had a pointer to its associated Session; but does that produce memory leaks?")
 	m := p.sess.WidgetManager()
-	m.With(p.parentWidget, p.sess)
+	m.With(p.parentWidget, true)
 
 	m.Col(12)
 	m.Label("Landing Page").Size(SizeLarge).AddHeading()
