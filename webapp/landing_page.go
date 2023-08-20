@@ -25,7 +25,6 @@ func (p LandingPage) Generate() {
 	m := p.sess.WidgetManager()
 	m.With(p.parentWidget, p.sess)
 
-	Todo("should we set the parent widget as the current widget? Maybe the WidgetManager should already be primed for this?")
 	m.Col(12)
 	m.Label("Landing Page").Size(SizeLarge).AddHeading()
 	m.Col(6)
