@@ -21,7 +21,7 @@ func NewLandingPage(sess Session, parentWidget Widget) LandingPage {
 }
 
 func (p LandingPage) Generate() {
-	Todo("It would be convenient if a WidgetManager had a pointer to its associated Session; but does that produce memory leaks?")
+	Todo("!It would be convenient if a WidgetManager had a pointer to its associated Session; but does that produce memory leaks?")
 	m := p.sess.WidgetManager()
 	m.With(p.parentWidget, p.sess)
 
@@ -40,7 +40,6 @@ func (p LandingPage) Generate() {
 	m.Close()
 	m.Open()
 	{
-		Todo("does it reset columns to 12?")
 		m.Listener(p.signUpListener)
 		m.Label("Sign Up").AddButton()
 	}
@@ -72,8 +71,8 @@ func (p LandingPage) signInListener(s Session, widget Widget) error {
 	errcount := WidgetErrorCount(p.parentWidget, s.State)
 	Pr("error count:", errcount)
 	if errcount == 0 {
-		Pr("no errors, continuing")
-		Todo("if everything worked out, change the displayed page / login state?")
+		sp := NewAnimalFeedPage(s, p.parentWidget)
+		sp.Generate()
 	}
 	return nil
 }

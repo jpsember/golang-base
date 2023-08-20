@@ -226,7 +226,7 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 }
 
 func (m WidgetManager) With(container Widget, repainter Session) WidgetManager {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	id := WidgetId(container)
 	pr(VERT_SP, "With:", id, "at:", CallerLocation(1))
 
@@ -422,8 +422,17 @@ func SetWidgetDebugRendering() {
 func GetStaticOrDynamicLabel(widget Widget, state JSMap) (string, bool) {
 	w := widget.Base()
 	Todo("?we are assuming static content is a string here")
-	textContent := widget.Base().StaticContent().(string)
-	hasStatic := textContent != ""
+
+	Todo("Smelly code here, nil vs empty string etc")
+	hasStatic := false
+	textContent, ok := widget.Base().StaticContent().(string)
+	if ok {
+		hasStatic = textContent != ""
+	}
+	//if !ok {
+	//	BadArg("widget has no StaticContent:", WidgetId(widget), Info(widget), Info(widget.Base().StaticContent()))
+	//}
+	//hasStatic := textContent != "" && textContent != nil
 	if !hasStatic {
 		textContent = WidgetStringValue(state, w.Id)
 	}
