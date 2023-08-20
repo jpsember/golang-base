@@ -225,7 +225,7 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	return m
 }
 
-func (m WidgetManager) With(container Widget) WidgetManager {
+func (m WidgetManager) With(container Widget, repainter Session) WidgetManager {
 	pr := PrIf(true)
 	id := WidgetId(container)
 	pr(VERT_SP, "With:", id, "at:", CallerLocation(1))
@@ -233,10 +233,14 @@ func (m WidgetManager) With(container Widget) WidgetManager {
 	Todo("Would be great if could refer to widget OR its id")
 	CheckState(m.Exists(id))
 
+	if repainter != nil {
+		repainter.Repaint(container)
+	}
+
 	pr("current widget map:", INDENT, m.WidgetMapSummary())
 	pr("removing all child widgets")
 	// Discard any existing child widgets
-  Todo("Remove widgets should accept an Array ptr, not a slice")
+	Todo("Remove widgets should accept an Array ptr, not a slice")
 	m.RemoveWidgets(container.Children().Array())
 	container.Children().Clear()
 	pr("after removal, current widget map:", INDENT, m.WidgetMapSummary())
