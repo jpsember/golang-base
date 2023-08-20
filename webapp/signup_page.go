@@ -31,6 +31,7 @@ func NewSignUpPage(sess Session, parentWidget Widget) SignUpPage {
 func (p SignUpPage) Generate() {
 
 	m := p.sess.WidgetManager()
+	m.With(p.parentWidget, p.sess)
 
 	m.Col(12)
 	m.Label("Sign Up Page").Size(SizeLarge).AddHeading()
@@ -48,7 +49,6 @@ func (p SignUpPage) Generate() {
 		m.Id(id_sign_up).Label("Sign In").AddButton()
 	}
 	m.Close()
-
 }
 
 func getWidget(sess Session, id string) Widget {

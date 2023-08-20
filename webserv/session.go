@@ -61,8 +61,12 @@ func (s Session) ToJson() *JSMapStruct {
 	return m
 }
 
-// Mark a widget for repainting.
+// Mark a widget for repainting.  Does nothing if there is no repaintSet (i.e., it is not being done within
+// an AJAX call)
 func (s Session) Repaint(w Widget) {
+	if s.repaintSet == nil {
+		return
+	}
 	b := w.Base()
 	pr := PrIf(debRepaint)
 	id := b.Id
@@ -202,7 +206,7 @@ func (s Session) processRepaintFlags(debugDepth int, w Widget, refmap JSMap, rep
 
 const respKeyWidgetsToRefresh = "w"
 
-var debRepaint = false && Alert("debRepaint")
+var debRepaint = true && Alert("debRepaint")
 
 // Send Ajax response back to client.
 func (s Session) sendAjaxResponse() {

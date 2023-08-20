@@ -153,7 +153,7 @@ func (oper AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 	WriteResponse(w, "text/html", bp.Bytes())
 }
 
-const WidgetIdPage = "page"
+const WidgetIdPage = "main_page"
 
 var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)

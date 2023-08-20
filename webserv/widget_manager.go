@@ -225,10 +225,27 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	return m
 }
 
-func (m WidgetManager) With(container Widget) WidgetManager {
-	CheckState(m.Exists(WidgetId(container)))
+func (m WidgetManager) With(container Widget, repainter Session) WidgetManager {
+	pr := PrIf(true)
+	id := WidgetId(container)
+	pr("With:", id, "at:", CallerLocation(1))
+
+	Todo("Would be great if could refer to widget OR its id")
+	CheckState(m.Exists(id))
+
+	pr("current widget map:", INDENT, m.WidgetMapSummary())
+	pr("removing all child widgets")
+	// Discard any existing child widgets
+	m.RemoveWidgets(container.GetChildren())
+	pr("after removal, current widget map:", INDENT, m.WidgetMapSummary())
+
 	m.parentStack.Clear()
+	pr("storing container as sole parent in stack")
 	m.parentStack.Add(container)
+
+	if repainter != nil {
+		repainter.Repaint(container)
+	}
 	return m
 }
 
@@ -366,6 +383,30 @@ func (m WidgetManager) Listener(listener WidgetListener) WidgetManager {
 func (m WidgetManager) AllocateAnonymousId() string {
 	m.anonymousIdCounter++
 	return "." + IntToString(m.anonymousIdCounter)
+}
+
+func (m WidgetManager) RemoveWidgets(widgets []Widget) {
+	for _, widget := range widgets {
+		m.Remove(widget)
+	}
+}
+
+// Remove widget (if it exists), and the subtree of widgets it may contain.
+func (m WidgetManager) Remove(widget Widget) WidgetManager {
+	id := WidgetId(widget)
+	if m.Exists(id) {
+		delete(m.widgetMap, id)
+		m.RemoveWidgets(widget.GetChildren())
+	}
+	return m
+}
+
+func (m WidgetManager) WidgetMapSummary() JSMap {
+	mp := NewJSMap()
+	for id, widget := range m.widgetMap {
+		mp.Put(id, TypeOf(widget))
+	}
+	return mp
 }
 
 var WidgetDebugRenderingFlag bool

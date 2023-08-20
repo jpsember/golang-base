@@ -23,7 +23,8 @@ func NewLandingPage(sess Session, parentWidget Widget) LandingPage {
 func (p LandingPage) Generate() {
 
 	m := p.sess.WidgetManager()
-	m.With(p.parentWidget)
+	m.With(p.parentWidget, p.sess)
+	p.sess.Repaint(p.parentWidget)
 
 	Todo("should we set the parent widget as the current widget? Maybe the WidgetManager should already be primed for this?")
 	m.Col(12)
@@ -79,6 +80,7 @@ func (p LandingPage) signInListener(s Session, widget Widget) error {
 }
 
 func (p LandingPage) signUpListener(s Session, widget Widget) error {
-	Todo("signup")
+	sp := NewSignUpPage(s, p.parentWidget)
+	sp.Generate()
 	return nil
 }
