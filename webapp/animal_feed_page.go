@@ -24,7 +24,7 @@ func NewAnimalFeedPage(sess Session, parentWidget Widget) AnimalFeedPage {
 func (p AnimalFeedPage) Generate() {
 
 	m := p.sess.WidgetManager()
-	m.With(p.parentWidget, p.sess)
+	m.With(p.parentWidget)
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
@@ -96,7 +96,7 @@ func birdListener(s Session, widget Widget) error {
 	if newVal == "parrot" {
 		s.SetWidgetProblem(widget, "No parrots, please!")
 	}
-	s.Repaint(widget)
+	s.WidgetManager().Repaint(widget)
 	return nil
 }
 
@@ -108,10 +108,6 @@ func zebraListener(s Session, widget Widget) error {
 	// Store this as the new value for this widget within the session state map
 	s.State.Put(WidgetId(widget), newVal)
 
-	if !Alert("we probably don't need to repaint the widget") {
-		s.Repaint(widget)
-	}
-
 	// Increment the alert class, and update its message
 	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
 
@@ -120,7 +116,7 @@ func zebraListener(s Session, widget Widget) error {
 	s.State.Put(alertWidget.Id,
 		strings.TrimSpace(newVal+" "+
 			RandomText(myRand.Rand(), 55, false)))
-	s.Repaint(alertWidget)
+	s.WidgetManager().Repaint(alertWidget)
 	return nil
 }
 
@@ -134,7 +130,7 @@ func buttonListener(s Session, widget Widget) error {
 
 	s.State.Put(alertWidget.Id,
 		strings.TrimSpace(newVal))
-	s.Repaint(alertWidget)
+	s.WidgetManager().Repaint(alertWidget)
 	return nil
 }
 

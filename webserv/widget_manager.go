@@ -20,6 +20,7 @@ type WidgetManagerObj struct {
 	pendingId                   string
 	pendingLabel                string
 	anonymousIdCounter          int
+	repaintSet                  *Set[string]
 }
 
 func NewWidgetManager(session Session) WidgetManager {
@@ -227,9 +228,7 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 
 // Have subsequent WidgetManager operations operate on a particular container widget.
 // The container is marked for repainting.
-func (m WidgetManager) With(container Widget, session Session) WidgetManager {
-	Todo("Move repaint flags from session to WidgetManager?")
-	Todo("repaint is probably always going to be true, so get rid of the parameter")
+func (m WidgetManager) With(container Widget) WidgetManager {
 	pr := PrIf(false)
 	id := WidgetId(container)
 	pr(VERT_SP, "With:", id, "at:", CallerLocation(1))
@@ -237,7 +236,7 @@ func (m WidgetManager) With(container Widget, session Session) WidgetManager {
 	Todo("Would be great if could refer to widget OR its id")
 	CheckState(m.Exists(id))
 
-	session.Repaint(container)
+	m.Repaint(container)
 
 	pr("current widget map:", INDENT, m.WidgetMapSummary())
 	pr("removing all child widgets")
@@ -429,12 +428,27 @@ func GetStaticOrDynamicLabel(widget Widget, state JSMap) (string, bool) {
 	if ok {
 		hasStatic = textContent != ""
 	}
-	//if !ok {
-	//	BadArg("widget has no StaticContent:", WidgetId(widget), Info(widget), Info(widget.Base().StaticContent()))
-	//}
-	//hasStatic := textContent != "" && textContent != nil
 	if !hasStatic {
 		textContent = WidgetStringValue(state, w.Id)
 	}
 	return textContent, hasStatic
+}
+
+// Mark a widget for repainting.  Does nothing if there is no repaintSet (i.e., it is not being done within
+// an AJAX call)
+func (m WidgetManager) Repaint(w Widget) {
+	if m.repaintSet == nil {
+		return
+	}
+	b := w.Base()
+	pr := PrIf(debRepaint)
+	id := b.Id
+	pr("Repaint:", id)
+	if m.repaintSet.Add(id) {
+		pr("...adding to set")
+	}
+}
+
+func (m WidgetManager) ClearRepaintSet() {
+	m.repaintSet = NewSet[string]()
 }

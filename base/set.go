@@ -7,8 +7,9 @@ type Set[KEY comparable] struct {
 }
 
 func NewSet[KEY comparable]() *Set[KEY] {
+	Todo("!Make Set follow ptr/struct pattern")
 	m := new(Set[KEY])
-	m.wrappedMap = make(map[KEY]bool)
+	m.Clear()
 	return m
 }
 
@@ -19,6 +20,10 @@ func (set *Set[KEY]) Add(value KEY) bool {
 		set.wrappedMap[value] = true
 	}
 	return !found
+}
+
+func (set *Set[KEY]) Clear() {
+	set.wrappedMap = make(map[KEY]bool)
 }
 
 func (set *Set[KEY]) Contains(value KEY) bool {

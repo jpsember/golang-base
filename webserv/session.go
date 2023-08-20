@@ -22,7 +22,6 @@ type SessionStruct struct {
 	State JSMap
 
 	widgetManager WidgetManager
-	repaintSet    *Set[string]
 
 	// Current request variables
 	responseWriter http.ResponseWriter
@@ -61,21 +60,6 @@ func (s Session) ToJson() *JSMapStruct {
 	return m
 }
 
-// Mark a widget for repainting.  Does nothing if there is no repaintSet (i.e., it is not being done within
-// an AJAX call)
-func (s Session) Repaint(w Widget) {
-	if s.repaintSet == nil {
-		return
-	}
-	b := w.Base()
-	pr := PrIf(debRepaint)
-	id := b.Id
-	pr("Repaint:", id)
-	if s.repaintSet.Add(id) {
-		pr("...adding to set")
-	}
-}
-
 func ParseSession(source JSEntity) Session {
 	var s = source.(*JSMapStruct)
 	var n = NewSession()
@@ -89,9 +73,9 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 	s.Mutex.Lock()
 	s.responseWriter = w
 	s.request = req
-	s.repaintSet = NewSet[string]()
 	s.requestProblem = ""
 	s.parseAjaxRequest(req)
+	s.WidgetManager().ClearRepaintSet()
 	s.processClientMessage()
 	s.sendAjaxResponse()
 }
@@ -180,14 +164,14 @@ func (s Session) processClientInfo(infoString string) {
 	Todo("!process client info:", INDENT, json)
 }
 
-func (s Session) processRepaintFlags(debugDepth int, w Widget, refmap JSMap, repaint bool) {
+func (s Session) processRepaintFlags(repaintSet *Set[string], debugDepth int, w Widget, refmap JSMap, repaint bool) {
 	b := w.Base()
 	id := b.Id
 	pr := PrIf(debRepaint)
 	pr(Dots(debugDepth*4)+IntToString(debugDepth), "repaint, flag:", repaint, "id:", id)
 
 	if !repaint {
-		if s.repaintSet.Contains(id) {
+		if repaintSet.Contains(id) {
 			repaint = true
 			pr(Dots(debugDepth*4), "repaint flag was set; repainting entire subtree")
 		}
@@ -200,7 +184,7 @@ func (s Session) processRepaintFlags(debugDepth int, w Widget, refmap JSMap, rep
 	}
 
 	for _, c := range w.Children().Array() {
-		s.processRepaintFlags(1+debugDepth, c, refmap, repaint)
+		s.processRepaintFlags(repaintSet, 1+debugDepth, c, refmap, repaint)
 	}
 }
 
@@ -220,7 +204,7 @@ func (s Session) sendAjaxResponse() {
 	// refmap will be the map sent to the client with the widgets
 	refmap := NewJSMap()
 
-	s.processRepaintFlags(0, s.PageWidget, refmap, false)
+	s.processRepaintFlags(s.WidgetManager().repaintSet, 0, s.PageWidget, refmap, false)
 
 	jsmap.Put(respKeyWidgetsToRefresh, refmap)
 	pr("sending back to Ajax caller:", INDENT, jsmap)
@@ -239,7 +223,8 @@ func (s Session) discardRequest() {
 	s.requestProblem = ""
 	s.widgetValues = nil
 	s.widgetIds = nil
-	s.repaintSet = nil
+  Todo("Make ClearRepaintSet package vis")
+	s.WidgetManager().ClearRepaintSet()
 	s.Mutex.Unlock()
 }
 
@@ -341,7 +326,7 @@ func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {
 		} else {
 			state.Put(key, problemText)
 		}
-		s.Repaint(widget)
+		s.WidgetManager().Repaint(widget)
 	}
 }
 
