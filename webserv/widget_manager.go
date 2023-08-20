@@ -233,7 +233,6 @@ func (m WidgetManager) With(container Widget) WidgetManager {
 	id := WidgetId(container)
 	pr(VERT_SP, "With:", id, "at:", CallerLocation(1))
 
-	Todo("Would be great if could refer to widget OR its id")
 	CheckState(m.Exists(id))
 
 	m.Repaint(container)
@@ -421,17 +420,12 @@ func SetWidgetDebugRendering() {
 func GetStaticOrDynamicLabel(widget Widget, state JSMap) (string, bool) {
 	w := widget.Base()
 	Todo("?we are assuming static content is a string here")
-
-	Todo("Smelly code here, nil vs empty string etc")
-	hasStatic := false
-	textContent, ok := widget.Base().StaticContent().(string)
-	if ok {
-		hasStatic = textContent != ""
+	sc := w.StaticContent()
+	if sc != nil {
+		return sc.(string), true
+	} else {
+		return WidgetStringValue(state, w.Id), false
 	}
-	if !hasStatic {
-		textContent = WidgetStringValue(state, w.Id)
-	}
-	return textContent, hasStatic
 }
 
 // Mark a widget for repainting.  Does nothing if there is no repaintSet (i.e., it is not being done within
