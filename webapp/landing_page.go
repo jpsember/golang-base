@@ -21,10 +21,9 @@ func NewLandingPage(sess Session, parentWidget Widget) LandingPage {
 }
 
 func (p LandingPage) Generate() {
-
+	Todo("It would be convenient if a WidgetManager had a pointer to its associated Session; but does that produce memory leaks?")
 	m := p.sess.WidgetManager()
-	m.With(p.parentWidget, p.sess)
-	p.sess.Repaint(p.parentWidget)
+	m.With(p.parentWidget)
 
 	Todo("should we set the parent widget as the current widget? Maybe the WidgetManager should already be primed for this?")
 	m.Col(12)
@@ -46,6 +45,8 @@ func (p LandingPage) Generate() {
 		m.Label("Sign Up").AddButton()
 	}
 	m.Close()
+
+	p.sess.Repaint(p.parentWidget)
 }
 
 func (p LandingPage) validateUserName(s Session, widget Widget) error {

@@ -225,10 +225,10 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	return m
 }
 
-func (m WidgetManager) With(container Widget, repainter Session) WidgetManager {
+func (m WidgetManager) With(container Widget) WidgetManager {
 	pr := PrIf(true)
 	id := WidgetId(container)
-	pr("With:", id, "at:", CallerLocation(1))
+	pr(VERT_SP, "With:", id, "at:", CallerLocation(1))
 
 	Todo("Would be great if could refer to widget OR its id")
 	CheckState(m.Exists(id))
@@ -242,10 +242,6 @@ func (m WidgetManager) With(container Widget, repainter Session) WidgetManager {
 	m.parentStack.Clear()
 	pr("storing container as sole parent in stack")
 	m.parentStack.Add(container)
-
-	if repainter != nil {
-		repainter.Repaint(container)
-	}
 	return m
 }
 
@@ -397,6 +393,7 @@ func (m WidgetManager) Remove(widget Widget) WidgetManager {
 	if m.Exists(id) {
 		delete(m.widgetMap, id)
 		m.RemoveWidgets(widget.GetChildren())
+		widget.ClearChildren()
 	}
 	return m
 }
