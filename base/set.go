@@ -2,6 +2,12 @@ package base
 
 var _ = Pr
 
+type StringSet = *Set[string]
+
+func NewStringSet() StringSet {
+	return NewSet[string]()
+}
+
 type Set[KEY comparable] struct {
 	wrappedMap map[KEY]bool
 	locked     bool

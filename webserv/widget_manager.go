@@ -20,7 +20,7 @@ type WidgetManagerObj struct {
 	pendingId                   string
 	pendingLabel                string
 	anonymousIdCounter          int
-	repaintSet                  *Set[string]
+	repaintSet                  StringSet
 }
 
 func NewWidgetManager(session Session) WidgetManager {
@@ -444,5 +444,5 @@ func (m WidgetManager) Repaint(w Widget) {
 }
 
 func (m WidgetManager) clearRepaintSet() {
-	m.repaintSet = NewSet[string]()
+	m.repaintSet = NewStringSet()
 }

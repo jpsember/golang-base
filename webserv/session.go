@@ -164,7 +164,7 @@ func (s Session) processClientInfo(infoString string) {
 	Todo("!process client info:", INDENT, json)
 }
 
-func (s Session) processRepaintFlags(repaintSet *Set[string], debugDepth int, w Widget, refmap JSMap, repaint bool) {
+func (s Session) processRepaintFlags(repaintSet StringSet, debugDepth int, w Widget, refmap JSMap, repaint bool) {
 	b := w.Base()
 	id := b.Id
 	pr := PrIf(debRepaint)
