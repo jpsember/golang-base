@@ -225,6 +225,13 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	return m
 }
 
+func (m WidgetManager) With(container Widget) WidgetManager {
+	CheckState(m.Exists(WidgetId(container)))
+	m.parentStack.Clear()
+	m.parentStack.Add(container)
+	return m
+}
+
 // Create a child container widget and push onto stack
 func (m WidgetManager) Open() Widget {
 	m.Log("open")

@@ -86,6 +86,12 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 	if sess.AppData == nil {
 		oper.AssignUserToSession(sess)
 		oper.constructPageWidget(sess)
+
+		user, ok := sess.AppData.(webapp_data.User)
+		CheckState(ok, "no User found in sess AppData:", INDENT, sess.AppData)
+		Todo("!have convention of prefixing enums with e.g. 'UserState_'")
+		CheckState(user.State() == webapp_data.UnknownUser)
+		NewLandingPage(sess, sess.PageWidget).Generate()
 	}
 
 	url, err := url.Parse(req.RequestURI)
@@ -162,74 +168,76 @@ func (oper AjaxOper) constructPageWidget(sess Session) {
 	widget := m.Open()
 	sess.PageWidget = widget
 
-	user, ok := sess.AppData.(webapp_data.User)
-	CheckState(ok, "no User found in sess AppData:", INDENT, sess.AppData)
+	if !Alert("disabled") {
+		user, ok := sess.AppData.(webapp_data.User)
+		CheckState(ok, "no User found in sess AppData:", INDENT, sess.AppData)
 
-	Todo("!have convention of prefixing enums with e.g. 'UserState_'")
-	if true && user.State() == webapp_data.UnknownUser {
-		NewLandingPage(sess, widget).Generate()
-		return
-	}
-
-	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
-	alertWidget.SetVisible(false)
-	m.Add(alertWidget)
-
-	m.Size(SizeLarge).Label("This is the header text").AddHeading()
-
-	heading := NewHeadingWidget("header_text", 1)
-	m.Add(heading)
-
-	m.Col(4)
-	for i := 1; i < 12; i++ {
-		anim, err := Db().GetAnimal(i)
-		if err != nil {
-			Pr("what do we do with unexpected errors?", INDENT, err)
+		Todo("!have convention of prefixing enums with e.g. 'UserState_'")
+		if true && user.State() == webapp_data.UnknownUser {
+			NewLandingPage(sess, widget).Generate()
+			return
 		}
-		if anim == nil {
-			continue
+
+		alertWidget = NewAlertWidget("sample_alert", AlertInfo)
+		alertWidget.SetVisible(false)
+		m.Add(alertWidget)
+
+		m.Size(SizeLarge).Label("This is the header text").AddHeading()
+
+		heading := NewHeadingWidget("header_text", 1)
+		m.Add(heading)
+
+		m.Col(4)
+		for i := 1; i < 12; i++ {
+			anim, err := Db().GetAnimal(i)
+			if err != nil {
+				Pr("what do we do with unexpected errors?", INDENT, err)
+			}
+			if anim == nil {
+				continue
+			}
+			cardId := "animal_" + IntToString(int(anim.Id()))
+			OpenAnimalCardWidget(m, cardId, anim, buttonListener)
 		}
-		cardId := "animal_" + IntToString(int(anim.Id()))
-		OpenAnimalCardWidget(m, cardId, anim, buttonListener)
-	}
 
-	m.Col(4)
-	m.Label("uniform delta").AddText()
-	m.Col(8)
-	m.Id("x58").Label(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
+		m.Col(4)
+		m.Label("uniform delta").AddText()
+		m.Col(8)
+		m.Id("x58").Label(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
 
-	m.Col(2).AddSpace()
-	m.Col(3).AddSpace()
-	m.Col(3).AddSpace()
-	m.Col(4).AddSpace()
+		m.Col(2).AddSpace()
+		m.Col(3).AddSpace()
+		m.Col(3).AddSpace()
+		m.Col(4).AddSpace()
 
-	m.Col(6)
-	m.Listener(birdListener)
-	m.Label("Bird").Id("bird")
-	m.AddInput()
+		m.Col(6)
+		m.Listener(birdListener)
+		m.Label("Bird").Id("bird")
+		m.AddInput()
 
-	m.Col(6)
-	m.Open()
-	m.Id("x59").Label(`Label for X59`).Listener(checkboxListener).AddCheckbox()
-	m.Id("x60").Label(`With fruit`).Listener(checkboxListener).AddSwitch()
-	m.Close()
+		m.Col(6)
+		m.Open()
+		m.Id("x59").Label(`Label for X59`).Listener(checkboxListener).AddCheckbox()
+		m.Id("x60").Label(`With fruit`).Listener(checkboxListener).AddSwitch()
+		m.Close()
 
-	m.Col(4)
-	m.Id("launch").Label(`Launch`).Listener(buttonListener).AddButton()
+		m.Col(4)
+		m.Id("launch").Label(`Launch`).Listener(buttonListener).AddButton()
 
-	m.Col(8)
-	m.Label(`Sample text; is 5 < 26? A line feed
+		m.Col(8)
+		m.Label(`Sample text; is 5 < 26? A line feed
 "Quoted string"
 Multiple line feeds:
 
 
    an indented final line`)
-	m.AddText()
+		m.AddText()
 
-	m.Col(4)
-	m.Listener(zebraListener)
-	m.Label("Animal").Id("zebra").AddInput()
+		m.Col(4)
+		m.Listener(zebraListener)
+		m.Label("Animal").Id("zebra").AddInput()
 
+	}
 	m.Close()
 }
 

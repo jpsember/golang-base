@@ -29,6 +29,10 @@ func (array *Array[T]) IsEmpty() bool {
 	return len(array.wrappedArray) == 0
 }
 
+func (array *Array[T]) Clear() {
+	array.wrappedArray = make([]T, 0)
+}
+
 func (array *Array[T]) Pop() T {
 	var w = array.wrappedArray
 	i := len(w)
