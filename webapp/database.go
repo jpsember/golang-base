@@ -101,23 +101,53 @@ func (db Database) createTables() {
 func (db Database) FindUserWithName(userName string) (string, error) {
 	db.lock()
 	defer db.unlock()
+	foundId := db.auxFindUserWithName(userName)
+	if foundId == "" {
+		db.setError(Error("no user with name:", userName))
+	}
+	return foundId, db.err
+}
+
+func (db Database) auxFindUserWithName(userName string) string {
 	mp := db.getTable(tableNameUser)
-	foundId := ""
 	for id, jsent := range mp.table.WrappedMap() {
 		m := jsent.AsJSMap()
 		Pr("user id:", id, "value:", INDENT, m)
 		if m.GetString("name") == userName {
-			foundId = id
-			break
+			return id
 		}
 	}
+	return ""
+}
 
-	if foundId == "" {
-		db.setError(Error("no user with name:", userName))
+// Write user to database; must already exist.
+func (db Database) WriteUser(user User) error {
+	db.lock()
+	defer db.unlock()
+	mp := db.getTable(tableNameUser)
+	if !mp.HasKey(user.Id()) {
+		return Error("user not found:", user.Id())
 	}
+	mp.Put(user.Id(), user)
+  Todo("Have logging for writing to memtable")
+	return nil
+}
 
-	Pr("FindUserWithName:", userName, "returning id:", foundId, "error:", db.err)
-	return foundId, db.err
+// Create a user with the given name.  Returns nil if unsuccessful, else a UserBuilder.
+func (db Database) CreateUser(userName string) UserBuilder {
+	db.lock()
+	defer db.unlock()
+	foundId := db.auxFindUserWithName(userName)
+	if foundId != "" {
+		return nil
+	}
+	mp := db.getTable(tableNameUser)
+	key := mp.nextUniqueKey()
+	us := NewUser()
+	us.SetId(int64(key))
+	us.SetName(userName)
+	mp.Put(us.Id(), us.Build())
+	return us
 }
 
 func (db Database) GetAnimal(id int) (Animal, error) {
@@ -248,15 +278,24 @@ func (m MemTable) Put(key any, value any) {
 	m.table.Put(strKey, jsmapValue)
 }
 
+func (m MemTable) HasKey(key any) bool {
+	strKey := argToMemtableKey(key)
+	return m.table.HasKey(strKey)
+}
+
 func argToMemtableKey(key any) string {
 	var strKey string
 	switch k := key.(type) {
 	case string:
 		strKey = k
-	case int: // We aren't sure if it's 32 or 64, so choose 64
+	case int:
 		strKey = IntToString(k)
+	case int64:
+		strKey = IntToString(int(k))
+	case int32:
+		strKey = IntToString(int(k))
 	default:
-		BadArg("illegal key:", key, "type:", k)
+		BadArg("illegal key:", key, "type:", k, "Info:", Info(key))
 	}
 	return strKey
 }

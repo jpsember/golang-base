@@ -2,6 +2,7 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
 )
 
@@ -48,7 +49,7 @@ func (p SignUpPage) Generate() {
 		m.Col(6)
 		m.AddSpace()
 		m.Listener(p.signUpListener)
-		m.Id(id_sign_up).Label("Sign In").AddButton()
+		m.Id(id_sign_up).Label("Sign Up").AddButton()
 	}
 	m.Close()
 }
@@ -105,9 +106,11 @@ func (p SignUpPage) auxValidateMatchPwd(s Session, widget Widget, value string, 
 	}
 	var err error
 	value1 := s.State.OptString(id_user_pwd, "")
+	err, value = replaceWithTestInput(err, value, "a", value1)
 	if value1 != value {
 		err = Ternary(value == "", ErrorEmptyUserPassword, ErrorUserPasswordsDontMatch)
 	}
+
 	s.State.Put(WidgetId(widget), value)
 	s.SetWidgetProblem(widget, err)
 }
@@ -134,5 +137,20 @@ func (p SignUpPage) signUpListener(s Session, widget Widget) {
 	auxValidateUserPwd(s, getWidget(s, id_user_pwd), s.State.OptString(id_user_pwd, ""), 0)
 	p.auxValidateMatchPwd(s, getWidget(s, id_user_pwd_verify), s.State.OptString(id_user_pwd_verify, ""), 0)
 	auxValidateEmail(s, getWidget(s, id_user_email), s.State.OptString(id_user_email, ""), 0)
+
+	userName := s.State.OptString(id_user_name, "")
+	userPwd := s.State.OptString(id_user_pwd, "")
+	email := s.State.OptString(id_user_email, "")
+
+	ub := Db().CreateUser(userName)
+	if ub == nil {
+		s.SetWidgetIdProblem(id_user_name, "This user already exists")
+		return
+	}
+	ub.SetEmail(email).SetPassword(userPwd).SetState(webapp_data.WaitingActivation)
+	err := Db().WriteUser(ub)
+	CheckOk(err)
+
+	Todo("add support for WaitingActivation")
 	Todo("if everything worked out, change the displayed page / login state?")
 }

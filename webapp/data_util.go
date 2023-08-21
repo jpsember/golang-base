@@ -132,6 +132,9 @@ func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 }
 
 func ValidateUserPassword(password string, flag ValidateFlag) (string, error) {
+	pr := PrIf(false)
+	pr("ValidateUserPassword:", Quoted(password), flag)
+
 	text := password
 	text = strings.TrimSpace(text)
 	validatedName := text
@@ -150,8 +153,9 @@ func ValidateUserPassword(password string, flag ValidateFlag) (string, error) {
 		}
 	}
 
+	pr("before replaceWithTestInput:", err, validatedName)
 	err, validatedName = replaceWithTestInput(err, validatedName, "a", "bigpassword123")
-
+	pr("after replaceWithTestInput:", err, validatedName)
 	return validatedName, err
 }
 
