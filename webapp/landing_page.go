@@ -24,7 +24,7 @@ func (p LandingPage) Generate() {
 	s := p.sess.State
 	s.DeleteEach(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
 
-	if Alert("!prefilling user name and password") {
+	if false && Alert("!prefilling user name and password") {
 		s.Put(id_user_name, "Bartholemew").Put(id_user_pwd, "01234password")
 	}
 
@@ -60,23 +60,23 @@ func (p LandingPage) validateUserPwd(s Session, widget Widget) error {
 	return auxValidateUserPwd(s, widget, value, VALIDATE_ONLY_NONEMPTY)
 }
 
-func (p LandingPage) signInListener(s Session, widget Widget) error {
+func (p LandingPage) signInListener(sess Session, widget Widget) error {
 
-	userName := s.State.OptString(id_user_name, "")
-	pwd := s.State.OptString(id_user_pwd, "")
-	Todo("ability to read value using widget id")
-	if userName == "" {
-		s.SetWidgetProblem(getWidget(s, id_user_name), ErrorEmptyUserName)
-	}
-	if pwd == "" {
-		s.SetWidgetProblem(getWidget(s, id_user_pwd), ErrorEmptyUserPassword)
+	s := sess.State
+	userName := s.OptString(id_user_name, "")
+	pwd := s.OptString(id_user_pwd, "")
 
-	}
+	var err1 error
+	userName, err1 = ValidateUserName(userName, VALIDATE_ONLY_NONEMPTY)
+	var err2 error
+	pwd, err2 = ValidateEmailAddress(pwd, VALIDATE_ONLY_NONEMPTY)
 
-	errcount := WidgetErrorCount(p.parentWidget, s.State)
-	Pr("error count:", errcount)
+	sess.SetWidgetProblem(getWidget(sess, id_user_name), err1)
+	sess.SetWidgetProblem(getWidget(sess, id_user_pwd), err2)
+
+	errcount := WidgetErrorCount(p.parentWidget, sess.State)
 	if errcount == 0 {
-		sp := NewAnimalFeedPage(s, p.parentWidget)
+		sp := NewAnimalFeedPage(sess, p.parentWidget)
 		sp.Generate()
 	}
 	return nil

@@ -152,6 +152,7 @@ func (s Session) processClientMessage() {
 		return
 	}
 
+	Todo("listeners should not have return values")
 	listener(s, widget)
 }
 

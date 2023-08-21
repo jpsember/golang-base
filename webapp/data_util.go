@@ -12,6 +12,8 @@ type BlobId string
 
 const blobIdLength = 10
 
+var AllowTestInputs = Alert("Allowing test inputs (user name, password, etc)")
+
 func (b BlobId) String() string {
 	return string(b)
 }
@@ -125,6 +127,7 @@ func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 	} else if !UserNameValidatorRegExp.MatchString(userName) {
 		err = ErrorUserNameIllegalCharacters
 	}
+	err, validatedName = replaceWithTestInput(err, validatedName, "a", "joeuser42")
 	return validatedName, err
 }
 
@@ -146,6 +149,9 @@ func ValidateUserPassword(password string, flag ValidateFlag) (string, error) {
 			err = ErrorUserPasswordIllegalCharacters
 		}
 	}
+
+	err, validatedName = replaceWithTestInput(err, validatedName, "a", "bigpassword123")
+
 	return validatedName, err
 }
 
@@ -164,11 +170,25 @@ func ValidateEmailAddress(emailAddress string, flag ValidateFlag) (string, error
 		if x > USER_EMAIL_MAX_LENGTH {
 			err = ErrorUserEmailLength
 		} else {
-			address, err2 := mail.ParseAddress(text)
+			_, err2 := mail.ParseAddress(text)
 			if err2 != nil {
 				err = ErrorUserEmailInvalid
 			}
 		}
 	}
+
+	err, validatedEmail = replaceWithTestInput(err, validatedEmail, "a", "joe_user@anycompany.xyx")
 	return validatedEmail, err
+}
+
+// If AllowTestInputs, and value is empty or equals shortcutForTest, return (nil, fullValueForTest).
+func replaceWithTestInput(err error, value string, shortcutForTest string, fullValueForTest string) (error, string) {
+	if AllowTestInputs {
+		if value == shortcutForTest || value == "" {
+			value = fullValueForTest
+			Alert("!Replacing: " + shortcutForTest + " with: " + value)
+			err = nil
+		}
+	}
+	return err, value
 }
