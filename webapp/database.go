@@ -12,18 +12,20 @@ import (
 )
 
 type DatabaseStruct struct {
-	state              int
-	err                error
-	theLock            sync.Mutex
-	memTables          map[string]MemTable
-	simFilesPath       Path
-	changesWrittenTime int64
+	Base         BaseObject
+	state        dbState
+	err          error
+	theLock      sync.Mutex
+	memTables    map[string]MemTable
+	simFilesPath Path
 }
 
 type Database = *DatabaseStruct
 
+type dbState int
+
 const (
-	dbStateNew = iota
+	dbStateNew dbState = iota
 	dbStateOpen
 	dbStateClosed
 )
@@ -32,14 +34,18 @@ var singletonDatabase Database
 
 func newDatabase() Database {
 	t := &DatabaseStruct{}
+	t.Base.SetName("Database")
+	// t.Base.AlertVerbose()
 	t.memTables = make(map[string]MemTable)
-	t.changesWrittenTime = CurrentTimeMs()
 	return t
 }
 
 func CreateDatabase() Database {
 	CheckState(singletonDatabase == nil, "<1Singleton database already exists")
 	singletonDatabase = newDatabase()
+	b := singletonDatabase.Base
+	b.SetName("Database")
+	b.AlertVerbose()
 	return Db()
 }
 
@@ -49,15 +55,14 @@ func Db() Database {
 }
 
 func (db Database) flushChanges() {
-	Alert("#50<1Flushing changes")
 	for _, mt := range db.memTables {
 		if mt.modified {
+			mt.Base.Log("flushing")
 			p := db.getSimFile(mt)
 			p.WriteStringM(mt.table.CompactString())
 			mt.modified = false
 		}
 	}
-	db.changesWrittenTime = CurrentTimeMs()
 }
 
 // This method does nothing in this version
@@ -66,15 +71,30 @@ func (db Database) SetDataSourceName(dataSourceName string) {
 }
 
 func (db Database) Open() {
-	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
+	if !db.tryLock(dbStateNew) {
+		BadState("Illegal database state")
+	}
+	defer db.unlock()
 	db.state = dbStateOpen
-	Todo("have background task periodically flush tables")
 	db.createTables()
+
+	var bgndTask = func() {
+		for {
+			SleepMs(1000)
+			db.Base.Log("flush periodically")
+			if !db.tryLock(dbStateOpen) {
+				db.Base.Log("...database has closed, exiting")
+				return
+			}
+			db.flushChanges()
+			db.theLock.Unlock()
+		}
+	}
+	go bgndTask()
 }
 
 func (db Database) Close() {
-	if db.state == dbStateOpen {
-		db.lock()
+	if db.tryLock(dbStateOpen) {
 		defer db.unlock()
 		db.flushChanges()
 		db.state = dbStateClosed
@@ -178,12 +198,6 @@ const HOURS = MINUTES * 60
 
 func (db Database) setModified(mt MemTable) {
 	mt.modified = true
-	currTime := CurrentTimeMs()
-	elapsed := currTime - db.changesWrittenTime
-	Pr("setting table modified:", mt.name, "ms since written:", elapsed)
-	if elapsed > SECONDS*20 {
-		db.flushChanges()
-	}
 }
 
 func (db Database) flushTable(mt MemTable) {
@@ -206,6 +220,7 @@ func SQLiteExperiment() {
 		d.AddAnimal(a)
 		Pr("added animal:", INDENT, a)
 	}
+	d.Close()
 	d.flushChanges()
 }
 
@@ -233,6 +248,7 @@ func (db Database) getSimFile(m MemTable) Path {
 }
 
 type MemTableStruct struct {
+	Base     BaseObject
 	name     string
 	table    JSMap
 	modified bool
@@ -245,6 +261,8 @@ func NewMemTable(name string) MemTable {
 		name:  name,
 		table: NewJSMap(),
 	}
+	t.Base.SetName("MemTable(" + name + ")")
+	t.Base.AlertVerbose()
 	return t
 }
 
@@ -265,10 +283,6 @@ func (m MemTable) nextUniqueKey() int {
 	return i
 }
 
-func (m MemTable) log(args ...any) {
-	Pr(JoinElementToList("<<MemTable "+m.name+">> ", args)...)
-}
-
 func (m MemTable) GetData(key any, parser DataClass) DataClass {
 	strKey := argToMemtableKey(key)
 	val := m.table.OptMap(strKey)
@@ -281,7 +295,7 @@ func (m MemTable) GetData(key any, parser DataClass) DataClass {
 func (m MemTable) Put(key any, value any) {
 	strKey := argToMemtableKey(key)
 	jsmapValue := argToMemtableValue(value)
-	m.log("Writing:", strKey, "=>", INDENT, jsmapValue)
+	m.Base.Log("Writing:", strKey, "=>", INDENT, jsmapValue)
 	m.table.Put(strKey, jsmapValue)
 }
 
@@ -331,11 +345,20 @@ func argToMemtableValue(val any) JSMap {
 
 // Acquire the lock on the database, and clear the error register.
 func (db Database) lock() {
-	if db.state != dbStateOpen {
+	if !db.tryLock(dbStateOpen) {
 		BadState("<1Illegal state:", db.state)
 	}
+}
+
+// Attempt to acquire the lock on the database; if state isn't expectedState, releases lock and returns false
+func (db Database) tryLock(expectedState dbState) bool {
 	db.theLock.Lock()
+	if db.state != expectedState {
+		db.theLock.Unlock()
+		return false
+	}
 	db.err = nil
+	return true
 }
 
 func (db Database) unlock() {
