@@ -15,117 +15,124 @@
 
 <body>
 
-  <div class='container  pt-5'> <!--page container -->
-    <div id='page'> <!--ContainerWidget Id: page -->
+  <!-- page container -->
+  <div class='container  pt-5'>
 
+    <!-- ContainerWidget Id: main_page -->
+    <div id='main_page'>
+      <div class='row'>
 
+        <!-- child -->
+        <div class="col-sm-12">
+          <h2 id='.1'>Landing Page</h2>
+        </div>  <!-- child -->
 
-
- <div class='row'> <!--start of row -->
-        <div class="col-sm-4"> <!--child -->
-          <div style="font-size:50%">
-          Hello
-        </div>
-        </div> <!--child -->
-
-        <div class="col-sm-4"> <!--child -->
-          <div>
-            <button class='btn btn-primary btn-sm'>View</button>
-          </div>
-        </div> <!--child -->
-
-
-        <div class="col-sm-4"> <!--child -->
-          <div>
-            <button class='btn btn-primary btn-sm'>View</button>
-          </div>
-        </div> <!--child -->
-
-        <div class="col-sm-4"> <!--child -->
-          Hello
-        </div> <!--child -->
-
-        <div class="col-sm-4"> <!--child -->
-          <div>
-            <button class='btn btn-primary btn-sm'>View</button>
-          </div>
-        </div> <!--child -->
-
-
-        <div class="col-sm-4"> <!--child -->
-          <div>
-            <button class='btn btn-primary btn-sm'>View</button>
-          </div>
-        </div> <!--child -->
       </div>
 
+      <form>
 
+      <div class='row'>
 
+        <!-- child -->
+        <div class="col-sm-6">
 
+          <!-- ContainerWidget Id: .2 -->
+          <div id='.2'>
+            <div class='row'>
 
+              <!-- child -->
+              <div class="col-sm-12">
+                <div id="user_name">
+                  <!-- Label -->
+                  <label class="form-label" style="font-size:70%">
+                    User name
+                  </label>
 
+                  <!-- Input -->
+                  <input class="form-control" type="text" id="user_name.aux" value="Bartholemew" onchange='jsVal("user_name")'>
+                </div>
+              </div>  <!-- child -->
 
-      <div class='row'> <!--start of row -->
-        <div class="col-sm-4"> <!--child -->
+            </div>
 
-          <!-- AnimalCardWidget -->
-          <div class="card bg-light mb-3 animal-card">
-            <img class="card-img-top" src="0.jpg">
+            <div class='row'>
 
-            <!-- title and summary -->
-            <div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;">
-              <h6 class="card-title">Roscoe</h6>
-              <p class="card-text" style="font-size:75%;">This boxer cross came
-                           to us with skin issues and needs additional treatment.
-                           She is on the mend though!</p>
-            </div>  <!-- title and summary -->
+              <!-- child -->
+              <div class="col-sm-12">
+                <div id="user_pwd">
+                  <!-- Label -->
+                  <label class="form-label" style="font-size:70%">
+                    Password
+                  </label>
 
-            <!-- Progress towards goal, controls -->
-            <div class="card-body">
+                  <!-- Input -->
+                  <input class="form-control" type="password" id="user_pwd.aux" value="01234password" onchange='jsVal("user_pwd")'>
+                </div>
+              </div>  <!-- child -->
 
-              <!-- progress-container -->
-              <div class="progress-container">
+            </div>
 
-                <!-- Plot grey in background, full width -->
-                <div class="progress-bar-bgnd">
-                </div>  <!-- Plot grey in background, full width -->
+            <div class='row'>
 
-                <!-- Plot bar graph in foreground, partial width -->
-                <div class="progress-bar" style="width: 35%;">
-                </div>  <!-- Plot bar graph in foreground, partial width -->
+              <!-- child -->
+              <div class="col-sm-12">
 
-              </div>  <!-- progress-container -->
+<div class="py-3" id='.3'>
+                  <button class='btn btn-primary' onclick='jsButton(".3")'>Sign In</button>
+                </div>
 
-              <div class="progress-text">
-                $120 raised of $250 goal
-              </div>
+              </div>  <!-- child -->
 
-              <!-- right-justified button -->
-              <div class="row">
+            </div>
 
+         <div class='row'>
 
-<!-- see https://getbootstrap.com/docs/5.0/components/buttons/ , 'block buttons' -->
+              <!-- child -->
+              <div class="col-sm-12">
+                <div id="user_pwd">
+                  <!-- Label -->
+                  <label class="form-label" style="font-size:70%">
+                    Password
+                  </label>
 
-<div class="d-grid justify-content-md-end">
-  <div id='a0_view'>
-                    <button class='btn btn-primary btn-sm' onclick='jsButton("a0_view")'>View</button>
-                  </div>
-  </div>
-              </div>  <!-- right-justified button -->
+                  <!-- Input -->
+                  <input class="form-control" type="password" id="user_pwd.aux" value="01234password" onchange='jsVal("user_pwd")'>
+                </div>
+              </div>  <!-- child -->
 
+            </div>
 
-            </div>  <!-- Progress towards goal, controls -->
+          </div>  <!-- ContainerWidget Id: .2 -->
 
-          </div>  <!-- AnimalCardWidget -->
+        </div>  <!-- child -->
 
-        </div> <!-- child -->
+        <!-- child -->
+        <div class="col-sm-6">
 
-      </div> <!-- end of row -->
+          <!-- ContainerWidget Id: .4 -->
+          <div id='.4'>
+            <div class='row'>
 
+              <!-- child -->
+              <div class="col-sm-12">
+                <div id='.5'>
+                  <button class='btn btn-primary ' onclick='jsButton(".5")'>Sign Up</button>
+                </div>
+              </div>  <!-- child -->
 
+            </div>
 
-    </div> <!-- ContainerWidget Id: page -->
-  </div> <!-- page container -->
+          </div>  <!-- ContainerWidget Id: .4 -->
+
+        </div>  <!-- child -->
+
+      </div>
+
+</form>
+    </div>  <!-- ContainerWidget Id: main_page -->
+
+    <script>jsGetDisplayProperties();</script>
+  </div>  <!-- page container -->
 
 </body>
 

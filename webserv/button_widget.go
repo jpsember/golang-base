@@ -24,7 +24,8 @@ func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		return
 	}
 
-	m.A(`<div id='`, w.Id, `'>`)
+	// Adding py-3 here to put some vertical space between button and other widgets
+	m.A(`<div class='py-3' id='`, w.Id, `'>`)
 
 	m.DoIndent()
 	m.A(`<button class='btn btn-primary `)
