@@ -299,6 +299,11 @@ func getProblemId(w Widget) string {
 	return WidgetId(w) + ".problem"
 }
 
+func (s Session) SetWidgetIdProblem(widgetId string, problem any) {
+	widget := s.WidgetManager().Get(widgetId)
+	s.SetWidgetProblem(widget, problem)
+}
+
 func (s Session) SetWidgetProblem(widget Widget, problem any) {
 	var text string
 	if problem != nil {

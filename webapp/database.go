@@ -82,7 +82,7 @@ func (db Database) Close() {
 
 func (db Database) setError(e error) bool {
 	if e != nil {
-		if db.err != nil {
+		if db.err == nil {
 			db.err = e
 			Alert("<1#50Setting database error:", INDENT, e)
 		}
@@ -90,13 +90,40 @@ func (db Database) setError(e error) bool {
 	return db.err != nil
 }
 
+const (
+	tableNameUser   = "user"
+	tableNameAnimal = "animal"
+)
+
 func (db Database) createTables() {
+}
+
+func (db Database) FindUserWithName(userName string) (string, error) {
+	db.lock()
+	defer db.unlock()
+	mp := db.getTable(tableNameUser)
+	foundId := ""
+	for id, jsent := range mp.table.WrappedMap() {
+		m := jsent.AsJSMap()
+		Pr("user id:", id, "value:", INDENT, m)
+		if m.GetString("name") == userName {
+			foundId = id
+			break
+		}
+	}
+
+	if foundId == "" {
+		db.setError(Error("no user with name:", userName))
+	}
+
+	Pr("FindUserWithName:", userName, "returning id:", foundId, "error:", db.err)
+	return foundId, db.err
 }
 
 func (db Database) GetAnimal(id int) (Animal, error) {
 	db.lock()
 	defer db.unlock()
-	mp := db.getTable("animal")
+	mp := db.getTable(tableNameAnimal)
 	obj := mp.GetData(id, DefaultAnimal)
 	return obj.(Animal), db.err
 }
@@ -104,7 +131,7 @@ func (db Database) GetAnimal(id int) (Animal, error) {
 func (db Database) AddAnimal(a AnimalBuilder) {
 	db.lock()
 	defer db.unlock()
-	mp := db.getTable("animal")
+	mp := db.getTable(tableNameAnimal)
 	id := mp.nextUniqueKey()
 	a.SetId(int64(id))
 	mp.Put(id, a.Build())

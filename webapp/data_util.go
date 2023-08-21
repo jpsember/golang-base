@@ -12,7 +12,7 @@ type BlobId string
 
 const blobIdLength = 10
 
-var AllowTestInputs = Alert("Allowing test inputs (user name, password, etc)")
+var AllowTestInputs = Alert("!Allowing test inputs (user name, password, etc)")
 
 func (b BlobId) String() string {
 	return string(b)
@@ -186,7 +186,7 @@ func replaceWithTestInput(err error, value string, shortcutForTest string, fullV
 	if AllowTestInputs {
 		if value == shortcutForTest || value == "" {
 			value = fullValueForTest
-			Alert("replaceWithTestInput; replacing: " + shortcutForTest + " with: " + value)
+			Alert("<2replaceWithTestInput; replacing: " + shortcutForTest + " with: " + value)
 			err = nil
 		}
 	}

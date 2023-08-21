@@ -71,14 +71,23 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 	var err2 error
 	pwd, err2 = ValidateEmailAddress(pwd, VALIDATE_ONLY_NONEMPTY)
 
-	sess.SetWidgetProblem(getWidget(sess, id_user_name), err1)
-	sess.SetWidgetProblem(getWidget(sess, id_user_pwd), err2)
+	sess.SetWidgetIdProblem(id_user_name, err1)
+	sess.SetWidgetIdProblem(id_user_pwd, err2)
 
 	errcount := WidgetErrorCount(p.parentWidget, sess.State)
-	if errcount == 0 {
-		sp := NewAnimalFeedPage(sess, p.parentWidget)
-		sp.Generate()
+	if errcount != 0 {
+		return
 	}
+
+	userId, err := Db().FindUserWithName(userName)
+	if err != nil {
+		sess.SetWidgetIdProblem(id_user_name, "No such user, or incorrect password")
+		return
+	}
+	Todo("switch to logged in somehow, user id:", userId)
+
+	sp := NewAnimalFeedPage(sess, p.parentWidget)
+	sp.Generate()
 }
 
 func (p LandingPage) signUpListener(s Session, widget Widget) {
