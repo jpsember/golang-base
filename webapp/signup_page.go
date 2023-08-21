@@ -30,6 +30,8 @@ func NewSignUpPage(sess Session, parentWidget Widget) SignUpPage {
 
 func (p SignUpPage) Generate() {
 
+	s := p.sess.State
+	s.DeleteEach(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
 	m := p.sess.WidgetManager()
 	m.With(p.parentWidget)
 

@@ -91,10 +91,6 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	sess := DetermineSession(oper.sessionManager, w, req, true)
 	if sess.AppData == nil {
 		oper.AssignUserToSession(sess)
-
-		if Alert("!prefilling user name and password") {
-			sess.State.Put(id_user_name, "Bartholemew").Put(id_user_pwd, "01234password")
-		}
 		oper.constructPageWidget(sess)
 
 		user, ok := sess.AppData.(webapp_data.User)

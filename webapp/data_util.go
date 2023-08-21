@@ -3,6 +3,7 @@ package webapp
 import (
 	"bytes"
 	. "github.com/jpsember/golang-base/base"
+	"net/mail"
 	"strings"
 	"sync"
 )
@@ -94,12 +95,16 @@ var ErrorUserNameIllegalCharacters = Error("Your name has illegal characters")
 
 var ErrorEmptyUserPassword = Error("Please enter a password")
 var ErrorEmptyUserEmail = Error("Please enter an email address")
+var ErrorUserEmailInvalid = Error("The email address is invalid")
+
 var ErrorUserPasswordLength = Error("Password must be between 8 and 20 characters")
 var ErrorUserPasswordIllegalCharacters = Error("Password must not contain spaces")
 var ErrorUserPasswordsDontMatch = Error("The two passwords don't match")
+var ErrorUserEmailLength = Error("Email address is too long")
 
 const USER_PASSWORD_MIN_LENGTH = 8
 const USER_PASSWORD_MAX_LENGTH = 20
+const USER_EMAIL_MAX_LENGTH = 40
 
 var UserNameValidatorRegExp = Regexp(`^[a-zA-Z0-9_]+(?: [a-zA-Z0-9_]+)*$`)
 var UserPasswordValidatorRegExp = Regexp(`^[^ ]+$`)
@@ -156,10 +161,13 @@ func ValidateEmailAddress(emailAddress string, flag ValidateFlag) (string, error
 			err = ErrorEmptyUserEmail
 		}
 	} else if !flag.Has(VALIDATE_ONLY_NONEMPTY) {
-		if x < USER_PASSWORD_MIN_LENGTH || x > USER_PASSWORD_MAX_LENGTH {
-			err = ErrorUserPasswordLength
-		} else if !UserPasswordValidatorRegExp.MatchString(text) {
-			err = ErrorUserPasswordIllegalCharacters
+		if x > USER_EMAIL_MAX_LENGTH {
+			err = ErrorUserEmailLength
+		} else {
+			address, err2 := mail.ParseAddress(text)
+			if err2 != nil {
+				err = ErrorUserEmailInvalid
+			}
 		}
 	}
 	return validatedEmail, err

@@ -21,6 +21,13 @@ func NewLandingPage(sess Session, parentWidget Widget) LandingPage {
 }
 
 func (p LandingPage) Generate() {
+	s := p.sess.State
+	s.DeleteEach(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
+
+	if Alert("!prefilling user name and password") {
+		s.Put(id_user_name, "Bartholemew").Put(id_user_pwd, "01234password")
+	}
+
 	m := p.sess.WidgetManager()
 	m.With(p.parentWidget)
 

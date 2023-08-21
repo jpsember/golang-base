@@ -6,6 +6,7 @@ import (
 
 type JSMapStruct struct {
 	wrappedMap map[string]JSEntity
+	locked     bool
 }
 type JSMap = *JSMapStruct
 
@@ -134,12 +135,19 @@ func (m JSMap) CompactString() string {
 }
 
 func (m JSMap) Delete(key string) JSMap {
-	delete(m.wrappedMap, key)
+	delete(m.mutableWrapped(), key)
 	return m
 }
 
+func (m JSMap) DeleteEach(keys ...string) JSMap {
+	w := m.mutableWrapped()
+	for _, k := range keys {
+		delete(w, k)
+	}
+	return m
+}
 func (m JSMap) Put(key string, value any) JSMap {
-	m.wrappedMap[key] = ToJSEntity(value)
+	m.mutableWrapped()[key] = ToJSEntity(value)
 	return m
 }
 
@@ -307,6 +315,7 @@ func (m JSMap) GetInt64(key string) int64 {
 	var val = m.wrappedMap[key]
 	return int64((val.(JSEntity)).AsInteger())
 }
+
 func (m JSMap) OptInt64(key string, defaultValue int) int64 {
 	var val = m.wrappedMap[key]
 	if val == nil {
@@ -314,6 +323,7 @@ func (m JSMap) OptInt64(key string, defaultValue int) int64 {
 	}
 	return int64((val.(JSEntity)).AsInteger())
 }
+
 func (m JSMap) GetBool(key string) bool {
 	var val = m.wrappedMap[key]
 	return (val.(JSEntity)).AsBool()
@@ -382,6 +392,19 @@ func (m JSMap) OptLong(key string, defaultValue int64) int64 {
 }
 
 func (m JSMap) Clear() JSMap {
+	m.mutableWrapped()
 	m.wrappedMap = make(map[string]JSEntity)
 	return m
+}
+
+func (m JSMap) Lock() JSMap {
+	m.locked = true
+	return m
+}
+
+func (m JSMap) mutableWrapped() map[string]JSEntity {
+	if m.locked {
+		BadState("<2JSMap is locked")
+	}
+	return m.wrappedMap
 }

@@ -1,4 +1,3 @@
-{       "Alerts" : 4340,
-        "Panics" : 1088,
-  "ReportDelays" : 2088
+{ "Alerts" : 4340,
+  "Panics" : 2485
 }
