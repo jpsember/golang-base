@@ -11,6 +11,7 @@ type SessionManager interface {
 	FindSession(id string) Session
 	CreateSession() Session
 	SetModified(session Session)
+	DiscardAllSessions()
 }
 
 func RandomSessionId() string {
@@ -56,6 +57,10 @@ func (s *inMemorySessionMap) CreateSession() Session {
 	}
 	s.Log("Created new session:", INDENT, b)
 	return b
+}
+
+func (s *inMemorySessionMap) DiscardAllSessions() {
+	s.sessionMap.Clear()
 }
 
 // Get a string value from session state map

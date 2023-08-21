@@ -88,6 +88,17 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	pr := PrIf(false)
 	pr("handler, request:", req.RequestURI)
 
+	if Alert("!If full page requested, discarding sessions") {
+		url, err := url.Parse(req.RequestURI)
+		if err == nil && url.Path == "/" {
+			sess := DetermineSession(oper.sessionManager, w, req, false)
+			if sess != nil {
+				Alert("Discarding existing session")
+				oper.sessionManager.DiscardAllSessions()
+			}
+		}
+	}
+
 	sess := DetermineSession(oper.sessionManager, w, req, true)
 	if sess.AppData == nil {
 		oper.AssignUserToSession(sess)
@@ -107,7 +118,6 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 		if path == "/ajax" {
 			sess.HandleAjaxRequest(w, req)
 		} else if path == "/" {
-			Todo("for tests, if full page requested, discard any sessions")
 			oper.processFullPageRequest(sess, w, req)
 		} else {
 			pr("handling resource request for:", path)

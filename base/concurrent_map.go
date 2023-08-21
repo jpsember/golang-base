@@ -11,9 +11,8 @@ type ConcurrentMap[K comparable, V any] struct {
 }
 
 func NewConcurrentMap[K comparable, V any]() *ConcurrentMap[K, V] {
-	r := ConcurrentMap[K, V]{
-		wrappedMap: make(map[K]V),
-	}
+	r := ConcurrentMap[K, V]{}
+	r.Clear()
 	return &r
 }
 
@@ -53,4 +52,10 @@ func (m *ConcurrentMap[K, V]) Provide(key K, value V) (V, bool) {
 	}
 	m.lock.Unlock()
 	return oldValue, ok
+}
+
+func (m *ConcurrentMap[K, V]) Clear() {
+	m.lock.Lock()
+	m.wrappedMap = make(map[K]V)
+	m.lock.Unlock()
 }

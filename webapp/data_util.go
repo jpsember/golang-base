@@ -186,7 +186,7 @@ func replaceWithTestInput(err error, value string, shortcutForTest string, fullV
 	if AllowTestInputs {
 		if value == shortcutForTest || value == "" {
 			value = fullValueForTest
-			Alert("!Replacing: " + shortcutForTest + " with: " + value)
+			Alert("replaceWithTestInput; replacing: " + shortcutForTest + " with: " + value)
 			err = nil
 		}
 	}
