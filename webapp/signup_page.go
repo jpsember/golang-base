@@ -124,7 +124,8 @@ func auxValidateEmail(s Session, widget Widget, value string, flag ValidateFlag)
 	if flag.Has(VALIDATE_EMPTYOK) && value == "" {
 		return
 	}
-	value, err := ValidateEmailAddress(value, flag)
+	var err error
+	value, err = ValidateEmailAddress(value, flag)
 	s.State.Put(WidgetId(widget), value)
 	s.SetWidgetProblem(widget, err)
 }

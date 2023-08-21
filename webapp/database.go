@@ -68,6 +68,7 @@ func (db Database) SetDataSourceName(dataSourceName string) {
 func (db Database) Open() {
 	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
 	db.state = dbStateOpen
+	Todo("have background task periodically flush tables")
 	db.createTables()
 }
 
@@ -129,7 +130,7 @@ func (db Database) WriteUser(user User) error {
 		return Error("user not found:", user.Id())
 	}
 	mp.Put(user.Id(), user)
-  Todo("Have logging for writing to memtable")
+	db.setModified(mp)
 	return nil
 }
 
@@ -147,6 +148,7 @@ func (db Database) CreateUser(userName string) UserBuilder {
 	us.SetId(int64(key))
 	us.SetName(userName)
 	mp.Put(us.Id(), us.Build())
+	db.setModified(mp)
 	return us
 }
 
@@ -252,7 +254,7 @@ func (m MemTable) getValue(key string) (JSMap, bool) {
 }
 
 func (m MemTable) nextUniqueKey() int {
-	i := 0
+	i := 1
 	for {
 		if !m.table.HasKey(IntToString(i)) {
 			Todo("reimplement as binary search for highest key")
@@ -261,6 +263,10 @@ func (m MemTable) nextUniqueKey() int {
 		i++
 	}
 	return i
+}
+
+func (m MemTable) log(args ...any) {
+	Pr(JoinElementToList("<<MemTable "+m.name+">> ", args)...)
 }
 
 func (m MemTable) GetData(key any, parser DataClass) DataClass {
@@ -275,6 +281,7 @@ func (m MemTable) GetData(key any, parser DataClass) DataClass {
 func (m MemTable) Put(key any, value any) {
 	strKey := argToMemtableKey(key)
 	jsmapValue := argToMemtableValue(value)
+	m.log("Writing:", strKey, "=>", INDENT, jsmapValue)
 	m.table.Put(strKey, jsmapValue)
 }
 
