@@ -57,13 +57,13 @@ func getWidget(sess Session, id string) Widget {
 	return sess.WidgetManager().Get(id)
 }
 
-func (p SignUpPage) validateUserName(s Session, widget Widget) error {
+func (p SignUpPage) validateUserName(s Session, widget Widget) {
 	// It is here in the listener that we read the 'client requested' value for the widget
 	// from the ajax parameters, and write it to the state.  We will validate it here.
-	return auxValidateUserName(s, widget, s.GetValueString(), VALIDATE_EMPTYOK)
+	auxValidateUserName(s, widget, s.GetValueString(), VALIDATE_EMPTYOK)
 }
 
-func auxValidateUserName(s Session, widget Widget, value string, flag ValidateFlag) error {
+func auxValidateUserName(s Session, widget Widget, value string, flag ValidateFlag) {
 	pr := PrIf(false)
 	pr("auxValidateUserName")
 
@@ -77,12 +77,11 @@ func auxValidateUserName(s Session, widget Widget, value string, flag ValidateFl
 	// We want to update the state even if the name is illegal, so user can see what he typed in
 	s.State.Put(WidgetId(widget), value)
 	s.SetWidgetProblem(widget, err)
-	return err
 }
 
-func (p SignUpPage) validateUserPwd(s Session, widget Widget) error {
+func (p SignUpPage) validateUserPwd(s Session, widget Widget) {
 	value := s.GetValueString()
-	return auxValidateUserPwd(s, widget, value, VALIDATE_EMPTYOK)
+	auxValidateUserPwd(s, widget, value, VALIDATE_EMPTYOK)
 }
 
 func auxValidateUserPwd(s Session, widget Widget, value string, flag ValidateFlag) error {
@@ -95,14 +94,14 @@ func auxValidateUserPwd(s Session, widget Widget, value string, flag ValidateFla
 	return err
 }
 
-func (p SignUpPage) validateMatchPwd(s Session, widget Widget) error {
+func (p SignUpPage) validateMatchPwd(s Session, widget Widget) {
 	value := s.GetValueString()
-	return p.auxValidateMatchPwd(s, widget, value, VALIDATE_EMPTYOK)
+	p.auxValidateMatchPwd(s, widget, value, VALIDATE_EMPTYOK)
 }
 
-func (p SignUpPage) auxValidateMatchPwd(s Session, widget Widget, value string, flag ValidateFlag) error {
+func (p SignUpPage) auxValidateMatchPwd(s Session, widget Widget, value string, flag ValidateFlag) {
 	if flag.Has(VALIDATE_EMPTYOK) && value == "" {
-		return nil
+		return
 	}
 	var err error
 	value1 := s.State.OptString(id_user_pwd, "")
@@ -111,27 +110,23 @@ func (p SignUpPage) auxValidateMatchPwd(s Session, widget Widget, value string, 
 	}
 	s.State.Put(WidgetId(widget), value)
 	s.SetWidgetProblem(widget, err)
-	return err
 }
 
-func (p SignUpPage) validateEmail(s Session, widget Widget) error {
+func (p SignUpPage) validateEmail(s Session, widget Widget) {
 	value := s.GetValueString()
-	return auxValidateEmail(s, widget, value, VALIDATE_EMPTYOK)
+	auxValidateEmail(s, widget, value, VALIDATE_EMPTYOK)
 }
 
-func auxValidateEmail(s Session, widget Widget, value string, flag ValidateFlag) error {
+func auxValidateEmail(s Session, widget Widget, value string, flag ValidateFlag) {
 	if flag.Has(VALIDATE_EMPTYOK) && value == "" {
-		return nil
+		return
 	}
 	value, err := ValidateEmailAddress(value, flag)
-
 	s.State.Put(WidgetId(widget), value)
 	s.SetWidgetProblem(widget, err)
-
-	return err
 }
 
-func (p SignUpPage) signUpListener(s Session, widget Widget) error {
+func (p SignUpPage) signUpListener(s Session, widget Widget) {
 	pr := PrIf(true)
 	pr("state:", INDENT, s.State)
 
@@ -139,7 +134,5 @@ func (p SignUpPage) signUpListener(s Session, widget Widget) error {
 	auxValidateUserPwd(s, getWidget(s, id_user_pwd), s.State.OptString(id_user_pwd, ""), 0)
 	p.auxValidateMatchPwd(s, getWidget(s, id_user_pwd_verify), s.State.OptString(id_user_pwd_verify, ""), 0)
 	auxValidateEmail(s, getWidget(s, id_user_email), s.State.OptString(id_user_email, ""), 0)
-
 	Todo("if everything worked out, change the displayed page / login state?")
-	return nil
 }

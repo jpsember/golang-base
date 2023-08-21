@@ -51,16 +51,16 @@ func (p LandingPage) Generate() {
 	m.Close()
 }
 
-func (p LandingPage) validateUserName(s Session, widget Widget) error {
-	return auxValidateUserName(s, widget, s.GetValueString(), VALIDATE_ONLY_NONEMPTY)
+func (p LandingPage) validateUserName(s Session, widget Widget) {
+	auxValidateUserName(s, widget, s.GetValueString(), VALIDATE_ONLY_NONEMPTY)
 }
 
-func (p LandingPage) validateUserPwd(s Session, widget Widget) error {
+func (p LandingPage) validateUserPwd(s Session, widget Widget) {
 	value := s.GetValueString()
-	return auxValidateUserPwd(s, widget, value, VALIDATE_ONLY_NONEMPTY)
+	auxValidateUserPwd(s, widget, value, VALIDATE_ONLY_NONEMPTY)
 }
 
-func (p LandingPage) signInListener(sess Session, widget Widget) error {
+func (p LandingPage) signInListener(sess Session, widget Widget) {
 
 	s := sess.State
 	userName := s.OptString(id_user_name, "")
@@ -79,11 +79,9 @@ func (p LandingPage) signInListener(sess Session, widget Widget) error {
 		sp := NewAnimalFeedPage(sess, p.parentWidget)
 		sp.Generate()
 	}
-	return nil
 }
 
-func (p LandingPage) signUpListener(s Session, widget Widget) error {
+func (p LandingPage) signUpListener(s Session, widget Widget) {
 	sp := NewSignUpPage(s, p.parentWidget)
 	sp.Generate()
-	return nil
 }

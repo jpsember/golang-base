@@ -107,6 +107,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 		if path == "/ajax" {
 			sess.HandleAjaxRequest(w, req)
 		} else if path == "/" {
+			Todo("for tests, if full page requested, discard any sessions")
 			oper.processFullPageRequest(sess, w, req)
 		} else {
 			pr("handling resource request for:", path)

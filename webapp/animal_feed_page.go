@@ -86,7 +86,7 @@ Multiple line feeds:
 	m.Label("Animal").Id("zebra").AddInput()
 }
 
-func birdListener(s Session, widget Widget) error {
+func birdListener(s Session, widget Widget) {
 	Todo("?can we have sessions produce listener functions with appropriate handling of sess any?")
 	newVal := s.GetValueString()
 	b := widget.Base()
@@ -97,10 +97,9 @@ func birdListener(s Session, widget Widget) error {
 		s.SetWidgetProblem(widget, "No parrots, please!")
 	}
 	s.WidgetManager().Repaint(widget)
-	return nil
 }
 
-func zebraListener(s Session, widget Widget) error {
+func zebraListener(s Session, widget Widget) {
 
 	// Get the requested new value for the widget
 	newVal := s.GetValueString()
@@ -117,10 +116,9 @@ func zebraListener(s Session, widget Widget) error {
 		strings.TrimSpace(newVal+" "+
 			RandomText(myRand.Rand(), 55, false)))
 	s.WidgetManager().Repaint(alertWidget)
-	return nil
 }
 
-func buttonListener(s Session, widget Widget) error {
+func buttonListener(s Session, widget Widget) {
 	wid := s.GetWidgetId()
 	newVal := "Clicked: " + wid
 
@@ -131,10 +129,9 @@ func buttonListener(s Session, widget Widget) error {
 	s.State.Put(alertWidget.Id,
 		strings.TrimSpace(newVal))
 	s.WidgetManager().Repaint(alertWidget)
-	return nil
 }
 
-func checkboxListener(s Session, widget Widget) error {
+func checkboxListener(s Session, widget Widget) {
 	wid := s.GetWidgetId()
 
 	// Get the requested new value for the widget
@@ -144,5 +141,4 @@ func checkboxListener(s Session, widget Widget) error {
 
 	s.State.Put(wid, newVal)
 	// Repainting isn't necessary, as the web page has already done this
-	return nil
 }

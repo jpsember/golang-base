@@ -151,8 +151,6 @@ func (s Session) processClientMessage() {
 		s.SetRequestProblem("widget is disabled", b.Id)
 		return
 	}
-
-	Todo("listeners should not have return values")
 	listener(s, widget)
 }
 

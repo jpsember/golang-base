@@ -13,7 +13,7 @@ type Widget interface {
 }
 
 // This general type of listener can serve as a validator as well
-type WidgetListener func(sess Session, widget Widget) error
+type WidgetListener func(sess Session, widget Widget)
 
 type WidgetMap = map[string]Widget
 
