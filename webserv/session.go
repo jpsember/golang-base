@@ -6,6 +6,40 @@ import (
 	"sync"
 )
 
+var loggedInUsersSet = NewSet[int]()
+var loggedInUsersSetLock sync.RWMutex
+
+func IsUserLoggedIn(userId int) bool {
+	loggedInUsersSetLock.Lock()
+	defer loggedInUsersSetLock.Unlock()
+	return loggedInUsersSet.Contains(userId)
+}
+
+func TryRegisteringUserAsLoggedIn(userId int, loggedInState bool) bool {
+	loggedInUsersSetLock.Lock()
+	defer loggedInUsersSetLock.Unlock()
+
+	currentState := loggedInUsersSet.Contains(userId)
+	changed := currentState != loggedInState
+	if changed {
+		if loggedInState {
+			loggedInUsersSet.Add(userId)
+		} else {
+			loggedInUsersSet.Remove(userId)
+		}
+	}
+	return changed
+}
+
+func DiscardAllSessions(sessionManager SessionManager) {
+	loggedInUsersSetLock.Lock()
+	defer loggedInUsersSetLock.Unlock()
+
+	Alert("Discarding all sessions")
+	sessionManager.DiscardAllSessions()
+	loggedInUsersSet.Clear()
+}
+
 type Session = *SessionStruct
 
 type SessionStruct struct {

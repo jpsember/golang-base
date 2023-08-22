@@ -95,8 +95,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 		if err == nil && url.Path == "/" {
 			sess := DetermineSession(oper.sessionManager, w, req, false)
 			if sess != nil {
-				Alert("Discarding existing session")
-				oper.sessionManager.DiscardAllSessions()
+				DiscardAllSessions(oper.sessionManager)
 			}
 		}
 	}

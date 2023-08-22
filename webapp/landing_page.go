@@ -86,9 +86,11 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		return
 	}
 
-	Todo("Prevent user from being logged in multiple times simultaneously")
-
-	Todo("switch to logged in somehow, user id:", userId)
+	if IsUserLoggedIn(userId) {
+		Todo("Log user out of other sessions?")
+		sess.SetWidgetIdProblem(id_user_name, "User is already logged in")
+		return
+	}
 
 	userData := Db().GetUser(userId)
 
@@ -112,6 +114,11 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 
 	if errMsg != "" {
 		sess.SetWidgetIdProblem(id_user_name, errMsg)
+		return
+	}
+
+	if !TryRegisteringUserAsLoggedIn(userId, true) {
+		sess.SetWidgetIdProblem(id_user_name, "Unable to log in at this time")
 		return
 	}
 

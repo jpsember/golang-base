@@ -1,7 +1,5 @@
 package base
 
-var _ = Pr
-
 type StringSet = *Set[string]
 
 func NewStringSet() StringSet {
@@ -30,6 +28,15 @@ func (set *Set[KEY]) Add(value KEY) bool {
 		set.mutableWrappedMap()[value] = true
 	}
 	return !found
+}
+
+// Remove element from set.  Returns true if it was in the set.
+func (set *Set[KEY]) Remove(value KEY) bool {
+	found := set.Contains(value)
+	if found {
+		delete(set.mutableWrappedMap(), value)
+	}
+	return found
 }
 
 func (set *Set[KEY]) Clear() {

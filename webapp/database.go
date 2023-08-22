@@ -141,7 +141,6 @@ func (db Database) auxFindUserWithName(userName string) int {
 	mp := db.getTable(tableNameUser)
 	for id, jsent := range mp.table.WrappedMap() {
 		m := jsent.AsJSMap()
-		Pr("user id:", id, "value:", INDENT, m)
 		if m.GetString("name") == userName {
 			return ParseIntM(id)
 		}
