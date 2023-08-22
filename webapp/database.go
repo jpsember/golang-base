@@ -23,8 +23,7 @@ type DatabaseStruct struct {
 	stmtSelectSpecificBlob   *sql.Stmt
 	stmtSelectSpecificUser   *sql.Stmt
 	stmtFindUserIdByName     *sql.Stmt
-
-	stmtInsertUser *sql.Stmt
+	stmtInsertUser           *sql.Stmt
 }
 
 type Database = *DatabaseStruct
@@ -195,7 +194,6 @@ func (db Database) DeleteAllRowsInTable(name string) error {
 	db.lock()
 	defer db.unlock()
 	database := db.db
-	Todo("are semicolons needed in sql commands?")
 	_, err := database.Exec(`DELETE FROM ` + name)
 	db.setError(err)
 	return db.err
@@ -418,15 +416,13 @@ func (db Database) WriteUser(user User) error {
 	return db.err
 }
 
-// Create a user with the given name
+// Create a user with the given (unique) name.
 func (db Database) CreateUserWith(user User) (User, error) {
-
 	db.lock()
 	defer db.unlock()
 
 	var createdUser User
 	existingId := db.auxFindUserWithName(user.Name())
-	Pr("existing id:", existingId)
 	if existingId != 0 {
 		db.setError(UserExistsError)
 	} else {
@@ -440,27 +436,4 @@ func (db Database) CreateUserWith(user User) (User, error) {
 		}
 	}
 	return createdUser, db.err
-}
-
-// Create a user with the given name.  Returns nil if unsuccessful, else a UserBuilder.
-func (db Database) CreateUser(userName string) UserBuilder {
-
-	db.lock()
-	defer db.unlock()
-
-	ub := NewUser().SetName(userName)
-
-	result, err := db.db.Exec(`INSERT INTO `+tableNameUser+` (name) VALUES(?)`,
-		userName)
-	if !db.setError(err) {
-		id, err2 := result.LastInsertId()
-		Todo("Make sure first item added has value > 0")
-		if !db.setError(err2) {
-			ub.SetId(int(id))
-			Pr("created user, id:", id, "now:", ub)
-		}
-	}
-
-	return ub
-
 }
