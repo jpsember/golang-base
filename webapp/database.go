@@ -292,13 +292,6 @@ func (m MemTable) nextUniqueKey() int {
 	return i
 }
 
-func CatchPanic(handler func()) {
-	if r := recover(); r != nil {
-		Pr("Catching panic:", CR, GenerateStackTrace(1))
-		handler()
-	}
-}
-
 func (m MemTable) GetData(key any, parser DataClass) DataClass {
 	strKey := argToMemtableKey(key)
 	val := m.table.OptMap(strKey)
