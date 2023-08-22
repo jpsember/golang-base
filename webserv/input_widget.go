@@ -45,7 +45,7 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	m.DoIndent()
 
-	problemId := w.Id + ".problem"
+	problemId := WidgetIdWithProblem(w.Id)
 	problemText := state.OptString(problemId, "")
 	if false && Alert("always problem") {
 		problemText = "sample problem information"

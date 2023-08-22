@@ -357,15 +357,12 @@ func (db Database) FindUserWithName(userName string) (int, error) {
 }
 
 func (db Database) auxFindUserWithName(userName string) int {
-
 	rows := db.stFindUserIdByName.QueryRow(userName)
-
 	var id int
 	err := rows.Scan(&id)
 	if err != sql.ErrNoRows {
 		db.setError(err)
 	}
-	Pr("auxFindUserWithName", userName, "returning", id)
 	return id
 }
 

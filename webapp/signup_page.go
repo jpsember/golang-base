@@ -31,9 +31,7 @@ func NewSignUpPage(sess Session, parentWidget Widget) SignUpPage {
 
 func (p SignUpPage) Generate() {
 
-	s := p.sess.State
-	s.DeleteEach(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
-	Todo("Delete auxilliary versions of these as well; i.e., try to log in as a non-existent user, then switch to sign up")
+	p.sess.DeleteStateKeys(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
 	m := p.sess.WidgetManager()
 	m.With(p.parentWidget)
 
