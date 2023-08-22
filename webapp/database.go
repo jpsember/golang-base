@@ -6,6 +6,7 @@ package webapp
 
 import (
 	"database/sql"
+	"errors"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	_ "github.com/mattn/go-sqlite3"
@@ -39,6 +40,8 @@ func newDatabase() Database {
 }
 
 var singletonDatabase Database
+
+var UserExistsError = errors.New("named user already exists")
 
 func (db Database) prepareStatements() {
 	db.stmtSelectSpecificAnimal = db.preparedStatement(`SELECT * FROM ` + tableNameAnimal + ` WHERE id = ?`)
@@ -78,17 +81,16 @@ func (db Database) Open() error {
 		db.prepareStatements()
 
 		if Alert("some experiments") {
-			//
-			//result, err := db.db.Exec(`INSERT INTO ` + tableNameUser + ` DEFAULT VALUES`)
-			//Pr("inserted nothing, result:", result, err)
-			//if !db.setError(err) {
-			//	id, err2 := result.LastInsertId()
-			//	Todo("Make sure first item added has value > 0")
-			//	Pr("last insert id:", id, "error:", err2)
-			//}
+			Todo("Do we still need to reserve a '0' user? Why or why not?")
+			b0, err := db.CreateUserWith(DefaultUser)
+			Pr("created zero user:", b0)
 
-			b := db.CreateUser("")
-			Pr("created user:", b)
+			b, err := db.CreateUserWith(NewUser().SetName("jeff").SetState(UserstateWaitingActivation).SetEmail("abc@xyz.com"))
+			Pr("created user; err:", err, INDENT, b)
+
+			b2, err2 := db.GetUser(b.Id())
+
+			Pr("read user with id:", b.Id(), "err:", err2, INDENT, b2)
 		}
 	}
 	return db.err
@@ -405,20 +407,7 @@ func (db Database) auxFindUserWithName(userName string) int {
 func (db Database) WriteUser(user User) error {
 	db.lock()
 	defer db.unlock()
-
-	// UPDATE table
-	//SET column_1 = new_value_1,
-	//    column_2 = new_value_2
-	//WHERE
-	//    search_condition
-	//ORDER column_or_expression
-	//LIMIT row_count OFFSET offset;
-
-	//  id INTEGER PRIMARY KEY AUTOINCREMENT,
-	//     name VARCHAR(64) NOT NULL,
-	//     userState VARCHAR(20),
-	//     email VARCHAR(60),
-	//     password VARCHAR(25)
+ 
 	_, err := db.db.Exec(`UPDATE `+tableNameUser+` SET name = ?, userState = ?, email = ?, password = ? WHERE id = ?`,
 		user.Name(), user.State().String(), user.Email(), user.Password())
 
@@ -426,8 +415,39 @@ func (db Database) WriteUser(user User) error {
 	return db.err
 }
 
+// Create a user with the given name
+func (db Database) CreateUserWith(user User) (User, error) {
+
+	db.lock()
+	defer db.unlock()
+
+	var createdUser User
+	existingId := db.auxFindUserWithName(user.Name())
+	Pr("existing id:", existingId)
+	if existingId != 0 {
+		db.setError(UserExistsError)
+	} else {
+		ub := user.Build().ToBuilder()
+		//ub := NewUser().SetName(userName)
+
+		result, err := db.db.Exec(`INSERT INTO `+tableNameUser+` (name, userState, email, password) VALUES(?,?,?,?)`,
+			user.Name(), user.State().String(), user.Email(), user.Password())
+
+		if !db.setError(err) {
+			id, err2 := result.LastInsertId()
+			if !db.setError(err2) {
+				ub.SetId(int(id))
+				createdUser = ub.Build()
+			}
+		}
+	}
+	return createdUser, db.err
+
+}
+
 // Create a user with the given name.  Returns nil if unsuccessful, else a UserBuilder.
 func (db Database) CreateUser(userName string) UserBuilder {
+
 	db.lock()
 	defer db.unlock()
 
