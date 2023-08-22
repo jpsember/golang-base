@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+var AutoActivateUser = Alert("?Automatically activating user")
+
 type AnimalOperStruct struct {
 	sessionManager SessionManager
 	appRoot        Path
