@@ -24,6 +24,7 @@ type DatabaseStruct struct {
 	stmtSelectSpecificUser   *sql.Stmt
 	stmtFindUserIdByName     *sql.Stmt
 	stmtInsertUser           *sql.Stmt
+	stmtUserUpdate           *sql.Stmt
 }
 
 type Database = *DatabaseStruct
@@ -43,6 +44,7 @@ func newDatabase() Database {
 var singletonDatabase Database
 
 var UserExistsError = errors.New("named user already exists")
+var UserDoesntExistError = errors.New("user does not exist")
 
 func (db Database) prepareStatements() {
 	db.stmtSelectSpecificAnimal = db.preparedStatement(`SELECT * FROM ` + tableNameAnimal + ` WHERE id = ?`)
@@ -50,6 +52,7 @@ func (db Database) prepareStatements() {
 	db.stmtSelectSpecificBlob = db.preparedStatement(`SELECT * FROM ` + tableNameBlob + ` WHERE id = ?`)
 	db.stmtFindUserIdByName = db.preparedStatement(`SELECT id FROM ` + tableNameUser + ` WHERE name = ?`)
 	db.stmtInsertUser = db.preparedStatement(`INSERT INTO ` + tableNameUser + ` (name, userState, email, password) VALUES(?,?,?,?)`)
+	db.stmtUserUpdate = db.preparedStatement(`UPDATE ` + tableNameUser + ` SET name = ?, userState = ?, email = ?, password = ? WHERE id = ?`)
 }
 
 func CreateDatabase() Database {
@@ -82,7 +85,13 @@ func (db Database) Open() error {
 		db.createTables()
 		db.prepareStatements()
 
-		if false && Alert("some experiments") {
+		if true && Alert("some experiments") {
+
+			Pr("Attempting to Update a user that doesn't exist")
+			err := db.UpdateUser(NewUser().SetName("zebra").SetId(42))
+			Pr("err:", err)
+			CheckState(err != nil)
+
 			b, err := db.CreateUserWith(NewUser().SetName("jeff").SetState(UserstateWaitingActivation).SetEmail("abc@xyz.com"))
 			Pr("created user; err:", err, INDENT, b)
 			b2, err2 := db.GetUser(b.Id())
@@ -105,7 +114,7 @@ func (db Database) Close() error {
 // If no registered error exists, set it.  Return true if registered error exists afterwards.
 func (db Database) setError(err error) bool {
 	if err != nil {
-		if db.err != nil {
+		if db.err == nil {
 			db.err = err
 			Alert("<1#50Setting database error:", INDENT, err)
 		}
@@ -326,7 +335,7 @@ func (db Database) scanBlob(rows *sql.Row) BlobBuilder {
 // ------------------------------------------------------------------------------------
 
 func (db Database) GetUser(userId int) (User, error) {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("GetUser, id:", userId)
 
 	db.lock()
@@ -399,14 +408,33 @@ func (db Database) auxFindUserWithName(userName string) int {
 }
 
 // Write user to database; must already exist.
-func (db Database) WriteUser(user User) error {
+func (db Database) UpdateUser(user User) error {
+	pr := PrIf(false)
+
 	db.lock()
 	defer db.unlock()
 
-	_, err := db.db.Exec(`UPDATE `+tableNameUser+` SET name = ?, userState = ?, email = ?, password = ? WHERE id = ?`,
-		user.Name(), user.State().String(), user.Email(), user.Password())
+	for {
+		pr("UpdateUser:", INDENT, user)
+		result, err := db.stmtUserUpdate.Exec(user.Name(), user.State().String(), user.Email(), user.Password(), user.Id())
+		pr("result:", result, "err:", err)
+		if db.setError(err) {
+			break
+		}
 
-	db.setError(err)
+		count, err := result.RowsAffected()
+		pr("rows affected:", count, "err:", err)
+		if db.setError(err) {
+			break
+		}
+
+		pr("count:", count)
+		if count != 1 {
+			db.setError(UserDoesntExistError)
+		}
+		break
+	}
+	pr("...returning:", db.err)
 	return db.err
 }
 
