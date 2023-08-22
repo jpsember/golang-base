@@ -41,7 +41,15 @@ func (p LandingPage) Generate() {
 		m.Label("User name").Id(id_user_name).Listener(
 			p.validateUserName).AddInput()
 		m.Label("Password").Id(id_user_pwd).Listener(p.validateUserPwd).AddPassword()
-		m.Listener(p.signInListener).Label("Sign In").AddButton()
+		m.Open()
+		m.Col(6)
+		{
+			m.Listener(p.signInListener).Label("Sign In").AddButton()
+			m.Listener(p.forgotPwdListener).Label("I forgot my password")
+			m.Size(SizeTiny)
+			m.AddButton()
+		}
+		m.Close()
 	}
 	m.Close()
 	m.Open()
@@ -132,4 +140,25 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 func (p LandingPage) signUpListener(s Session, widget Widget) {
 	sp := NewSignUpPage(s, p.parentWidget)
 	sp.Generate()
+}
+
+func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {
+
+	s := sess.State
+	userName := s.OptString(id_user_name, "")
+
+	if userName == "" {
+		Todo("disable button if no user name entered")
+		return
+	}
+
+	userId, err := Db().FindUserWithName(userName)
+
+	if err != nil {
+		Alert("Not revealing that 'no such user exists' in forgot password logic")
+	}
+	if userId != 0 {
+		Todo("Send email")
+	}
+	sess.SetWidgetIdProblem(id_user_name, "An email has been sent with a link to change your password.")
 }

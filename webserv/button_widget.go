@@ -24,15 +24,25 @@ func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		return
 	}
 
-	// Adding py-3 here to put some vertical space between button and other widgets
-	m.A(`<div class='py-3' id='`, w.Id, `'>`)
+	if w.size == SizeTiny {
+    // For now, interpreting SizeTiny to mean a non-underlined, link-styled button that is very small:
+		m.A(`<div class='py-1' id='`, w.Id, `'>`)
+		m.DoIndent()
+		m.A(`<button class='btn btn-link text-decoration-none' style='font-size: 0.6em'`)
+	} else {
 
-	m.DoIndent()
-	m.A(`<button class='btn btn-primary `)
-	if w.size != SizeDefault {
-		m.A(MapValue(btnTextSize, w.size))
+		// Adding py-3 here to put some vertical space between button and other widgets
+		m.A(`<div class='py-3' id='`, w.Id, `'>`)
+
+		m.DoIndent()
+
+		m.A(`<button class='btn btn-primary `)
+		if w.size != SizeDefault {
+			m.A(MapValue(btnTextSize, w.size))
+		}
+		m.A(`'`)
 	}
-	m.A(`'`)
+
 	if !w.Enabled() {
 		m.A(` disabled`)
 	}

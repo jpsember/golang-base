@@ -12,7 +12,6 @@
 
 </head>
 
-
 <body>
 
   <!-- page container -->
@@ -28,8 +27,6 @@
         </div>  <!-- child -->
 
       </div>
-
-      <form>
 
       <div class='row'>
 
@@ -49,7 +46,7 @@
                   </label>
 
                   <!-- Input -->
-                  <input class="form-control" type="text" id="user_name.aux" value="Bartholemew" onchange='jsVal("user_name")'>
+                  <input class="form-control" type="text" id="user_name.aux" value="" onchange='jsVal("user_name")'>
                 </div>
               </div>  <!-- child -->
 
@@ -66,7 +63,7 @@
                   </label>
 
                   <!-- Input -->
-                  <input class="form-control" type="password" id="user_pwd.aux" value="01234password" onchange='jsVal("user_pwd")'>
+                  <input class="form-control" type="password" id="user_pwd.aux" value="" onchange='jsVal("user_pwd")'>
                 </div>
               </div>  <!-- child -->
 
@@ -77,27 +74,28 @@
               <!-- child -->
               <div class="col-sm-12">
 
-<div class="py-3" id='.3'>
-                  <button class='btn btn-primary' onclick='jsButton(".3")'>Sign In</button>
-                </div>
+                <!-- ContainerWidget Id: .3 -->
+                <div id='.3'>
+                  <div class='row'>
 
-              </div>  <!-- child -->
+                    <!-- child -->
+                    <div class="col-sm-8">
+                      <div class='py-3' id='.4'>
+                        <button class='btn btn-primary ' onclick='jsButton(".4")'>Sign In</button>
+                      </div>
+                    </div>  <!-- child -->
 
-            </div>
+                    <!-- child -->
+                    <div class="col-sm-4">
+                      <div class='py-1' id='.5'>
+                        <button class='btn btn-link  text-decoration-none' style='font-size: 0.6em;' onclick='jsButton(".5")'>I forgot my password</button>
+                      </div>
+                    </div>  <!-- child -->
 
-         <div class='row'>
+                  </div>
 
-              <!-- child -->
-              <div class="col-sm-12">
-                <div id="user_pwd">
-                  <!-- Label -->
-                  <label class="form-label" style="font-size:70%">
-                    Password
-                  </label>
+                </div>  <!-- ContainerWidget Id: .3 -->
 
-                  <!-- Input -->
-                  <input class="form-control" type="password" id="user_pwd.aux" value="01234password" onchange='jsVal("user_pwd")'>
-                </div>
               </div>  <!-- child -->
 
             </div>
@@ -109,32 +107,30 @@
         <!-- child -->
         <div class="col-sm-6">
 
-          <!-- ContainerWidget Id: .4 -->
-          <div id='.4'>
+          <!-- ContainerWidget Id: .6 -->
+          <div id='.6'>
             <div class='row'>
 
               <!-- child -->
               <div class="col-sm-12">
-                <div id='.5'>
-                  <button class='btn btn-primary ' onclick='jsButton(".5")'>Sign Up</button>
+                <div class='py-3' id='.7'>
+                  <button class='btn btn-primary ' onclick='jsButton(".7")'>Sign Up</button>
                 </div>
               </div>  <!-- child -->
 
             </div>
 
-          </div>  <!-- ContainerWidget Id: .4 -->
+          </div>  <!-- ContainerWidget Id: .6 -->
 
         </div>  <!-- child -->
 
       </div>
 
-</form>
     </div>  <!-- ContainerWidget Id: main_page -->
 
     <script>jsGetDisplayProperties();</script>
   </div>  <!-- page container -->
 
 </body>
-
 
 </html>
