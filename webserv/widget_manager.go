@@ -2,7 +2,6 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"strings"
 )
 
 type WidgetManagerObj struct {
@@ -18,13 +17,13 @@ type WidgetManagerObj struct {
 	pendingListener             WidgetListener
 	parentStack                 *Array[Widget]
 	pendingSize                 WidgetSize
-	pendingText                 string
 	pendingId                   string
 	pendingLabel                string
 	anonymousIdCounter          int
+	repaintSet                  StringSet
 }
 
-func NewWidgetManager() WidgetManager {
+func NewWidgetManager(session Session) WidgetManager {
 	w := WidgetManagerObj{
 		parentStack: NewArray[Widget](),
 		widgetMap:   make(map[string]Widget),
@@ -51,114 +50,6 @@ func (m WidgetManager) Get(id string) Widget {
 func (m WidgetManager) find(id string) Widget {
 	return m.widgetMap[id]
 }
-
-// ------------------------------------------------------------------
-// Accessing widget values
-// ------------------------------------------------------------------
-
-/**
- * Set widgets' values. Used to restore app widgets to a previously saved
- * state
- */
-func (m WidgetManager) SetWidgetValues(js *JSMapStruct) {
-	for id, val := range js.WrappedMap() {
-		if m.Exists(id) {
-			m.Get(id).WriteValue(val)
-		}
-	}
-}
-
-/**
- * Read widgets' values. Doesn't include widgets that have no ids, or whose
- * ids start with "."
- */
-func (m WidgetManager) ReadWidgetValues() *JSMapStruct {
-	mp := NewJSMap()
-
-	for id, w := range m.widgetMap {
-		if strings.HasPrefix(id, ".") {
-			continue
-		}
-		v := w.ReadValue()
-		if v != nil {
-			mp.Put(id, v)
-		}
-	}
-	return mp
-}
-
-/**
- * Get value of string-valued widget
- */
-func (m WidgetManager) Vs(id string) string {
-	return m.Get(id).ReadValue().AsString()
-}
-
-/**
- * Set value of string-valued widget
- */
-func (m WidgetManager) Sets(id string, v string) {
-	m.Get(id).WriteValue(JString(v))
-}
-
-/**
- * Get value of boolean-valued widget
- */
-func (m WidgetManager) Vb(id string) bool {
-	result := false
-	g := m.Get(id)
-	if g != nil {
-		result = g.ReadValue().AsBool()
-	}
-	return result
-}
-
-/**
- * Set value of boolean-valued widget
- */
-func (m WidgetManager) Setb(id string, boolValue bool) bool {
-	m.Get(id).WriteValue(JBool(boolValue))
-	return boolValue
-}
-
-/**
- * Toggle value of boolean-valued widget
- */
-func (m WidgetManager) Toggle(id string) bool {
-	return m.Setb(id, !m.Vb(id))
-}
-
-/**
- * Get value of integer-valued widget
- */
-func (m WidgetManager) Vi(id string) int {
-	return int(m.Get(id).ReadValue().AsInteger())
-}
-
-/**
- * Set value of integer-valued widget
- */
-func (m WidgetManager) Seti(id string, v int) int {
-	m.Get(id).WriteValue(JInteger(v))
-	return v
-}
-
-/**
- * Get value of float-valued widget
- */
-func (m WidgetManager) Vf(id string) float64 {
-	return m.Get(id).ReadValue().AsFloat()
-}
-
-/**
- * Set value of double-valued widget
- */
-func (m WidgetManager) SetF(id string, v float64) float64 {
-	m.Get(id).WriteValue(JFloat(v))
-	return v
-}
-
-// ------------------------------------------------------------------------------------
 
 // ------------------------------------------------------------------------------------
 // Constructing widgets
@@ -218,11 +109,6 @@ func (m WidgetManager) DefaultString(value string) WidgetManager {
 	return m
 }
 
-func (m WidgetManager) Text(value string) WidgetManager {
-	m.pendingText = value
-	return m
-}
-
 func (m WidgetManager) Label(value string) WidgetManager {
 	CheckState(m.pendingLabel == "")
 	m.pendingLabel = value
@@ -271,12 +157,6 @@ func (m WidgetManager) ConsumePendingFloatingPointFlag() bool {
 	return v
 }
 
-func (m WidgetManager) consumePendingText() string {
-	lbl := m.pendingText
-	m.pendingText = ""
-	return lbl
-}
-
 func (m WidgetManager) consumePendingLabel() string {
 	lbl := m.pendingLabel
 	m.pendingLabel = ""
@@ -310,11 +190,9 @@ func verifyUsed(flag bool, name string) {
 }
 
 func (m WidgetManager) clearPendingComponentFields() {
-	Todo("!incorporate skip values into 'BadState', other assertions")
 	// If some values were not used, issue warnings
 	verifyUsed(m.mPendingDefaultIntValue == 0, "pendingDefaultIntValue")
 	verifyUsed(m.mPendingStringDefaultValue == "", "mPendingStringDefaultValue")
-	verifyUsed(m.pendingText == "", "pendingText")
 	verifyUsed(m.pendingLabel == "", "pendingLabel")
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
 	verifyUsed(m.pendingListener == nil, "pendingListener")
@@ -324,7 +202,6 @@ func (m WidgetManager) clearPendingComponentFields() {
 	m.mPendingDefaultIntValue = 0
 	m.mPendingBooleanDefaultValue = false
 	m.mPendingStringDefaultValue = ""
-	m.pendingText = ""
 	m.mPendingFloatingPointFlag = false
 }
 
@@ -332,7 +209,7 @@ func (m WidgetManager) clearPendingComponentFields() {
  * Add widget to the hierarchy
  */
 func (m WidgetManager) Add(widget Widget) WidgetManager {
-	b := widget.GetBaseWidget()
+	b := widget.Base()
 	id := b.Id
 	if id != "" {
 		if m.Exists(id) {
@@ -346,6 +223,29 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		m.parentStack.Last().AddChild(widget, m)
 	}
 	m.clearPendingComponentFields()
+	return m
+}
+
+// Have subsequent WidgetManager operations operate on a particular container widget.
+// The container is marked for repainting.
+func (m WidgetManager) With(container Widget) WidgetManager {
+	pr := PrIf(false)
+	id := WidgetId(container)
+	pr(VERT_SP, "With:", id, "at:", CallerLocation(1))
+
+	CheckState(m.Exists(id))
+
+	m.Repaint(container)
+
+	pr("current widget map:", INDENT, m.WidgetMapSummary())
+	pr("removing all child widgets")
+	// Discard any existing child widgets
+	m.removeWidgets(container.Children())
+	container.Children().Clear()
+	pr("after removal, current widget map:", INDENT, m.WidgetMapSummary())
+
+	m.parentStack.Clear()
+	m.parentStack.Add(container)
 	return m
 }
 
@@ -389,39 +289,57 @@ func (m WidgetManager) currentPanel() Widget {
 	return m.parentStack.Last()
 }
 
-func (m WidgetManager) AddInput(id string) WidgetManager {
-	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()))
+func (m WidgetManager) AddInput() WidgetManager {
+	return m.auxAddInput(false)
+}
+
+func (m WidgetManager) auxAddInput(password bool) WidgetManager {
+	id := m.consumeOptionalPendingId()
+	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()), password)
 	m.assignPendingListener(t)
 	return m.Add(t)
 }
 
-func (m WidgetManager) AddHeading(id string) WidgetManager {
-	t := NewHeadingWidget(id, m.consumePendingSize())
-	return m.Add(t)
+func (m WidgetManager) AddPassword() WidgetManager {
+	return m.auxAddInput(true)
 }
 
-func (m WidgetManager) assignPendingListener(widget Widget) {
-	if m.pendingListener != nil {
-		b := widget.GetBaseWidget()
-		CheckState(widget.GetBaseWidget().Listener == nil, "Widget", b.Id, "already has a listener")
-		widget.GetBaseWidget().Listener = m.pendingListener
-		m.pendingListener = nil
-	}
-}
-
-func (m WidgetManager) AddText() WidgetManager {
-
-	var w TextWidget
-	// The text can either be expressed as a string (static content),
-	// or an id (dynamic content, read from session state)
-	staticContent := m.consumePendingText()
+// Utility method to determine the label and id for text fields (text fields, headings).
+// The label can either be expressed as a string (static content),
+// or an id (dynamic content, read from session state).  If static, there should *not* be
+// a pending id.
+func (m WidgetManager) getStaticContentAndId() (string, string) {
+	staticContent := m.consumePendingLabel()
 	hasStaticContent := staticContent != ""
 	if hasStaticContent {
 		CheckState(m.pendingId == "", "specify id OR static content")
 	}
 	id := m.consumeOptionalPendingId()
-	w = NewTextWidget(id)
-	if hasStaticContent {
+	return staticContent, id
+}
+
+func (m WidgetManager) AddHeading() WidgetManager {
+	staticContent, id := m.getStaticContentAndId()
+	w := NewHeadingWidget(id, m.consumePendingSize())
+	if staticContent != "" {
+		w.SetStaticContent(staticContent)
+	}
+	return m.Add(w)
+}
+
+func (m WidgetManager) assignPendingListener(widget Widget) {
+	if m.pendingListener != nil {
+		b := widget.Base()
+		CheckState(widget.Base().Listener == nil, "Widget", b.Id, "already has a listener")
+		widget.Base().Listener = m.pendingListener
+		m.pendingListener = nil
+	}
+}
+
+func (m WidgetManager) AddText() WidgetManager {
+	staticContent, id := m.getStaticContentAndId()
+	w := NewTextWidget(id, m.consumePendingSize())
+	if staticContent != "" {
 		w.SetStaticContent(staticContent)
 	}
 	m.Log("Adding text, id:", w.Id)
@@ -430,10 +348,10 @@ func (m WidgetManager) AddText() WidgetManager {
 
 func (m WidgetManager) AddButton() ButtonWidget {
 	w := NewButtonWidget(m.consumePendingSize())
-	w.Id = m.consumePendingId()
+	w.Id = m.consumeOptionalPendingId()
 	m.assignPendingListener(w)
 	m.Log("Adding button, id:", w.Id)
-	w.Label = NewHtmlString(m.consumePendingText())
+	w.Label = NewHtmlString(m.consumePendingLabel())
 	m.Add(w)
 	return w
 }
@@ -451,7 +369,7 @@ func (m WidgetManager) AddSwitch() CheckboxWidget {
 }
 
 func (m WidgetManager) checkboxHelper(switchFlag bool) CheckboxWidget {
-	w := NewCheckboxWidget(switchFlag, m.consumePendingId(), NewHtmlString(m.consumePendingText()))
+	w := NewCheckboxWidget(switchFlag, m.consumePendingId(), NewHtmlString(m.consumePendingLabel()))
 	m.assignPendingListener(w)
 	m.Add(w)
 	return w
@@ -467,10 +385,64 @@ func (m WidgetManager) AllocateAnonymousId() string {
 	return "." + IntToString(m.anonymousIdCounter)
 }
 
+func (m WidgetManager) removeWidgets(widgets *Array[Widget]) {
+	for _, widget := range widgets.Array() {
+		m.Remove(widget)
+	}
+}
+
+// Remove widget (if it exists), and the subtree of widgets it may contain.
+func (m WidgetManager) Remove(widget Widget) WidgetManager {
+	id := WidgetId(widget)
+	if m.Exists(id) {
+		delete(m.widgetMap, id)
+		m.removeWidgets(widget.Children())
+	}
+	return m
+}
+
+func (m WidgetManager) WidgetMapSummary() JSMap {
+	mp := NewJSMap()
+	for id, widget := range m.widgetMap {
+		mp.Put(id, TypeOf(widget))
+	}
+	return mp
+}
+
 var WidgetDebugRenderingFlag bool
 
 // Deprecated. To have uses show up in editor as a warning.
 func SetWidgetDebugRendering() {
 	Alert("<1 Setting widget debug rendering")
 	WidgetDebugRenderingFlag = true
+}
+
+func GetStaticOrDynamicLabel(widget Widget, state JSMap) (string, bool) {
+	w := widget.Base()
+	Todo("?we are assuming static content is a string here")
+	sc := w.StaticContent()
+	if sc != nil {
+		return sc.(string), true
+	} else {
+		return WidgetStringValue(state, w.Id), false
+	}
+}
+
+// Mark a widget for repainting.  Does nothing if there is no repaintSet (i.e., it is not being done within
+// an AJAX call)
+func (m WidgetManager) Repaint(w Widget) {
+	if m.repaintSet == nil {
+		return
+	}
+	b := w.Base()
+	pr := PrIf(debRepaint)
+	id := b.Id
+	pr("Repaint:", id)
+	if m.repaintSet.Add(id) {
+		pr("...adding to set")
+	}
+}
+
+func (m WidgetManager) clearRepaintSet() {
+	m.repaintSet = NewStringSet()
 }

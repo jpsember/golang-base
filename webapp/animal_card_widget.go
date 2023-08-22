@@ -6,9 +6,6 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-//. "github.com/jpsember/golang-base/webserv/base_widget"
-//
-
 // A Widget that displays editable text
 type AnimalCardWidgetObj struct {
 	BaseWidgetObj
@@ -22,13 +19,13 @@ func OpenAnimalCardWidget(m WidgetManager, baseId string, animal Animal, viewBut
 	widget := newAnimalCardWidget(baseId, animal)
 	m.OpenContainer(widget)
 	// Create a button within this card
-	m.Id(baseId + "_view").Text(`View`).Listener(viewButtonListener).Size(SizeSmall).AddButton()
+	m.Id(baseId + "_view").Label(`View`).Listener(viewButtonListener).Size(SizeSmall).AddButton()
 	m.Close()
 }
 
 func newAnimalCardWidget(widgetId string, animal Animal) AnimalCardWidget {
 	w := AnimalCardWidgetObj{}
-	w.GetBaseWidget().Id = widgetId
+	w.Base().Id = widgetId
 	w.animal = animal
 	w.children = NewArray[Widget]()
 	return &w

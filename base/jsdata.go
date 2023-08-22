@@ -24,3 +24,16 @@ func RandomText(rand *rand.Rand, maxLength int, withLinefeeds bool) string {
 	}
 	return strings.TrimSpace(sb.String())
 }
+
+func ParseEnumFromMap(enumInfo *EnumInfo, m JSMap, key string, defaultValue int) int {
+	var result = defaultValue
+	var val = m.OptString(key, "")
+	if val != "" {
+		if id, found := enumInfo.EnumIds[val]; found {
+			result = int(id)
+		} else {
+			BadArg("No such value for enum:", val)
+		}
+	}
+	return result
+}

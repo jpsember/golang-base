@@ -6,13 +6,14 @@ import (
 
 // The interface that all widgets must support
 type Widget interface {
-	WriteValue(v JSEntity)
-	ReadValue() JSEntity
+	Base() BaseWidget
 	RenderTo(m MarkupBuilder, state JSMap)
-	GetBaseWidget() BaseWidget
+	Children() *Array[Widget]
 	AddChild(c Widget, manager WidgetManager)
-	GetChildren() []Widget
 }
+
+// This general type of listener can serve as a validator as well
+type WidgetListener func(sess Session, widget Widget)
 
 type WidgetMap = map[string]Widget
 
@@ -29,3 +30,23 @@ const (
 	SizeLarge
 	SizeHuge
 )
+
+func WidgetId(widget Widget) string {
+	return widget.Base().Id
+}
+
+func WidgetErrorCount(root Widget, state JSMap) int {
+	count := 0
+	return auxWidgetErrorCount(count, root, state)
+}
+
+func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
+	problemId := w.Base().Id + ".problem"
+	if state.OptString(problemId, "") != "" {
+		count++
+	}
+	for _, child := range w.Children().Array() {
+		count = auxWidgetErrorCount(count, child, state)
+	}
+	return count
+}

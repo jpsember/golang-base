@@ -3,7 +3,6 @@ package base
 import (
 	"errors"
 	"fmt"
-	"os"
 	"reflect"
 	"regexp"
 	"runtime/debug"
@@ -138,7 +137,10 @@ func auxAbort(skipCount int, prefix string, message ...any) {
 			fmt.Println(st)
 			nestedAbortFlag = false
 		}
-		os.Exit(1)
+		// I don't think we want to exit the program; rather, just panic
+		Pr("about to panic:", msg)
+		panic(msg)
+		//os.Exit(1)
 	} else {
 		TestAbortMessageLog.WriteString(msg + "\n")
 	}
@@ -801,21 +803,20 @@ func (st StackTrace) parse(content string) {
 	st.Elements = elements
 }
 
-// Wrap a main function so that we can modify the display of any panic stack traces that occur.
-func WrapMain(mainFunc func()) {
-	Todo("!We may want the option to not exit the program after displaying the panic's stack trace")
-	defer func() {
-		if r := recover(); r != nil {
-			Panic()
-		}
-	}()
-	mainFunc()
-}
-
 func CausePanic() int {
 	sum := 0
 	for i := -3; i < 3; i++ {
 		sum += 10 / i
 	}
 	return sum
+}
+
+func CatchPanic(handler func()) {
+	if r := recover(); r != nil {
+		Pr("catching panic:", r)
+		Pr(GenerateStackTrace(2))
+		if handler != nil {
+			handler()
+		}
+	}
 }

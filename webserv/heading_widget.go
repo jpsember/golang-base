@@ -24,10 +24,10 @@ func (w HeadingWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if !w.Visible() {
 		m.RenderInvisible(w)
 	} else {
-		value := WidgetStringValue(state, w.Id)
+		textContent, _ := GetStaticOrDynamicLabel(w, state)
 		tag := widgetSizeToHeadingTag(w.size)
 		m.A(`<`, tag, ` id='`, w.Id, `'>`)
-		m.Escape(value)
+		m.Escape(textContent)
 		m.A(`</`, tag, `>`)
 	}
 	m.Cr()

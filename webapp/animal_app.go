@@ -1,19 +1,17 @@
 package webapp
 
 import (
-	"bytes"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
-	"log"
-	"os"
-	"runtime/debug"
-
+	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
-	"math/rand"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
 )
+
+var AutoActivateUser = Alert("?Automatically activating user")
 
 type AnimalOperStruct struct {
 	sessionManager SessionManager
@@ -23,70 +21,22 @@ type AnimalOperStruct struct {
 	FullWidth      bool // If true, page occupies full width of screen
 	TopPadding     int  // If nonzero, adds padding to top of page
 }
-type AjaxOper = *AnimalOperStruct
 
-func (oper AjaxOper) UserCommand() string {
+type AnimalOper = *AnimalOperStruct
+
+func (oper AnimalOper) UserCommand() string {
 	return "widgets"
 }
 
-func (oper AjaxOper) GetHelp(bp *BasePrinter) {
+func (oper AnimalOper) GetHelp(bp *BasePrinter) {
 	bp.Pr("Demonstrates a web server with AJAX manipulating Widget UI elements")
 }
 
-func (oper AjaxOper) ProcessArgs(c *CmdLineArgs) {
+func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
-func ShowStackTrace() {
-	//Pr("printing stack:")
-	//debug.PrintStack()
-	Pr("generating stack:")
-	y := debug.Stack()
-	x := string(y)
-	lns := strings.Split(x, "\n")
-
-	prefix := ""
-	for _, val := range lns {
-		result := val
-		for {
-			if strings.HasPrefix(val, "goroutine ") {
-				result = ""
-				break
-			}
-
-			if strings.HasPrefix(val, "\t") {
-				val := strings.TrimSpace(val)
-				cols := strings.Fields(val)
-				if len(cols) != 2 {
-					break
-				}
-				result = cols[0]
-				break
-			}
-			j := strings.LastIndex(val, "(")
-			if j < 0 {
-				break
-			}
-			q := strings.LastIndex(val[0:j], ".")
-			if q < 0 {
-				break
-			}
-			prefix = val[q+1 : j]
-			result = ""
-			break
-		}
-		if result != "" {
-			Pr(result + " " + prefix)
-		}
-	}
-	//Pr(CurrentDirectory())
-	Pr("animal_app.go:89")
-	Pr("zero.go:89")
-
-	//Pr(lns)
-	os.Exit(1)
-}
-
-func (oper AjaxOper) Perform(app *App) {
+func (oper AnimalOper) Perform(app *App) {
+	//ClearAlertHistory()
 	if false && Alert("Performing sql experiment") {
 		SQLiteExperiment()
 		return
@@ -96,20 +46,8 @@ func (oper AjaxOper) Perform(app *App) {
 	db.SetDataSourceName("../sqlite/jeff_experiment.db")
 	db.Open()
 
-	Todo("Verify reading blobs back")
 	if false && Alert("blob experiment") {
-		data := []byte{
-			2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41,
-		}
-		for i := 0; i < 10; i++ {
-			Pr("inserting:", i)
-			bl, err := db.InsertBlob(data)
-			Pr("result:", INDENT, bl, CR, err)
-
-			Pr("verifying:")
-			blob, err := db.ReadBlob(StringToBlobId(bl.Id()))
-			CheckState(bytes.Equal(data, blob.Data()))
-		}
+		PerformBlobExperiment(db)
 		Halt()
 	}
 
@@ -132,6 +70,11 @@ func (oper AjaxOper) Perform(app *App) {
 
 	http.HandleFunc("/",
 		func(w http.ResponseWriter, req *http.Request) {
+			defer func() {
+				if r := recover(); r != nil {
+					BadState("<1Panic during http.HandleFunc:", r)
+				}
+			}()
 			oper.handle(w, req)
 		})
 
@@ -143,12 +86,31 @@ func (oper AjaxOper) Perform(app *App) {
 }
 
 // A handler such as this must be thread safe!
-func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
+func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	pr := PrIf(false)
 	pr("handler, request:", req.RequestURI)
 
+	if Alert("!If full page requested, discarding sessions") {
+		url, err := url.Parse(req.RequestURI)
+		if err == nil && url.Path == "/" {
+			sess := DetermineSession(oper.sessionManager, w, req, false)
+			if sess != nil {
+				DiscardAllSessions(oper.sessionManager)
+			}
+		}
+	}
+
 	sess := DetermineSession(oper.sessionManager, w, req, true)
-	pr("determined session:", sess != nil)
+	if sess.AppData == nil {
+		oper.AssignUserToSession(sess)
+		oper.constructPageWidget(sess)
+
+		user, ok := sess.AppData.(webapp_data.User)
+		CheckState(ok, "no User found in sess AppData:", INDENT, sess.AppData)
+		Todo("!have convention of prefixing enums with e.g. 'UserState_'")
+		CheckState(user.State() == webapp_data.UserstateUnknown)
+		NewLandingPage(sess, sess.PageWidget).Generate()
+	}
 
 	url, err := url.Parse(req.RequestURI)
 	if err == nil {
@@ -157,7 +119,7 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 		if path == "/ajax" {
 			sess.HandleAjaxRequest(w, req)
 		} else if path == "/" {
-			oper.processFullPageRequest(w, req)
+			oper.processFullPageRequest(sess, w, req)
 		} else {
 			pr("handling resource request for:", path)
 			err = sess.HandleResourceRequest(w, req, oper.resources)
@@ -173,22 +135,12 @@ func (oper AjaxOper) handle(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Request) {
+func (oper AnimalOper) processFullPageRequest(sess Session, w http.ResponseWriter, req *http.Request) {
 	// Construct a session if none found, and a widget for a full webpage
-	sess := DetermineSession(oper.sessionManager, w, req, true)
+	//sess := DetermineSession(oper.sessionManager, w, req, true)
 	sess.Mutex.Lock()
 	defer sess.Mutex.Unlock()
-	// If this is a new session, store our operation within it
-	if sess.AppData == nil {
-		sess.AppData = oper
-		Todo("!Allow header to have constant text")
-		sess.State.Put("header_text", "This is ajax_demo.go").
-			Put("header_text_2", "8 columns").Put("header_text_3", "4 columns").Put("bird", "").Put("zebra", "")
-	}
 
-	if sess.PageWidget == nil {
-		oper.constructPageWidget(sess)
-	}
 	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
@@ -198,7 +150,7 @@ func (oper AjaxOper) processFullPageRequest(w http.ResponseWriter, req *http.Req
 }
 
 // Generate the biolerplate header and scripts markup
-func (oper AjaxOper) writeHeader(bp MarkupBuilder) {
+func (oper AnimalOper) writeHeader(bp MarkupBuilder) {
 	bp.A(oper.headerMarkup)
 	bp.OpenTag("body")
 	containerClass := "container"
@@ -212,157 +164,31 @@ func (oper AjaxOper) writeHeader(bp MarkupBuilder) {
 }
 
 // Generate the boilerplate footer markup, then write the page to the response
-func (oper AjaxOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
+func (oper AnimalOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 	bp.CloseTag() // page container
 	bp.CloseTag() // body
 	bp.A(`</html>`).Cr()
 	WriteResponse(w, "text/html", bp.Bytes())
 }
 
-const WidgetIdPage = "page"
+const WidgetIdPage = "main_page"
 
 var alertWidget AlertWidget
-var myRand = rand.New(rand.NewSource(1234))
-
-func GetOperFromSession(session Session) AjaxOper {
-	return session.AppData.(AjaxOper)
-}
+var myRand = NewJSRand().SetSeed(1234)
 
 // Assign a widget heirarchy to a session
-func (oper AjaxOper) constructPageWidget(sess Session) {
+func (oper AnimalOper) constructPageWidget(sess Session) {
 	m := sess.WidgetManager()
 	//m.AlertVerbose()
 
+	Todo("?Clarify when we need to *remove* old widgets")
 	m.Id(WidgetIdPage)
 	widget := m.Open()
 	sess.PageWidget = widget
-
-	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
-	alertWidget.SetVisible(false)
-	m.Add(alertWidget)
-
-	heading := NewHeadingWidget("header_text", 1)
-	m.Add(heading)
-
-	m.Col(4)
-	for i := 1; i < 12; i++ {
-		anim, err := Db().GetAnimal(i)
-		if err != nil {
-			Pr("what do we do with unexpected errors?", INDENT, err)
-		}
-		if anim == nil {
-			continue
-		}
-		cardId := "animal_" + IntToString(int(anim.Id()))
-		OpenAnimalCardWidget(m, cardId, anim, buttonListener)
-	}
-
-	m.Col(4)
-	m.Text("uniform delta").AddText()
-	m.Col(8)
-	m.Id("x58").Text(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
-
-	m.Col(2).AddSpace()
-	m.Col(3).AddSpace()
-	m.Col(3).AddSpace()
-	m.Col(4).AddSpace()
-
-	m.Col(6)
-	m.Listener(birdListener)
-	m.Label("Bird")
-	m.AddInput("bird")
-
-	m.Col(6)
-	m.Open()
-	m.Id("x59").Text(`Label for X59`).Listener(checkboxListener).AddCheckbox()
-	m.Id("x60").Text(`With fruit`).Listener(checkboxListener).AddSwitch()
-	m.Close()
-
-	m.Col(4)
-	m.Id("launch").Text(`Launch`).Listener(buttonListener).AddButton()
-
-	m.Col(8)
-	m.Text(`Sample text; is 5 < 26? A line feed
-"Quoted string"
-Multiple line feeds:
-
-
-   an indented final line`)
-	m.AddText()
-
-	m.Col(4)
-	m.Listener(zebraListener)
-	m.Label("Animal").AddInput("zebra")
-
 	m.Close()
 }
 
-func birdListener(sess any, widget Widget) {
-	// Todo("can we have sessions produce listener functions with appropriate handling of sess any?")
-	s := sess.(Session)
-	newVal := s.GetValueString()
-	if !s.Ok() {
-		return
-	}
-	b := widget.GetBaseWidget()
-	s.ClearWidgetProblem(widget)
-	s.State.Put(b.Id, newVal)
-	Todo("!do validation as a global function somewhere")
-	if newVal == "parrot" {
-		s.SetWidgetProblem(widget, "No parrots, please!")
-	}
-	s.Repaint(widget)
-}
-
-func zebraListener(sess any, widget Widget) {
-
-	s := sess.(Session)
-
-	// Get the requested new value for the widget
-	newVal := s.GetValueString()
-	if !s.Ok() {
-		return
-	}
-
-	// Store this as the new value for this widget within the session state map
-	s.State.Put(widget.GetBaseWidget().Id, newVal)
-	s.Repaint(widget.GetBaseWidget())
-
-	// Increment the alert class, and update its message
-	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
-
-	alertWidget.SetVisible(newVal != "")
-
-	s.State.Put(alertWidget.Id,
-		strings.TrimSpace(newVal+" "+
-			RandomText(myRand, 55, false)))
-	s.Repaint(alertWidget)
-}
-
-func buttonListener(sess any, widget Widget) {
-	s := sess.(Session)
-	wid := s.GetWidgetId()
-	newVal := "Clicked: " + wid
-
-	// Increment the alert class, and update its message
-	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
-	alertWidget.SetVisible(true)
-
-	s.State.Put(alertWidget.Id,
-		strings.TrimSpace(newVal))
-	s.Repaint(alertWidget)
-}
-
-func checkboxListener(sess any, widget Widget) {
-	s := sess.(Session)
-	wid := s.GetWidgetId()
-
-	// Get the requested new value for the widget
-	newVal := s.GetValueBoolean()
-	if !s.Ok() {
-		return
-	}
-
-	s.State.Put(wid, newVal)
-	// Repainting isn't necessary, as the web page has already done this
+// A new session was created; assign an 'unknown' user to it
+func (oper AnimalOper) AssignUserToSession(sess Session) {
+	sess.AppData = webapp_data.NewUser().Build()
 }

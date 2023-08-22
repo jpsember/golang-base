@@ -1,16 +1,14 @@
 package main
 
 import (
-	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/app"
+	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp"
 )
 
 func main() {
-	WrapMain(auxMain)
-}
+	defer CatchPanic(nil)
 
-func auxMain() {
 	//ClearAlertHistory()
 	//SetWidgetDebugRendering()
 

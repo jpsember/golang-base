@@ -6,6 +6,7 @@ import (
 
 type Array[T any] struct {
 	wrappedArray []T
+	locked       bool
 }
 
 func NewArray[T any]() *Array[T] {
@@ -15,10 +16,15 @@ func NewArray[T any]() *Array[T] {
 	return m
 }
 
+func (array *Array[T]) Lock() *Array[T] {
+	array.locked = true
+	return array
+}
+
 func (array *Array[T]) Size() int { return len(array.wrappedArray) }
 
 func (array *Array[T]) Add(value T) {
-	array.wrappedArray = append(array.wrappedArray, value)
+	array.wrappedArray = append(array.mutableWrappedArray(), value)
 }
 
 func (array *Array[T]) Array() []T {
@@ -29,8 +35,20 @@ func (array *Array[T]) IsEmpty() bool {
 	return len(array.wrappedArray) == 0
 }
 
+func (array *Array[T]) Clear() {
+	array.mutableWrappedArray()
+	array.wrappedArray = make([]T, 0)
+}
+
+func (array *Array[T]) mutableWrappedArray() []T {
+	if array.locked {
+		BadState("<1Array is locked)")
+	}
+	return array.wrappedArray
+}
+
 func (array *Array[T]) Pop() T {
-	var w = array.wrappedArray
+	var w = array.mutableWrappedArray()
 	i := len(w)
 	if i == 0 {
 		BadState("<1 Pop of empty array")
@@ -54,7 +72,7 @@ func (array *Array[T]) Last() T {
 
 // Remove a contiguous sequence of elements; adjust arguments into range, and do nothing if appropriate.
 func (array *Array[T]) Remove(start int, count int) {
-	w := array.wrappedArray
+	w := array.mutableWrappedArray()
 	end := start + count
 	x := len(w)
 	start = Clamp(start, 0, x)
@@ -78,7 +96,7 @@ func (array *Array[T]) RemoveAllButLastN(n int) {
 }
 
 func (array *Array[T]) Append(items ...T) {
-	array.wrappedArray = append(array.wrappedArray, items...)
+	array.wrappedArray = append(array.mutableWrappedArray(), items...)
 }
 
 func (array *Array[T]) Get(i int) T {
@@ -86,7 +104,7 @@ func (array *Array[T]) Get(i int) T {
 }
 
 func (array *Array[T]) Set(i int, value T) {
-	array.wrappedArray[i] = value
+	array.mutableWrappedArray()[i] = value
 }
 
 // Attempt to sort the array
@@ -95,7 +113,7 @@ func (array *Array[T]) Sort() error {
 		return nil
 	}
 	// Not sure why; have to cast argument to 'any'
-	a, ok := any(array.wrappedArray).([]string)
+	a, ok := any(array.mutableWrappedArray()).([]string)
 	if ok {
 		sort.Strings(a)
 		return nil

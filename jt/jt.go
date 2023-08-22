@@ -303,7 +303,7 @@ func (j JTest) showDiffs() {
 	}
 }
 
-var TextFileExtensions = NewSet[string]()
+var TextFileExtensions = NewStringSet()
 
 func init() {
 	TextFileExtensions.AddAll(strings.Split("txt json java go", " "))

@@ -7,17 +7,19 @@ import (
 // A Widget that displays editable text
 type InputWidgetObj struct {
 	BaseWidgetObj
-	Label HtmlString
+	Label    HtmlString
+	Password bool
 }
 
 type InputWidget = *InputWidgetObj
 
-func NewInputWidget(id string, label HtmlString) InputWidget {
+func NewInputWidget(id string, label HtmlString, password bool) InputWidget {
 	w := InputWidgetObj{
-		BaseWidgetObj{
+		BaseWidgetObj: BaseWidgetObj{
 			Id: id,
 		},
-		label,
+		Label:    label,
+		Password: password,
 	}
 	return &w
 }
@@ -63,7 +65,8 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if hasProblem {
 		m.A(` border-danger border-3`) // Adding border-3 makes the text shift a bit on error, maybe not desirable
 	}
-	m.A(`" type="text" id="`, w.Id, `.aux" value="`)
+
+	m.A(`" type="`, Ternary(w.Password, "password", "text"), `" id="`, w.Id, `.aux" value="`)
 	value := WidgetStringValue(state, w.Id)
 	m.Escape(value)
 	m.A(`" onchange='jsVal("`, w.Id, `")'>`).Cr()

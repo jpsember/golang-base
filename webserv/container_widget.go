@@ -30,6 +30,7 @@ type ContainerWidgetObj struct {
 type ContainerWidget = *ContainerWidgetObj
 
 func NewContainerWidget(id string) ContainerWidget {
+	Todo("!might simplify a lot of things if widgets had references to their own managers")
 	w := ContainerWidgetObj{
 		children: NewArray[Widget](),
 		cells:    NewArray[GridCell](),
@@ -38,9 +39,8 @@ func NewContainerWidget(id string) ContainerWidget {
 	w.Id = id
 	return &w
 }
-
-func (w ContainerWidget) GetChildren() []Widget {
-	return w.children.Array()
+func (w ContainerWidget) Children() *Array[Widget] {
+	return w.children
 }
 
 func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
@@ -49,7 +49,7 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	pr("adding widget to container:", INDENT, w)
 	cols := w.columns
 	if cols == 0 {
-		BadState("no pending columns for widget:", c.GetBaseWidget().Id)
+		BadState("no pending columns for widget:", WidgetId(c))
 	}
 	cell := GridCell{
 		Width: cols,
@@ -86,7 +86,7 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 				prevPoint = IPointWith(0, cell.Location.Y)
 			}
 
-			b := child.GetBaseWidget()
+			b := child.Base()
 			s := `div class="col-sm-` + IntToString(cell.Width) + `"`
 			if WidgetDebugRenderingFlag {
 				s += ` style="background-color:` + DebugColor(b.IdHashcode()) + `;`

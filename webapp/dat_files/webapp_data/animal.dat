@@ -1,6 +1,6 @@
 class {
    // Unique id
-   long id;
+   int id;
 
    enum AnimalState state;
 

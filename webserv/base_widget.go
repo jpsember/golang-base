@@ -4,8 +4,6 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
-type WidgetListener func(sess any, widget Widget)
-
 // The simplest concrete Widget implementation
 type BaseWidgetObj struct {
 	Id            string
@@ -25,8 +23,14 @@ func NewBaseWidget(id string) BaseWidget {
 	return t
 }
 
-func (w BaseWidget) GetBaseWidget() BaseWidget {
+func (w BaseWidget) Base() BaseWidget {
 	return w
+}
+
+var emptyChildrenList = NewArray[Widget]().Lock()
+
+func (w BaseWidget) Children() *Array[Widget] {
+	return emptyChildrenList
 }
 
 func (w BaseWidget) SetStaticContent(content any) {
@@ -35,10 +39,6 @@ func (w BaseWidget) SetStaticContent(content any) {
 
 func (w BaseWidget) StaticContent() any {
 	return w.staticContent
-}
-
-func (w BaseWidget) WriteValue(v JSEntity) {
-	NotImplemented("WriteValue")
 }
 
 func (w BaseWidget) Visible() bool {
@@ -55,11 +55,6 @@ func (w BaseWidget) Enabled() bool {
 
 func (w BaseWidget) SetEnabled(s bool) {
 	w.disabled = !s
-}
-
-func (w BaseWidget) ReadValue() JSEntity {
-	NotImplemented("ReadValue")
-	return JBoolFalse
 }
 
 func (w BaseWidget) AddChild(c Widget, manager WidgetManager) {

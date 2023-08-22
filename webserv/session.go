@@ -6,6 +6,40 @@ import (
 	"sync"
 )
 
+var loggedInUsersSet = NewSet[int]()
+var loggedInUsersSetLock sync.RWMutex
+
+func IsUserLoggedIn(userId int) bool {
+	loggedInUsersSetLock.Lock()
+	defer loggedInUsersSetLock.Unlock()
+	return loggedInUsersSet.Contains(userId)
+}
+
+func TryRegisteringUserAsLoggedIn(userId int, loggedInState bool) bool {
+	loggedInUsersSetLock.Lock()
+	defer loggedInUsersSetLock.Unlock()
+
+	currentState := loggedInUsersSet.Contains(userId)
+	changed := currentState != loggedInState
+	if changed {
+		if loggedInState {
+			loggedInUsersSet.Add(userId)
+		} else {
+			loggedInUsersSet.Remove(userId)
+		}
+	}
+	return changed
+}
+
+func DiscardAllSessions(sessionManager SessionManager) {
+	loggedInUsersSetLock.Lock()
+	defer loggedInUsersSetLock.Unlock()
+
+	Alert("Discarding all sessions")
+	sessionManager.DiscardAllSessions()
+	loggedInUsersSet.Clear()
+}
+
 type Session = *SessionStruct
 
 type SessionStruct struct {
@@ -22,7 +56,6 @@ type SessionStruct struct {
 	State JSMap
 
 	widgetManager WidgetManager
-	repaintSet    *Set[string]
 
 	// Current request variables
 	responseWriter http.ResponseWriter
@@ -45,7 +78,7 @@ func NewSession() Session {
 // Get WidgetManager for this session, creating one if necessary
 func (s Session) WidgetManager() WidgetManager {
 	if s.widgetManager == nil {
-		s.widgetManager = NewWidgetManager()
+		s.widgetManager = NewWidgetManager(s)
 	}
 	return s.widgetManager
 }
@@ -61,17 +94,6 @@ func (s Session) ToJson() *JSMapStruct {
 	return m
 }
 
-// Mark a widget for repainting.
-func (s Session) Repaint(w Widget) {
-	b := w.GetBaseWidget()
-	pr := PrIf(debRepaint)
-	id := b.Id
-	pr("Repaint:", id)
-	if s.repaintSet.Add(id) {
-		pr("...adding to set")
-	}
-}
-
 func ParseSession(source JSEntity) Session {
 	var s = source.(*JSMapStruct)
 	var n = NewSession()
@@ -85,9 +107,12 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 	s.Mutex.Lock()
 	s.responseWriter = w
 	s.request = req
-	s.repaintSet = NewSet[string]()
 	s.requestProblem = ""
 	s.parseAjaxRequest(req)
+	s.WidgetManager().clearRepaintSet()
+	if false && Alert("dumping") {
+		Pr("Query:", INDENT, req.URL.Query())
+	}
 	s.processClientMessage()
 	s.sendAjaxResponse()
 }
@@ -148,17 +173,18 @@ func (s Session) processClientMessage() {
 	// for that widget
 	//
 	widget := s.GetWidget()
-	b := widget.GetBaseWidget()
+	b := widget.Base()
 
 	if !s.Ok() {
 		return
 	}
 	listener := b.Listener
 	if listener == nil {
-		s.SetRequestProblem("no listener for id", b.Id)
+		Todo("?Is it ok to have no listener?")
+		//s.SetRequestProblem("no listener for id", b.Id)
 		return
 	}
-	if !widget.GetBaseWidget().Enabled() {
+	if !b.Enabled() {
 		s.SetRequestProblem("widget is disabled", b.Id)
 		return
 	}
@@ -174,14 +200,14 @@ func (s Session) processClientInfo(infoString string) {
 	Todo("!process client info:", INDENT, json)
 }
 
-func (s Session) processRepaintFlags(debugDepth int, w Widget, refmap JSMap, repaint bool) {
-	b := w.GetBaseWidget()
+func (s Session) processRepaintFlags(repaintSet StringSet, debugDepth int, w Widget, refmap JSMap, repaint bool) {
+	b := w.Base()
 	id := b.Id
 	pr := PrIf(debRepaint)
 	pr(Dots(debugDepth*4)+IntToString(debugDepth), "repaint, flag:", repaint, "id:", id)
 
 	if !repaint {
-		if s.repaintSet.Contains(id) {
+		if repaintSet.Contains(id) {
 			repaint = true
 			pr(Dots(debugDepth*4), "repaint flag was set; repainting entire subtree")
 		}
@@ -193,8 +219,8 @@ func (s Session) processRepaintFlags(debugDepth int, w Widget, refmap JSMap, rep
 		refmap.Put(id, m.String())
 	}
 
-	for _, c := range w.GetChildren() {
-		s.processRepaintFlags(1+debugDepth, c, refmap, repaint)
+	for _, c := range w.Children().Array() {
+		s.processRepaintFlags(repaintSet, 1+debugDepth, c, refmap, repaint)
 	}
 }
 
@@ -214,7 +240,7 @@ func (s Session) sendAjaxResponse() {
 	// refmap will be the map sent to the client with the widgets
 	refmap := NewJSMap()
 
-	s.processRepaintFlags(0, s.PageWidget, refmap, false)
+	s.processRepaintFlags(s.WidgetManager().repaintSet, 0, s.PageWidget, refmap, false)
 
 	jsmap.Put(respKeyWidgetsToRefresh, refmap)
 	pr("sending back to Ajax caller:", INDENT, jsmap)
@@ -233,13 +259,14 @@ func (s Session) discardRequest() {
 	s.requestProblem = ""
 	s.widgetValues = nil
 	s.widgetIds = nil
-	s.repaintSet = nil
+	s.WidgetManager().clearRepaintSet()
 	s.Mutex.Unlock()
 }
 
 func (s Session) SetRequestProblem(message ...any) Session {
 	if s.requestProblem == "" {
 		s.requestProblem = "Problem with ajax request: " + ToString(message...)
+		Alert("<2 setting request problem:", s.requestProblem)
 	}
 	return s
 }
@@ -271,12 +298,12 @@ func (s Session) GetWidgetId() string {
 
 // Read request's widget value as a string
 func (s Session) GetValueString() string {
-	id, err := getSingleValue(s.widgetValues)
+	value, err := getSingleValue(s.widgetValues)
 	if err != nil {
 		s.SetRequestProblem("Unable to get widget value")
 		return ""
 	}
-	return id
+	return value
 }
 
 // Read request's widget value as a boolean
@@ -306,18 +333,41 @@ func (s Session) GetWidget() Widget {
 }
 
 func getProblemId(w Widget) string {
-	return w.GetBaseWidget().Id + ".problem"
+	return WidgetId(w) + ".problem"
 }
 
-func (s Session) ClearWidgetProblem(widget Widget) {
-	key := getProblemId(widget)
-	s.State.Delete(key)
+func (s Session) SetWidgetIdProblem(widgetId string, problem any) {
+	widget := s.WidgetManager().Get(widgetId)
+	s.SetWidgetProblem(widget, problem)
 }
 
-func (s Session) SetWidgetProblem(widget Widget, s2 string) {
-	CheckArg(s2 != "")
+func (s Session) SetWidgetProblem(widget Widget, problem any) {
+	var text string
+	if problem != nil {
+		switch t := problem.(type) {
+		case string:
+			text = t
+		case error:
+			text = t.Error()
+		default:
+			BadArg("<1Unsupported type")
+		}
+	}
+	s.auxSetWidgetProblem(widget, text)
+}
+
+func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {
 	key := getProblemId(widget)
-	s.State.Put(key, s2)
+	state := s.State
+	existingProblem := state.OptString(key, "")
+	if existingProblem != problemText {
+		if problemText == "" {
+			state.Delete(key)
+		} else {
+			state.Put(key, problemText)
+		}
+		s.WidgetManager().Repaint(widget)
+	}
 }
 
 // Include javascript call within page to get client's display properties.

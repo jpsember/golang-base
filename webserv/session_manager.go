@@ -11,6 +11,7 @@ type SessionManager interface {
 	FindSession(id string) Session
 	CreateSession() Session
 	SetModified(session Session)
+	DiscardAllSessions()
 }
 
 func RandomSessionId() string {
@@ -58,12 +59,13 @@ func (s *inMemorySessionMap) CreateSession() Session {
 	return b
 }
 
+func (s *inMemorySessionMap) DiscardAllSessions() {
+	s.sessionMap.Clear()
+}
+
 // Get a string value from session state map
 func WidgetStringValue(state JSMap, id string) string {
-	if !state.HasKey(id) {
-		return "??? #" + id + " ???"
-	}
-	return state.GetString(id)
+	return state.OptString(id, "")
 }
 
 // Get a boolean value from session state map

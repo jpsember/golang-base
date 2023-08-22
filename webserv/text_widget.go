@@ -6,42 +6,54 @@ import (
 
 type TextWidgetObj struct {
 	BaseWidgetObj
+	size WidgetSize
 }
 
 type TextWidget = *TextWidgetObj
 
-func NewTextWidget(id string) TextWidget {
-	t := &TextWidgetObj{}
+func NewTextWidget(id string, size WidgetSize) TextWidget {
+	t := &TextWidgetObj{
+		size: size,
+	}
 	t.Id = id
 	return t
 }
 
 func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	b := w.GetBaseWidget()
 	if !w.Visible() {
 		m.RenderInvisible(w)
 		return
 	}
 
-	var textContent string
-
-	sc := b.StaticContent()
-	hasStaticContent := sc != nil
-	if hasStaticContent {
-		textContent = sc.(string)
-	} else {
-		textContent = state.OptString(w.Id, "")
-	}
+	textContent, wasStatic := GetStaticOrDynamicLabel(w, state)
 
 	h := NewHtmlString(textContent)
-	if hasStaticContent {
-		m.OpenTag(`div`)
-	} else {
+
+	args := NewArray[any]()
+	args.Add(`div`)
+
+	if !wasStatic {
+		args.Add(`div id='` + w.Id + `'`)
 		m.OpenTag(`div id='` + w.Id + `'`)
 	}
+	if w.size != SizeDefault {
+		Todo("?A better way to do this, no doubt")
+		args.Add(textSize[w.size])
+	}
+
+	m.OpenTag(args.Array()...)
 
 	for _, c := range h.Paragraphs() {
 		m.A(`<p>`, c, `</p>`).Cr()
 	}
 	m.CloseTag()
+}
+
+var textSize = map[WidgetSize]string{
+	SizeMicro:  ` style='font-size:.4em'`,
+	SizeTiny:   ` style='font-size:.5em'`,
+	SizeSmall:  ` style='font-size:.7em'`,
+	SizeMedium: ``,
+	SizeLarge:  ` style='font-size:1.3em'`,
+	SizeHuge:   ` style='font-size:1.8em'`,
 }
