@@ -82,16 +82,10 @@ func (db Database) Open() error {
 		db.createTables()
 		db.prepareStatements()
 
-		if Alert("some experiments") {
-			Todo("Do we still need to reserve a '0' user? Why or why not?")
-			b0, err := db.CreateUserWith(DefaultUser)
-			Pr("created zero user:", b0)
-
+		if false && Alert("some experiments") {
 			b, err := db.CreateUserWith(NewUser().SetName("jeff").SetState(UserstateWaitingActivation).SetEmail("abc@xyz.com"))
 			Pr("created user; err:", err, INDENT, b)
-
 			b2, err2 := db.GetUser(b.Id())
-
 			Pr("read user with id:", b.Id(), "err:", err2, INDENT, b2)
 		}
 	}
@@ -422,18 +416,30 @@ func (db Database) CreateUserWith(user User) (User, error) {
 	defer db.unlock()
 
 	var createdUser User
-	existingId := db.auxFindUserWithName(user.Name())
-	if existingId != 0 {
-		db.setError(UserExistsError)
-	} else {
-		result, err := db.stmtInsertUser.Exec(user.Name(), user.State().String(), user.Email(), user.Password())
 
-		if !db.setError(err) {
-			id, err2 := result.LastInsertId()
-			if !db.setError(err2) {
-				createdUser = user.Build().ToBuilder().SetId(int(id)).Build()
-			}
+	for {
+		existingId := db.auxFindUserWithName(user.Name())
+		if existingId != 0 {
+			db.setError(UserExistsError)
+			break
 		}
+
+		result, err := db.stmtInsertUser.Exec(user.Name(), user.State().String(), user.Email(), user.Password())
+		if db.setError(err) {
+			break
+		}
+
+		id, err := result.LastInsertId()
+		if db.setError(err) {
+			break
+		}
+
+		createdUser = user.Build().ToBuilder().SetId(int(id)).Build()
+		Todo("Do we still need to reserve a '0' user? Why or why not?")
+		CheckState(createdUser.Id() > 0, "unexpected id in new record:", createdUser)
+
+		break
 	}
+
 	return createdUser, db.err
 }
