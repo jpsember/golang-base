@@ -41,7 +41,7 @@ func WidgetErrorCount(root Widget, state JSMap) int {
 }
 
 func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
-	problemId := w.Base().Id + ".problem"
+	problemId := WidgetIdWithProblem(w.Base().Id)
 	if state.OptString(problemId, "") != "" {
 		count++
 	}
@@ -49,4 +49,9 @@ func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
 		count = auxWidgetErrorCount(count, child, state)
 	}
 	return count
+}
+
+func WidgetIdWithProblem(id string) string {
+	CheckArg(id != "")
+	return id + ".problem"
 }

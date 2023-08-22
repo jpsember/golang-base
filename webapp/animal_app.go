@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 )
 
@@ -37,19 +38,19 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 
 func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
-	if false && Alert("Performing sql experiment") {
-		SQLiteExperiment()
-		return
+
+	dataSourceName := "../sqlite/animal_app.db"
+
+	if true && dataSourceName == "../sqlite/animal_app_TEMP.db" && Alert("Deleting database") {
+		p := NewPathM(CheckOkWith(filepath.Abs(dataSourceName)))
+		if p.Exists() {
+			p.DeleteFileM()
+		}
 	}
 
 	db := CreateDatabase()
-	db.SetDataSourceName("../sqlite/jeff_experiment.db")
+	db.SetDataSourceName(dataSourceName)
 	db.Open()
-
-	if false && Alert("blob experiment") {
-		PerformBlobExperiment(db)
-		Halt()
-	}
 
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")

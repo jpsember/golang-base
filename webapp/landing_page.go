@@ -100,7 +100,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		return
 	}
 
-	userData := Db().GetUser(userId)
+	userData, _ := Db().ReadUser(userId)
 	if userData == nil {
 		sess.SetWidgetIdProblem(id_user_name, "User is unavaliable; sorry")
 		return
@@ -109,7 +109,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		if userData.State() == webapp_data.UserstateWaitingActivation {
 			Alert("Activating user automatically (without email verification)")
 			userData = userData.ToBuilder().SetState(webapp_data.UserstateActive).Build()
-			Db().WriteUser(userData)
+			Db().UpdateUser(userData)
 		}
 	}
 	errMsg := ""

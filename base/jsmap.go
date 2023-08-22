@@ -135,19 +135,20 @@ func (m JSMap) CompactString() string {
 }
 
 func (m JSMap) Delete(key string) JSMap {
-	delete(m.mutableWrapped(), key)
+	delete(m.MutableWrapped(), key)
 	return m
 }
 
 func (m JSMap) DeleteEach(keys ...string) JSMap {
-	w := m.mutableWrapped()
+	w := m.MutableWrapped()
 	for _, k := range keys {
 		delete(w, k)
 	}
 	return m
 }
+
 func (m JSMap) Put(key string, value any) JSMap {
-	m.mutableWrapped()[key] = ToJSEntity(value)
+	m.MutableWrapped()[key] = ToJSEntity(value)
 	return m
 }
 
@@ -392,7 +393,7 @@ func (m JSMap) OptLong(key string, defaultValue int64) int64 {
 }
 
 func (m JSMap) Clear() JSMap {
-	m.mutableWrapped()
+	m.MutableWrapped()
 	m.wrappedMap = make(map[string]JSEntity)
 	return m
 }
@@ -402,7 +403,7 @@ func (m JSMap) Lock() JSMap {
 	return m
 }
 
-func (m JSMap) mutableWrapped() map[string]JSEntity {
+func (m JSMap) MutableWrapped() map[string]JSEntity {
 	if m.locked {
 		BadState("<2JSMap is locked")
 	}

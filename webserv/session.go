@@ -332,10 +332,6 @@ func (s Session) GetWidget() Widget {
 	return nil
 }
 
-func getProblemId(w Widget) string {
-	return WidgetId(w) + ".problem"
-}
-
 func (s Session) SetWidgetIdProblem(widgetId string, problem any) {
 	widget := s.WidgetManager().Get(widgetId)
 	s.SetWidgetProblem(widget, problem)
@@ -357,7 +353,7 @@ func (s Session) SetWidgetProblem(widget Widget, problem any) {
 }
 
 func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {
-	key := getProblemId(widget)
+	key := WidgetIdWithProblem(WidgetId(widget))
 	state := s.State
 	existingProblem := state.OptString(key, "")
 	if existingProblem != problemText {
@@ -377,6 +373,14 @@ func (s Session) RequestClientInfo(sb MarkupBuilder) {
 	if true {
 		Alert("!Always making resolution call; might want to avoid infinite calls by only requesting if at least n seconds elapsed")
 		sb.A(`<script>jsGetDisplayProperties();</script>`).Cr()
+	}
+}
+
+func (s Session) DeleteStateKeys(keys ...string) {
+	m := s.State.MutableWrapped()
+	for _, k := range keys {
+		delete(m, k)
+		delete(m, WidgetIdWithProblem(k))
 	}
 }
 
