@@ -23,6 +23,8 @@ type DatabaseStruct struct {
 	stmtSelectSpecificBlob   *sql.Stmt
 	stmtSelectSpecificUser   *sql.Stmt
 	stmtFindUserIdByName     *sql.Stmt
+
+	stmtInsertUser *sql.Stmt
 }
 
 type Database = *DatabaseStruct
@@ -48,6 +50,7 @@ func (db Database) prepareStatements() {
 	db.stmtSelectSpecificUser = db.preparedStatement(`SELECT * FROM ` + tableNameUser + ` WHERE id = ?`)
 	db.stmtSelectSpecificBlob = db.preparedStatement(`SELECT * FROM ` + tableNameBlob + ` WHERE id = ?`)
 	db.stmtFindUserIdByName = db.preparedStatement(`SELECT id FROM ` + tableNameUser + ` WHERE name = ?`)
+	db.stmtInsertUser = db.preparedStatement(`INSERT INTO ` + tableNameUser + ` (name, userState, email, password) VALUES(?,?,?,?)`)
 }
 
 func CreateDatabase() Database {
@@ -407,7 +410,7 @@ func (db Database) auxFindUserWithName(userName string) int {
 func (db Database) WriteUser(user User) error {
 	db.lock()
 	defer db.unlock()
- 
+
 	_, err := db.db.Exec(`UPDATE `+tableNameUser+` SET name = ?, userState = ?, email = ?, password = ? WHERE id = ?`,
 		user.Name(), user.State().String(), user.Email(), user.Password())
 
@@ -427,22 +430,16 @@ func (db Database) CreateUserWith(user User) (User, error) {
 	if existingId != 0 {
 		db.setError(UserExistsError)
 	} else {
-		ub := user.Build().ToBuilder()
-		//ub := NewUser().SetName(userName)
-
-		result, err := db.db.Exec(`INSERT INTO `+tableNameUser+` (name, userState, email, password) VALUES(?,?,?,?)`,
-			user.Name(), user.State().String(), user.Email(), user.Password())
+		result, err := db.stmtInsertUser.Exec(user.Name(), user.State().String(), user.Email(), user.Password())
 
 		if !db.setError(err) {
 			id, err2 := result.LastInsertId()
 			if !db.setError(err2) {
-				ub.SetId(int(id))
-				createdUser = ub.Build()
+				createdUser = user.Build().ToBuilder().SetId(int(id)).Build()
 			}
 		}
 	}
 	return createdUser, db.err
-
 }
 
 // Create a user with the given name.  Returns nil if unsuccessful, else a UserBuilder.
