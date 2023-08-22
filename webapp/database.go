@@ -123,8 +123,11 @@ func (db Database) GetUser(userId int) User {
 	db.lock()
 	defer db.unlock()
 	mp := db.getTable(tableNameUser)
-	result := mp.GetData(userId, DefaultUser).(User)
-	return result
+	parsedValue := mp.GetData(userId, DefaultUser)
+	if parsedValue == nil {
+		return nil
+	}
+	return parsedValue.(User)
 }
 
 func (db Database) FindUserWithName(userName string) (int, error) {
@@ -289,13 +292,24 @@ func (m MemTable) nextUniqueKey() int {
 	return i
 }
 
+func CatchPanic(handler func()) {
+	if r := recover(); r != nil {
+		Pr("Catching panic:", CR, GenerateStackTrace(1))
+		handler()
+	}
+}
+
 func (m MemTable) GetData(key any, parser DataClass) DataClass {
 	strKey := argToMemtableKey(key)
 	val := m.table.OptMap(strKey)
 	if val == nil {
 		return nil
 	}
-	Todo("DataClass .Parse method should return object and error")
+
+	defer CatchPanic(func() {
+		Pr("Failed to parse:", INDENT, val)
+	})
+
 	return parser.Parse(val)
 }
 

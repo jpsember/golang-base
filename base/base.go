@@ -3,7 +3,6 @@ package base
 import (
 	"errors"
 	"fmt"
-	"os"
 	"reflect"
 	"regexp"
 	"runtime/debug"
@@ -138,7 +137,10 @@ func auxAbort(skipCount int, prefix string, message ...any) {
 			fmt.Println(st)
 			nestedAbortFlag = false
 		}
-		os.Exit(1)
+		// I don't think we want to exit the program; rather, just panic
+		Pr("about to panic:", msg)
+		panic(msg)
+		//os.Exit(1)
 	} else {
 		TestAbortMessageLog.WriteString(msg + "\n")
 	}
