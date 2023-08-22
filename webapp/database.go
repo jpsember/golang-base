@@ -80,7 +80,7 @@ func Db() Database {
 func (db Database) SetDataSourceName(dataSourceName string) {
 	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
 	db.dataSourceName = dataSourceName
-	Alert("<1Setting data source name:", dataSourceName, CurrentDirectory())
+	//Alert("<1Setting data source name:", dataSourceName, CurrentDirectory())
 }
 
 func (db Database) Open() error {
@@ -96,7 +96,7 @@ func (db Database) Open() error {
 		db.createTables()
 		db.prepareStatements()
 
-		if true && Alert("some experiments") {
+		if false && Alert("some experiments") {
 
 			Pr("Attempting to Update a user that doesn't exist")
 			err := db.UpdateUser(NewUser().SetName("zebra").SetId(42))
@@ -333,9 +333,7 @@ func (db Database) CreateUser(user User) (User, error) {
 		}
 
 		createdUser = user.Build().ToBuilder().SetId(int(id)).Build()
-		Todo("Do we still need to reserve a '0' user? Why or why not?")
 		CheckState(createdUser.Id() > 0, "unexpected id in new record:", createdUser)
-
 		break
 	}
 
