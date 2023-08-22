@@ -119,26 +119,34 @@ const (
 func (db Database) createTables() {
 }
 
-func (db Database) FindUserWithName(userName string) (string, error) {
+func (db Database) GetUser(userId int) User {
+	db.lock()
+	defer db.unlock()
+	mp := db.getTable(tableNameUser)
+	result := mp.GetData(userId, DefaultUser).(User)
+	return result
+}
+
+func (db Database) FindUserWithName(userName string) (int, error) {
 	db.lock()
 	defer db.unlock()
 	foundId := db.auxFindUserWithName(userName)
-	if foundId == "" {
+	if foundId == 0 {
 		db.setError(Error("no user with name:", userName))
 	}
 	return foundId, db.err
 }
 
-func (db Database) auxFindUserWithName(userName string) string {
+func (db Database) auxFindUserWithName(userName string) int {
 	mp := db.getTable(tableNameUser)
 	for id, jsent := range mp.table.WrappedMap() {
 		m := jsent.AsJSMap()
 		Pr("user id:", id, "value:", INDENT, m)
 		if m.GetString("name") == userName {
-			return id
+			return ParseIntM(id)
 		}
 	}
-	return ""
+	return 0
 }
 
 // Write user to database; must already exist.
@@ -150,6 +158,7 @@ func (db Database) WriteUser(user User) error {
 		return Error("user not found:", user.Id())
 	}
 	mp.Put(user.Id(), user)
+	Todo("have table set itself modified with Put, etc")
 	db.setModified(mp)
 	return nil
 }
@@ -159,13 +168,13 @@ func (db Database) CreateUser(userName string) UserBuilder {
 	db.lock()
 	defer db.unlock()
 	foundId := db.auxFindUserWithName(userName)
-	if foundId != "" {
+	if foundId != 0 {
 		return nil
 	}
 	mp := db.getTable(tableNameUser)
 	key := mp.nextUniqueKey()
 	us := NewUser()
-	us.SetId(int64(key))
+	us.SetId(key)
 	us.SetName(userName)
 	mp.Put(us.Id(), us.Build())
 	db.setModified(mp)
@@ -185,10 +194,8 @@ func (db Database) AddAnimal(a AnimalBuilder) {
 	defer db.unlock()
 	mp := db.getTable(tableNameAnimal)
 	id := mp.nextUniqueKey()
-	a.SetId(int64(id))
+	a.SetId(id)
 	mp.Put(id, a.Build())
-	Todo("write modified table periodically")
-	Todo("always writing")
 	db.setModified(mp)
 }
 
@@ -289,6 +296,7 @@ func (m MemTable) GetData(key any, parser DataClass) DataClass {
 	if val == nil {
 		return nil
 	}
+	Todo("DataClass .Parse method should return object and error")
 	return parser.Parse(val)
 }
 

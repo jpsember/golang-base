@@ -1,6 +1,6 @@
 class {
     // Unique id
-    long id;
+    int id;
 
     string name;
     enum UserState state;

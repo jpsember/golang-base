@@ -1,5 +1,5 @@
 enum {
-    unknown_user,
-    waiting_activation,
-    logged_in,
+    userstate_unknown,
+    userstate_waiting_activation,
+    userstate_active,
 }

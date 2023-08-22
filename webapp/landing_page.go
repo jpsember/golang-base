@@ -2,6 +2,7 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
 )
 
@@ -84,7 +85,28 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		sess.SetWidgetIdProblem(id_user_name, "No such user, or incorrect password")
 		return
 	}
+
+	Todo("Prevent user from being logged in multiple times simultaneously")
+
 	Todo("switch to logged in somehow, user id:", userId)
+
+	userData := Db().GetUser(userId)
+
+	errMsg := ""
+	switch userData.State() {
+	case webapp_data.UserstateActive:
+		// This is ok.
+	case webapp_data.UserstateWaitingActivation:
+		errMsg = "This user has not been activated yet"
+	default:
+		errMsg = "This user is in an unsupported state"
+		Alert("Unsupported user state:", INDENT, userData)
+	}
+
+	if errMsg != "" {
+		sess.SetWidgetIdProblem(id_user_name, errMsg)
+		return
+	}
 
 	sp := NewAnimalFeedPage(sess, p.parentWidget)
 	sp.Generate()

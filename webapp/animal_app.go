@@ -107,7 +107,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 		user, ok := sess.AppData.(webapp_data.User)
 		CheckState(ok, "no User found in sess AppData:", INDENT, sess.AppData)
 		Todo("!have convention of prefixing enums with e.g. 'UserState_'")
-		CheckState(user.State() == webapp_data.UnknownUser)
+		CheckState(user.State() == webapp_data.UserstateUnknown)
 		NewLandingPage(sess, sess.PageWidget).Generate()
 	}
 

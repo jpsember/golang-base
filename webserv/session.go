@@ -76,6 +76,9 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 	s.requestProblem = ""
 	s.parseAjaxRequest(req)
 	s.WidgetManager().clearRepaintSet()
+	if false && Alert("dumping") {
+		Pr("Query:", INDENT, req.URL.Query())
+	}
 	s.processClientMessage()
 	s.sendAjaxResponse()
 }

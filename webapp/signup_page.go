@@ -148,7 +148,7 @@ func (p SignUpPage) signUpListener(s Session, widget Widget) {
 		s.SetWidgetIdProblem(id_user_name, "This user already exists")
 		return
 	}
-	ub.SetEmail(email).SetPassword(userPwd).SetState(webapp_data.WaitingActivation)
+	ub.SetEmail(email).SetPassword(userPwd).SetState(webapp_data.UserstateWaitingActivation)
 	err := Db().WriteUser(ub)
 	CheckOk(err)
 
