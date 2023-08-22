@@ -37,7 +37,7 @@ func (p AnimalFeedPage) Generate() {
 
 	m.Col(4)
 	for i := 1; i < 12; i++ {
-		anim, err := Db().GetAnimal(i)
+		anim, err := Db().ReadAnimal(i)
 		if err != nil {
 			Pr("what do we do with unexpected errors?", INDENT, err)
 		}

@@ -144,7 +144,7 @@ func (p SignUpPage) signUpListener(s Session, widget Widget) {
 	b.SetPassword(s.State.OptString(id_user_pwd, ""))
 	b.SetEmail(s.State.OptString(id_user_email, ""))
 
-	ub, err := Db().CreateUserWith(b)
+	ub, err := Db().CreateUser(b)
 
 	Pr("created user:", INDENT, ub)
 	if err == UserExistsError {

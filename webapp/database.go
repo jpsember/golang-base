@@ -13,18 +13,30 @@ import (
 	"sync"
 )
 
+// ------------------------------------------------------------------------------------
+// Our errors related to database operations
+// ------------------------------------------------------------------------------------
+
+var UserExistsError = errors.New("named user already exists")
+var UserDoesntExistError = errors.New("user does not exist")
+var AnimalDoesntExistError = errors.New("animal does not exist")
+
+// ------------------------------------------------------------------------------------
+
 type DatabaseStruct struct {
-	state                    int
-	err                      error
-	dataSourceName           string
-	db                       *sql.DB
-	theLock                  sync.Mutex
-	stmtSelectSpecificAnimal *sql.Stmt
-	stmtSelectSpecificBlob   *sql.Stmt
-	stmtSelectSpecificUser   *sql.Stmt
-	stmtFindUserIdByName     *sql.Stmt
-	stmtInsertUser           *sql.Stmt
-	stmtUserUpdate           *sql.Stmt
+	state                  int
+	err                    error
+	dataSourceName         string
+	db                     *sql.DB
+	theLock                sync.Mutex
+	stSelectSpecificAnimal *sql.Stmt
+	stSelectSpecificBlob   *sql.Stmt
+	stSelectSpecificUser   *sql.Stmt
+	stFindUserIdByName     *sql.Stmt
+	stInsertUser           *sql.Stmt
+	stUpdateUser           *sql.Stmt
+	stInsertAnimal         *sql.Stmt
+	stUpdateAnimal         *sql.Stmt
 }
 
 type Database = *DatabaseStruct
@@ -43,16 +55,15 @@ func newDatabase() Database {
 
 var singletonDatabase Database
 
-var UserExistsError = errors.New("named user already exists")
-var UserDoesntExistError = errors.New("user does not exist")
-
 func (db Database) prepareStatements() {
-	db.stmtSelectSpecificAnimal = db.preparedStatement(`SELECT * FROM ` + tableNameAnimal + ` WHERE id = ?`)
-	db.stmtSelectSpecificUser = db.preparedStatement(`SELECT * FROM ` + tableNameUser + ` WHERE id = ?`)
-	db.stmtSelectSpecificBlob = db.preparedStatement(`SELECT * FROM ` + tableNameBlob + ` WHERE id = ?`)
-	db.stmtFindUserIdByName = db.preparedStatement(`SELECT id FROM ` + tableNameUser + ` WHERE name = ?`)
-	db.stmtInsertUser = db.preparedStatement(`INSERT INTO ` + tableNameUser + ` (name, userState, email, password) VALUES(?,?,?,?)`)
-	db.stmtUserUpdate = db.preparedStatement(`UPDATE ` + tableNameUser + ` SET name = ?, userState = ?, email = ?, password = ? WHERE id = ?`)
+	db.stSelectSpecificAnimal = db.preparedStatement(`SELECT * FROM ` + tableNameAnimal + ` WHERE id = ?`)
+	db.stSelectSpecificUser = db.preparedStatement(`SELECT * FROM ` + tableNameUser + ` WHERE id = ?`)
+	db.stSelectSpecificBlob = db.preparedStatement(`SELECT * FROM ` + tableNameBlob + ` WHERE id = ?`)
+	db.stFindUserIdByName = db.preparedStatement(`SELECT id FROM ` + tableNameUser + ` WHERE name = ?`)
+	db.stInsertUser = db.preparedStatement(`INSERT INTO ` + tableNameUser + ` (name, userState, email, password) VALUES(?,?,?,?)`)
+	db.stUpdateUser = db.preparedStatement(`UPDATE ` + tableNameUser + ` SET name = ?, userState = ?, email = ?, password = ? WHERE id = ?`)
+	db.stInsertAnimal = db.preparedStatement(`INSERT INTO ` + tableNameAnimal + ` (name, summary, details, campaign_balance, campaign_target) VALUES(?,?,?,?,?)`)
+	db.stUpdateAnimal = db.preparedStatement(`UPDATE ` + tableNameAnimal + ` SET name = ?, summary = ?, details = ?, campaign_balance = ?, campaign_target = ? WHERE id = ?`)
 }
 
 func CreateDatabase() Database {
@@ -92,10 +103,18 @@ func (db Database) Open() error {
 			Pr("err:", err)
 			CheckState(err != nil)
 
-			b, err := db.CreateUserWith(NewUser().SetName("jeff").SetState(UserstateWaitingActivation).SetEmail("abc@xyz.com"))
+			b, err := db.CreateUser(NewUser().SetName("jeff").SetState(UserstateWaitingActivation).SetEmail("abc@xyz.com"))
 			Pr("created user; err:", err, INDENT, b)
-			b2, err2 := db.GetUser(b.Id())
+			b2, err2 := db.ReadUser(b.Id())
 			Pr("read user with id:", b.Id(), "err:", err2, INDENT, b2)
+
+			Pr("Creating some animals")
+			for i := 0; i < 20; i++ {
+				a := RandomAnimal()
+				a2, err := db.CreateAnimal(a)
+				Pr("added animal:", INDENT, a2)
+				CheckOk(err)
+			}
 		}
 	}
 	return db.err
@@ -139,7 +158,7 @@ func SQLiteExperiment() {
 	CheckOk(d.DeleteAllRowsInTable("animal"))
 	for i := 0; i < 20; i++ {
 		a := RandomAnimal()
-		CheckOk(d.AddAnimal(a))
+		CheckOkWith(d.CreateAnimal(a))
 		Pr("added animal:", INDENT, a)
 	}
 }
@@ -202,51 +221,6 @@ func (db Database) DeleteAllRowsInTable(name string) error {
 	return db.err
 }
 
-// ------------------------------------------------------------------------------------
-// Animal
-// ------------------------------------------------------------------------------------
-
-func (db Database) AddAnimal(a AnimalBuilder) error {
-	db.lock()
-	defer db.unlock()
-	result, err := db.db.Exec(`INSERT INTO `+tableNameAnimal+` (name, summary, details, campaign_target, campaign_balance) VALUES(?,?,?,?,?)`,
-		a.Name(), a.Summary(), a.Details(), a.CampaignTarget(), a.CampaignBalance())
-	if !db.setError(err) {
-		id, err2 := result.LastInsertId()
-		if !db.setError(err2) {
-			a.SetId(int(id))
-		}
-	}
-	return db.err
-}
-
-func (db Database) scanAnimal(rows *sql.Row) AnimalBuilder {
-	var ab AnimalBuilder
-	var id int64
-	var name string
-	var summary string
-	var details string
-	var campaignTarget, campaignBalance int32
-	err := rows.Scan(&id, &name, &summary, &details, &campaignTarget, &campaignBalance)
-	if err != nil && err != sql.ErrNoRows {
-		db.setError(err)
-	} else if err != sql.ErrNoRows {
-		ab = NewAnimal().SetId(int(id)).SetName(name).SetSummary(summary).SetDetails(details).SetCampaignTarget(int(campaignTarget)).SetCampaignBalance(int(campaignBalance))
-	}
-	return ab
-}
-
-func (db Database) GetAnimal(id int) (Animal, error) {
-	db.lock()
-	defer db.unlock()
-	pr := PrIf(false)
-	pr("GetAnimal:", id)
-	rows := db.stmtSelectSpecificAnimal.QueryRow(id)
-	result := db.scanAnimal(rows)
-	pr("result:", INDENT, result)
-	return result, db.err
-}
-
 // Acquire the lock on the database, and clear the error register.
 func (db Database) lock() {
 	if db.state != dbStateOpen {
@@ -267,9 +241,9 @@ func (db Database) failIfError(err error) {
 }
 
 func (db Database) preparedStatement(sqlStr string) *sql.Stmt {
-	stmt, err := db.db.Prepare(sqlStr)
+	st, err := db.db.Prepare(sqlStr)
 	db.failIfError(err)
-	return stmt
+	return st
 }
 
 func (db Database) InsertBlob(blob []byte) (Blob, error) {
@@ -289,7 +263,7 @@ func (db Database) InsertBlob(blob []byte) (Blob, error) {
 		CheckState(attempt < 50, "failed to choose a unique blob id!")
 		bb.SetId(string(GenerateBlobId()))
 		pr("blob id:", bb.Id())
-		rows := db.stmtSelectSpecificBlob.QueryRow(bb.Id())
+		rows := db.stSelectSpecificBlob.QueryRow(bb.Id())
 		result := db.scanBlob(rows)
 		pr("result:", INDENT, result)
 		if result == nil {
@@ -308,7 +282,7 @@ func (db Database) ReadBlob(blobId BlobId) (Blob, error) {
 	defer db.unlock()
 
 	idStr := blobId
-	rows := db.stmtSelectSpecificBlob.QueryRow(idStr)
+	rows := db.stSelectSpecificBlob.QueryRow(idStr)
 	bb := db.scanBlob(rows)
 	var b Blob
 	if db.ok() {
@@ -334,21 +308,83 @@ func (db Database) scanBlob(rows *sql.Row) BlobBuilder {
 // User
 // ------------------------------------------------------------------------------------
 
-func (db Database) GetUser(userId int) (User, error) {
+// Create a user with the given (unique) name.
+func (db Database) CreateUser(user User) (User, error) {
+	db.lock()
+	defer db.unlock()
+
+	var createdUser User
+
+	for {
+		existingId := db.auxFindUserWithName(user.Name())
+		if existingId != 0 {
+			db.setError(UserExistsError)
+			break
+		}
+
+		result, err := db.stInsertUser.Exec(user.Name(), user.State().String(), user.Email(), user.Password())
+		if db.setError(err) {
+			break
+		}
+
+		id, err := result.LastInsertId()
+		if db.setError(err) {
+			break
+		}
+
+		createdUser = user.Build().ToBuilder().SetId(int(id)).Build()
+		Todo("Do we still need to reserve a '0' user? Why or why not?")
+		CheckState(createdUser.Id() > 0, "unexpected id in new record:", createdUser)
+
+		break
+	}
+
+	return createdUser, db.err
+}
+
+func (db Database) FindUserWithName(userName string) (int, error) {
 	pr := PrIf(false)
-	pr("GetUser, id:", userId)
+	pr("FindUserWithName:", userName)
 
 	db.lock()
 	defer db.unlock()
-	rows := db.stmtSelectSpecificUser.QueryRow(userId)
 
+	foundId := db.auxFindUserWithName(userName)
+	if foundId == 0 {
+		db.setError(UserDoesntExistError)
+	}
+	pr("returning foundId", foundId, "error", db.err)
+
+	return foundId, db.err
+}
+
+func (db Database) auxFindUserWithName(userName string) int {
+
+	rows := db.stFindUserIdByName.QueryRow(userName)
+
+	var id int
+	err := rows.Scan(&id)
+	if err != sql.ErrNoRows {
+		db.setError(err)
+	}
+	Pr("auxFindUserWithName", userName, "returning", id)
+	return id
+}
+
+func (db Database) ReadUser(userId int) (User, error) {
+	pr := PrIf(false)
+	pr("ReadUser, id:", userId)
+
+	db.lock()
+	defer db.unlock()
+	rows := db.stSelectSpecificUser.QueryRow(userId)
 	result := db.scanUser(rows)
 	pr("result:", INDENT, result, CR, "error:", db.err)
 	return result, db.err
 }
 
 func (db Database) scanUser(rows *sql.Row) UserBuilder {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("scanUser")
 
 	b := NewUser()
@@ -379,34 +415,6 @@ func (db Database) scanUser(rows *sql.Row) UserBuilder {
 	return b
 }
 
-func (db Database) FindUserWithName(userName string) (int, error) {
-	pr := PrIf(true)
-	pr("FindUserWithName:", userName)
-
-	db.lock()
-	defer db.unlock()
-	foundId := db.auxFindUserWithName(userName)
-	Pr("foundId:", foundId)
-	if foundId == 0 {
-		db.setError(Error("no user with name:", userName))
-	}
-	Pr("returning foundId", foundId, "error", db.err)
-	return foundId, db.err
-}
-
-func (db Database) auxFindUserWithName(userName string) int {
-
-	rows := db.stmtFindUserIdByName.QueryRow(userName)
-
-	var id int
-	err := rows.Scan(&id)
-	if err != sql.ErrNoRows {
-		db.setError(err)
-	}
-	Pr("auxFindUserWithName", userName, "returning", id)
-	return id
-}
-
 // Write user to database; must already exist.
 func (db Database) UpdateUser(user User) error {
 	pr := PrIf(false)
@@ -416,7 +424,7 @@ func (db Database) UpdateUser(user User) error {
 
 	for {
 		pr("UpdateUser:", INDENT, user)
-		result, err := db.stmtUserUpdate.Exec(user.Name(), user.State().String(), user.Email(), user.Password(), user.Id())
+		result, err := db.stUpdateUser.Exec(user.Name(), user.State().String(), user.Email(), user.Password(), user.Id())
 		pr("result:", result, "err:", err)
 		if db.setError(err) {
 			break
@@ -438,21 +446,20 @@ func (db Database) UpdateUser(user User) error {
 	return db.err
 }
 
-// Create a user with the given (unique) name.
-func (db Database) CreateUserWith(user User) (User, error) {
+// ------------------------------------------------------------------------------------
+// Animal
+// ------------------------------------------------------------------------------------
+
+func (db Database) CreateAnimal(a Animal) (Animal, error) {
+
 	db.lock()
 	defer db.unlock()
 
-	var createdUser User
+	var createdAnimal Animal
 
 	for {
-		existingId := db.auxFindUserWithName(user.Name())
-		if existingId != 0 {
-			db.setError(UserExistsError)
-			break
-		}
 
-		result, err := db.stmtInsertUser.Exec(user.Name(), user.State().String(), user.Email(), user.Password())
+		result, err := db.stInsertAnimal.Exec(a.Name(), a.Summary(), a.Details(), a.CampaignBalance(), a.CampaignTarget())
 		if db.setError(err) {
 			break
 		}
@@ -462,12 +469,70 @@ func (db Database) CreateUserWith(user User) (User, error) {
 			break
 		}
 
-		createdUser = user.Build().ToBuilder().SetId(int(id)).Build()
-		Todo("Do we still need to reserve a '0' user? Why or why not?")
-		CheckState(createdUser.Id() > 0, "unexpected id in new record:", createdUser)
+		createdAnimal = a.Build().ToBuilder().SetId(int(id)).Build()
+		CheckState(createdAnimal.Id() > 0, "unexpected id in new record:", createdAnimal)
 
 		break
 	}
 
-	return createdUser, db.err
+	return createdAnimal, db.err
+}
+
+func (db Database) ReadAnimal(id int) (Animal, error) {
+	db.lock()
+	defer db.unlock()
+	pr := PrIf(false)
+	pr("ReadAnimal:", id)
+	rows := db.stSelectSpecificAnimal.QueryRow(id)
+	result := db.scanAnimal(rows)
+	pr("result:", INDENT, result)
+	return result, db.err
+}
+
+func (db Database) scanAnimal(rows *sql.Row) AnimalBuilder {
+	var ab AnimalBuilder
+	var id int64
+	var name string
+	var summary string
+	var details string
+	var campaignTarget, campaignBalance int32
+	err := rows.Scan(&id, &name, &summary, &details, &campaignTarget, &campaignBalance)
+	if err != nil && err != sql.ErrNoRows {
+		db.setError(err)
+	} else if err != sql.ErrNoRows {
+		ab = NewAnimal().SetId(int(id)).SetName(name).SetSummary(summary).SetDetails(details).SetCampaignTarget(int(campaignTarget)).SetCampaignBalance(int(campaignBalance))
+	}
+	return ab
+}
+
+// Write animal to database; must already exist.
+func (db Database) UpdateAnimal(a Animal) error {
+	pr := PrIf(false)
+
+	db.lock()
+	defer db.unlock()
+
+	for {
+		pr("UpdateAnimal:", INDENT, a)
+		Todo("Have convention of listing fields in alpha order here?")
+		result, err := db.stUpdateAnimal.Exec(a.Name(), a.Summary(), a.Details(), a.CampaignBalance(), a.CampaignTarget(), a.Id())
+		pr("result:", result, "err:", err)
+		if db.setError(err) {
+			break
+		}
+
+		count, err := result.RowsAffected()
+		pr("rows affected:", count, "err:", err)
+		if db.setError(err) {
+			break
+		}
+
+		pr("count:", count)
+		if count != 1 {
+			db.setError(AnimalDoesntExistError)
+		}
+		break
+	}
+	pr("...returning:", db.err)
+	return db.err
 }

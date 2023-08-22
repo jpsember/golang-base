@@ -100,7 +100,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		return
 	}
 
-	userData, _ := Db().GetUser(userId)
+	userData, _ := Db().ReadUser(userId)
 	if userData == nil {
 		sess.SetWidgetIdProblem(id_user_name, "User is unavaliable; sorry")
 		return
