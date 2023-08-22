@@ -119,7 +119,11 @@ const (
 func (db Database) createTables() {
 }
 
-func (db Database) GetUser(userId int) User {
+// ------------------------------------------------------------------------------------
+// User
+// ------------------------------------------------------------------------------------
+
+func (db Database) ReadUser(userId int) (User, error) {
 	db.lock()
 	defer db.unlock()
 	mp := db.getTable(tableNameUser)
@@ -183,15 +187,11 @@ func (db Database) CreateUser(userName string) UserBuilder {
 	return us
 }
 
-func (db Database) GetAnimal(id int) (Animal, error) {
-	db.lock()
-	defer db.unlock()
-	mp := db.getTable(tableNameAnimal)
-	obj := mp.GetData(id, DefaultAnimal)
-	return obj.(Animal), db.err
-}
+// ------------------------------------------------------------------------------------
+// Animal
+// ------------------------------------------------------------------------------------
 
-func (db Database) AddAnimal(a AnimalBuilder) {
+func (db Database) AddAnimal(a AnimalBuilder) error {
 	db.lock()
 	defer db.unlock()
 	mp := db.getTable(tableNameAnimal)
@@ -199,6 +199,15 @@ func (db Database) AddAnimal(a AnimalBuilder) {
 	a.SetId(id)
 	mp.Put(id, a.Build())
 	db.setModified(mp)
+	return db.err
+}
+
+func (db Database) ReadAnimal(id int) (Animal, error) {
+	db.lock()
+	defer db.unlock()
+	mp := db.getTable(tableNameAnimal)
+	obj := mp.GetData(id, DefaultAnimal)
+	return obj.(Animal), db.err
 }
 
 const SECONDS = 1000
