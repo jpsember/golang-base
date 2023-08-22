@@ -144,13 +144,16 @@ func (p SignUpPage) signUpListener(s Session, widget Widget) {
 	email := s.State.OptString(id_user_email, "")
 
 	ub := Db().CreateUser(userName)
+	Pr("created user with name:", userName, INDENT, ub)
 	if ub == nil {
 		s.SetWidgetIdProblem(id_user_name, "This user already exists")
 		return
 	}
 	ub.SetEmail(email).SetPassword(userPwd).SetState(webapp_data.UserstateWaitingActivation)
+	Pr("writing user:", INDENT, ub)
 	err := Db().WriteUser(ub)
 	CheckOk(err)
+	Pr("wrote user:", ub)
 
 	Todo("add support for WaitingActivation")
 	Todo("if everything worked out, change the displayed page / login state?")

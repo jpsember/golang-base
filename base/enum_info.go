@@ -40,3 +40,11 @@ func (info *EnumInfo) ValueOf(s string) (uint32, error) {
 	}
 	return 0, fmt.Errorf("can't find enum with label %q", s)
 }
+
+func (info *EnumInfo) FromString(s string, holder ErrorHolder) uint32 {
+	val, err := info.ValueOf(s)
+	if holder != nil {
+		holder.Add(err)
+	}
+	return val
+}
