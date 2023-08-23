@@ -90,6 +90,22 @@ type ExpObj struct {
 	Amount int
 }
 
+type UserStateScanner struct {
+	State UserState
+}
+
+func (x UserStateScanner) Scan(v any) error {
+	str := v.(string)
+	parsedState, err := UserStateEnumInfo.ValueOf(str)
+	if err != nil {
+		Pr("failed to parse:", err)
+
+	} else {
+		x.State = UserState(parsedState)
+	}
+	return err
+}
+
 func (db Database) Open() error {
 	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
 	CheckState(db.dataSourceName != "", "<1No call to SetDataSourceName made")
@@ -106,7 +122,7 @@ func (db Database) Open() error {
 		if true && Alert("some experiments") {
 
 			st := db.preparedStatement(`INSERT INTO ` + tableNameExperiment + ` (str, state, amount) VALUES(?,?,?)`)
-			result, err := st.Exec("Jeff", "active", 42)
+			result, err := st.Exec("Jeff", "userstate_waiting_activation", 42)
 			Pr("result:", result, "err:", err)
 
 			id, err := result.LastInsertId()
@@ -122,9 +138,11 @@ func (db Database) Open() error {
 			{
 				obj := ExpObj{}
 
-				err := rows.Scan(&obj.Id, &obj.Str, &obj.State, &obj.Amount)
+				ss := UserStateScanner{}
+				err := rows.Scan(&obj.Id, &obj.Str, &ss, &obj.Amount)
 				CheckOk(err)
 				Pr("scanned:", INDENT, obj)
+				obj.State = ss.State
 			}
 
 			Halt()
