@@ -83,6 +83,13 @@ func (db Database) SetDataSourceName(dataSourceName string) {
 	//Alert("<1Setting data source name:", dataSourceName, CurrentDirectory())
 }
 
+type ExpObj struct {
+	Id     int
+	Str    string
+	State  string
+	Amount int
+}
+
 func (db Database) Open() error {
 	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
 	CheckState(db.dataSourceName != "", "<1No call to SetDataSourceName made")
@@ -96,25 +103,31 @@ func (db Database) Open() error {
 		db.createTables()
 		db.prepareStatements()
 
-		if false && Alert("some experiments") {
+		if true && Alert("some experiments") {
 
-			Pr("Attempting to Update a user that doesn't exist")
-			err := db.UpdateUser(NewUser().SetName("zebra").SetId(42))
-			Pr("err:", err)
-			CheckState(err != nil)
+			st := db.preparedStatement(`INSERT INTO ` + tableNameExperiment + ` (str, state, amount) VALUES(?,?,?)`)
+			result, err := st.Exec("Jeff", "active", 42)
+			Pr("result:", result, "err:", err)
 
-			b, err := db.CreateUser(NewUser().SetName("jeff").SetState(UserstateWaitingActivation).SetEmail("abc@xyz.com"))
-			Pr("created user; err:", err, INDENT, b)
-			b2, err2 := db.ReadUser(b.Id())
-			Pr("read user with id:", b.Id(), "err:", err2, INDENT, b2)
+			id, err := result.LastInsertId()
+			CheckOk(err)
+			Pr("id:", id)
 
-			Pr("Creating some animals")
-			for i := 0; i < 20; i++ {
-				a := RandomAnimal()
-				a2, err := db.CreateAnimal(a)
-				Pr("added animal:", INDENT, a2)
+			// Try performing a read operation
+
+			st2 := db.preparedStatement(`SELECT * FROM ` + tableNameExperiment + ` WHERE id = ?`)
+
+			rows := st2.QueryRow(id)
+
+			{
+				obj := ExpObj{}
+
+				err := rows.Scan(&obj.Id, &obj.Str, &obj.State, &obj.Amount)
 				CheckOk(err)
+				Pr("scanned:", INDENT, obj)
 			}
+
+			Halt()
 		}
 	}
 	return db.err
@@ -166,12 +179,24 @@ func SQLiteExperiment() {
 const tableNameAnimal = `animal`
 const tableNameUser = `user`
 const tableNameBlob = `blobtable`
+const tableNameExperiment = `experiment`
 
 func (db Database) createTables() {
 	database := db.db
 	{
 		var err error
 
+		{
+			const create string = `
+ CREATE TABLE IF NOT EXISTS ` + tableNameExperiment + ` (
+     id INTEGER PRIMARY KEY,
+     str VARCHAR(20) NOT NULL,
+     state VARCHAR(20) NOT NULL,
+     amount INT
+     )`
+			_, err = database.Exec(create)
+			db.setError(err)
+		}
 		{
 			// Create a table if it doesn't exist
 			const create string = `
@@ -187,12 +212,14 @@ func (db Database) createTables() {
 			db.setError(err)
 		}
 		{
+			Todo("Use regexp to fill in type stuff, e.g. VARCHAR(20) NOT NULL for password")
 			Todo("!Use same limits on user name, email, etc here")
 			const create string = `
  CREATE TABLE IF NOT EXISTS ` + tableNameUser + ` (
      id INTEGER PRIMARY KEY,
      name VARCHAR(64) NOT NULL,
-     userState VARCHAR(20) NOT NULL,
+     user_state VARCHAR(20) NOT NULL,
+	 user_class VARCHAR(20) NOT NULL,
      email VARCHAR(60) NOT NULL,
      password VARCHAR(25) NOT NULL
      )`
@@ -386,23 +413,21 @@ func (db Database) scanUser(rows *sql.Row) UserBuilder {
 
 	var id int
 	var name string
-	var userState string
+	var user_state string
+	var user_class string
 	var email string
 	var password string
 
 	errHolder := NewErrorHolder()
 
-	pr("rows.Scan, before:", CR, id, name, userState, email, password)
-
-	err := rows.Scan(&id, &name, &userState, &email, &password)
-	pr("rows.Scan, after:", CR, id, name, userState, email, password)
+	err := rows.Scan(&id, &name, &user_state, &user_class, &email, &password)
 	pr("err:", err)
 	if err != sql.ErrNoRows {
 		errHolder.Add(err)
 		b = NewUser()
 		b.SetId(id)
 		b.SetName(name)
-		b.SetState(UserState(UserStateEnumInfo.FromString(userState, errHolder)))
+		b.SetState(UserState(UserStateEnumInfo.FromString(user_state, errHolder)))
 		b.SetEmail(email)
 		b.SetPassword(password)
 	}

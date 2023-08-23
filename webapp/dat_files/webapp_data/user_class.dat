@@ -1,0 +1,5 @@
+enum {
+    userclass_donor,
+    userclass_manager,
+    userclass_admin,
+}

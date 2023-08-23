@@ -1,5 +1,4 @@
 enum {
-    userstate_unknown,
     userstate_waiting_activation,
     userstate_active,
 }

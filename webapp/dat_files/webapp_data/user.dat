@@ -6,4 +6,5 @@ class {
     enum UserState state;
     string email;
     string password;
+    enum UserClass user_class;
 }
