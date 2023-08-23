@@ -86,7 +86,7 @@ func (db Database) SetDataSourceName(dataSourceName string) {
 type ExpObj struct {
 	Id     int
 	Str    string
-	State  string
+	State  UserState
 	Amount int
 }
 
