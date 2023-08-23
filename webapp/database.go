@@ -213,81 +213,92 @@ func NewtblField() tblField {
 }
 
 type StringParserStruct struct {
-	Content string
-	Cursor  int
+	content string
+	cursor  int
 }
 
 type StringParser = *StringParserStruct
 
 func NewStringParser(content string) StringParser {
 	t := &StringParserStruct{
-		Content: strings.TrimSpace(content),
+		content: strings.TrimSpace(content),
 	}
+	Pr("constructed new string parser:", INDENT, t)
 	return t
 }
 
+func (p StringParser) auxReadTo(delim byte) (string, int) {
+	j := p.cursor
+	for j < len(p.content) && p.content[j] != delim {
+		j++
+	}
+	Pr("auxReadTo, delim:", delim, "cursor:", p.cursor, "j:", j)
+	Pr(p)
+
+	res := strings.TrimSpace(p.content[p.cursor:j])
+	newCursor := MinInt(j+1, len(p.content))
+	return res, newCursor
+}
+
+// Read the characters that occur before a delimeter, and skip the delimiter.
+// If no delimeter is found, reads and returns the remaining characters.  In
+// either case, the substring returned will have leading and trailing whitespace trimmed.
+func (p StringParser) ReadTo(delim byte) string {
+	CheckState(!p.Done())
+	res, newCursor := p.auxReadTo(delim)
+	p.cursor = newCursor
+	Pr(p, "ReadTo:", Quoted(res))
+	return res
+}
+
+// Peak at the next substring; returns "" if done.
+func (p StringParser) OptTo(delim byte) string {
+	res, _ := p.auxReadTo(delim)
+	return res
+}
+
+func (p StringParser) ReadToIf(delim byte, target string) bool {
+	var output bool
+	res, newCursor := p.auxReadTo(delim)
+	if res == target {
+		p.cursor = newCursor
+		output = true
+	}
+	Pr("ReadToIf;", p, "target:", Quoted(target), "returning:", output)
+	return output
+}
+
+// Determine if no characters remain.
 func (p StringParser) Done() bool {
-	return p.Cursor == len(p.Content)
+	return p.cursor == len(p.content)
 }
 
 func (p StringParser) String() string {
 	s := strings.Builder{}
 	s.WriteString(`"`)
-	s.WriteString(p.Content[0:p.Cursor])
+	s.WriteString(p.content[0:p.cursor])
 	s.WriteString(">>>")
-	s.WriteString(p.Content[p.Cursor:])
+	s.WriteString(p.content[p.cursor:])
 	s.WriteString(`"`)
 	return s.String()
 }
 
-func (p StringParser) ReadTo(delim byte) string {
-	CheckState(!p.Done())
-
-	//Pr("ReadTo:", string(delim), INDENT, p)
-	j := p.Cursor
-	for j < len(p.Content) && p.Content[j] != delim {
-		j++
-	}
-
-	res := strings.TrimSpace(p.Content[p.Cursor:j])
-	p.Cursor = MinInt(j+1, len(p.Content))
-	return res
-}
-
-//
-//func (p StringParser) AdvanceOpt(delim string) string { return p.advanceTo(delim, true) }
-//
-//func (p StringParser) Advance(delim string) string {
-//	return p.advanceTo(delim, false)
-//}
-//
-//func (p StringParser) advanceTo(delim string, orEnd bool) string {
-//	CheckState(!p.Done())
-//
-//	Pr("Advance to:", Quoted(delim), INDENT, p)
-//	i := p.Cursor + strings.Index(p.Content[p.Cursor:], delim)
-//	var res string
-//	if i < 0 {
-//		if !orEnd {
-//			BadState("Can't find delimiter:", Quoted(delim), CR, p)
-//		}
-//		res = p.Content[p.Cursor:]
-//		p.Cursor = len(p.Content)
-//	} else {
-//		res = p.Content[p.Cursor:i]
-//		i++ // Skip the delimeter
-//		x := len(p.Content)
-//		for i < x && p.Content[i] == ' ' {
-//			i++ // Skip space
-//		}
-//		p.Cursor = i
-//	}
-//	return strings.TrimSpace(res)
-//}
-
 func parseTypeInfo(sb *strings.Builder, info string) {
-	Todo("My own version of strings.Builder?")
-	sb.WriteString(info)
+	ps := NewStringParser(info)
+
+	typeExpr := ps.ReadTo(' ')
+	isKey := ps.ReadToIf(' ', "key")
+
+	switch typeExpr {
+	case "int":
+		sb.WriteString("INTEGER ")
+		break
+	default:
+		BadArg("<1Unsupported type expr:", typeExpr, "in:", info)
+	}
+	if isKey {
+		sb.WriteString("PRIMARY KEY ")
+	}
 }
 
 func (db Database) CreateTableFrom(args ...any) {
@@ -296,6 +307,7 @@ func (db Database) CreateTableFrom(args ...any) {
 	sb := strings.Builder{}
 
 	tblName := ps.ReadTo(':')
+	Pr("ps.ReadTo, table name:", tblName)
 
 	sb.WriteString("CREATE TABLE IF NOT EXISTS ")
 	sb.WriteString(tblName)
@@ -304,8 +316,11 @@ func (db Database) CreateTableFrom(args ...any) {
 	first := true
 	for !ps.Done() {
 		fieldName := ps.ReadTo(' ')
+		Pr("fieldName:", fieldName)
 		typeInfo := ps.ReadTo(',')
+		Pr("typeInfo:", typeInfo)
 		Todo("enforce snake case")
+		Pr("read fieldName:", Quoted(fieldName), "typeInfo:", Quoted(typeInfo))
 		if !first {
 			sb.WriteString(", ")
 		}
