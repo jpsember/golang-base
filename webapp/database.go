@@ -105,27 +105,35 @@ func (db Database) Open() error {
 
 		if true && Alert("some experiments") {
 
-			st := db.preparedStatement(`INSERT INTO ` + tableNameExperiment + ` (str, state, amount) VALUES(?,?,?)`)
-			result, err := st.Exec("Jeff", "userstate_foo", 42)
-			Pr("result:", result, "err:", err)
+			// Store a single object in the experiment table, with state=ACTIVE
+
+			constructedUser := NewUser().SetName("jeff").SetState(UserstateActive)
+			insertStatement := db.preparedStatement(`INSERT INTO ` + tableNameExperiment + ` (str, state, amount ) VALUES(?,?,?)`)
+
+			result, err := insertStatement.Exec(constructedUser.Name(), constructedUser.State(), 42)
+			CheckOk(err)
 
 			id, err := result.LastInsertId()
 			CheckOk(err)
-			Pr("id:", id)
+			constructedUser.SetId(int(id))
+
+			Pr("Stored user in database:", INDENT, constructedUser)
 
 			// Try performing a read operation
 
-			st2 := db.preparedStatement(`SELECT * FROM ` + tableNameExperiment + ` WHERE id = ?`)
+			readStatement := db.preparedStatement(`SELECT * FROM ` + tableNameExperiment + ` WHERE id = ?`)
 
-			rows := st2.QueryRow(id)
-
+			rows := readStatement.QueryRow(id)
 			{
-				// This works; but we must be careful to use a mutable object, as it will modify the fields directly
-				obj := ExpObj{}
+				readBackUser := NewUser()
+				Pr("before scanning:", INDENT, readBackUser)
 
-				err := rows.Scan(&obj.Id, &obj.Str, &obj.State, &obj.Amount)
+				var unusedAmount int
+				var unusedString string
+				err := rows.Scan(readBackUser.IdPtr(), &unusedString, readBackUser.StatePtr(), &unusedAmount)
+
 				CheckOk(err)
-				Pr("scanned:", INDENT, obj)
+				Pr("after scanning:", INDENT, readBackUser)
 			}
 
 			Halt()
