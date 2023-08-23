@@ -5,11 +5,20 @@
 package webapp
 
 import (
+	"errors"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"reflect"
 	"sync"
 )
+
+// ------------------------------------------------------------------------------------
+// Our errors related to database operations
+// ------------------------------------------------------------------------------------
+
+var UserExistsError = errors.New("named user already exists")
+var UserDoesntExistError = errors.New("user does not exist")
+var AnimalDoesntExistError = errors.New("animal does not exist")
 
 type DatabaseStruct struct {
 	Base         BaseObject
@@ -123,20 +132,72 @@ func (db Database) createTables() {
 // User
 // ------------------------------------------------------------------------------------
 
+// Create a user with the given (unique) name.
+func (db Database) CreateUser(user User) (User, error) {
+	db.lock()
+	defer db.unlock()
+
+	var createdUser User
+
+	for {
+		existingId := db.auxFindUserWithName(user.Name())
+		if existingId != 0 {
+			db.setError(UserExistsError)
+			break
+		}
+
+		mp := db.getTable(tableNameUser)
+		key := mp.nextUniqueKey()
+		us := user.ToBuilder()
+		us.SetId(key)
+
+		createdUser = us.Build()
+		mp.Put(us.Id(), createdUser)
+		db.setModified(mp)
+
+		CheckState(createdUser.Id() > 0, "unexpected id in new record:", createdUser)
+		break
+	}
+
+	return createdUser, db.err
+}
+
 func (db Database) ReadUser(userId int) (User, error) {
 	db.lock()
 	defer db.unlock()
 	mp := db.getTable(tableNameUser)
 	parsedValue := mp.GetData(userId, DefaultUser)
 	if parsedValue == nil {
-		return nil
+		return nil, UserDoesntExistError
 	}
-	return parsedValue.(User)
+	return parsedValue.(User), nil
+}
+
+// Write user to database; must already exist.
+func (db Database) UpdateUser(user User) error {
+	pr := PrIf(false)
+
+	db.lock()
+	defer db.unlock()
+
+	for {
+		pr("UpdateUser:", INDENT, user)
+		mp := db.getTable(tableNameUser)
+		if !mp.HasKey(user.Id()) {
+			db.setError(UserDoesntExistError)
+			break
+		}
+		mp.Put(user.Id(), user)
+		break
+	}
+	pr("...returning:", db.err)
+	return db.err
 }
 
 func (db Database) FindUserWithName(userName string) (int, error) {
 	db.lock()
 	defer db.unlock()
+
 	foundId := db.auxFindUserWithName(userName)
 	if foundId == 0 {
 		db.setError(Error("no user with name:", userName))
@@ -167,24 +228,6 @@ func (db Database) WriteUser(user User) error {
 	Todo("have table set itself modified with Put, etc")
 	db.setModified(mp)
 	return nil
-}
-
-// Create a user with the given name.  Returns nil if unsuccessful, else a UserBuilder.
-func (db Database) CreateUser(userName string) UserBuilder {
-	db.lock()
-	defer db.unlock()
-	foundId := db.auxFindUserWithName(userName)
-	if foundId != 0 {
-		return nil
-	}
-	mp := db.getTable(tableNameUser)
-	key := mp.nextUniqueKey()
-	us := NewUser()
-	us.SetId(key)
-	us.SetName(userName)
-	mp.Put(us.Id(), us.Build())
-	db.setModified(mp)
-	return us
 }
 
 // ------------------------------------------------------------------------------------
