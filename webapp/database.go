@@ -10,6 +10,7 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	_ "github.com/mattn/go-sqlite3"
+	"strings"
 	"sync"
 )
 
@@ -105,6 +106,15 @@ func (db Database) Open() error {
 
 		if true && Alert("some experiments") {
 
+			//  CREATE TABLE IF NOT EXISTS ` + tableNameExperiment + ` (
+			//     id INTEGER PRIMARY KEY,
+			//     str VARCHAR(20) NOT NULL,
+			//     state VARCHAR(20) NOT NULL,
+			//     amount INT
+			//     )`
+			db.CreateTableFrom(tableNameExperiment, ": id int key, str string", USER_PASSWORD_MAX_LENGTH, "state enum", "amount int")
+			Halt()
+
 			// Store a single object in the experiment table, with state=ACTIVE
 
 			constructedUser := NewUser().SetName("jeff").SetState(UserstateActive)
@@ -189,6 +199,125 @@ const tableNameAnimal = `animal`
 const tableNameUser = `user`
 const tableNameBlob = `blobtable`
 const tableNameExperiment = `experiment`
+
+type tblFieldStruct struct {
+	Name     string
+	TypeExpr string
+}
+
+type tblField = *tblFieldStruct
+
+func NewtblField() tblField {
+	t := &tblFieldStruct{}
+	return t
+}
+
+type StringParserStruct struct {
+	Content string
+	Cursor  int
+}
+
+type StringParser = *StringParserStruct
+
+func NewStringParser(content string) StringParser {
+	t := &StringParserStruct{
+		Content: strings.TrimSpace(content),
+	}
+	return t
+}
+
+func (p StringParser) Done() bool {
+	return p.Cursor == len(p.Content)
+}
+
+func (p StringParser) String() string {
+	s := strings.Builder{}
+	s.WriteString(`"`)
+	s.WriteString(p.Content[0:p.Cursor])
+	s.WriteString(">>>")
+	s.WriteString(p.Content[p.Cursor:])
+	s.WriteString(`"`)
+	return s.String()
+}
+
+func (p StringParser) ReadTo(delim byte) string {
+	CheckState(!p.Done())
+
+	//Pr("ReadTo:", string(delim), INDENT, p)
+	j := p.Cursor
+	for j < len(p.Content) && p.Content[j] != delim {
+		j++
+	}
+
+	res := strings.TrimSpace(p.Content[p.Cursor:j])
+	p.Cursor = MinInt(j+1, len(p.Content))
+	return res
+}
+
+//
+//func (p StringParser) AdvanceOpt(delim string) string { return p.advanceTo(delim, true) }
+//
+//func (p StringParser) Advance(delim string) string {
+//	return p.advanceTo(delim, false)
+//}
+//
+//func (p StringParser) advanceTo(delim string, orEnd bool) string {
+//	CheckState(!p.Done())
+//
+//	Pr("Advance to:", Quoted(delim), INDENT, p)
+//	i := p.Cursor + strings.Index(p.Content[p.Cursor:], delim)
+//	var res string
+//	if i < 0 {
+//		if !orEnd {
+//			BadState("Can't find delimiter:", Quoted(delim), CR, p)
+//		}
+//		res = p.Content[p.Cursor:]
+//		p.Cursor = len(p.Content)
+//	} else {
+//		res = p.Content[p.Cursor:i]
+//		i++ // Skip the delimeter
+//		x := len(p.Content)
+//		for i < x && p.Content[i] == ' ' {
+//			i++ // Skip space
+//		}
+//		p.Cursor = i
+//	}
+//	return strings.TrimSpace(res)
+//}
+
+func parseTypeInfo(sb *strings.Builder, info string) {
+	Todo("My own version of strings.Builder?")
+	sb.WriteString(info)
+}
+
+func (db Database) CreateTableFrom(args ...any) {
+	arg := ToString(args...)
+	ps := NewStringParser(arg)
+	sb := strings.Builder{}
+
+	tblName := ps.ReadTo(':')
+
+	sb.WriteString("CREATE TABLE IF NOT EXISTS ")
+	sb.WriteString(tblName)
+	sb.WriteString("( ")
+
+	first := true
+	for !ps.Done() {
+		fieldName := ps.ReadTo(' ')
+		typeInfo := ps.ReadTo(',')
+		Todo("enforce snake case")
+		if !first {
+			sb.WriteString(", ")
+		}
+		first = false
+		sb.WriteString(fieldName)
+		sb.WriteString(" ")
+		parseTypeInfo(&sb, typeInfo)
+	}
+	sb.WriteString(")")
+	Pr(Quoted(sb.String()))
+	Todo("create the table")
+}
 
 func (db Database) createTables() {
 	database := db.db
