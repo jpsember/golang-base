@@ -39,7 +39,7 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
 
-	dataSourceName := "../sqlite/animal_app.db"
+	dataSourceName := "../sqlite/animal_app_TEMP.db"
 
 	if true && dataSourceName == "../sqlite/animal_app_TEMP.db" && Alert("Deleting database") {
 		p := NewPathM(CheckOkWith(filepath.Abs(dataSourceName)))

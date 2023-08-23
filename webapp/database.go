@@ -60,8 +60,8 @@ func (db Database) prepareStatements() {
 	db.stSelectSpecificUser = db.preparedStatement(`SELECT * FROM ` + tableNameUser + ` WHERE id = ?`)
 	db.stSelectSpecificBlob = db.preparedStatement(`SELECT * FROM ` + tableNameBlob + ` WHERE id = ?`)
 	db.stFindUserIdByName = db.preparedStatement(`SELECT id FROM ` + tableNameUser + ` WHERE name = ?`)
-	db.stInsertUser = db.preparedStatement(`INSERT INTO ` + tableNameUser + ` (name, userState, email, password) VALUES(?,?,?,?)`)
-	db.stUpdateUser = db.preparedStatement(`UPDATE ` + tableNameUser + ` SET name = ?, userState = ?, email = ?, password = ? WHERE id = ?`)
+	db.stInsertUser = db.preparedStatement(`INSERT INTO ` + tableNameUser + ` (name, user_state, email, password) VALUES(?,?,?,?)`)
+	db.stUpdateUser = db.preparedStatement(`UPDATE ` + tableNameUser + ` SET name = ?, user_state = ?, email = ?, password = ? WHERE id = ?`)
 	db.stInsertAnimal = db.preparedStatement(`INSERT INTO ` + tableNameAnimal + ` (name, summary, details, campaign_balance, campaign_target) VALUES(?,?,?,?,?)`)
 	db.stUpdateAnimal = db.preparedStatement(`UPDATE ` + tableNameAnimal + ` SET name = ?, summary = ?, details = ?, campaign_balance = ?, campaign_target = ? WHERE id = ?`)
 }
