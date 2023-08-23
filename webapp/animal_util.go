@@ -21,7 +21,7 @@ func GenerateRandomAnimals() {
 	for i := 0; i < 100; i++ {
 		anim := RandomAnimal()
 		db := Db()
-		db.CreateAnimal(anim)
+		db.AddAnimal(anim)
 		Pr("added animal:", INDENT, anim)
 	}
 }
