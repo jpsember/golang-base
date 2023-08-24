@@ -102,42 +102,6 @@ func (db Database) Open() error {
 		// We must create the tables *before* preparing any statements!
 		db.createTables()
 		db.prepareStatements()
-
-		if true && Alert("some experiments") {
-
-			// Store a single object in the experiment table, with state=ACTIVE
-
-			constructedUser := NewUser().SetName("jeff").SetState(UserstateActive)
-			insertStatement := db.preparedStatement(`INSERT INTO ` + tableNameExperiment + ` (str, state, amount ) VALUES(?,?,?)`)
-
-			result, err := insertStatement.Exec(constructedUser.Name(), constructedUser.State(), 42)
-			CheckOk(err)
-
-			id, err := result.LastInsertId()
-			CheckOk(err)
-			constructedUser.SetId(int(id))
-
-			Pr("Stored user in database:", INDENT, constructedUser)
-
-			// Try performing a read operation
-
-			readStatement := db.preparedStatement(`SELECT * FROM ` + tableNameExperiment + ` WHERE id = ?`)
-
-			rows := readStatement.QueryRow(id)
-			{
-				readBackUser := NewUser()
-				Pr("before scanning:", INDENT, readBackUser)
-
-				var unusedAmount int
-				var unusedString string
-				err := rows.Scan(readBackUser.IdPtr(), &unusedString, readBackUser.StatePtr(), &unusedAmount)
-
-				CheckOk(err)
-				Pr("after scanning:", INDENT, readBackUser)
-			}
-
-			Halt()
-		}
 	}
 	return db.err
 }
