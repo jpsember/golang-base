@@ -10,7 +10,6 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	_ "github.com/mattn/go-sqlite3"
-	"strings"
 	"sync"
 )
 
@@ -106,15 +105,6 @@ func (db Database) Open() error {
 
 		if true && Alert("some experiments") {
 
-			//  CREATE TABLE IF NOT EXISTS ` + tableNameExperiment + ` (
-			//     id INTEGER PRIMARY KEY,
-			//     str VARCHAR(20) NOT NULL,
-			//     state VARCHAR(20) NOT NULL,
-			//     amount INT
-			//     )`
-			db.CreateTableFrom(tableNameExperiment, ": id int key, str string", USER_PASSWORD_MAX_LENGTH, "state enum", "amount int")
-			Halt()
-
 			// Store a single object in the experiment table, with state=ACTIVE
 
 			constructedUser := NewUser().SetName("jeff").SetState(UserstateActive)
@@ -199,140 +189,6 @@ const tableNameAnimal = `animal`
 const tableNameUser = `user`
 const tableNameBlob = `blobtable`
 const tableNameExperiment = `experiment`
-
-type tblFieldStruct struct {
-	Name     string
-	TypeExpr string
-}
-
-type tblField = *tblFieldStruct
-
-func NewtblField() tblField {
-	t := &tblFieldStruct{}
-	return t
-}
-
-type StringParserStruct struct {
-	content string
-	cursor  int
-}
-
-type StringParser = *StringParserStruct
-
-func NewStringParser(content string) StringParser {
-	t := &StringParserStruct{
-		content: strings.TrimSpace(content),
-	}
-	Pr("constructed new string parser:", INDENT, t)
-	return t
-}
-
-func (p StringParser) auxReadTo(delim byte) (string, int) {
-	j := p.cursor
-	for j < len(p.content) && p.content[j] != delim {
-		j++
-	}
-	Pr("auxReadTo, delim:", delim, "cursor:", p.cursor, "j:", j)
-	Pr(p)
-
-	res := strings.TrimSpace(p.content[p.cursor:j])
-	newCursor := MinInt(j+1, len(p.content))
-	return res, newCursor
-}
-
-// Read the characters that occur before a delimeter, and skip the delimiter.
-// If no delimeter is found, reads and returns the remaining characters.  In
-// either case, the substring returned will have leading and trailing whitespace trimmed.
-func (p StringParser) ReadTo(delim byte) string {
-	CheckState(!p.Done())
-	res, newCursor := p.auxReadTo(delim)
-	p.cursor = newCursor
-	Pr(p, "ReadTo:", Quoted(res))
-	return res
-}
-
-// Peak at the next substring; returns "" if done.
-func (p StringParser) OptTo(delim byte) string {
-	res, _ := p.auxReadTo(delim)
-	return res
-}
-
-func (p StringParser) ReadToIf(delim byte, target string) bool {
-	var output bool
-	res, newCursor := p.auxReadTo(delim)
-	if res == target {
-		p.cursor = newCursor
-		output = true
-	}
-	Pr("ReadToIf;", p, "target:", Quoted(target), "returning:", output)
-	return output
-}
-
-// Determine if no characters remain.
-func (p StringParser) Done() bool {
-	return p.cursor == len(p.content)
-}
-
-func (p StringParser) String() string {
-	s := strings.Builder{}
-	s.WriteString(`"`)
-	s.WriteString(p.content[0:p.cursor])
-	s.WriteString(">>>")
-	s.WriteString(p.content[p.cursor:])
-	s.WriteString(`"`)
-	return s.String()
-}
-
-func parseTypeInfo(sb *strings.Builder, info string) {
-	ps := NewStringParser(info)
-
-	typeExpr := ps.ReadTo(' ')
-	isKey := ps.ReadToIf(' ', "key")
-
-	switch typeExpr {
-	case "int":
-		sb.WriteString("INTEGER ")
-		break
-	default:
-		BadArg("<1Unsupported type expr:", typeExpr, "in:", info)
-	}
-	if isKey {
-		sb.WriteString("PRIMARY KEY ")
-	}
-}
-
-func (db Database) CreateTableFrom(args ...any) {
-	arg := ToString(args...)
-	ps := NewStringParser(arg)
-	sb := strings.Builder{}
-
-	tblName := ps.ReadTo(':')
-	Pr("ps.ReadTo, table name:", tblName)
-
-	sb.WriteString("CREATE TABLE IF NOT EXISTS ")
-	sb.WriteString(tblName)
-	sb.WriteString("( ")
-
-	first := true
-	for !ps.Done() {
-		fieldName := ps.ReadTo(' ')
-		Pr("fieldName:", fieldName)
-		typeInfo := ps.ReadTo(',')
-		Pr("typeInfo:", typeInfo)
-		Todo("enforce snake case")
-		Pr("read fieldName:", Quoted(fieldName), "typeInfo:", Quoted(typeInfo))
-		if !first {
-			sb.WriteString(", ")
-		}
-		first = false
-		sb.WriteString(fieldName)
-		sb.WriteString(" ")
-		parseTypeInfo(&sb, typeInfo)
-	}
-	sb.WriteString(")")
-	Pr(Quoted(sb.String()))
-	Todo("create the table")
-}
 
 func (db Database) createTables() {
 	database := db.db
