@@ -33,10 +33,10 @@ type DatabaseStruct struct {
 	stSelectSpecificBlob   *sql.Stmt
 	stSelectSpecificUser   *sql.Stmt
 	stFindUserIdByName     *sql.Stmt
-	stInsertUser           *sql.Stmt
-	stUpdateUser           *sql.Stmt
-	stInsertAnimal         *sql.Stmt
-	stUpdateAnimal         *sql.Stmt
+	//stInsertUser           *sql.Stmt
+	stUpdateUser   *sql.Stmt
+	stInsertAnimal *sql.Stmt
+	stUpdateAnimal *sql.Stmt
 }
 
 type Database = *DatabaseStruct
@@ -60,8 +60,8 @@ func (db Database) prepareStatements() {
 	db.stSelectSpecificUser = db.preparedStatement(`SELECT * FROM ` + tableNameUser + ` WHERE id = ?`)
 	db.stSelectSpecificBlob = db.preparedStatement(`SELECT * FROM ` + tableNameBlob + ` WHERE id = ?`)
 	db.stFindUserIdByName = db.preparedStatement(`SELECT id FROM ` + tableNameUser + ` WHERE name = ?`)
-	db.stInsertUser = db.preparedStatement(`INSERT INTO ` + tableNameUser + ` (name, user_state, email, password) VALUES(?,?,?,?)`)
-	db.stUpdateUser = db.preparedStatement(`UPDATE ` + tableNameUser + ` SET name = ?, user_state = ?, email = ?, password = ? WHERE id = ?`)
+	//db.stInsertUser = db.preparedStatement(`INSERT INTO ` + tableNameUser + ` (name, user_state, email, password) VALUES(?,?,?,?)`)
+	db.stUpdateUser = db.preparedStatement(`UPDATE ` + tableNameUser + ` SET name = ?, state = ?, email = ?, password = ? WHERE id = ?`)
 	db.stInsertAnimal = db.preparedStatement(`INSERT INTO ` + tableNameAnimal + ` (name, summary, details, campaign_balance, campaign_target) VALUES(?,?,?,?,?)`)
 	db.stUpdateAnimal = db.preparedStatement(`UPDATE ` + tableNameAnimal + ` SET name = ?, summary = ?, details = ?, campaign_balance = ?, campaign_target = ? WHERE id = ?`)
 }
@@ -266,17 +266,10 @@ func (db Database) CreateUser(user User) (User, error) {
 			break
 		}
 
-		result, err := db.stInsertUser.Exec(user.Name(), user.State().String(), user.Email(), user.Password())
-		if db.setError(err) {
+		createdUser, err1 := CreateUser(db.db, user)
+		if db.setError(err1) {
 			break
 		}
-
-		id, err := result.LastInsertId()
-		if db.setError(err) {
-			break
-		}
-
-		createdUser = user.Build().ToBuilder().SetId(int(id)).Build()
 		CheckState(createdUser.Id() > 0, "unexpected id in new record:", createdUser)
 		break
 	}
