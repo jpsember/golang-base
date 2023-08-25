@@ -107,6 +107,18 @@ func (db Database) Open() error {
 		db.createTables()
 		db.prepareStatements()
 	}
+
+	if Alert("experiment") {
+		u := NewUser().SetEmail("a").SetPassword("pasword").SetState(UserstateActive).SetName("jeff")
+		Pr("attempting to create user:", INDENT, u)
+		u2, err := CreateUser(db.db, u)
+		CheckOk(err)
+		Pr("created:", INDENT, u2)
+		u3 := u2.ToBuilder().SetName("Frank")
+		err2 := UpdateUser(db.db, u3)
+		Pr("updated:", INDENT, u3, "err:", err2)
+	}
+
 	return db.err
 }
 
