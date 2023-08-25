@@ -144,19 +144,8 @@ func (db Database) createTables() {
 
 	database := db.db
 
-	//dbResPath := ProjectDirM().JoinM("webapp/db_res")
-
-	//
 	CreateTableUser(database)
 	CreateTableAnimal(database)
-
-	//for _, f := range NewDirWalk(dbResPath).IncludeExtensions("txt").Files() {
-	//	if strings.HasSuffix(f.Base(), "_gen.txt") {
-	//		content := f.ReadStringM()
-	//		_, err := database.Exec(content)
-	//		db.setError(err)
-	//	}
-	//}
 
 	_, err := database.Exec(`
 CREATE TABLE IF NOT EXISTS ` + tableNameBlob + ` (
