@@ -78,6 +78,9 @@ type ExpObj struct {
 }
 
 func (db Database) Open() error {
+	Todo("can probably use generated code for blob table as well, if we support byte arrays")
+	Todo("we probably don't need db to cache errors")
+	Todo("have generated code accept 'our' db object which wraps the sql database")
 	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
 	CheckState(db.dataSourceName.NonEmpty(), "<1No call to SetDataSourceName made")
 	// Create the directory containing the database, if it doesn't exist
