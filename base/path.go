@@ -11,6 +11,24 @@ type Path string
 var EmptyPath = Path("")
 
 var homeDir = EmptyPath
+var projectDir = EmptyPath
+
+func ProjectDirM() Path {
+	if projectDir.Empty() {
+		startDir := CurrentDirectory()
+		currDir := startDir
+		for {
+			CheckState(!currDir.Empty(), "No .git subdirectory found in tree at or above", startDir)
+			cand := currDir.JoinM(".git")
+			if cand.Exists() {
+				projectDir = currDir
+				break
+			}
+			currDir = currDir.Parent()
+		}
+	}
+	return projectDir
+}
 
 func HomeDirM() Path {
 	if homeDir.Empty() {
@@ -200,6 +218,9 @@ func (path Path) DeleteDirectoryM(substring string) {
 
 func (path Path) DeleteFile() error {
 	CheckArg(!path.Empty())
+	if !path.Exists() {
+		return nil
+	}
 	return os.Remove(string(path))
 }
 

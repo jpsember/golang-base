@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"path/filepath"
 	"strings"
 )
 
@@ -39,17 +38,16 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
 
-	dataSourceName := "../sqlite/animal_app_TEMP.db"
+	dataDir := ProjectDirM().JoinM("webapp/sqlite")
+	dataSourcePath := dataDir.JoinM("animal_app_TEMP.db")
 
-	if true && dataSourceName == "../sqlite/animal_app_TEMP.db" && Alert("Deleting database") {
-		p := NewPathM(CheckOkWith(filepath.Abs(dataSourceName)))
-		if p.Exists() {
-			p.DeleteFileM()
-		}
+	if true && dataSourcePath.Base() == "animal_app_TEMP.db" && Alert("Deleting database") {
+		Todo("deleteFileM should not return err if it doesn't exist")
+		dataSourcePath.DeleteFileM()
 	}
 
 	db := CreateDatabase()
-	db.SetDataSourceName(dataSourceName)
+	db.SetDataSourceName(dataSourcePath)
 	db.Open()
 
 	oper.sessionManager = BuildSessionMap()

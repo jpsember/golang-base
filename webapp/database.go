@@ -10,6 +10,7 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	_ "github.com/mattn/go-sqlite3"
+	"strings"
 	"sync"
 )
 
@@ -26,7 +27,7 @@ var AnimalDoesntExistError = errors.New("animal does not exist")
 type DatabaseStruct struct {
 	state                  int
 	err                    error
-	dataSourceName         string
+	dataSourceName         Path
 	db                     *sql.DB
 	theLock                sync.Mutex
 	stSelectSpecificAnimal *sql.Stmt
@@ -77,7 +78,7 @@ func Db() Database {
 	return singletonDatabase
 }
 
-func (db Database) SetDataSourceName(dataSourceName string) {
+func (db Database) SetDataSourceName(dataSourceName Path) {
 	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
 	db.dataSourceName = dataSourceName
 	//Alert("<1Setting data source name:", dataSourceName, CurrentDirectory())
@@ -92,8 +93,12 @@ type ExpObj struct {
 
 func (db Database) Open() error {
 	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
-	CheckState(db.dataSourceName != "", "<1No call to SetDataSourceName made")
-	database, err := sql.Open("sqlite3", db.dataSourceName)
+	CheckState(db.dataSourceName.NonEmpty(), "<1No call to SetDataSourceName made")
+	// Create the directory containing the database, if it doesn't exist
+	dir := db.dataSourceName.Parent().CheckNonEmpty()
+	dir.MkDirsM()
+
+	database, err := sql.Open("sqlite3", db.dataSourceName.String())
 	db.db = database
 	if db.setError(err) {
 		db.state = dbStateFailed
@@ -155,21 +160,22 @@ const tableNameBlob = `blobtable`
 const tableNameExperiment = `experiment`
 
 func (db Database) createTables() {
+
 	database := db.db
+
+	dbResPath := ProjectDirM().JoinM("webapp/db_res")
+	for _, f := range NewDirWalk(dbResPath).IncludeExtensions("txt").Files() {
+		if strings.HasSuffix(f.Base(), "_gen") {
+			content := f.ReadStringM()
+			Todo("do something with content: "+content, f)
+			_, err := database.Exec(content)
+			db.setError(err)
+		}
+	}
+
 	{
 		var err error
 
-		{
-			const create string = `
- CREATE TABLE IF NOT EXISTS ` + tableNameExperiment + ` (
-     id INTEGER PRIMARY KEY,
-     str VARCHAR(20) NOT NULL,
-     state VARCHAR(20) NOT NULL,
-     amount INT
-     )`
-			_, err = database.Exec(create)
-			db.setError(err)
-		}
 		{
 			// Create a table if it doesn't exist
 			const create string = `
