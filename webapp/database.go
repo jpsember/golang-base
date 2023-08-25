@@ -10,7 +10,6 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	_ "github.com/mattn/go-sqlite3"
-	"strings"
 	"sync"
 )
 
@@ -145,27 +144,27 @@ func (db Database) createTables() {
 
 	database := db.db
 
-	dbResPath := ProjectDirM().JoinM("webapp/db_res")
-	for _, f := range NewDirWalk(dbResPath).IncludeExtensions("txt").Files() {
-		if strings.HasSuffix(f.Base(), "_gen.txt") {
-			content := f.ReadStringM()
-			_, err := database.Exec(content)
-			db.setError(err)
-		}
-	}
+	//dbResPath := ProjectDirM().JoinM("webapp/db_res")
 
-	{
-		var err error
+	//
+	CreateTableUser(database)
+	CreateTableAnimal(database)
 
-		{
-			_, err = database.Exec(`
+	//for _, f := range NewDirWalk(dbResPath).IncludeExtensions("txt").Files() {
+	//	if strings.HasSuffix(f.Base(), "_gen.txt") {
+	//		content := f.ReadStringM()
+	//		_, err := database.Exec(content)
+	//		db.setError(err)
+	//	}
+	//}
+
+	_, err := database.Exec(`
 CREATE TABLE IF NOT EXISTS ` + tableNameBlob + ` (
     id VARCHAR(36) PRIMARY KEY,
     data BLOB
 )`)
-			db.setError(err)
-		}
-	}
+	db.setError(err)
+
 }
 
 func (db Database) DeleteAllRowsInTable(name string) error {
