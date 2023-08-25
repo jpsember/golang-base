@@ -13,19 +13,25 @@ var EmptyPath = Path("")
 var homeDir = EmptyPath
 var projectDir = EmptyPath
 
+var FileNotFoundError = Error("file not found")
+
+func FindFileUpward(name string, startDir Path) (Path, error) {
+	CheckArg(startDir.IsDir(), "not a directory")
+
+	currentDir := startDir
+	for currentDir.NonEmpty() {
+		candidate := currentDir.JoinM(name)
+		if candidate.Exists() {
+			return candidate, nil
+		}
+		currentDir = currentDir.Parent()
+	}
+	return EmptyPath, FileNotFoundError
+}
+
 func ProjectDirM() Path {
 	if projectDir.Empty() {
-		startDir := CurrentDirectory()
-		currDir := startDir
-		for {
-			CheckState(!currDir.Empty(), "No .git subdirectory found in tree at or above", startDir)
-			cand := currDir.JoinM(".git")
-			if cand.Exists() {
-				projectDir = currDir
-				break
-			}
-			currDir = currDir.Parent()
-		}
+		projectDir = CheckOkWith(FindFileUpward(".git", CurrentDirectory())).Parent()
 	}
 	return projectDir
 }

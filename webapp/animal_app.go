@@ -42,7 +42,6 @@ func (oper AnimalOper) Perform(app *App) {
 	dataSourcePath := dataDir.JoinM("animal_app_TEMP.db")
 
 	if true && dataSourcePath.Base() == "animal_app_TEMP.db" && Alert("Deleting database") {
-		Todo("deleteFileM should not return err if it doesn't exist")
 		dataSourcePath.DeleteFileM()
 	}
 

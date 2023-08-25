@@ -137,27 +137,9 @@ func (db Database) ok() bool {
 	return db.err == nil
 }
 
-func SQLiteExperiment() {
-	Pr("running SQLiteExperiment")
-
-	d := CreateDatabase()
-	// We're running from within the webapp subdirectory...
-	d.SetDataSourceName("../sqlite/animals.db")
-	CheckOk(d.Open())
-
-	Pr("opened db")
-	CheckOk(d.DeleteAllRowsInTable("animal"))
-	for i := 0; i < 20; i++ {
-		a := RandomAnimal()
-		CheckOkWith(d.CreateAnimal(a))
-		Pr("added animal:", INDENT, a)
-	}
-}
-
 const tableNameAnimal = `animal`
 const tableNameUser = `user`
 const tableNameBlob = `blobtable`
-const tableNameExperiment = `experiment`
 
 func (db Database) createTables() {
 
@@ -165,9 +147,8 @@ func (db Database) createTables() {
 
 	dbResPath := ProjectDirM().JoinM("webapp/db_res")
 	for _, f := range NewDirWalk(dbResPath).IncludeExtensions("txt").Files() {
-		if strings.HasSuffix(f.Base(), "_gen") {
+		if strings.HasSuffix(f.Base(), "_gen.txt") {
 			content := f.ReadStringM()
-			Todo("do something with content: "+content, f)
 			_, err := database.Exec(content)
 			db.setError(err)
 		}
@@ -175,37 +156,6 @@ func (db Database) createTables() {
 
 	{
 		var err error
-
-		{
-			// Create a table if it doesn't exist
-			const create string = `
- CREATE TABLE IF NOT EXISTS ` + tableNameAnimal + ` (
-     id INTEGER PRIMARY KEY,
-     name VARCHAR(64) NOT NULL,
-     summary VARCHAR(300) NOT NULL,
-     details VARCHAR(3000) NOT NULL,
-     campaign_target INT,
-     campaign_balance INT 
-     )`
-			_, err = database.Exec(create)
-			db.setError(err)
-		}
-		{
-			Todo("Use regexp to fill in type stuff, e.g. VARCHAR(20) NOT NULL for password")
-			Todo("!Use same limits on user name, email, etc here")
-			const create string = `
- CREATE TABLE IF NOT EXISTS ` + tableNameUser + ` (
-     id INTEGER PRIMARY KEY,
-     name VARCHAR(64) NOT NULL,
-     user_state VARCHAR(20) NOT NULL,
-	 user_class VARCHAR(20) NOT NULL,
-     email VARCHAR(60) NOT NULL,
-     password VARCHAR(25) NOT NULL
-     )`
-
-			_, err = database.Exec(create)
-			db.setError(err)
-		}
 
 		{
 			_, err = database.Exec(`
