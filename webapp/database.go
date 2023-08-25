@@ -19,24 +19,17 @@ import (
 
 var UserExistsError = errors.New("named user already exists")
 var UserDoesntExistError = errors.New("user does not exist")
-var AnimalDoesntExistError = errors.New("animal does not exist")
 
 // ------------------------------------------------------------------------------------
 
 type DatabaseStruct struct {
-	state                  int
-	err                    error
-	dataSourceName         Path
-	db                     *sql.DB
-	theLock                sync.Mutex
-	stSelectSpecificAnimal *sql.Stmt
-	stSelectSpecificBlob   *sql.Stmt
-	stSelectSpecificUser   *sql.Stmt
-	stFindUserIdByName     *sql.Stmt
-	//stInsertUser           *sql.Stmt
-	stUpdateUser   *sql.Stmt
-	stInsertAnimal *sql.Stmt
-	stUpdateAnimal *sql.Stmt
+	state                int
+	err                  error
+	dataSourceName       Path
+	db                   *sql.DB
+	theLock              sync.Mutex
+	stSelectSpecificBlob *sql.Stmt
+	stFindUserIdByName   *sql.Stmt
 }
 
 type Database = *DatabaseStruct
@@ -56,14 +49,8 @@ func newDatabase() Database {
 var singletonDatabase Database
 
 func (db Database) prepareStatements() {
-	db.stSelectSpecificAnimal = db.preparedStatement(`SELECT * FROM ` + tableNameAnimal + ` WHERE id = ?`)
-	db.stSelectSpecificUser = db.preparedStatement(`SELECT * FROM ` + tableNameUser + ` WHERE id = ?`)
 	db.stSelectSpecificBlob = db.preparedStatement(`SELECT * FROM ` + tableNameBlob + ` WHERE id = ?`)
 	db.stFindUserIdByName = db.preparedStatement(`SELECT id FROM ` + tableNameUser + ` WHERE name = ?`)
-	//db.stInsertUser = db.preparedStatement(`INSERT INTO ` + tableNameUser + ` (name, user_state, email, password) VALUES(?,?,?,?)`)
-	db.stUpdateUser = db.preparedStatement(`UPDATE ` + tableNameUser + ` SET name = ?, state = ?, email = ?, password = ? WHERE id = ?`)
-	db.stInsertAnimal = db.preparedStatement(`INSERT INTO ` + tableNameAnimal + ` (name, summary, details, campaign_balance, campaign_target) VALUES(?,?,?,?,?)`)
-	db.stUpdateAnimal = db.preparedStatement(`UPDATE ` + tableNameAnimal + ` SET name = ?, summary = ?, details = ?, campaign_balance = ?, campaign_target = ? WHERE id = ?`)
 }
 
 func CreateDatabase() Database {
@@ -110,6 +97,11 @@ func (db Database) Open() error {
 
 	if Alert("experiment") {
 		u := NewUser().SetEmail("a").SetPassword("pasword").SetState(UserstateActive).SetName("jeff")
+		Pr("attempting to read user with id 1")
+		uf, errf :=
+			ReadUser(db.db, 1)
+		Pr("found user:", uf, "err:", errf)
+
 		Pr("attempting to create user:", INDENT, u)
 		u2, err := CreateUser(db.db, u)
 		CheckOk(err)
@@ -117,6 +109,12 @@ func (db Database) Open() error {
 		u3 := u2.ToBuilder().SetName("Frank")
 		err2 := UpdateUser(db.db, u3)
 		Pr("updated:", INDENT, u3, "err:", err2)
+
+		Pr("attempting to find user 1 now that it exists")
+		uf, errf =
+			ReadUser(db.db, 1)
+		Pr("found user:", uf, "err:", errf)
+
 	}
 
 	return db.err
@@ -266,24 +264,20 @@ func (db Database) scanBlob(rows *sql.Row) BlobBuilder {
 
 // Create a user with the given (unique) name.
 func (db Database) CreateUser(user User) (User, error) {
+	Todo("maybe put all this boilerplat (lock/unlock) within generated code")
 	db.lock()
 	defer db.unlock()
 
 	var createdUser User
 
-	for {
-		existingId := db.auxFindUserWithName(user.Name())
-		if existingId != 0 {
-			db.setError(UserExistsError)
-			break
-		}
+	existingId := db.auxFindUserWithName(user.Name())
+	if existingId != 0 {
+		db.setError(UserExistsError)
 
-		createdUser, err1 := CreateUser(db.db, user)
-		if db.setError(err1) {
-			break
-		}
-		CheckState(createdUser.Id() > 0, "unexpected id in new record:", createdUser)
-		break
+	} else {
+		c, err := CreateUser(db.db, user)
+		createdUser = c
+		db.setError(err)
 	}
 
 	return createdUser, db.err
@@ -316,45 +310,9 @@ func (db Database) auxFindUserWithName(userName string) int {
 }
 
 func (db Database) ReadUser(userId int) (User, error) {
-	pr := PrIf(false)
-	pr("ReadUser, id:", userId)
-
 	db.lock()
 	defer db.unlock()
-	rows := db.stSelectSpecificUser.QueryRow(userId)
-	result := db.scanUser(rows)
-	pr("result:", INDENT, result, CR, "error:", db.err)
-	return result, db.err
-}
-
-func (db Database) scanUser(rows *sql.Row) UserBuilder {
-	pr := PrIf(false)
-	pr("scanUser")
-
-	b := NewUser()
-
-	var id int
-	var name string
-	var user_state string
-	var user_class string
-	var email string
-	var password string
-
-	errHolder := NewErrorHolder()
-
-	err := rows.Scan(&id, &name, &user_state, &user_class, &email, &password)
-	pr("err:", err)
-	if err != sql.ErrNoRows {
-		errHolder.Add(err)
-		b = NewUser()
-		b.SetId(id)
-		b.SetName(name)
-		b.SetState(UserState(UserStateEnumInfo.FromString(user_state, errHolder)))
-		b.SetEmail(email)
-		b.SetPassword(password)
-	}
-	db.setError(errHolder.First())
-	return b
+	return ReadUser(db.db, userId)
 }
 
 // Write user to database; must already exist.
@@ -364,26 +322,8 @@ func (db Database) UpdateUser(user User) error {
 	db.lock()
 	defer db.unlock()
 
-	for {
-		pr("UpdateUser:", INDENT, user)
-		result, err := db.stUpdateUser.Exec(user.Name(), user.State().String(), user.Email(), user.Password(), user.Id())
-		pr("result:", result, "err:", err)
-		if db.setError(err) {
-			break
-		}
+	db.setError(UpdateUser(db.db, user))
 
-		count, err := result.RowsAffected()
-		pr("rows affected:", count, "err:", err)
-		if db.setError(err) {
-			break
-		}
-
-		pr("count:", count)
-		if count != 1 {
-			db.setError(UserDoesntExistError)
-		}
-		break
-	}
 	pr("...returning:", db.err)
 	return db.err
 }
@@ -397,84 +337,22 @@ func (db Database) CreateAnimal(a Animal) (Animal, error) {
 	db.lock()
 	defer db.unlock()
 
-	var createdAnimal Animal
-
-	for {
-
-		result, err := db.stInsertAnimal.Exec(a.Name(), a.Summary(), a.Details(), a.CampaignBalance(), a.CampaignTarget())
-		if db.setError(err) {
-			break
-		}
-
-		id, err := result.LastInsertId()
-		if db.setError(err) {
-			break
-		}
-
-		createdAnimal = a.Build().ToBuilder().SetId(int(id)).Build()
-		CheckState(createdAnimal.Id() > 0, "unexpected id in new record:", createdAnimal)
-
-		break
-	}
-
+	createdAnimal, err := CreateAnimal(db.db, a)
+	db.setError(err)
 	return createdAnimal, db.err
 }
 
 func (db Database) ReadAnimal(id int) (Animal, error) {
 	db.lock()
 	defer db.unlock()
-	pr := PrIf(false)
-	pr("ReadAnimal:", id)
-	rows := db.stSelectSpecificAnimal.QueryRow(id)
-	result := db.scanAnimal(rows)
-	pr("result:", INDENT, result)
-	return result, db.err
-}
-
-func (db Database) scanAnimal(rows *sql.Row) AnimalBuilder {
-	var ab AnimalBuilder
-	var id int64
-	var name string
-	var summary string
-	var details string
-	var campaignTarget, campaignBalance int32
-	err := rows.Scan(&id, &name, &summary, &details, &campaignTarget, &campaignBalance)
-	if err != nil && err != sql.ErrNoRows {
-		db.setError(err)
-	} else if err != sql.ErrNoRows {
-		ab = NewAnimal().SetId(int(id)).SetName(name).SetSummary(summary).SetDetails(details).SetCampaignTarget(int(campaignTarget)).SetCampaignBalance(int(campaignBalance))
-	}
-	return ab
+	return ReadAnimal(db.db, id)
 }
 
 // Write animal to database; must already exist.
 func (db Database) UpdateAnimal(a Animal) error {
-	pr := PrIf(false)
-
 	db.lock()
 	defer db.unlock()
 
-	for {
-		pr("UpdateAnimal:", INDENT, a)
-		Todo("Have convention of listing fields in alpha order here?")
-		result, err := db.stUpdateAnimal.Exec(a.Name(), a.Summary(), a.Details(), a.CampaignBalance(), a.CampaignTarget(), a.Id())
-		pr("result:", result, "err:", err)
-		if db.setError(err) {
-			break
-		}
-
-		count, err := result.RowsAffected()
-		pr("rows affected:", count, "err:", err)
-		if db.setError(err) {
-			break
-		}
-
-		pr("count:", count)
-		if count != 1 {
-			db.setError(AnimalDoesntExistError)
-		}
-		break
-	}
-	pr("...returning:", db.err)
+	db.setError(UpdateAnimal(db.db, a))
 	return db.err
 }
