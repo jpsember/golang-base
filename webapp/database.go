@@ -26,7 +26,7 @@ type DatabaseStruct struct {
 	state                int
 	err                  error
 	dataSourceName       Path
-	db                   *sql.DB
+	Db                   *sql.DB
 	theLock              sync.Mutex
 	stSelectSpecificBlob *sql.Stmt
 	stFindUserIdByName   *sql.Stmt
@@ -88,7 +88,7 @@ func (db Database) Open() error {
 	dir.MkDirsM()
 
 	database, err := sql.Open("sqlite3", db.dataSourceName.String())
-	db.db = database
+	db.Db = database
 	if db.setError(err) {
 		db.state = dbStateFailed
 	} else {
@@ -102,20 +102,20 @@ func (db Database) Open() error {
 		u := NewUser().SetEmail("a").SetPassword("pasword").SetState(UserstateActive).SetName("jeff")
 		Pr("attempting to read user with id 1")
 		uf, errf :=
-			ReadUser(db.db, 1)
+			ReadUser(db.Db, 1)
 		Pr("found user:", uf, "err:", errf)
 
 		Pr("attempting to create user:", INDENT, u)
-		u2, err := CreateUser(db.db, u)
+		u2, err := CreateUser(db.Db, u)
 		CheckOk(err)
 		Pr("created:", INDENT, u2)
 		u3 := u2.ToBuilder().SetName("Frank")
-		err2 := UpdateUser(db.db, u3)
+		err2 := UpdateUser(db.Db, u3)
 		Pr("updated:", INDENT, u3, "err:", err2)
 
 		Pr("attempting to find user 1 now that it exists")
 		uf, errf =
-			ReadUser(db.db, 1)
+			ReadUser(db.Db, 1)
 		Pr("found user:", uf, "err:", errf)
 
 	}
@@ -125,9 +125,9 @@ func (db Database) Open() error {
 
 func (db Database) Close() error {
 	if db.state == dbStateOpen {
-		db.lock()
-		defer db.unlock()
-		db.setError(db.db.Close())
+		db.Lock()
+		defer db.Unlock()
+		db.setError(db.Db.Close())
 		db.state = dbStateClosed
 	}
 	return db.err
@@ -154,7 +154,7 @@ const tableNameBlob = `blobtable`
 
 func (db Database) createTables() {
 
-	database := db.db
+	database := db.Db
 
 	CreateTableUser(database)
 	CreateTableAnimal(database)
@@ -169,16 +169,16 @@ CREATE TABLE IF NOT EXISTS ` + tableNameBlob + ` (
 }
 
 func (db Database) DeleteAllRowsInTable(name string) error {
-	db.lock()
-	defer db.unlock()
-	database := db.db
+	db.Lock()
+	defer db.Unlock()
+	database := db.Db
 	_, err := database.Exec(`DELETE FROM ` + name)
 	db.setError(err)
 	return db.err
 }
 
 // Acquire the lock on the database, and clear the error register.
-func (db Database) lock() {
+func (db Database) Lock() {
 	if db.state != dbStateOpen {
 		BadState("<1Illegal state:", db.state)
 	}
@@ -186,7 +186,7 @@ func (db Database) lock() {
 	db.err = nil
 }
 
-func (db Database) unlock() {
+func (db Database) Unlock() {
 	db.theLock.Unlock()
 }
 
@@ -197,14 +197,14 @@ func (db Database) failIfError(err error) {
 }
 
 func (db Database) preparedStatement(sqlStr string) *sql.Stmt {
-	st, err := db.db.Prepare(sqlStr)
+	st, err := db.Db.Prepare(sqlStr)
 	db.failIfError(err)
 	return st
 }
 
 func (db Database) InsertBlob(blob []byte) (Blob, error) {
-	db.lock()
-	defer db.unlock()
+	db.Lock()
+	defer db.Unlock()
 
 	bb := NewBlob()
 	bb.SetData(blob)
@@ -229,13 +229,13 @@ func (db Database) InsertBlob(blob []byte) (Blob, error) {
 	}
 	Pr("attempting to insert:", INDENT, bb)
 
-	_, err := db.db.Exec(`INSERT INTO `+tableNameBlob+` (id, data) VALUES(?,?)`, bb.Id(), bb.Data())
+	_, err := db.Db.Exec(`INSERT INTO `+tableNameBlob+` (id, data) VALUES(?,?)`, bb.Id(), bb.Data())
 	return bb.Build(), err
 }
 
 func (db Database) ReadBlob(blobId BlobId) (Blob, error) {
-	db.lock()
-	defer db.unlock()
+	db.Lock()
+	defer db.Unlock()
 
 	idStr := blobId
 	rows := db.stSelectSpecificBlob.QueryRow(idStr)
@@ -266,9 +266,9 @@ func (db Database) scanBlob(rows *sql.Row) BlobBuilder {
 
 // Create a user with the given (unique) name.
 func (db Database) CreateUser(user User) (User, error) {
-	Todo("maybe put all this boilerplat (lock/unlock) within generated code")
-	db.lock()
-	defer db.unlock()
+	Todo("maybe put all this boilerplat (Lock/Unlock) within generated code")
+	db.Lock()
+	defer db.Unlock()
 
 	var createdUser User
 
@@ -277,7 +277,7 @@ func (db Database) CreateUser(user User) (User, error) {
 		db.setError(UserExistsError)
 
 	} else {
-		c, err := CreateUser(db.db, user)
+		c, err := CreateUser(db.Db, user)
 		createdUser = c
 		db.setError(err)
 	}
@@ -289,8 +289,8 @@ func (db Database) FindUserWithName(userName string) (int, error) {
 	pr := PrIf(false)
 	pr("FindUserWithName:", userName)
 
-	db.lock()
-	defer db.unlock()
+	db.Lock()
+	defer db.Unlock()
 
 	foundId := db.auxFindUserWithName(userName)
 	if foundId == 0 {
@@ -313,19 +313,19 @@ func (db Database) auxFindUserWithName(userName string) int {
 }
 
 func (db Database) ReadUser(userId int) (User, error) {
-	db.lock()
-	defer db.unlock()
-	return ReadUser(db.db, userId)
+	db.Lock()
+	defer db.Unlock()
+	return ReadUser(db.Db, userId)
 }
 
 // Write user to database; must already exist.
 func (db Database) UpdateUser(user User) error {
 	pr := PrIf(false)
 
-	db.lock()
-	defer db.unlock()
+	db.Lock()
+	defer db.Unlock()
 
-	db.setError(UpdateUser(db.db, user))
+	db.setError(UpdateUser(db.Db, user))
 
 	pr("...returning:", db.err)
 	return db.err
@@ -337,25 +337,25 @@ func (db Database) UpdateUser(user User) error {
 
 func (db Database) CreateAnimal(a Animal) (Animal, error) {
 
-	db.lock()
-	defer db.unlock()
+	db.Lock()
+	defer db.Unlock()
 
-	createdAnimal, err := CreateAnimal(db.db, a)
+	createdAnimal, err := CreateAnimal(db.Db, a)
 	db.setError(err)
 	return createdAnimal, db.err
 }
 
 func (db Database) ReadAnimal(id int) (Animal, error) {
-	db.lock()
-	defer db.unlock()
-	return ReadAnimal(db.db, id)
+	db.Lock()
+	defer db.Unlock()
+	return ReadAnimal(db.Db, id)
 }
 
 // Write animal to database; must already exist.
 func (db Database) UpdateAnimal(a Animal) error {
-	db.lock()
-	defer db.unlock()
+	db.Lock()
+	defer db.Unlock()
 
-	db.setError(UpdateAnimal(db.db, a))
+	db.setError(UpdateAnimal(db.Db, a))
 	return db.err
 }
