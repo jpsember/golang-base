@@ -93,8 +93,11 @@ func (db Database) Open() error {
 		db.state = dbStateFailed
 	} else {
 		db.state = dbStateOpen
+
+		PrepareDatabase(db.Db)
+
 		// We must create the tables *before* preparing any statements!
-		db.createTables()
+		//db.createTables()
 		db.prepareStatements()
 	}
 
@@ -102,20 +105,20 @@ func (db Database) Open() error {
 		u := NewUser().SetEmail("a").SetPassword("pasword").SetState(UserstateActive).SetName("jeff")
 		Pr("attempting to read user with id 1")
 		uf, errf :=
-			ReadUser(db.Db, 1)
+			ReadUser(db, 1)
 		Pr("found user:", uf, "err:", errf)
 
 		Pr("attempting to create user:", INDENT, u)
-		u2, err := CreateUser(db.Db, u)
+		u2, err := CreateUser(db, u)
 		CheckOk(err)
 		Pr("created:", INDENT, u2)
 		u3 := u2.ToBuilder().SetName("Frank")
-		err2 := UpdateUser(db.Db, u3)
+		err2 := UpdateUser(db, u3)
 		Pr("updated:", INDENT, u3, "err:", err2)
 
 		Pr("attempting to find user 1 now that it exists")
 		uf, errf =
-			ReadUser(db.Db, 1)
+			ReadUser(db, 1)
 		Pr("found user:", uf, "err:", errf)
 
 	}
@@ -152,21 +155,19 @@ func (db Database) ok() bool {
 const tableNameUser = `user`
 const tableNameBlob = `blobtable`
 
-func (db Database) createTables() {
-
-	database := db.Db
-
-	CreateTableUser(database)
-	CreateTableAnimal(database)
-
-	_, err := database.Exec(`
-CREATE TABLE IF NOT EXISTS ` + tableNameBlob + ` (
-    id VARCHAR(36) PRIMARY KEY,
-    data BLOB
-)`)
-	db.setError(err)
-
-}
+//func (db Database) createTables() {
+//
+//	database := db.Db
+//
+////
+////	_, err := database.Exec(`
+////CREATE TABLE IF NOT EXISTS ` + tableNameBlob + ` (
+////    id VARCHAR(36) PRIMARY KEY,
+////    data BLOB
+////)`)
+//	db.setError(err)
+//
+//}
 
 func (db Database) DeleteAllRowsInTable(name string) error {
 	db.Lock()
@@ -265,8 +266,7 @@ func (db Database) scanBlob(rows *sql.Row) BlobBuilder {
 // ------------------------------------------------------------------------------------
 
 // Create a user with the given (unique) name.
-func (db Database) CreateUser(user User) (User, error) {
-	Todo("maybe put all this boilerplat (Lock/Unlock) within generated code")
+func (db Database) CreateUserByName(user User) (User, error) {
 	db.Lock()
 	defer db.Unlock()
 
@@ -275,9 +275,9 @@ func (db Database) CreateUser(user User) (User, error) {
 	existingId := db.auxFindUserWithName(user.Name())
 	if existingId != 0 {
 		db.setError(UserExistsError)
-
 	} else {
-		c, err := CreateUser(db.Db, user)
+		Die("this will attempt to lock twice, maybe we want the ability to ignore calls to lock/unlock")
+		c, err := CreateUserUnsafe(db, user)
 		createdUser = c
 		db.setError(err)
 	}
@@ -312,24 +312,24 @@ func (db Database) auxFindUserWithName(userName string) int {
 	return id
 }
 
-func (db Database) ReadUser(userId int) (User, error) {
-	db.Lock()
-	defer db.Unlock()
-	return ReadUser(db.Db, userId)
-}
+//func (db Database) ReadUser(userId int) (User, error) {
+//	db.Lock()
+//	defer db.Unlock()
+//	return ReadUser(db.Db, userId)
+//}
 
-// Write user to database; must already exist.
-func (db Database) UpdateUser(user User) error {
-	pr := PrIf(false)
-
-	db.Lock()
-	defer db.Unlock()
-
-	db.setError(UpdateUser(db.Db, user))
-
-	pr("...returning:", db.err)
-	return db.err
-}
+//// Write user to database; must already exist.
+//func (db Database) UpdateUser(user User) error {
+//	pr := PrIf(false)
+//
+//	db.Lock()
+//	defer db.Unlock()
+//
+//	db.setError(UpdateUser(db.Db, user))
+//
+//	pr("...returning:", db.err)
+//	return db.err
+//}
 
 // ------------------------------------------------------------------------------------
 // Animal
