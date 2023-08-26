@@ -149,7 +149,6 @@ func (db Database) ok() bool {
 	return db.err == nil
 }
 
-const tableNameAnimal = `animal`
 const tableNameUser = `user`
 const tableNameBlob = `blobtable`
 
@@ -303,6 +302,7 @@ func (db Database) FindUserWithName(userName string) (int, error) {
 }
 
 func (db Database) auxFindUserWithName(userName string) int {
+	Todo("have datagen produce indexes and corresponding go methods for specific fields")
 	rows := db.stFindUserIdByName.QueryRow(userName)
 	var id int
 	err := rows.Scan(&id)

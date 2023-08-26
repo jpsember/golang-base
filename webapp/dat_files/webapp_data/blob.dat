@@ -1,6 +1,8 @@
-class {
-   // Unique id
-   string id;
+class sql(index name;) {
+   int id;
+
+   // Unique label
+   string name;
 
    *byte data;
 }
