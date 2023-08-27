@@ -25,7 +25,7 @@ type DatabaseStruct struct {
 	state          int
 	err            error
 	dataSourceName Path
-	Db             *sql.DB
+	sqlDatabase    *sql.DB
 	theLock        sync.Mutex
 	blobLock       sync.Mutex
 	userLock       sync.Mutex
@@ -64,13 +64,6 @@ func (db Database) SetDataSourceName(dataSourceName Path) {
 	//Alert("<1Setting data source name:", dataSourceName, CurrentDirectory())
 }
 
-type ExpObj struct {
-	Id     int
-	Str    string
-	State  UserState
-	Amount int
-}
-
 func (db Database) Open() error {
 	Todo("we probably don't need db to cache errors")
 	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
@@ -80,32 +73,32 @@ func (db Database) Open() error {
 	dir.MkDirsM()
 
 	database, err := sql.Open("sqlite3", db.dataSourceName.String())
-	db.Db = database
+	db.sqlDatabase = database
 	if db.setError(err) {
 		db.state = dbStateFailed
 	} else {
 		db.state = dbStateOpen
-		PrepareDatabase(db.Db)
+		PrepareDatabase(db.sqlDatabase, &db.theLock)
 	}
 
-	if Alert("experiment") {
+	if !Alert("experiment") {
 		u := NewUser().SetEmail("a").SetPassword("pasword").SetState(UserstateActive).SetName("jeff")
 		Pr("attempting to read user with id 1")
 		uf, errf :=
-			ReadUser(db, 1)
+			ReadUser(1)
 		Pr("found user:", uf, "err:", errf)
 
 		Pr("attempting to create user:", INDENT, u)
-		u2, err := CreateUser(db, u)
+		u2, err := CreateUser(u)
 		CheckOk(err)
 		Pr("created:", INDENT, u2)
 		u3 := u2.ToBuilder().SetName("Frank")
-		err2 := UpdateUser(db, u3)
+		err2 := UpdateUser(u3)
 		Pr("updated:", INDENT, u3, "err:", err2)
 
 		Pr("attempting to find user 1 now that it exists")
 		uf, errf =
-			ReadUser(db, 1)
+			ReadUser(1)
 		Pr("found user:", uf, "err:", errf)
 
 	}
@@ -117,7 +110,7 @@ func (db Database) Close() error {
 	if db.state == dbStateOpen {
 		db.Lock()
 		defer db.Unlock()
-		db.setError(db.Db.Close())
+		db.setError(db.sqlDatabase.Close())
 		db.state = dbStateClosed
 	}
 	return db.err
@@ -142,7 +135,7 @@ func (db Database) ok() bool {
 func (db Database) DeleteAllRowsInTable(name string) error {
 	db.Lock()
 	defer db.Unlock()
-	database := db.Db
+	database := db.sqlDatabase
 	_, err := database.Exec(`DELETE FROM ` + name)
 	db.setError(err)
 	return db.err
@@ -159,18 +152,6 @@ func (db Database) Lock() {
 
 func (db Database) Unlock() {
 	db.theLock.Unlock()
-}
-
-func (db Database) failIfError(err error) {
-	if err != nil {
-		BadState("<1Serious error has occurred:", err)
-	}
-}
-
-func (db Database) preparedStatement(sqlStr string) *sql.Stmt {
-	st, err := db.Db.Prepare(sqlStr)
-	db.failIfError(err)
-	return st
 }
 
 func (db Database) CreateBlobWithUniqueName(blob []byte) (Blob, error) {
@@ -194,7 +175,7 @@ func (db Database) CreateBlobWithUniqueName(blob []byte) (Blob, error) {
 		bb.SetName(string(GenerateBlobId()))
 		pr("blob name:", bb.Name())
 
-		id, _ := ReadBlobWithName(db, bb.Name())
+		id, _ := ReadBlobWithName(bb.Name())
 		Todo("distinguish between not found error and others; maybe don't return an error at all if not found")
 		if id == 0 {
 			break
@@ -202,16 +183,7 @@ func (db Database) CreateBlobWithUniqueName(blob []byte) (Blob, error) {
 		pr("blob is already in database, attempting again")
 	}
 	Pr("attempting to insert:", INDENT, bb)
-	return CreateBlob(db, bb)
-}
-
-func (db Database) scanBlob(rows *sql.Row) int {
-	var id int
-	err := rows.Scan(&id)
-	if err != nil && err != sql.ErrNoRows {
-		db.setError(err)
-	}
-	return id
+	return CreateBlob(bb)
 }
 
 // ------------------------------------------------------------------------------------
@@ -220,7 +192,7 @@ func (db Database) scanBlob(rows *sql.Row) int {
 
 // Create a user with the given (unique) name.
 
-func (db Database) CreateUserByName(user User) (User, error) {
+func (db Database) CreateUserWithUniqueName(user User) (User, error) {
 
 	Todo("Is there a UNIQUENESS constraint that we can take advantage of, to avoid this auxilliary lock?")
 	// We use an auxilliary lock to avoid having some other thread call this function
@@ -230,12 +202,12 @@ func (db Database) CreateUserByName(user User) (User, error) {
 
 	var createdUser User
 
-	existingId, _ := ReadUserWithName(db, user.Name())
+	existingId, _ := ReadUserWithName(user.Name())
 	Todo("distinguish between a 'no user found' error and some other")
 	if existingId != 0 {
 		db.setError(UserExistsError)
 	} else {
-		c, err := CreateUser(db, user)
+		c, err := CreateUser(user)
 		createdUser = c
 		db.setError(err)
 	}

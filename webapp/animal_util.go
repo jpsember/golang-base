@@ -20,8 +20,7 @@ func RandomAnimal() webapp_data.AnimalBuilder {
 func GenerateRandomAnimals() {
 	for i := 0; i < 100; i++ {
 		anim := RandomAnimal()
-		db := Db()
-		db.CreateAnimal(anim)
+		webapp_data.CreateAnimal(anim)
 		Pr("added animal:", INDENT, anim)
 	}
 }

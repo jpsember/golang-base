@@ -88,7 +88,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		return
 	}
 
-	userId, err := Db().FindUserWithName(userName)
+	userId, err := webapp_data.ReadUserWithName(userName)
 	if err != nil {
 		sess.SetWidgetIdProblem(id_user_name, "No such user, or incorrect password")
 		return
@@ -100,7 +100,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		return
 	}
 
-	userData, _ := webapp_data.ReadUser(Db(), userId)
+	userData, _ := webapp_data.ReadUser(userId)
 	if userData == nil {
 		sess.SetWidgetIdProblem(id_user_name, "User is unavaliable; sorry")
 		return
@@ -109,7 +109,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		if userData.State() == webapp_data.UserstateWaitingActivation {
 			Alert("Activating user automatically (without email verification)")
 			userData = userData.ToBuilder().SetState(webapp_data.UserstateActive).Build()
-			webapp_data.UpdateUser(Db(), userData)
+			webapp_data.UpdateUser(userData)
 		}
 	}
 	errMsg := ""
@@ -152,7 +152,7 @@ func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {
 		return
 	}
 
-	userId, err := Db().FindUserWithName(userName)
+	userId, err := webapp_data.ReadUserWithName(userName)
 
 	if err != nil {
 		Alert("Not revealing that 'no such user exists' in forgot password logic")
