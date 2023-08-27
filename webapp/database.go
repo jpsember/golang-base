@@ -14,7 +14,6 @@ import (
 type DatabaseStruct struct {
 	Base         BaseObject
 	state        dbState
-	err          error
 	theLock      sync.Mutex
 	memTables    map[string]MemTable
 	simFilesPath Path
@@ -101,16 +100,6 @@ func (db Database) Close() {
 	}
 }
 
-func (db Database) setError(e error) bool {
-	if e != nil {
-		if db.err == nil {
-			db.err = e
-			Alert("<1#50Setting database error:", INDENT, e)
-		}
-	}
-	return db.err != nil
-}
-
 const (
 	tableNameUser   = "user"
 	tableNameAnimal = "animal"
@@ -150,7 +139,7 @@ func (db Database) CreateUser(user User) (User, error) {
 		break
 	}
 
-	return createdUser, db.err
+	return createdUser, nil
 }
 
 func (db Database) ReadUser(userId int) (User, error) {
@@ -171,29 +160,20 @@ func (db Database) UpdateUser(user User) error {
 	db.lock()
 	defer db.unlock()
 
+	var err error
+
 	for {
 		pr("UpdateUser:", INDENT, user)
 		mp := db.getTable(tableNameUser)
 		if !mp.HasKey(user.Id()) {
-			db.setError(ObjectNotFoundError)
+			err = ObjectNotFoundError
 			break
 		}
 		mp.Put(user.Id(), user)
 		break
 	}
-	pr("...returning:", db.err)
-	return db.err
-}
-
-func (db Database) FindUserWithName(userName string) (int, error) {
-	db.lock()
-	defer db.unlock()
-
-	foundId := db.auxFindUserWithName(userName)
-	if foundId == 0 {
-		db.setError(Error("no user with name:", userName))
-	}
-	return foundId, db.err
+	pr("...returning:", err)
+	return err
 }
 
 func (db Database) auxFindUserWithName(userName string) int {
@@ -233,7 +213,7 @@ func (db Database) AddAnimal(a AnimalBuilder) error {
 	a.SetId(id)
 	mp.Put(id, a.Build())
 	db.setModified(mp)
-	return db.err
+	return nil
 }
 
 func (db Database) ReadAnimal(id int) (Animal, error) {
@@ -241,7 +221,7 @@ func (db Database) ReadAnimal(id int) (Animal, error) {
 	defer db.unlock()
 	mp := db.getTable(tableNameAnimal)
 	obj := mp.GetData(id, DefaultAnimal)
-	return obj.(Animal), db.err
+	return obj.(Animal), nil
 }
 
 const SECONDS = 1000
@@ -424,7 +404,6 @@ func (db Database) tryLock(expectedState dbState) bool {
 		db.theLock.Unlock()
 		return false
 	}
-	db.err = nil
 	return true
 }
 
