@@ -46,7 +46,7 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 
 	db := CreateDatabase()
-	db.SetDataSourceName(dataSourcePath)
+	db.SetDataSourceName(dataSourcePath.String())
 	db.Open()
 
 	oper.sessionManager = BuildSessionMap()

@@ -5,20 +5,11 @@
 package webapp
 
 import (
-	"errors"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"reflect"
 	"sync"
 )
-
-// ------------------------------------------------------------------------------------
-// Our errors related to database operations
-// ------------------------------------------------------------------------------------
-
-var UserExistsError = errors.New("named user already exists")
-var UserDoesntExistError = errors.New("user does not exist")
-var AnimalDoesntExistError = errors.New("animal does not exist")
 
 type DatabaseStruct struct {
 	Base         BaseObject
@@ -123,6 +114,7 @@ func (db Database) setError(e error) bool {
 const (
 	tableNameUser   = "user"
 	tableNameAnimal = "animal"
+	tableNameBlob   = "blob"
 )
 
 func (db Database) createTables() {
@@ -142,7 +134,6 @@ func (db Database) CreateUser(user User) (User, error) {
 	for {
 		existingId := db.auxFindUserWithName(user.Name())
 		if existingId != 0 {
-			db.setError(UserExistsError)
 			break
 		}
 
@@ -168,7 +159,7 @@ func (db Database) ReadUser(userId int) (User, error) {
 	mp := db.getTable(tableNameUser)
 	parsedValue := mp.GetData(userId, DefaultUser)
 	if parsedValue == nil {
-		return nil, UserDoesntExistError
+		return nil, nil
 	}
 	return parsedValue.(User), nil
 }
@@ -184,7 +175,7 @@ func (db Database) UpdateUser(user User) error {
 		pr("UpdateUser:", INDENT, user)
 		mp := db.getTable(tableNameUser)
 		if !mp.HasKey(user.Id()) {
-			db.setError(UserDoesntExistError)
+			db.setError(ObjectNotFoundError)
 			break
 		}
 		mp.Put(user.Id(), user)
@@ -370,6 +361,16 @@ func (m MemTable) HasKey(key any) bool {
 	return m.table.HasKey(strKey)
 }
 
+func (m MemTable) FindKeyForValue(value any) string {
+	mp := m.table.WrappedMap()
+	for key, val := range mp {
+		if val == value {
+			return key
+		}
+	}
+	return ""
+}
+
 func argToMemtableKey(key any) string {
 	var strKey string
 	switch k := key.(type) {
@@ -453,8 +454,8 @@ func (db Database) InsertBlob(blob []byte) (Blob, error) {
 		attempt++
 		CheckState(attempt < 50, "failed to choose a unique blob id!")
 		blobId := GenerateBlobId()
-		bb.SetId(blobId.String())
-		pr("blob id:", bb.Id())
+		bb.SetName(blobId.String())
+		pr("blob id:", bb.Name())
 		p := db.getBlobPath(blobId)
 		if !p.Exists() {
 			break
@@ -463,19 +464,32 @@ func (db Database) InsertBlob(blob []byte) (Blob, error) {
 	}
 	Pr("attempting to insert:", INDENT, bb)
 
+	mp := db.getTable(tableNameBlob)
+	key := mp.nextUniqueKey()
+	bb.SetId(key)
+	mp.Put(key, bb.Name())
+
 	db.writeBlob(bb)
 	return bb.Build(), nil
 }
 
-func (db Database) ReadBlob(blobId BlobId) (Blob, error) {
+func (db Database) ReadBlob(blobName BlobId) (Blob, error) {
+	//...refer to blobs here by their ids, not their names
 	db.lock()
 	defer db.unlock()
-	pth := db.getBlobPath(blobId)
+	pth := db.getBlobPath(blobName)
 	if !pth.Exists() {
-		return nil, Error("no such blob:", blobId)
+		return nil, Error("no such blob:", blobName)
 	}
-	idStr := blobId.String()
-	bb := NewBlob().SetId(idStr).SetData(pth.ReadBytesM())
+
+	// Find this key in the table
+	mp := db.getTable(tableNameBlob)
+	blobId := mp.FindKeyForValue(blobName)
+	CheckState(blobId != "")
+
+	nameStr := blobName.String()
+	bb := NewBlob().SetName(nameStr).SetData(pth.ReadBytesM())
+
 	return bb.Build(), nil
 }
 
@@ -484,6 +498,6 @@ func (db Database) getBlobPath(blobId BlobId) Path {
 }
 
 func (db Database) writeBlob(blob Blob) {
-	pth := db.getBlobPath(StringToBlobId(blob.Id()))
+	pth := db.getBlobPath(StringToBlobId(blob.Name()))
 	pth.WriteBytesM(blob.Data())
 }
