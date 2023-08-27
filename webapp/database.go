@@ -239,6 +239,7 @@ func (db Database) scanBlob(rows *sql.Row) int {
 // ------------------------------------------------------------------------------------
 
 // Create a user with the given (unique) name.
+
 func (db Database) CreateUserByName(user User) (User, error) {
 
 	Todo("Is there a UNIQUENESS constraint that we can take advantage of, to avoid this auxilliary lock?")
@@ -249,6 +250,7 @@ func (db Database) CreateUserByName(user User) (User, error) {
 
 	var createdUser User
 
+	ReadUserWithName(db, user.Name())
 	existingId := db.auxFindUserWithName(user.Name())
 	if existingId != 0 {
 		db.setError(UserExistsError)
