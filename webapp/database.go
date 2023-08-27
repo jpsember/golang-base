@@ -18,7 +18,6 @@ import (
 // ------------------------------------------------------------------------------------
 
 var UserExistsError = errors.New("named user already exists")
-var UserDoesntExistError = errors.New("user does not exist")
 
 // ------------------------------------------------------------------------------------
 
@@ -250,8 +249,8 @@ func (db Database) CreateUserByName(user User) (User, error) {
 
 	var createdUser User
 
-	ReadUserWithName(db, user.Name())
-	existingId := db.auxFindUserWithName(user.Name())
+	existingId, _ := ReadUserWithName(db, user.Name())
+	Todo("distinguish between a 'no user found' error and some other")
 	if existingId != 0 {
 		db.setError(UserExistsError)
 	} else {
@@ -261,31 +260,4 @@ func (db Database) CreateUserByName(user User) (User, error) {
 	}
 
 	return createdUser, db.err
-}
-
-func (db Database) FindUserWithName(userName string) (int, error) {
-	pr := PrIf(false)
-	pr("FindUserWithName:", userName)
-
-	db.Lock()
-	defer db.Unlock()
-
-	foundId := db.auxFindUserWithName(userName)
-	if foundId == 0 {
-		db.setError(UserDoesntExistError)
-	}
-	pr("returning foundId", foundId, "error", db.err)
-
-	return foundId, db.err
-}
-
-func (db Database) auxFindUserWithName(userName string) int {
-	Todo("have datagen produce indexes and corresponding go methods for specific fields")
-	rows := db.stFindUserIdByName.QueryRow(userName)
-	var id int
-	err := rows.Scan(&id)
-	if err != sql.ErrNoRows {
-		db.setError(err)
-	}
-	return id
 }
