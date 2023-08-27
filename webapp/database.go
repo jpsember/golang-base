@@ -22,15 +22,13 @@ var UserExistsError = errors.New("named user already exists")
 // ------------------------------------------------------------------------------------
 
 type DatabaseStruct struct {
-	state                int
-	err                  error
-	dataSourceName       Path
-	Db                   *sql.DB
-	theLock              sync.Mutex
-	stSelectSpecificBlob *sql.Stmt
-	stFindUserIdByName   *sql.Stmt
-	blobLock             sync.Mutex
-	userLock             sync.Mutex
+	state          int
+	err            error
+	dataSourceName Path
+	Db             *sql.DB
+	theLock        sync.Mutex
+	blobLock       sync.Mutex
+	userLock       sync.Mutex
 }
 
 type Database = *DatabaseStruct
@@ -48,12 +46,6 @@ func newDatabase() Database {
 }
 
 var singletonDatabase Database
-
-func (db Database) prepareStatements() {
-	Todo("have generated functions do this")
-	db.stSelectSpecificBlob = db.preparedStatement(`SELECT id FROM ` + tableNameBlob + ` WHERE name = ?`)
-	db.stFindUserIdByName = db.preparedStatement(`SELECT id FROM ` + tableNameUser + ` WHERE name = ?`)
-}
 
 func CreateDatabase() Database {
 	CheckState(singletonDatabase == nil, "<1Singleton database already exists")
@@ -80,9 +72,7 @@ type ExpObj struct {
 }
 
 func (db Database) Open() error {
-	Todo("can probably use generated code for blob table as well, if we support byte arrays")
 	Todo("we probably don't need db to cache errors")
-	Todo("have generated code accept 'our' db object which wraps the sql database")
 	CheckState(db.state == dbStateNew, "Illegal state:", db.state)
 	CheckState(db.dataSourceName.NonEmpty(), "<1No call to SetDataSourceName made")
 	// Create the directory containing the database, if it doesn't exist
@@ -95,12 +85,7 @@ func (db Database) Open() error {
 		db.state = dbStateFailed
 	} else {
 		db.state = dbStateOpen
-
 		PrepareDatabase(db.Db)
-
-		// We must create the tables *before* preparing any statements!
-		//db.createTables()
-		db.prepareStatements()
 	}
 
 	if Alert("experiment") {
@@ -153,9 +138,6 @@ func (db Database) setError(err error) bool {
 func (db Database) ok() bool {
 	return db.err == nil
 }
-
-const tableNameUser = `user`
-const tableNameBlob = `blobtable`
 
 func (db Database) DeleteAllRowsInTable(name string) error {
 	db.Lock()
@@ -211,11 +193,10 @@ func (db Database) CreateBlobWithUniqueName(blob []byte) (Blob, error) {
 		CheckState(attempt < 50, "failed to choose a unique blob id!")
 		bb.SetName(string(GenerateBlobId()))
 		pr("blob name:", bb.Name())
-		Todo("This code can go away if we get the generated code supporting ReadBlobWith<field>")
-		rows := db.stSelectSpecificBlob.QueryRow(bb.Name())
-		result := db.scanBlob(rows)
-		pr("result:", INDENT, result)
-		if result == 0 {
+
+		id, _ := ReadBlobWithName(db, bb.Name())
+		Todo("distinguish between not found error and others; maybe don't return an error at all if not found")
+		if id == 0 {
 			break
 		}
 		pr("blob is already in database, attempting again")
