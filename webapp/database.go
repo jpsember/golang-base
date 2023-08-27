@@ -6,20 +6,11 @@ package webapp
 
 import (
 	"database/sql"
-	"errors"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	_ "github.com/mattn/go-sqlite3"
 	"sync"
 )
-
-// ------------------------------------------------------------------------------------
-// Our errors related to database operations
-// ------------------------------------------------------------------------------------
-
-var UserExistsError = errors.New("named user already exists")
-
-// ------------------------------------------------------------------------------------
 
 type DatabaseStruct struct {
 	state          int
@@ -81,6 +72,22 @@ func (db Database) Open() error {
 		PrepareDatabase(db.sqlDatabase, &db.theLock)
 	}
 
+	if Alert("experiment with blob") {
+		var dat = []byte{1, 2, 3, 4}
+
+		bb := NewBlob()
+		bb.SetData(dat)
+
+		key1 := string(GenerateBlobId())
+
+		bb.SetName(key1)
+		result, err := CreateBlobWithName(bb)
+		CheckOk(err)
+
+		bb = result.ToBuilder()
+		result2, err2 := CreateBlobWithName(bb)
+		Pr("attempt to create duplicate blob:", result2, "err:", err2)
+	}
 	if !Alert("experiment") {
 		u := NewUser().SetEmail("a").SetPassword("pasword").SetState(UserstateActive).SetName("jeff")
 		Pr("attempting to read user with id 1")
@@ -100,7 +107,6 @@ func (db Database) Open() error {
 		uf, errf =
 			ReadUser(1)
 		Pr("found user:", uf, "err:", errf)
-
 	}
 
 	return db.err
@@ -152,65 +158,4 @@ func (db Database) Lock() {
 
 func (db Database) Unlock() {
 	db.theLock.Unlock()
-}
-
-func (db Database) CreateBlobWithUniqueName(blob []byte) (Blob, error) {
-
-	bb := NewBlob()
-	bb.SetData(blob)
-
-	// We use an auxilliary lock to avoid having some other thread call this function
-	// and generate the same name (very unlikely)
-	db.blobLock.Lock()
-	defer db.blobLock.Unlock()
-
-	// Pick a unique blob id (one not already in the blob table)
-
-	pr := PrIf(true)
-	pr("choosing unique blob id")
-	attempt := 0
-	for {
-		attempt++
-		CheckState(attempt < 50, "failed to choose a unique blob id!")
-		bb.SetName(string(GenerateBlobId()))
-		pr("blob name:", bb.Name())
-
-		id, _ := ReadBlobWithName(bb.Name())
-		Todo("distinguish between not found error and others; maybe don't return an error at all if not found")
-		if id == 0 {
-			break
-		}
-		pr("blob is already in database, attempting again")
-	}
-	Pr("attempting to insert:", INDENT, bb)
-	return CreateBlob(bb)
-}
-
-// ------------------------------------------------------------------------------------
-// User
-// ------------------------------------------------------------------------------------
-
-// Create a user with the given (unique) name.
-
-func (db Database) CreateUserWithUniqueName(user User) (User, error) {
-
-	Todo("Is there a UNIQUENESS constraint that we can take advantage of, to avoid this auxilliary lock?")
-	// We use an auxilliary lock to avoid having some other thread call this function
-	// and generate the same name (very unlikely)
-	db.userLock.Lock()
-	defer db.userLock.Unlock()
-
-	var createdUser User
-
-	existingId, _ := ReadUserWithName(user.Name())
-	Todo("distinguish between a 'no user found' error and some other")
-	if existingId != 0 {
-		db.setError(UserExistsError)
-	} else {
-		c, err := CreateUser(user)
-		createdUser = c
-		db.setError(err)
-	}
-
-	return createdUser, db.err
 }

@@ -1,9 +1,10 @@
-class sql(index name_bar) {
+class sql(index name) {
 
     // Unique id
     int id;
 
-    string name_bar;
+    // Unique name
+    string name;
     enum UserState state;
     string email;
     string password;
