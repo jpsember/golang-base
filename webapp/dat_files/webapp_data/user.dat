@@ -1,9 +1,12 @@
-class {
+class sql(index name) {
+
     // Unique id
     int id;
 
+    // Unique name
     string name;
     enum UserState state;
     string email;
     string password;
+    enum UserClass user_class;
 }

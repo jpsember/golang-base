@@ -11,6 +11,30 @@ type Path string
 var EmptyPath = Path("")
 
 var homeDir = EmptyPath
+var projectDir = EmptyPath
+
+var FileNotFoundError = Error("file not found")
+
+func FindFileUpward(name string, startDir Path) (Path, error) {
+	CheckArg(startDir.IsDir(), "not a directory")
+
+	currentDir := startDir
+	for currentDir.NonEmpty() {
+		candidate := currentDir.JoinM(name)
+		if candidate.Exists() {
+			return candidate, nil
+		}
+		currentDir = currentDir.Parent()
+	}
+	return EmptyPath, FileNotFoundError
+}
+
+func ProjectDirM() Path {
+	if projectDir.Empty() {
+		projectDir = CheckOkWith(FindFileUpward(".git", CurrentDirectory())).Parent()
+	}
+	return projectDir
+}
 
 func HomeDirM() Path {
 	if homeDir.Empty() {
@@ -200,6 +224,9 @@ func (path Path) DeleteDirectoryM(substring string) {
 
 func (path Path) DeleteFile() error {
 	CheckArg(!path.Empty())
+	if !path.Exists() {
+		return nil
+	}
 	return os.Remove(string(path))
 }
 

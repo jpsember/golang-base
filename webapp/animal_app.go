@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"path/filepath"
 	"strings"
 )
 
@@ -39,17 +38,15 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
 
-	dataSourceName := "../sqlite/animal_app.db"
+	dataDir := ProjectDirM().JoinM("webapp/sqlite")
+	dataSourcePath := dataDir.JoinM("animal_app_TEMP.db")
 
-	if true && dataSourceName == "../sqlite/animal_app_TEMP.db" && Alert("Deleting database") {
-		p := NewPathM(CheckOkWith(filepath.Abs(dataSourceName)))
-		if p.Exists() {
-			p.DeleteFileM()
-		}
+	if true && dataSourcePath.Base() == "animal_app_TEMP.db" && Alert("Deleting database") {
+		dataSourcePath.DeleteFileM()
 	}
 
 	db := CreateDatabase()
-	db.SetDataSourceName(dataSourceName)
+	db.SetDataSourceName(dataSourcePath)
 	db.Open()
 
 	oper.sessionManager = BuildSessionMap()
@@ -109,7 +106,8 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 		user, ok := sess.AppData.(webapp_data.User)
 		CheckState(ok, "no User found in sess AppData:", INDENT, sess.AppData)
 		Todo("!have convention of prefixing enums with e.g. 'UserState_'")
-		CheckState(user.State() == webapp_data.UserstateUnknown)
+		CheckState(
+			user.Id() == 0)
 		NewLandingPage(sess, sess.PageWidget).Generate()
 	}
 

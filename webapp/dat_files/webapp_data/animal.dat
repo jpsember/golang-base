@@ -1,4 +1,4 @@
-class {
+class sql() {
    // Unique id
    int id;
 
