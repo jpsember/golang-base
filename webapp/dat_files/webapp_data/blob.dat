@@ -1,4 +1,4 @@
-class sql(index name;) {
+class sql(index name) {
    int id;
 
    // Unique label
