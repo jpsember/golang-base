@@ -1,4 +1,4 @@
-class sql() {
+class sql(index name;) {
 
     // Unique id
     int id;

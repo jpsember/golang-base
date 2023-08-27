@@ -51,6 +51,7 @@ func newDatabase() Database {
 var singletonDatabase Database
 
 func (db Database) prepareStatements() {
+	Todo("have generated functions do this")
 	db.stSelectSpecificBlob = db.preparedStatement(`SELECT id FROM ` + tableNameBlob + ` WHERE name = ?`)
 	db.stFindUserIdByName = db.preparedStatement(`SELECT id FROM ` + tableNameUser + ` WHERE name = ?`)
 }
@@ -157,20 +158,6 @@ func (db Database) ok() bool {
 const tableNameUser = `user`
 const tableNameBlob = `blobtable`
 
-//func (db Database) createTables() {
-//
-//	database := db.Db
-//
-////
-////	_, err := database.Exec(`
-////CREATE TABLE IF NOT EXISTS ` + tableNameBlob + ` (
-////    id VARCHAR(36) PRIMARY KEY,
-////    data BLOB
-////)`)
-//	db.setError(err)
-//
-//}
-
 func (db Database) DeleteAllRowsInTable(name string) error {
 	db.Lock()
 	defer db.Unlock()
@@ -238,20 +225,6 @@ func (db Database) CreateBlobWithUniqueName(blob []byte) (Blob, error) {
 	return CreateBlob(db, bb)
 }
 
-//func (db Database) ReadBlob(blobId BlobId) (Blob, error) {
-//	db.Lock()
-//	defer db.Unlock()
-//
-//	idStr := blobId
-//	rows := db.stSelectSpecificBlob.QueryRow(idStr)
-//	bb := db.scanBlob(rows)
-//	var b Blob
-//	if db.ok() {
-//		b = bb.Build()
-//	}
-//	return b, db.err
-//}
-
 func (db Database) scanBlob(rows *sql.Row) int {
 	var id int
 	err := rows.Scan(&id)
@@ -268,6 +241,7 @@ func (db Database) scanBlob(rows *sql.Row) int {
 // Create a user with the given (unique) name.
 func (db Database) CreateUserByName(user User) (User, error) {
 
+	Todo("Is there a UNIQUENESS constraint that we can take advantage of, to avoid this auxilliary lock?")
 	// We use an auxilliary lock to avoid having some other thread call this function
 	// and generate the same name (very unlikely)
 	db.userLock.Lock()
@@ -313,51 +287,3 @@ func (db Database) auxFindUserWithName(userName string) int {
 	}
 	return id
 }
-
-//func (db Database) ReadUser(userId int) (User, error) {
-//	db.Lock()
-//	defer db.Unlock()
-//	return ReadUser(db.Db, userId)
-//}
-
-//// Write user to database; must already exist.
-//func (db Database) UpdateUser(user User) error {
-//	pr := PrIf(false)
-//
-//	db.Lock()
-//	defer db.Unlock()
-//
-//	db.setError(UpdateUser(db.Db, user))
-//
-//	pr("...returning:", db.err)
-//	return db.err
-//}
-
-//// ------------------------------------------------------------------------------------
-//// Animal
-//// ------------------------------------------------------------------------------------
-//
-//func (db Database) CreateAnimal(a Animal) (Animal, error) {
-//
-//	db.Lock()
-//	defer db.Unlock()
-//
-//	createdAnimal, err := CreateAnimal(db.Db, a)
-//	db.setError(err)
-//	return createdAnimal, db.err
-//}
-//
-//func (db Database) ReadAnimal(id int) (Animal, error) {
-//	db.Lock()
-//	defer db.Unlock()
-//	return ReadAnimal(db.Db, id)
-//}
-//
-//// Write animal to database; must already exist.
-//func (db Database) UpdateAnimal(a Animal) error {
-//	db.Lock()
-//	defer db.Unlock()
-//
-//	db.setError(UpdateAnimal(db.Db, a))
-//	return db.err
-//}
