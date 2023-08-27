@@ -68,7 +68,7 @@ func PerformBlobExperiment(db Database) {
 	}
 	for i := 0; i < 10; i++ {
 		Pr("inserting:", i)
-		bl, err := db.InsertBlob(data)
+		bl, err := db.CreateBlobWithUniqueName(data)
 		Pr("result:", INDENT, bl, CR, err)
 
 		Pr("verifying:")

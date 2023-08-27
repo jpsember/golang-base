@@ -30,6 +30,8 @@ type DatabaseStruct struct {
 	theLock              sync.Mutex
 	stSelectSpecificBlob *sql.Stmt
 	stFindUserIdByName   *sql.Stmt
+	blobLock             sync.Mutex
+	userLock             sync.Mutex
 }
 
 type Database = *DatabaseStruct
@@ -49,7 +51,7 @@ func newDatabase() Database {
 var singletonDatabase Database
 
 func (db Database) prepareStatements() {
-	db.stSelectSpecificBlob = db.preparedStatement(`SELECT * FROM ` + tableNameBlob + ` WHERE id = ?`)
+	db.stSelectSpecificBlob = db.preparedStatement(`SELECT id FROM ` + tableNameBlob + ` WHERE name = ?`)
 	db.stFindUserIdByName = db.preparedStatement(`SELECT id FROM ` + tableNameUser + ` WHERE name = ?`)
 }
 
@@ -203,12 +205,15 @@ func (db Database) preparedStatement(sqlStr string) *sql.Stmt {
 	return st
 }
 
-func (db Database) InsertBlob(blob []byte) (Blob, error) {
-	db.Lock()
-	defer db.Unlock()
+func (db Database) CreateBlobWithUniqueName(blob []byte) (Blob, error) {
 
 	bb := NewBlob()
 	bb.SetData(blob)
+
+	// We use an auxilliary lock to avoid having some other thread call this function
+	// and generate the same name (very unlikely)
+	db.blobLock.Lock()
+	defer db.blobLock.Unlock()
 
 	// Pick a unique blob id (one not already in the blob table)
 
@@ -218,47 +223,42 @@ func (db Database) InsertBlob(blob []byte) (Blob, error) {
 	for {
 		attempt++
 		CheckState(attempt < 50, "failed to choose a unique blob id!")
-		bb.SetId(string(GenerateBlobId()))
-		pr("blob id:", bb.Id())
-		rows := db.stSelectSpecificBlob.QueryRow(bb.Id())
+		bb.SetName(string(GenerateBlobId()))
+		pr("blob name:", bb.Name())
+		Todo("This code can go away if we get the generated code supporting ReadBlobWith<field>")
+		rows := db.stSelectSpecificBlob.QueryRow(bb.Name())
 		result := db.scanBlob(rows)
 		pr("result:", INDENT, result)
-		if result == nil {
+		if result == 0 {
 			break
 		}
 		pr("blob is already in database, attempting again")
 	}
 	Pr("attempting to insert:", INDENT, bb)
-
-	_, err := db.Db.Exec(`INSERT INTO `+tableNameBlob+` (id, data) VALUES(?,?)`, bb.Id(), bb.Data())
-	return bb.Build(), err
+	return CreateBlob(db, bb)
 }
 
-func (db Database) ReadBlob(blobId BlobId) (Blob, error) {
-	db.Lock()
-	defer db.Unlock()
+//func (db Database) ReadBlob(blobId BlobId) (Blob, error) {
+//	db.Lock()
+//	defer db.Unlock()
+//
+//	idStr := blobId
+//	rows := db.stSelectSpecificBlob.QueryRow(idStr)
+//	bb := db.scanBlob(rows)
+//	var b Blob
+//	if db.ok() {
+//		b = bb.Build()
+//	}
+//	return b, db.err
+//}
 
-	idStr := blobId
-	rows := db.stSelectSpecificBlob.QueryRow(idStr)
-	bb := db.scanBlob(rows)
-	var b Blob
-	if db.ok() {
-		b = bb.Build()
-	}
-	return b, db.err
-}
-
-func (db Database) scanBlob(rows *sql.Row) BlobBuilder {
-	var ab BlobBuilder
-	var id string
-	var data []byte
-	err := rows.Scan(&id, &data)
+func (db Database) scanBlob(rows *sql.Row) int {
+	var id int
+	err := rows.Scan(&id)
 	if err != nil && err != sql.ErrNoRows {
 		db.setError(err)
-	} else if err != sql.ErrNoRows {
-		ab = NewBlob().SetId(id).SetData(data)
 	}
-	return ab
+	return id
 }
 
 // ------------------------------------------------------------------------------------
@@ -267,8 +267,11 @@ func (db Database) scanBlob(rows *sql.Row) BlobBuilder {
 
 // Create a user with the given (unique) name.
 func (db Database) CreateUserByName(user User) (User, error) {
-	db.Lock()
-	defer db.Unlock()
+
+	// We use an auxilliary lock to avoid having some other thread call this function
+	// and generate the same name (very unlikely)
+	db.userLock.Lock()
+	defer db.userLock.Unlock()
 
 	var createdUser User
 
@@ -276,8 +279,7 @@ func (db Database) CreateUserByName(user User) (User, error) {
 	if existingId != 0 {
 		db.setError(UserExistsError)
 	} else {
-		Die("this will attempt to lock twice, maybe we want the ability to ignore calls to lock/unlock")
-		c, err := CreateUserUnsafe(db, user)
+		c, err := CreateUser(db, user)
 		createdUser = c
 		db.setError(err)
 	}
@@ -331,31 +333,31 @@ func (db Database) auxFindUserWithName(userName string) int {
 //	return db.err
 //}
 
-// ------------------------------------------------------------------------------------
-// Animal
-// ------------------------------------------------------------------------------------
-
-func (db Database) CreateAnimal(a Animal) (Animal, error) {
-
-	db.Lock()
-	defer db.Unlock()
-
-	createdAnimal, err := CreateAnimal(db.Db, a)
-	db.setError(err)
-	return createdAnimal, db.err
-}
-
-func (db Database) ReadAnimal(id int) (Animal, error) {
-	db.Lock()
-	defer db.Unlock()
-	return ReadAnimal(db.Db, id)
-}
-
-// Write animal to database; must already exist.
-func (db Database) UpdateAnimal(a Animal) error {
-	db.Lock()
-	defer db.Unlock()
-
-	db.setError(UpdateAnimal(db.Db, a))
-	return db.err
-}
+//// ------------------------------------------------------------------------------------
+//// Animal
+//// ------------------------------------------------------------------------------------
+//
+//func (db Database) CreateAnimal(a Animal) (Animal, error) {
+//
+//	db.Lock()
+//	defer db.Unlock()
+//
+//	createdAnimal, err := CreateAnimal(db.Db, a)
+//	db.setError(err)
+//	return createdAnimal, db.err
+//}
+//
+//func (db Database) ReadAnimal(id int) (Animal, error) {
+//	db.Lock()
+//	defer db.Unlock()
+//	return ReadAnimal(db.Db, id)
+//}
+//
+//// Write animal to database; must already exist.
+//func (db Database) UpdateAnimal(a Animal) error {
+//	db.Lock()
+//	defer db.Unlock()
+//
+//	db.setError(UpdateAnimal(db.Db, a))
+//	return db.err
+//}
