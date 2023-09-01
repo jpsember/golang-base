@@ -45,9 +45,7 @@ func (oper AnimalOper) Perform(app *App) {
 		dataSourcePath.DeleteFileM()
 	}
 
-	db := CreateDatabase()
-	db.SetDataSourceName(dataSourcePath)
-	db.Open()
+	webapp_data.CreateDatabase(dataSourcePath.String())
 
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
