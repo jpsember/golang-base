@@ -46,9 +46,6 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 
 	webapp_data.CreateDatabase(dataSourcePath.String())
-	db := webapp_data.Db()
-	Todo("have CreateDatabase call Open() as well?")
-	db.Open()
 
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
