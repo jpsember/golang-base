@@ -5,10 +5,10 @@ set -eu
 #
 # The two branches must be one of "main" or "no-db".
 #
-# The untouched files are at present the single file "webapp/database.go"
+# The untouched files are at present the single file "dgen.sh"
 #
 
-OMITTED_FILE="webapp/database.go"
+OMITTED_FILE="dgen.sh"
 
 MAIN_BRANCH="main"
 ALT_BRANCH="no-db"
@@ -16,10 +16,8 @@ ALT_BRANCH="no-db"
 CURRENT_BRANCH=`git branch --show-current`
 if [ "$CURRENT_BRANCH" == "$MAIN_BRANCH" ]; then
   OTHER_BRANCH=$ALT_BRANCH
-  cp $OMITTED_FILE webapp/_SKIP_database_main.go
 elif [ "$CURRENT_BRANCH" == "$ALT_BRANCH" ]; then
   OTHER_BRANCH=$MAIN_BRANCH
-  cp $OMITTED_FILE webapp/_SKIP_database_no-db.go
 else
   echo "Current branch is $CURRENT_BRANCH, expected either $MAIN_BRANCH or $ALT_BRANCH !!!"
   exit 1
