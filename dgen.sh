@@ -6,4 +6,5 @@ datagen --exceptions language go \
    format \
    source_path webapp/gen \
    dat_path webapp/dat_files \
+   dbsim \
    clean "$@"
