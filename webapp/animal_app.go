@@ -44,6 +44,8 @@ func (oper AnimalOper) Perform(app *App) {
 	if true && dataSourcePath.Base() == "animal_app_TEMP.db" && Alert("Deleting database") {
 		dataSourcePath.DeleteFileM()
 	}
+	Todo("use the sqlite datasourcepath for the simulated path somehow")
+	Todo("Have ability to delete database (checking for a substring)")
 
 	webapp_data.CreateDatabase(dataSourcePath.String())
 

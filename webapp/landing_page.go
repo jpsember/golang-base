@@ -88,11 +88,12 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		return
 	}
 
-	userId, err := webapp_data.ReadUserWithName(userName)
+	user, err := webapp_data.ReadUserWithName(userName)
 	if err != nil {
 		sess.SetWidgetIdProblem(id_user_name, "No such user, or incorrect password")
 		return
 	}
+	userId := user.Id()
 
 	if IsUserLoggedIn(userId) {
 		Todo("Log user out of other sessions?")
@@ -152,12 +153,12 @@ func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {
 		return
 	}
 
-	userId, err := webapp_data.ReadUserWithName(userName)
+	user, err := webapp_data.ReadUserWithName(userName)
 
 	if err != nil {
 		Alert("Not revealing that 'no such user exists' in forgot password logic")
 	}
-	if userId != 0 {
+	if user.Id() != 0 {
 		Todo("Send email")
 	}
 	sess.SetWidgetIdProblem(id_user_name, "An email has been sent with a link to change your password.")
