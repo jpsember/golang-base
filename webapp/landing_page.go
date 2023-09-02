@@ -88,8 +88,12 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		return
 	}
 
-	userId, err := webapp_data.ReadUserWithName(userName)
-	if err != nil {
+	user, err := webapp_data.ReadUserWithName(userName)
+	userId := user.Id()
+	CheckOk(err)
+	Pr("ReadUserWithName:", userName, "user id:", userId, "err:", err)
+
+	if userId == 0 {
 		sess.SetWidgetIdProblem(id_user_name, "No such user, or incorrect password")
 		return
 	}
@@ -101,7 +105,12 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 	}
 
 	userData, _ := webapp_data.ReadUser(userId)
-	if userData == nil {
+	Pr("userData:", userData)
+
+	// WTF? 'An interface equals nil only if both the type and value are nil.
+
+	Pr("userData id:", userData.Id())
+	if userData.Id() == 0 {
 		sess.SetWidgetIdProblem(id_user_name, "User is unavaliable; sorry")
 		return
 	}
@@ -152,7 +161,8 @@ func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {
 		return
 	}
 
-	userId, err := webapp_data.ReadUserWithName(userName)
+	user, err := webapp_data.ReadUserWithName(userName)
+	userId := user.Id()
 
 	if err != nil {
 		Alert("Not revealing that 'no such user exists' in forgot password logic")
