@@ -45,6 +45,23 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 	CreateDatabase(dataSourcePath.String())
 
+	if true && Alert("creating a number of users") {
+		mr := NewJSRand().Rand()
+		for i := 0; i < 1000; i++ {
+			u := NewUser()
+			u.SetName(RandomText(mr, 3, false))
+			Pr("i:", i, "attempting to create user with name:", u.Name())
+			result, err := CreateUserWithName(u)
+			CheckOk(err)
+			if result.Id() == 0 {
+				Pr("failed to create user, must already exist?", u.Name())
+				continue
+			}
+		}
+		Pr("sleeping then quitting")
+		SleepMs(2000)
+		return
+	}
 	if false && Alert("experiment") {
 		b1 := NewBlob().SetName("bravo")
 		b, err := CreateBlobWithName(b1)
