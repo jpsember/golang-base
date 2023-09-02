@@ -3,7 +3,7 @@ package webapp
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
 	"log"
 	"net/http"
@@ -38,13 +38,40 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
 
-	dataDir := ProjectDirM().JoinM("webapp/sqlite")
-	dataSourcePath := dataDir.JoinM("animal_app_TMP_.db")
+	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app.db")
 
 	if true && dataSourcePath.Base() == "animal_app_TMP_.db" && Alert("Deleting database:", dataSourcePath) {
-		webapp_data.DeleteDatabase(dataSourcePath)
+		DeleteDatabase(dataSourcePath)
 	}
-	webapp_data.CreateDatabase(dataSourcePath.String())
+	CreateDatabase(dataSourcePath.String())
+
+	if Alert("experiment") {
+		b1 := NewBlob().SetName("bravo")
+		b, err := CreateBlobWithName(b1)
+		CheckOk(err)
+
+		if b.Id() == 0 {
+			Pr("failed to create blob:", INDENT, b1)
+			Pr("assuming one already exists:")
+			b2, err1 := ReadBlobWithName(b1.Name())
+			Pr("err:", err1)
+			Pr("Existing blob:", INDENT, b2)
+		} else {
+
+			var x []byte
+			for i := 0; i < 2000; i++ {
+				x = append(x, byte(i))
+			}
+
+			b = b.ToBuilder().SetData(x)
+			Pr("Attempting to write blob:", INDENT, b)
+			err2 := UpdateBlob(b)
+			Pr("err?", err2)
+		}
+		Pr("sleeping to allow db flush")
+		SleepMs(2000)
+		Halt("done experiment")
+	}
 
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
@@ -100,7 +127,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 		oper.AssignUserToSession(sess)
 		oper.constructPageWidget(sess)
 
-		user, ok := sess.AppData.(webapp_data.User)
+		user, ok := sess.AppData.(User)
 		CheckState(ok, "no User found in sess AppData:", INDENT, sess.AppData)
 		Todo("!have convention of prefixing enums with e.g. 'UserState_'")
 		CheckState(
@@ -186,5 +213,5 @@ func (oper AnimalOper) constructPageWidget(sess Session) {
 
 // A new session was created; assign an 'unknown' user to it
 func (oper AnimalOper) AssignUserToSession(sess Session) {
-	sess.AppData = webapp_data.NewUser().Build()
+	sess.AppData = NewUser().Build()
 }
