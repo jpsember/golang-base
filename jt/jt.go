@@ -394,3 +394,10 @@ func (j JTest) saveTestResults() {
 // A do-nothing method
 func (j JTest) Nothing() {
 }
+
+func (j JTest) AssertEqual(a any, b any) JTest {
+	if !reflect.DeepEqual(a, b) {
+		BadArg("Values are not equal:", INDENT, a, CR, b)
+	}
+	return j
+}

@@ -3,7 +3,6 @@ package base_test
 import (
 	. "github.com/jpsember/golang-base/base"
 	"github.com/jpsember/golang-base/jt"
-	"reflect"
 	"strings"
 	"testing"
 )
@@ -145,7 +144,7 @@ func TestGenerateDir(t *testing.T) {
 }
 
 func TestEncodeBase64(t *testing.T) {
-	_ = jt.Newz(t)
+	js := jt.New(t)
 
 	step := 1
 	for j := 0; j < 2000; j += step {
@@ -159,28 +158,6 @@ func TestEncodeBase64(t *testing.T) {
 		str := EncodeBase64Maybe(bytes)
 		bytes2 := DecodeBase64Maybe(str)
 
-		//Pr("deep equal same:", reflect.DeepEqual(bytes, bytes))
-		if !reflect.DeepEqual(bytes, bytes2) {
-			//Pr("DeepEqual is false, wtf?")
-
-			//alen := len(bytes)
-			//blen := len(bytes2)
-
-			//Pr("alen:", alen, "blen:", blen)
-
-			dump("bytes1", bytes)
-			dump("bytes2", bytes2)
-
-			Pr("info1:", Info(bytes))
-			Pr("info2:", Info(bytes2))
-			Pr("Encoded bytes of length", len(bytes), ":", bytes)
-			Pr("base64:", str)
-			Pr("Decoded to:", len(bytes2), ":", bytes2)
-			Die("failed to encode/decode")
-		}
+		js.AssertEqual(bytes, bytes2)
 	}
-}
-
-func dump(label string, array []byte) {
-	Pr("Bytes:", label, INDENT, JSListWith(array))
 }

@@ -355,6 +355,7 @@ func removeDataTypeSuffix(s string, optionalSuffix string) string {
 
 // Encode a byte array as a Base64 string, with our data type suffix added
 func EncodeBase64(byteArray []byte) string {
+	Alert("this is using the wrong encoding!")
 	return base64.URLEncoding.EncodeToString(byteArray) + DATA_TYPE_SUFFIX_BYTE
 }
 
@@ -367,10 +368,7 @@ func EncodeBase64Maybe(byteArray []byte) JSEntity {
 }
 
 func ParseBase64(s string) []byte {
-	Pr("ParseBase64, string:", len(s), s)
-
 	s = removeDataTypeSuffix(s, DATA_TYPE_SUFFIX_BYTE)
-	Pr("after stripping suffix, string:", len(s), s)
 	return CheckOkWith(base64.StdEncoding.DecodeString(s))
 }
 
