@@ -45,7 +45,9 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 	CreateDatabase(dataSourcePath.String())
 
-	if true && Alert("creating a number of users") {
+	Halt("support an iterator, issue #55")
+
+	if false && Alert("creating a number of users") {
 		mr := NewJSRand().Rand()
 		for i := 0; i < 1000; i++ {
 			u := NewUser()
