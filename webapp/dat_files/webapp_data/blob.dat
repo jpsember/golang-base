@@ -1,4 +1,4 @@
-class sql(index name) {
+class  {
    int id;
 
    // Unique label
@@ -6,3 +6,5 @@ class sql(index name) {
 
    *byte data;
 }
+
+sql {index name}
