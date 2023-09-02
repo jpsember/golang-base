@@ -39,14 +39,11 @@ func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
 
 	dataDir := ProjectDirM().JoinM("webapp/sqlite")
-	dataSourcePath := dataDir.JoinM("animal_app_TEMP.db")
+	dataSourcePath := dataDir.JoinM("animal_app_TMP_.db")
 
-	if true && dataSourcePath.Base() == "animal_app_TEMP.db" && Alert("Deleting database") {
-		dataSourcePath.DeleteFileM()
+	if true && dataSourcePath.Base() == "animal_app_TMP_.db" && Alert("Deleting database:", dataSourcePath) {
+		webapp_data.DeleteDatabase(dataSourcePath)
 	}
-	Todo("use the sqlite datasourcepath for the simulated path somehow")
-	Todo("Have ability to delete database (checking for a substring)")
-
 	webapp_data.CreateDatabase(dataSourcePath.String())
 
 	oper.sessionManager = BuildSessionMap()
