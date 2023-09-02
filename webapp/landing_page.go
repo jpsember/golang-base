@@ -91,7 +91,6 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 	user, err := webapp_data.ReadUserWithName(userName)
 	userId := user.Id()
 	CheckOk(err)
-	Pr("ReadUserWithName:", userName, "user id:", userId, "err:", err)
 
 	if userId == 0 {
 		sess.SetWidgetIdProblem(id_user_name, "No such user, or incorrect password")
@@ -105,11 +104,6 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 	}
 
 	userData, _ := webapp_data.ReadUser(userId)
-	Pr("userData:", userData)
-
-	// WTF? 'An interface equals nil only if both the type and value are nil.
-
-	Pr("userData id:", userData.Id())
 	if userData.Id() == 0 {
 		sess.SetWidgetIdProblem(id_user_name, "User is unavaliable; sorry")
 		return
