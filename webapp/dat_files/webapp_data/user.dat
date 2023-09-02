@@ -1,4 +1,4 @@
-class sql(index name) {
+class {
 
     // Unique id
     int id;
@@ -10,3 +10,5 @@ class sql(index name) {
     string password;
     enum UserClass user_class;
 }
+
+sql { index name }

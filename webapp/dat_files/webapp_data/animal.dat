@@ -1,4 +1,4 @@
-class sql() {
+class {
    // Unique id
    int id;
 
@@ -15,3 +15,5 @@ class sql() {
    int campaign_target;
    int campaign_balance;
 }
+
+sql {}
