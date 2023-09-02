@@ -355,7 +355,7 @@ func removeDataTypeSuffix(s string, optionalSuffix string) string {
 
 // Encode a byte array as a Base64 string, with our data type suffix added
 func EncodeBase64(byteArray []byte) string {
-	return base64.URLEncoding.EncodeToString(byteArray) + DATA_TYPE_SUFFIX_BYTE
+	return base64.StdEncoding.EncodeToString(byteArray) + DATA_TYPE_SUFFIX_BYTE
 }
 
 // Encode a byte array as a Base64 string if it is fairly long

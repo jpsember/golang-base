@@ -45,7 +45,7 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 	CreateDatabase(dataSourcePath.String())
 
-	if Alert("experiment") {
+	if false && Alert("experiment") {
 		b1 := NewBlob().SetName("bravo")
 		b, err := CreateBlobWithName(b1)
 		CheckOk(err)
@@ -57,7 +57,6 @@ func (oper AnimalOper) Perform(app *App) {
 			Pr("err:", err1)
 			Pr("Existing blob:", INDENT, b2)
 		} else {
-
 			var x []byte
 			for i := 0; i < 2000; i++ {
 				x = append(x, byte(i))

@@ -142,3 +142,22 @@ func TestGenerateDir(t *testing.T) {
 
 	j.AssertGenerated()
 }
+
+func TestEncodeBase64(t *testing.T) {
+	js := jt.New(t)
+
+	step := 1
+	for j := 0; j < 2000; j += step {
+		step += 2
+
+		bytes := []byte{}
+		for k := 0; k < j; k++ {
+			bytes = append(bytes, byte(k))
+		}
+
+		str := EncodeBase64Maybe(bytes)
+		bytes2 := DecodeBase64Maybe(str)
+
+		js.AssertEqual(bytes, bytes2)
+	}
+}
