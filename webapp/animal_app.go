@@ -45,7 +45,24 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 	CreateDatabase(dataSourcePath.String())
 
-	Halt("support an iterator, issue #55")
+	if Alert("experimenting with iter") {
+		count := 0
+		iter := UserIterator(12)
+		for iter.HasNext() {
+			result := iter.Next().(User)
+			Pr("Count:", count, "Next:", result.Id(), result.Name())
+			if result.Id() >= 80 {
+				break
+			}
+			count++
+			if count > 200 {
+				Pr("count too high")
+				break
+			}
+		}
+	}
+
+	Halt("done iteration experiment")
 
 	if false && Alert("creating a number of users") {
 		mr := NewJSRand().Rand()
