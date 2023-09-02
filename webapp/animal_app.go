@@ -45,7 +45,10 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 	CreateDatabase(dataSourcePath.String())
 
-	if Alert("experimenting with iter") {
+	if false && Alert("experimenting with iter") {
+
+		Todo("Why do the next seem to go up by two?")
+		Pr("Looking for reiq:", CheckOkWith(ReadUser(33)).Name())
 		count := 0
 		iter := UserIterator(12)
 		for iter.HasNext() {
@@ -60,11 +63,10 @@ func (oper AnimalOper) Perform(app *App) {
 				break
 			}
 		}
+		Halt("done iteration experiment")
 	}
 
-	Halt("done iteration experiment")
-
-	if false && Alert("creating a number of users") {
+	if true && Alert("creating a number of users") {
 		mr := NewJSRand().Rand()
 		for i := 0; i < 1000; i++ {
 			u := NewUser()
@@ -76,6 +78,7 @@ func (oper AnimalOper) Perform(app *App) {
 				Pr("failed to create user, must already exist?", u.Name())
 				continue
 			}
+			Pr("created user:", result.Id(), result.Name())
 		}
 		Pr("sleeping then quitting")
 		SleepMs(2000)
