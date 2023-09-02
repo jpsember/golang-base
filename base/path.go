@@ -251,6 +251,21 @@ func (path Path) Extension() string {
 	return ExtensionFrom(path.String())
 }
 
+func (path Path) TrimExtension() Path {
+	p := path.CheckNonEmpty().String()
+	ext := filepath.Ext(p)
+	if ext != "" {
+		i := len(p)
+		return NewPathM(p[:i-len(ext)])
+	}
+	return path
+}
+
+func (path Path) SetExtension(ext string) Path {
+	CheckNonEmpty(ext)
+	return NewPathM(path.TrimExtension().String() + "." + ext)
+}
+
 func (path Path) NonEmpty() bool {
 	return !path.Empty()
 }
