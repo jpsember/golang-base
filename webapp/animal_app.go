@@ -38,41 +38,24 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
 
-	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app.db")
+	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 
-	if true && dataSourcePath.Base() == "animal_app_TMP_.db" && Alert("Deleting database:", dataSourcePath) {
+	if false && Alert("Deleting database:", dataSourcePath) {
 		DeleteDatabase(dataSourcePath)
 	}
 	CreateDatabase(dataSourcePath.String())
 
-	if false && Alert("experimenting with iter") {
+	// Must 'close rows'?  See https://stackoverflow.com/questions/32479071
 
-		Todo("Why do the next seem to go up by two?")
-		Pr("Looking for reiq:", CheckOkWith(ReadUser(33)).Name())
-		count := 0
-		iter := UserIterator(12)
-		for iter.HasNext() {
-			result := iter.Next().(User)
-			Pr("Count:", count, "Next:", result.Id(), result.Name())
-			if result.Id() >= 80 {
-				break
-			}
-			count++
-			if count > 200 {
-				Pr("count too high")
-				break
-			}
-		}
-		Halt("done iteration experiment")
-	}
-
-	if true && Alert("creating a number of users") {
-		mr := NewJSRand().Rand()
-		for i := 0; i < 1000; i++ {
+	if false && Alert("creating a number of users") {
+		mr := NewJSRand().SetSeed(1965).Rand()
+		for i := 0; i < 10; i++ {
 			u := NewUser()
 			u.SetName(RandomText(mr, 3, false))
+			Pr("random name:", u.Name())
 			Pr("i:", i, "attempting to create user with name:", u.Name())
 			result, err := CreateUserWithName(u)
+			Pr("create user result:", result.Id(), "err:", err)
 			CheckOk(err)
 			if result.Id() == 0 {
 				Pr("failed to create user, must already exist?", u.Name())
@@ -82,8 +65,39 @@ func (oper AnimalOper) Perform(app *App) {
 		}
 		Pr("sleeping then quitting")
 		SleepMs(2000)
-		return
+		//return
 	}
+	Todo("The indexes have the wrong name?")
+
+	if true && Alert("experimenting with iter") {
+		//sampleName := `mm`
+		////sampleId := 122
+		//Pr("Looking for", sampleName, ":", CheckOkWith(ReadUserWithName(sampleName)).Name())
+
+		//iter := UserIterator(12)
+		DoIterExperiment(UserIterator(12))
+		DoIterExperiment(UserIterator(380))
+
+		//Pr("built an iterator for idMin 12:", INDENT, iter)
+		//count := 0
+		//for iter.HasNext() {
+		//	result := iter.Next().(User)
+		//	Pr("Result:", result.Id(), ":", result.Name(), "(count:", count, ")")
+		//	if count%8 == 3 {
+		//		Pr("Looking for", sampleName, "by id", sampleId, ":", CheckOkWith(ReadUser(sampleId)).Name())
+		//	}
+		//	//if result.Id() >= 80 {
+		//	//	break
+		//	//}
+		//	count++
+		//	if count > 200 {
+		//		Pr("count too high")
+		//		break
+		//	}
+		//}
+		Halt("done iteration experiment")
+	}
+
 	if false && Alert("experiment") {
 		b1 := NewBlob().SetName("bravo")
 		b, err := CreateBlobWithName(b1)
@@ -142,6 +156,28 @@ func (oper AnimalOper) Perform(app *App) {
 
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
+	}
+}
+
+func DoIterExperiment(iter DbIter) {
+
+	sampleId := 122
+	sampleName := `mm`
+
+	Pr("Performing iter experiment with:", INDENT, iter)
+	count := 0
+	for iter.HasNext() {
+		Todo("can we use generics to have this return a User?")
+		result := iter.Next().(User)
+		Pr("Result:", result.Id(), ":", result.Name(), "(count:", count, ")")
+		if sampleId != 0 && count%8 == 3 {
+			Pr("Looking for", sampleName, "by id", sampleId, ":", CheckOkWith(ReadUser(sampleId)).Name())
+		}
+		count++
+		if count > 200 {
+			Pr("reached max count")
+			break
+		}
 	}
 }
 
