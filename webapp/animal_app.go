@@ -36,7 +36,7 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AnimalOper) Perform(app *App) {
-	//ClearAlertHistory()
+	ClearAlertHistory()
 
 	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 
@@ -45,11 +45,9 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 	CreateDatabase(dataSourcePath.String())
 
-	// Must 'close rows'?  See https://stackoverflow.com/questions/32479071
-
 	if false && Alert("creating a number of users") {
 		mr := NewJSRand().SetSeed(1965).Rand()
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 30; i++ {
 			u := NewUser()
 			u.SetName(RandomText(mr, 3, false))
 			Pr("random name:", u.Name())
@@ -65,13 +63,19 @@ func (oper AnimalOper) Perform(app *App) {
 		}
 		Pr("sleeping then quitting")
 		SleepMs(2000)
-		//return
 	}
 
 	if true && Alert("experimenting with iter") {
 
-		{
-			iter := UserIterator(3)
+		for pass := 0; pass < 2; pass++ {
+			var iter DbIter
+			if pass == 0 {
+				iter = UserIterator(17)
+				Pr(VERT_SP, "iterating by id")
+			} else {
+				iter = UserNameIterator("marcy")
+				Pr(VERT_SP, "iterating by name")
+			}
 
 			//the iterator is not doing anything
 
@@ -81,31 +85,8 @@ func (oper AnimalOper) Perform(app *App) {
 				user := iter.Next().(User)
 				CheckState(!iter.HasError())
 				Pr("i:", i, "id:", user.Id(), "name:", user.Name())
-
 			}
-			Halt("done experiment")
 		}
-
-		DoIterExperiment(UserIterator(12))
-		DoIterExperiment(UserIterator(380))
-
-		//Pr("built an iterator for idMin 12:", INDENT, iter)
-		//count := 0
-		//for iter.HasNext() {
-		//	result := iter.Next().(User)
-		//	Pr("Result:", result.Id(), ":", result.Name(), "(count:", count, ")")
-		//	if count%8 == 3 {
-		//		Pr("Looking for", sampleName, "by id", sampleId, ":", CheckOkWith(ReadUser(sampleId)).Name())
-		//	}
-		//	//if result.Id() >= 80 {
-		//	//	break
-		//	//}
-		//	count++
-		//	if count > 200 {
-		//		Pr("count too high")
-		//		break
-		//	}
-		//}
 		Halt("done iteration experiment")
 	}
 
