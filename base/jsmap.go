@@ -314,7 +314,11 @@ func (m JSMap) OptFloat64(key string, defaultValue float64) float64 {
 
 func (m JSMap) GetInt64(key string) int64 {
 	var val = m.wrappedMap[key]
-	return int64((val.(JSEntity)).AsInteger())
+	return (val.(JSEntity)).AsInteger()
+}
+
+func (m JSMap) GetInt(key string) int {
+	return int(m.GetInt64(key))
 }
 
 func (m JSMap) OptInt64(key string, defaultValue int) int64 {
@@ -408,4 +412,8 @@ func (m JSMap) MutableWrapped() map[string]JSEntity {
 		BadState("<2JSMap is locked")
 	}
 	return m.wrappedMap
+}
+
+func (m JSMap) Size() int {
+	return len(m.wrappedMap)
 }
