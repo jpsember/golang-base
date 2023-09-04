@@ -67,15 +67,14 @@ func (oper AnimalOper) Perform(app *App) {
 		SleepMs(2000)
 		//return
 	}
-	Todo("The indexes have the wrong name?")
 
 	if true && Alert("experimenting with iter") {
-		//sampleName := `mm`
-		////sampleId := 122
-		//Pr("Looking for", sampleName, ":", CheckOkWith(ReadUserWithName(sampleName)).Name())
 
 		{
-			iter := UserIterator(380)
+			iter := UserIterator(3)
+
+			//the iterator is not doing anything
+
 			i := -1
 			for iter.HasNext() {
 				i++
