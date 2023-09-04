@@ -74,7 +74,19 @@ func (oper AnimalOper) Perform(app *App) {
 		////sampleId := 122
 		//Pr("Looking for", sampleName, ":", CheckOkWith(ReadUserWithName(sampleName)).Name())
 
-		//iter := UserIterator(12)
+		{
+			iter := UserIterator(380)
+			i := -1
+			for iter.HasNext() {
+				i++
+				user := iter.Next().(User)
+				CheckState(!iter.HasError())
+				Pr("i:", i, "id:", user.Id(), "name:", user.Name())
+
+			}
+			Halt("done experiment")
+		}
+
 		DoIterExperiment(UserIterator(12))
 		DoIterExperiment(UserIterator(380))
 
