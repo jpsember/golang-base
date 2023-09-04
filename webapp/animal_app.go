@@ -65,7 +65,7 @@ func (oper AnimalOper) Perform(app *App) {
 		SleepMs(2000)
 	}
 
-	if true && Alert("experimenting with iter") {
+	if false && Alert("experimenting with iter") {
 
 		for pass := 0; pass < 2; pass++ {
 			var iter DbIter
@@ -148,28 +148,6 @@ func (oper AnimalOper) Perform(app *App) {
 
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
-	}
-}
-
-func DoIterExperiment(iter DbIter) {
-
-	sampleId := 122
-	sampleName := `mm`
-
-	Pr("Performing iter experiment with:", INDENT, iter)
-	count := 0
-	for iter.HasNext() {
-		Todo("can we use generics to have this return a User?")
-		result := iter.Next().(User)
-		Pr("Result:", result.Id(), ":", result.Name(), "(count:", count, ")")
-		if sampleId != 0 && count%8 == 3 {
-			Pr("Looking for", sampleName, "by id", sampleId, ":", CheckOkWith(ReadUser(sampleId)).Name())
-		}
-		count++
-		if count > 200 {
-			Pr("reached max count")
-			break
-		}
 	}
 }
 
