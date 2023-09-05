@@ -36,8 +36,7 @@ func NewContainerWidget(id string) ContainerWidget {
 		cells:    NewArray[GridCell](),
 		columns:  12,
 	}
-	w.Id = id
-	Pr("Constructing ContainerWidget, id:", id)
+	w.BaseId = id
 	return &w
 }
 func (w ContainerWidget) Children() *Array[Widget] {
@@ -47,15 +46,17 @@ func (w ContainerWidget) Children() *Array[Widget] {
 func (w ContainerWidget) ClearChildren() {
 	w.children.Clear()
 	w.cells.Clear()
+	// Reset the columns to the default (12)
+	w.columns = 12
 }
 
 func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	w.children.Add(c)
-	pr := PrIf(true)
-	pr(VERT_SP, "ContainerWidget", w.Id, "adding child", c.Base().Id, "to container", w.Id, "columns:", w.columns)
+	pr := PrIf(false)
+	pr(VERT_SP, "ContainerWidget", w.BaseId, "adding child", c.Base().BaseId, "to container", w.BaseId, "columns:", w.columns)
 	cols := w.columns
 	if cols == 0 {
-		BadState("no pending columns for widget:", WidgetId(c))
+		BadState("no pending columns for widget:", c.Id())
 	}
 	cell := GridCell{
 		Width: cols,
@@ -77,15 +78,14 @@ func (w ContainerWidget) SetColumns(columns int) {
 }
 
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	Pr(VERT_SP, "ContainerWidget, rendering;", w.IdSummary())
+	CheckState(w.cells.Size() == w.children.Size())
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
-	m.Comments(`ContainerWidget`, w.IdSummary()).OpenTag(`div id='` + w.Id + `'`)
+	m.Comments(`ContainerWidget`, w.IdSummary()).OpenTag(`div id='` + w.BaseId + `'`)
 	if w.Visible() {
 		prevPoint := IPointWith(0, -1)
 		for index, child := range w.children.Array() {
 			cell := w.cells.Get(index)
-			Pr("prevPoint:", prevPoint, "index:", index, "cell loc:", cell.Location, "width:", cell.Width)
 			// If this cell lies in a row below the current, Close the current and start a new one
 			if cell.Location.Y > prevPoint.Y {
 				if prevPoint.Y >= 0 {
@@ -106,11 +106,11 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			if WidgetDebugRenderingFlag {
 				// Render a div that contains some information
 				{
-					m.A(`<div id='`, w.Id, `'`, ` style="font-size:50%; font-family:monospace;">`)
+					m.A(`<div id='`, w.BaseId, `'`, ` style="font-size:50%; font-family:monospace;">`)
 				}
 
-				if b.Id[0] != '.' || Alert("Including anon ids") {
-					m.A(`Id:`, b.Id, ` `)
+				if b.BaseId[0] != '.' /* || Alert("Including anon ids" )*/ {
+					m.A(`Id:`, b.BaseId, ` `)
 				}
 				m.A(`Cols:`, cell.Width, ` `)
 				{

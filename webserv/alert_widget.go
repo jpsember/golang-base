@@ -29,7 +29,7 @@ func NewAlertWidget(id string, alertClass AlertClass) AlertWidget {
 	w := AlertWidgetObj{
 		Class: alertClass,
 	}
-	w.Id = id
+	w.BaseId = id
 	return &w
 }
 
@@ -43,7 +43,7 @@ func (w AlertWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	pr := PrIf(false)
 	desc := `AlertWidget ` + w.IdSummary()
 	pr("rendering AlertWidget, desc:", desc, "class:", w.Class)
-	alertMsg := state.OptString(w.Id, "No alert message found!")
+	alertMsg := state.OptString(w.BaseId, "No alert message found!")
 	m.A(`<div class='alert alert-`, classNames[w.Class],
-		`' role='alert' id='`, w.Id, `'>`, html.EscapeString(alertMsg), `</div>`).Cr()
+		`' role='alert' id='`, w.BaseId, `'>`, html.EscapeString(alertMsg), `</div>`).Cr()
 }

@@ -11,7 +11,7 @@ type Widget interface {
 	Children() *Array[Widget]
 	AddChild(c Widget, manager WidgetManager)
 	ClearChildren()
-	TheId() string
+	Id() string
 }
 
 // This general type of listener can serve as a validator as well
@@ -33,18 +33,13 @@ const (
 	SizeHuge
 )
 
-// Deprecated.  We can now call widget.Id()
-func WidgetId(widget Widget) string {
-	return widget.Base().Id
-}
-
 func WidgetErrorCount(root Widget, state JSMap) int {
 	count := 0
 	return auxWidgetErrorCount(count, root, state)
 }
 
 func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
-	problemId := WidgetIdWithProblem(w.Base().Id)
+	problemId := WidgetIdWithProblem(w.Base().BaseId)
 	if state.OptString(problemId, "") != "" {
 		count++
 	}

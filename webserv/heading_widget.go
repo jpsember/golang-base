@@ -16,7 +16,7 @@ func NewHeadingWidget(id string, size WidgetSize) HeadingWidget {
 	w := HeadingWidgetStruct{
 		size: size,
 	}
-	w.Id = id
+	w.BaseId = id
 	return &w
 }
 
@@ -26,7 +26,7 @@ func (w HeadingWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	} else {
 		textContent, _ := GetStaticOrDynamicLabel(w, state)
 		tag := widgetSizeToHeadingTag(w.size)
-		m.A(`<`, tag, ` id='`, w.Id, `'>`)
+		m.A(`<`, tag, ` id='`, w.BaseId, `'>`)
 		m.Escape(textContent)
 		m.A(`</`, tag, `>`)
 	}

@@ -185,7 +185,7 @@ func (s Session) processClientMessage() {
 		return
 	}
 	if !b.Enabled() {
-		s.SetRequestProblem("widget is disabled", b.Id)
+		s.SetRequestProblem("widget is disabled", b.BaseId)
 		return
 	}
 	listener(s, widget)
@@ -202,7 +202,7 @@ func (s Session) processClientInfo(infoString string) {
 
 func (s Session) processRepaintFlags(repaintSet StringSet, debugDepth int, w Widget, refmap JSMap, repaint bool) {
 	b := w.Base()
-	id := b.Id
+	id := b.BaseId
 	pr := PrIf(debRepaint)
 	pr(Dots(debugDepth*4)+IntToString(debugDepth), "repaint, flag:", repaint, "id:", id)
 
@@ -353,7 +353,7 @@ func (s Session) SetWidgetProblem(widget Widget, problem any) {
 }
 
 func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {
-	key := WidgetIdWithProblem(WidgetId(widget))
+	key := WidgetIdWithProblem(widget.Id())
 	state := s.State
 	existingProblem := state.OptString(key, "")
 	if existingProblem != problemText {

@@ -36,7 +36,7 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AnimalOper) Perform(app *App) {
-	ClearAlertHistory()
+	//ClearAlertHistory()
 
 	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 

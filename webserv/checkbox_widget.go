@@ -15,7 +15,7 @@ type CheckboxWidget = *CheckboxWidgetObj
 
 func NewCheckboxWidget(switchFlag bool, id string, label HtmlString) CheckboxWidget {
 	w := CheckboxWidgetObj{}
-	w.Base().Id = id
+	w.Base().BaseId = id
 	w.Label = label
 	w.switchFlag = switchFlag
 	return &w
@@ -30,7 +30,7 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	auxId := w.AuxId()
 
 	m.Comment("CheckboxWidget")
-	m.OpenTag(`div id="`, w.Id, `"`)
+	m.OpenTag(`div id="`, w.BaseId, `"`)
 	{
 		var cbClass string
 		var role string
@@ -46,8 +46,8 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		{
 			m.VoidTag(
 				`input class="form-check-input" type="checkbox" id="`, auxId, `"`, role,
-				Ternary(WidgetBooleanValue(state, w.Id), ` checked`, ``),
-				` onclick='jsCheckboxClicked("`, w.Id, `")'`)
+				Ternary(WidgetBooleanValue(state, w.BaseId), ` checked`, ``),
+				` onclick='jsCheckboxClicked("`, w.BaseId, `")'`)
 
 			{
 				m.Comment("Label").OpenTag(`label class="form-check-label" for="`, auxId, `"`).Escape(w.Label).CloseTag() //.A(`</label>`).Cr()
