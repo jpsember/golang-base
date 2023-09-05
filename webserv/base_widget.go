@@ -8,7 +8,7 @@ import (
 type BaseWidgetObj struct {
 	BaseId        string
 	Bounds        Rect
-	Listener      WidgetListener
+	listener      WidgetListener
 	hidden        bool
 	disabled      bool
 	staticContent any
@@ -23,8 +23,23 @@ func NewBaseWidget(id string) BaseWidget {
 	return t
 }
 
+func (w BaseWidget) String() string {
+	return "<" + w.BaseId + ">"
+}
+
 func (w BaseWidget) Id() string {
 	return w.BaseId
+}
+
+func (w BaseWidget) Listener() WidgetListener {
+	return w.listener
+}
+
+func (w BaseWidget) SetListener(listener WidgetListener) {
+	if w.listener != nil {
+		BadState("Widget", w.Id(), "already has a listener")
+	}
+	w.listener = listener
 }
 
 func (w BaseWidget) ClearChildren() {
@@ -92,16 +107,4 @@ func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 func (w BaseWidget) AuxId() string {
 	return w.BaseId + ".aux"
-}
-
-func (w BaseWidget) IdHashcode() int {
-	if w.idHashcode == 0 {
-		b := []byte(w.BaseId)
-		sum := 0
-		for _, x := range b {
-			sum += int(x)
-		}
-		w.idHashcode = MaxInt(sum&0xffff, 1)
-	}
-	return w.idHashcode
 }

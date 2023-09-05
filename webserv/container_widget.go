@@ -39,6 +39,11 @@ func NewContainerWidget(id string) ContainerWidget {
 	w.BaseId = id
 	return &w
 }
+
+func (w ContainerWidget) String() string {
+	return "<" + w.BaseId + " ContainerWidget>"
+}
+
 func (w ContainerWidget) Children() *Array[Widget] {
 	return w.children
 }
@@ -53,7 +58,7 @@ func (w ContainerWidget) ClearChildren() {
 func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	w.children.Add(c)
 	pr := PrIf(false)
-	pr(VERT_SP, "ContainerWidget", w.BaseId, "adding child", c.Base().BaseId, "to container", w.BaseId, "columns:", w.columns)
+	pr(VERT_SP, "ContainerWidget", w.BaseId, "adding child", c.Id(), "to container", w.BaseId, "columns:", w.columns)
 	cols := w.columns
 	if cols == 0 {
 		BadState("no pending columns for widget:", c.Id())
@@ -95,10 +100,9 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 				prevPoint = IPointWith(0, cell.Location.Y)
 			}
 
-			b := child.Base()
 			s := `div class="col-sm-` + IntToString(cell.Width) + `"`
 			if WidgetDebugRenderingFlag {
-				s += ` style="background-color:` + DebugColor(b.IdHashcode()) + `;`
+				s += ` style="background-color:` + DebugColorForString(child.Id()) + `;`
 				s += `border-style:double;`
 				s += `"`
 			}
@@ -109,8 +113,9 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 					m.A(`<div id='`, w.BaseId, `'`, ` style="font-size:50%; font-family:monospace;">`)
 				}
 
-				if b.BaseId[0] != '.' /* || Alert("Including anon ids" )*/ {
-					m.A(`Id:`, b.BaseId, ` `)
+				id := child.Id()
+				if id[0] != '.' /* || Alert("Including anon ids" )*/ {
+					m.A(`Id:`, id, ` `)
 				}
 				m.A(`Cols:`, cell.Width, ` `)
 				{

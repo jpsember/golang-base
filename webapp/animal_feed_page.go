@@ -91,9 +91,8 @@ Multiple line feeds:
 func birdListener(s Session, widget Widget) {
 	Todo("?can we have sessions produce listener functions with appropriate handling of sess any?")
 	newVal := s.GetValueString()
-	b := widget.Base()
 	s.SetWidgetProblem(widget, nil)
-	s.State.Put(b.BaseId, newVal)
+	s.State.Put(widget.Id(), newVal)
 	Todo("!do validation as a global function somewhere")
 	if newVal == "parrot" {
 		s.SetWidgetProblem(widget, "No parrots, please!")

@@ -209,8 +209,7 @@ func (m WidgetManager) clearPendingComponentFields() {
  * Add widget to the hierarchy
  */
 func (m WidgetManager) Add(widget Widget) WidgetManager {
-	b := widget.Base()
-	id := b.BaseId
+	id := widget.Id()
 	if id != "" {
 		if m.Exists(id) {
 			BadState("<1Attempt to add widget with duplicate id:", id)
@@ -330,9 +329,7 @@ func (m WidgetManager) AddHeading() WidgetManager {
 
 func (m WidgetManager) assignPendingListener(widget Widget) {
 	if m.pendingListener != nil {
-		b := widget.Base()
-		CheckState(widget.Base().Listener == nil, "Widget", b.BaseId, "already has a listener")
-		widget.Base().Listener = m.pendingListener
+		widget.SetListener(m.pendingListener)
 		m.pendingListener = nil
 	}
 }
@@ -419,13 +416,12 @@ func SetWidgetDebugRendering() {
 }
 
 func GetStaticOrDynamicLabel(widget Widget, state JSMap) (string, bool) {
-	w := widget.Base()
 	Todo("?we are assuming static content is a string here")
-	sc := w.StaticContent()
+	sc := widget.StaticContent()
 	if sc != nil {
 		return sc.(string), true
 	} else {
-		return WidgetStringValue(state, w.BaseId), false
+		return WidgetStringValue(state, widget.Id()), false
 	}
 }
 
@@ -435,11 +431,9 @@ func (m WidgetManager) Repaint(w Widget) {
 	if m.repaintSet == nil {
 		return
 	}
-	b := w.Base()
 	pr := PrIf(debRepaint)
-	id := b.BaseId
-	pr("Repaint:", id)
-	if m.repaintSet.Add(id) {
+	pr("Repaint:", w)
+	if m.repaintSet.Add(w.Id()) {
 		pr("...adding to set")
 	}
 }

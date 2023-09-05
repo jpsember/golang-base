@@ -57,8 +57,7 @@ func (b MarkupBuilder) DoOutdent() MarkupBuilder {
 }
 
 func (b MarkupBuilder) RenderInvisible(w Widget) MarkupBuilder {
-	base := w.Base()
-	b.A(`<div id='`, base.BaseId, `'></div>`)
+	b.A(`<div id='`, w.Id(), `'></div>`)
 	b.Cr()
 	return b
 }

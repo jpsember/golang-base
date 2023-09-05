@@ -173,19 +173,18 @@ func (s Session) processClientMessage() {
 	// for that widget
 	//
 	widget := s.GetWidget()
-	b := widget.Base()
 
 	if !s.Ok() {
 		return
 	}
-	listener := b.Listener
+	listener := widget.Listener()
 	if listener == nil {
 		Todo("?Is it ok to have no listener?")
 		//s.SetRequestProblem("no listener for id", b.Id)
 		return
 	}
-	if !b.Enabled() {
-		s.SetRequestProblem("widget is disabled", b.BaseId)
+	if !widget.Enabled() {
+		s.SetRequestProblem("widget is disabled", widget)
 		return
 	}
 	listener(s, widget)
@@ -201,8 +200,7 @@ func (s Session) processClientInfo(infoString string) {
 }
 
 func (s Session) processRepaintFlags(repaintSet StringSet, debugDepth int, w Widget, refmap JSMap, repaint bool) {
-	b := w.Base()
-	id := b.BaseId
+	id := w.Id()
 	pr := PrIf(debRepaint)
 	pr(Dots(debugDepth*4)+IntToString(debugDepth), "repaint, flag:", repaint, "id:", id)
 
