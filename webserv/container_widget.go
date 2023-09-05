@@ -37,16 +37,22 @@ func NewContainerWidget(id string) ContainerWidget {
 		columns:  12,
 	}
 	w.Id = id
+	Pr("Constructing ContainerWidget, id:", id)
 	return &w
 }
 func (w ContainerWidget) Children() *Array[Widget] {
 	return w.children
 }
 
+func (w ContainerWidget) ClearChildren() {
+	w.children.Clear()
+	w.cells.Clear()
+}
+
 func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	w.children.Add(c)
-	pr := PrIf(false)
-	pr("adding widget to container:", INDENT, w)
+	pr := PrIf(true)
+	pr(VERT_SP, "ContainerWidget", w.Id, "adding child", c.Base().Id, "to container", w.Id, "columns:", w.columns)
 	cols := w.columns
 	if cols == 0 {
 		BadState("no pending columns for widget:", WidgetId(c))
@@ -62,6 +68,7 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 		cell.Location = IPointWith(0, cell.Location.Y+1)
 		Todo("!add support for cell heights > 1")
 	}
+	pr("added cell, now:", w.cells)
 	w.cells.Add(cell)
 }
 
@@ -70,6 +77,7 @@ func (w ContainerWidget) SetColumns(columns int) {
 }
 
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
+	Pr(VERT_SP, "ContainerWidget, rendering;", w.IdSummary())
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
 	m.Comments(`ContainerWidget`, w.IdSummary()).OpenTag(`div id='` + w.Id + `'`)
@@ -77,6 +85,7 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		prevPoint := IPointWith(0, -1)
 		for index, child := range w.children.Array() {
 			cell := w.cells.Get(index)
+			Pr("prevPoint:", prevPoint, "index:", index, "cell loc:", cell.Location, "width:", cell.Width)
 			// If this cell lies in a row below the current, Close the current and start a new one
 			if cell.Location.Y > prevPoint.Y {
 				if prevPoint.Y >= 0 {
@@ -100,7 +109,7 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 					m.A(`<div id='`, w.Id, `'`, ` style="font-size:50%; font-family:monospace;">`)
 				}
 
-				if b.Id[0] != '.' {
+				if b.Id[0] != '.' || Alert("Including anon ids") {
 					m.A(`Id:`, b.Id, ` `)
 				}
 				m.A(`Cols:`, cell.Width, ` `)

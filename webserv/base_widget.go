@@ -23,6 +23,14 @@ func NewBaseWidget(id string) BaseWidget {
 	return t
 }
 
+func (w BaseWidget) TheId() string {
+	return w.Id
+}
+
+func (w BaseWidget) ClearChildren() {
+	NotImplemented()
+}
+
 func (w BaseWidget) Base() BaseWidget {
 	return w
 }

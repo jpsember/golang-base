@@ -10,6 +10,8 @@ type Widget interface {
 	RenderTo(m MarkupBuilder, state JSMap)
 	Children() *Array[Widget]
 	AddChild(c Widget, manager WidgetManager)
+	ClearChildren()
+	TheId() string
 }
 
 // This general type of listener can serve as a validator as well
@@ -31,6 +33,7 @@ const (
 	SizeHuge
 )
 
+// Deprecated.  We can now call widget.Id()
 func WidgetId(widget Widget) string {
 	return widget.Base().Id
 }

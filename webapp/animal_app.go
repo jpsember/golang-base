@@ -156,7 +156,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	pr := PrIf(false)
 	pr("handler, request:", req.RequestURI)
 
-	if Alert("!If full page requested, discarding sessions") {
+	if false && Alert("!If full page requested, discarding sessions") {
 		url, err := url.Parse(req.RequestURI)
 		if err == nil && url.Path == "/" {
 			sess := DetermineSession(oper.sessionManager, w, req, false)
