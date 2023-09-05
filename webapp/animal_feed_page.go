@@ -23,7 +23,7 @@ func NewAnimalFeedPage(sess Session, parentWidget Widget) AnimalFeedPage {
 }
 
 func (p AnimalFeedPage) Generate() {
-	SetWidgetDebugRendering()
+	//SetWidgetDebugRendering()
 
 	m := p.sess.WidgetManager()
 	m.With(p.parentWidget)
@@ -32,7 +32,7 @@ func (p AnimalFeedPage) Generate() {
 	alertWidget.SetVisible(false)
 	m.Add(alertWidget)
 
-	m.Size(SizeTiny).Label("AnimalFeedPage").AddHeading()
+	m.Size(SizeMicro).Label("AnimalFeedPage").AddHeading()
 
 	//heading := NewHeadingWidget("header_text", 1)
 	//m.Add(heading)

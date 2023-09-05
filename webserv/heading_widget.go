@@ -26,7 +26,14 @@ func (w HeadingWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	} else {
 		textContent, _ := GetStaticOrDynamicLabel(w, state)
 		tag := widgetSizeToHeadingTag(w.size)
-		m.A(`<`, tag, ` id='`, w.BaseId, `'>`)
+		m.A(`<`, tag)
+
+		// Have some special handling for the Micro size; very small text, and right justified
+		if w.size == SizeMicro {
+			m.A(` style="font-size:50%" class="text-end"`)
+		}
+		
+		m.A(` id='`, w.BaseId, `'>`)
 		m.Escape(textContent)
 		m.A(`</`, tag, `>`)
 	}
