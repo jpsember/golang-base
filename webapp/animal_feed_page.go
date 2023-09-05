@@ -2,7 +2,7 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
 )
 
@@ -29,12 +29,14 @@ func (p AnimalFeedPage) Generate() {
 
 	m.Size(SizeMicro).Align(AlignRight).Label("AnimalFeedPage").AddHeading()
 
-	//heading := NewHeadingWidget("header_text", 1)
-	//m.Add(heading)
+	// If no animals found, add some
+	if !HasAnimals() {
+		GenerateRandomAnimals()
+	}
 
 	m.Col(4)
 	for i := 1; i < 12; i++ {
-		anim, err := webapp_data.ReadAnimal(i)
+		anim, err := ReadAnimal(i)
 		if err != nil {
 			Pr("what do we do with unexpected errors?", INDENT, err)
 		}

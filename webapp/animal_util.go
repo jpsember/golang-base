@@ -2,13 +2,13 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"github.com/jpsember/golang-base/webserv"
 )
 
-func RandomAnimal() webapp_data.AnimalBuilder {
+func RandomAnimal() AnimalBuilder {
 	r := webserv.HTMLRand.Rand()
-	a := webapp_data.NewAnimal()
+	a := NewAnimal()
 	a.SetName(RandomText(r, 20, false))
 	a.SetSummary(RandomText(r, Ternary(false, 300, 20), false))
 	a.SetDetails(RandomText(r, Ternary(false, 2000, 20), true))
@@ -17,10 +17,15 @@ func RandomAnimal() webapp_data.AnimalBuilder {
 	return a
 }
 
+func HasAnimals() bool {
+	return CheckOkWith(ReadAnimal(1)) != DefaultAnimal
+}
+
 func GenerateRandomAnimals() {
+	Alert("Generating some random animals")
 	for i := 0; i < 100; i++ {
 		anim := RandomAnimal()
-		webapp_data.CreateAnimal(anim)
+		CreateAnimal(anim)
 		Pr("added animal:", INDENT, anim)
 	}
 }
