@@ -17,6 +17,7 @@ type WidgetManagerObj struct {
 	pendingListener             WidgetListener
 	parentStack                 *Array[Widget]
 	pendingSize                 WidgetSize
+	pendingAlign                WidgetAlign
 	pendingId                   string
 	pendingLabel                string
 	anonymousIdCounter          int
@@ -79,6 +80,12 @@ func (m WidgetManager) consumeOptionalPendingId() string {
 // Set size for next widget (what size means depends upon the widget type).
 func (m WidgetManager) Size(size WidgetSize) WidgetManager {
 	m.pendingSize = size
+	return m
+}
+
+// Set horizontal alignment for next widget
+func (m WidgetManager) Align(align WidgetAlign) WidgetManager {
+	m.pendingAlign = align
 	return m
 }
 
@@ -164,9 +171,15 @@ func (m WidgetManager) consumePendingLabel() string {
 }
 
 func (m WidgetManager) consumePendingSize() WidgetSize {
-	size := m.pendingSize
+	x := m.pendingSize
 	m.pendingSize = SizeDefault
-	return size
+	return x
+}
+
+func (m WidgetManager) consumePendingAlign() WidgetAlign {
+	x := m.pendingAlign
+	m.pendingAlign = AlignDefault
+	return x
 }
 
 func (m WidgetManager) consumePendingStringDefaultValue() string {
@@ -196,7 +209,8 @@ func (m WidgetManager) clearPendingComponentFields() {
 	verifyUsed(m.pendingLabel == "", "pendingLabel")
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
 	verifyUsed(m.pendingListener == nil, "pendingListener")
-	verifyUsed(m.pendingSize == 0, "pendingSize")
+	verifyUsed(m.pendingSize == SizeDefault, "pendingSize")
+	verifyUsed(m.pendingAlign == AlignDefault, "pendingAlign")
 
 	m.mComboChoices = nil
 	m.mPendingDefaultIntValue = 0
@@ -320,7 +334,9 @@ func (m WidgetManager) getStaticContentAndId() (string, string) {
 
 func (m WidgetManager) AddHeading() WidgetManager {
 	staticContent, id := m.getStaticContentAndId()
-	w := NewHeadingWidget(id, m.consumePendingSize())
+	w := NewHeadingWidget(id)
+	w.SetSize(m.consumePendingSize())
+	w.SetAlign(m.consumePendingAlign())
 	if staticContent != "" {
 		w.SetStaticContent(staticContent)
 	}
@@ -345,8 +361,10 @@ func (m WidgetManager) AddText() WidgetManager {
 }
 
 func (m WidgetManager) AddButton() ButtonWidget {
-	w := NewButtonWidget(m.consumePendingSize())
+	w := NewButtonWidget()
 	w.BaseId = m.consumeOptionalPendingId()
+	w.SetSize(m.consumePendingSize())
+	w.SetAlign(m.consumePendingAlign())
 	m.assignPendingListener(w)
 	m.Log("Adding button, id:", w.BaseId)
 	w.Label = NewHtmlString(m.consumePendingLabel())

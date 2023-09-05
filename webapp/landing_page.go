@@ -33,7 +33,8 @@ func (p LandingPage) Generate() {
 	m.With(p.parentWidget)
 
 	m.Col(12)
-	m.Label("Landing Page").Size(SizeLarge).AddHeading()
+	m.Label("Landing Page").Align(AlignCenter).Size(SizeMicro).AddHeading()
+	m.Label("gallery").Align(AlignRight).Size(SizeTiny).Listener(p.galleryListener).AddButton()
 	m.Col(6)
 	m.Open()
 	{
@@ -143,6 +144,10 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 func (p LandingPage) signUpListener(s Session, widget Widget) {
 	sp := NewSignUpPage(s, p.parentWidget)
 	sp.Generate()
+}
+
+func (p LandingPage) galleryListener(sess Session, widget Widget) {
+	NewGalleryPage(sess, p.parentWidget).Generate()
 }
 
 func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {

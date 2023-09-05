@@ -7,15 +7,12 @@ import (
 // A Widget that displays editable text
 type HeadingWidgetStruct struct {
 	BaseWidgetObj
-	size WidgetSize
 }
 
 type HeadingWidget = *HeadingWidgetStruct
 
-func NewHeadingWidget(id string, size WidgetSize) HeadingWidget {
-	w := HeadingWidgetStruct{
-		size: size,
-	}
+func NewHeadingWidget(id string) HeadingWidget {
+	w := HeadingWidgetStruct{}
 	w.BaseId = id
 	return &w
 }
@@ -25,14 +22,17 @@ func (w HeadingWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		m.RenderInvisible(w)
 	} else {
 		textContent, _ := GetStaticOrDynamicLabel(w, state)
-		tag := widgetSizeToHeadingTag(w.size)
+		tag := wsHeadingSize[w.Size()]
 		m.A(`<`, tag)
 
 		// Have some special handling for the Micro size; very small text, and right justified
 		if w.size == SizeMicro {
-			m.A(` style="font-size:50%" class="text-end"`)
+			m.A(` style="font-size:50%"`)
 		}
-		
+		tx := wsHeadingAlign[w.Align()]
+		if tx != "" {
+			m.A(` class="`, tx, `"`)
+		}
 		m.A(` id='`, w.BaseId, `'>`)
 		m.Escape(textContent)
 		m.A(`</`, tag, `>`)
@@ -40,10 +40,18 @@ func (w HeadingWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.Cr()
 }
 
-var wsHeadingSize = BuildMap[WidgetSize, string](
-	SizeHuge, "h1", SizeLarge, "h2", SizeMedium, "h3", SizeSmall, "h4", SizeTiny, "h5", SizeMicro, "h6",
-	SizeDefault, "h3")
+var wsHeadingSize = map[WidgetSize]string{
+	SizeHuge:    "h1",
+	SizeLarge:   "h2",
+	SizeMedium:  "h3",
+	SizeSmall:   "h4",
+	SizeTiny:    "h5",
+	SizeMicro:   "h6",
+	SizeDefault: "h3",
+}
 
-func widgetSizeToHeadingTag(widgetSize WidgetSize) string {
-	return MapValue(wsHeadingSize, widgetSize)
+var wsHeadingAlign = map[WidgetAlign]string{
+	AlignRight:  "text-end",
+	AlignCenter: "text-center",
+	AlignLeft:   "text-left",
 }

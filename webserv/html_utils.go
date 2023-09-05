@@ -32,3 +32,12 @@ func SimpleHashCodeForBytes(bytes []byte) int {
 	}
 	return MaxInt(sum&0xffff, 1)
 }
+
+var alignStrs = []string{
+	"", "text-center", "text-left", "text-right",
+}
+
+func TextAlignStr(align WidgetAlign) string {
+	// Wtf, keeps changing:  https://stackoverflow.com/questions/15446189
+	return alignStrs[align]
+}

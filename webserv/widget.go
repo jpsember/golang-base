@@ -42,6 +42,15 @@ const (
 	SizeHuge
 )
 
+type WidgetAlign int
+
+const (
+	AlignDefault WidgetAlign = iota
+	AlignCenter
+	AlignLeft
+	AlignRight
+)
+
 func WidgetErrorCount(root Widget, state JSMap) int {
 	count := 0
 	return auxWidgetErrorCount(count, root, state)

@@ -13,6 +13,8 @@ type BaseWidgetObj struct {
 	disabled      bool
 	staticContent any
 	idHashcode    int
+	size          WidgetSize
+	align         WidgetAlign
 }
 
 type BaseWidget = *BaseWidgetObj
@@ -29,6 +31,23 @@ func (w BaseWidget) String() string {
 
 func (w BaseWidget) Id() string {
 	return w.BaseId
+}
+
+func (w BaseWidget) SetSize(size WidgetSize) {
+	w.size = size
+}
+
+func (w BaseWidget) SetAlign(align WidgetAlign) {
+	w.align = align
+}
+
+func (w BaseWidget) Align() WidgetAlign {
+	return w.align
+}
+
+func (w BaseWidget) Size() WidgetSize {
+	Todo("we can directly access embedded structs' fields (if they are public)")
+	return w.size
 }
 
 func (w BaseWidget) Listener() WidgetListener {
