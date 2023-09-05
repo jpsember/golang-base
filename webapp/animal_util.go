@@ -14,6 +14,7 @@ func RandomAnimal() AnimalBuilder {
 	a.SetDetails(RandomText(r, Ternary(false, 2000, 20), true))
 	a.SetCampaignTarget(int((r.Intn(10) + 2) * 50 * DollarsToCurrency))
 	a.SetCampaignBalance(r.Intn(a.CampaignTarget()))
+	Todo("Issue #59: add random photo")
 	return a
 }
 
