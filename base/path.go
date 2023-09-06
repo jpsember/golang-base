@@ -10,7 +10,7 @@ type Path string
 
 var EmptyPath = Path("")
 
-func homeDirFunc() (Path, error) {
+func homeDirFunc() (any, error) {
 	var pth Path
 	p, err := os.UserHomeDir()
 	if err == nil {
@@ -19,8 +19,8 @@ func homeDirFunc() (Path, error) {
 	return pth, err
 }
 
-var homeDir = newCachedDir(homeDirFunc)
-var projectDir = newCachedDir(func() (Path, error) {
+var homeDir = newCachedResult(homeDirFunc)
+var projectDir = newCachedResult(func() (any, error) {
 	return AscendToDirectoryContainingFile(EmptyPath, ".git")
 })
 
@@ -30,13 +30,46 @@ var FileNotFoundError = Error("file not found")
 // An experimental structure for delaying finding a path, and recording err when it does
 // ------------------------------------------------------------------------------------
 
+type evalFunc func() (any, error)
+
+type cachedResultStruct struct {
+	result any
+	err    error
+	fn     evalFunc
+}
+type cachedResult = *cachedResultStruct
+
+func newCachedResult(eval evalFunc) cachedResult {
+	t := &cachedResultStruct{
+		fn: eval,
+	}
+	return t
+}
+
+func (cd cachedResult) Result() (any, error) {
+	if cd.fn != nil {
+		cd.result, cd.err = cd.fn()
+		cd.fn = nil
+	}
+	return cd.result, cd.err
+}
+
+func (cd cachedResult) ResultM() any {
+	return CheckOkWith(cd.Result())
+}
+
+// ------------------------------------------------------------------------------------
+
+// ------------------------------------------------------------------------------------
+// An experimental structure for delaying finding a path, and recording err when it does
+// ------------------------------------------------------------------------------------
+
 type cachedDirEvalFunc func() (Path, error)
 
 type cachedDirStruct struct {
-	attempted bool
-	path      Path
-	err       error
-	f         cachedDirEvalFunc
+	path Path
+	err  error
+	f    cachedDirEvalFunc
 }
 type cachedDir = *cachedDirStruct
 
@@ -56,9 +89,8 @@ func (cd cachedDir) PathM() Path {
 }
 
 func (cd cachedDir) Path() (Path, error) {
-	if !cd.attempted {
+	if cd.f != nil {
 		pth, err := cd.f()
-		cd.attempted = true
 		cd.path = pth
 		cd.err = err
 	}
@@ -84,11 +116,16 @@ func FindFileUpward(name string, startDir Path) (Path, error) {
 }
 
 func ProjectDirM() Path {
-	return projectDir.PathM()
+	return projectDir.ResultM().(Path)
 }
 
 func HomeDirM() Path {
-	return homeDir.PathM()
+	return homeDir.ResultM().(Path)
+}
+
+func HomeDir() (Path, error) {
+	result, err := homeDir.Result()
+	return result.(Path), err
 }
 
 func TempFile(prefix string) (Path, error) {
