@@ -10,24 +10,62 @@ type Path string
 
 var EmptyPath = Path("")
 
-var homeDir = EmptyPath
-var projectDir = EmptyPath
+func homeDirFunc() (Path, error) {
+	var pth Path
+	p, err := os.UserHomeDir()
+	if err == nil {
+		pth, err = NewPath(p)
+	}
+	return pth, err
+}
+
+var homeDir = newCachedDir(homeDirFunc)
+var projectDir = newCachedDir(func() (Path, error) {
+	return AscendToDirectoryContainingFile(EmptyPath, ".git")
+})
 
 var FileNotFoundError = Error("file not found")
 
-type cachedDirEvalFunc func(path Path) (Path, error)
-type cachedDir struct {
-	path Path
-	err  error
-	f    cachedDirEvalFunc
+// ------------------------------------------------------------------------------------
+// An experimental structure for delaying finding a path, and recording err when it does
+// ------------------------------------------------------------------------------------
+
+type cachedDirEvalFunc func() (Path, error)
+
+type cachedDirStruct struct {
+	attempted bool
+	path      Path
+	err       error
+	f         cachedDirEvalFunc
 }
+type cachedDir = *cachedDirStruct
 
 func newCachedDir(eval cachedDirEvalFunc) cachedDir {
-	t := cachedDir{
+	t := &cachedDirStruct{
 		f: eval,
 	}
 	return t
 }
+
+func (cd cachedDir) PathM() Path {
+	cd.Path()
+	if cd.err != nil {
+		BadState("<1Trouble determining directory:", cd.err)
+	}
+	return cd.path
+}
+
+func (cd cachedDir) Path() (Path, error) {
+	if !cd.attempted {
+		pth, err := cd.f()
+		cd.attempted = true
+		cd.path = pth
+		cd.err = err
+	}
+	return cd.path, cd.err
+}
+
+// ------------------------------------------------------------------------------------
 
 // Deprecated.
 func FindFileUpward(name string, startDir Path) (Path, error) {
@@ -46,18 +84,11 @@ func FindFileUpward(name string, startDir Path) (Path, error) {
 }
 
 func ProjectDirM() Path {
-	if projectDir.Empty() {
-		projectDir = AscendToDirectoryContainingFileM(EmptyPath, ".git")
-	}
-	return projectDir
+	return projectDir.PathM()
 }
 
 func HomeDirM() Path {
-	if homeDir.Empty() {
-		p := CheckOkWith(os.UserHomeDir())
-		homeDir = NewPathM(p)
-	}
-	return homeDir
+	return homeDir.PathM()
 }
 
 func TempFile(prefix string) (Path, error) {
