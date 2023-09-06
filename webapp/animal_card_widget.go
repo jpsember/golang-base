@@ -31,7 +31,7 @@ func newAnimalCardWidget(widgetId string, animal Animal) AnimalCardWidget {
 	return &w
 }
 
-var picCounter = 0
+//var picCounter = 0
 
 func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
@@ -44,10 +44,24 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	m.Comments("AnimalCardWidget").OpenTag(`div class="card bg-light mb-3 animal-card"`)
 	{
+		imgUrl := "unknown"
+		photoId := w.animal.PhotoThumbnail()
+		if photoId == 0 {
+			Alert("!Animal has no photo")
+		} else {
+			newUrl, err := ReadImageIntoCache(photoId)
+			if err != nil {
+				Alert("!Problem reading image into cache;", err)
+			} else {
+				imgUrl = newUrl
+			}
+		}
+
 		// Display an image
-		picCounter++
-		imgUrl := IntToString(MyMod(picCounter, 3)) + ".jpg"
-		Todo("!add support for image based on particular animal")
+		//picCounter++
+		//imgUrl = IntToString(MyMod(picCounter, 3)) + ".jpg"
+		//Todo("!add support for image based on particular animal")
+		//Pr("imgUrl:", imgUrl)
 		m.Comment("animal image").VoidTag(`jimg class="card-jimg-top" src="`, imgUrl, `"`)
 
 		// Display title and brief summary
@@ -112,4 +126,9 @@ const maxChildren = 1
 func (w AnimalCardWidget) AddChild(c Widget, manager WidgetManager) {
 	CheckState(w.children.Size() < maxChildren)
 	w.children.Add(c)
+}
+
+func ReadImageIntoCache(blobId int) (string, error) {
+	Todo("if necessary, read image from database into cache or whatever")
+	return "missing.jpg", Error("not implemented yet")
 }

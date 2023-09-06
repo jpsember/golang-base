@@ -4,17 +4,37 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	"github.com/jpsember/golang-base/jimg"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
-	"github.com/jpsember/golang-base/webserv"
+	"math/rand"
 )
 
-func RandomAnimal() AnimalBuilder {
-	r := webserv.HTMLRand.Rand()
+func RandomAnimal(r *rand.Rand) AnimalBuilder {
+	if r == nil {
+		r = NewJSRand().Rand()
+	}
 	a := NewAnimal()
 	a.SetName(RandomText(r, 20, false))
 	a.SetSummary(RandomText(r, Ternary(false, 300, 20), false))
 	a.SetDetails(RandomText(r, Ternary(false, 2000, 20), true))
 	a.SetCampaignTarget(int((r.Intn(10) + 2) * 50 * DollarsToCurrency))
 	a.SetCampaignBalance(r.Intn(a.CampaignTarget()))
+
+	{
+		// Copy one of our sample photos to use as this animal's photo
+		d := SharedDemoPhotos
+		nms := d.ScaledPhotoNames()
+		if len(nms) == 0 {
+			Alert("?No demo photos found; animal(s) won't have photos")
+		} else {
+			i := r.Intn(len(nms))
+			var b Blob
+			b = NewBlob()
+			pth := d.scaledPhotosDir().JoinM(nms[i])
+			// It will be a builder most of the time, but we will call ToBuilder() where necessary
+			b = b.ToBuilder().SetData(pth.ReadBytesM())
+			b = CheckOkWith(CreateBlob(b))
+			a.SetPhotoThumbnail(b.Id())
+		}
+	}
 	Todo("Issue #59: add random photo")
 	return a
 }
@@ -25,15 +45,16 @@ func HasAnimals() bool {
 
 func GenerateRandomAnimals() {
 	Alert("Generating some random animals")
-	for i := 0; i < 100; i++ {
-		anim := RandomAnimal()
+	rnd := NewJSRand()
+	for i := 0; i < 30; i++ {
+		anim := RandomAnimal(rnd.Rand())
 		CreateAnimal(anim)
 		Pr("added animal:", INDENT, anim)
 	}
 }
 
 type DemoPhotosStruct struct {
-	scaledPhotoNames []Path
+	scaledPhotoNames []string
 	scaledPhotoDir   Path
 }
 
@@ -51,10 +72,14 @@ func (d DemoPhotos) init() {
 
 }
 
-func (d DemoPhotos) ScaledPhotoNames() []Path {
+func (d DemoPhotos) ScaledPhotoNames() []string {
 	if d.scaledPhotoNames == nil {
 		w := NewDirWalk(d.scaledPhotosDir()).IncludeExtensions("jpg")
-		d.scaledPhotoNames = w.FilesRelative()
+		var result []string
+		for _, x := range w.FilesRelative() {
+			result = append(result, x.AsNonEmptyString())
+		}
+		d.scaledPhotoNames = result
 	}
 	return d.scaledPhotoNames
 }

@@ -45,7 +45,7 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 	CreateDatabase(dataSourcePath.String())
 
-	if true && Alert("scale experiment") {
+	if false && Alert("scale experiment") {
 		Pr("scaled photos:", SharedDemoPhotos.ScaledPhotoNames())
 		SharedDemoPhotos.ReadSamples()
 		Halt()
@@ -64,10 +64,16 @@ func (oper AnimalOper) Perform(app *App) {
 				Pr("failed to create user, must already exist?", u.Name())
 				continue
 			}
-			Pr("created user:", result.Id(), result.Name())
+			Pr("created user:", result.Id(), result.Name(), result)
 		}
 		Pr("sleeping then quitting")
 		SleepMs(2000)
+	}
+
+	if false && Alert("creating a number of animals") {
+		GenerateRandomAnimals()
+		SleepMs(2000)
+		Halt()
 	}
 
 	if false && Alert("experimenting with iter") {
