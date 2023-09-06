@@ -50,6 +50,14 @@ func (d DemoPhotos) init() {
 }
 
 func (d DemoPhotos) ReadSamples() {
+	var inspectionDir Path
+	if Alert("Writing inspection images") {
+		dsk := HomeDirM().JoinM("Desktop")
+		CheckState(dsk.IsDir())
+		inspectionDir = dsk.JoinM("_animal_inspection_")
+		inspectionDir.MkDirsM()
+	}
+
 	dir := FindProjectDirM().JoinM("sample_photos")
 	w := NewDirWalk(dir).IncludeExtensions("jpg", "jpeg", "png")
 	for _, f := range w.Files() {
@@ -68,14 +76,16 @@ func (d DemoPhotos) ReadSamples() {
 				break
 			}
 			var bytes []byte
-			bytes, err = img.ToPNG()
+			bytes, err = img.ToJPEG()
 			if err != nil {
 				break
 			}
 			Pr("encoded to:", len(bytes))
 
-			if Alert("dumping to desktop") {
-
+			if inspectionDir.NonEmpty() {
+				nm := f.TrimExtension().Base()
+				x := inspectionDir.JoinM(nm + ".jpg")
+				x.WriteBytesM(bytes)
 			}
 			break
 		}
@@ -83,4 +93,5 @@ func (d DemoPhotos) ReadSamples() {
 			Alert("Trouble decoding:", f.Base(), err, INDENT, img)
 		}
 	}
+
 }

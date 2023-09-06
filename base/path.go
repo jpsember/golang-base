@@ -103,10 +103,7 @@ func (path Path) toString() string {
 }
 
 func (path Path) AsNonEmptyString() string {
-	if path == "" {
-		BadArg("<1Path is empty")
-	}
-	return string(path)
+	return string(path.AssertNonEmpty())
 }
 
 // Join path to a relative path (string); panic if error

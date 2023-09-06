@@ -5,6 +5,7 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	"golang.org/x/image/draw"
 	"image"
+	"image/jpeg"
 	_ "image/jpeg"
 	"image/png"
 	// Package image/jpeg is not used explicitly in the code below,
@@ -223,6 +224,36 @@ func (ji JImage) ToPNG() ([]byte, error) {
 
 	if err != nil {
 		Alert("<1#10Failed to encode as PNG:", err, INDENT, ji)
+	}
+	return result, err
+}
+
+func (ji JImage) ToJPEG() ([]byte, error) {
+
+	var err error
+	var result []byte
+	for {
+		if ji.Type() != TypeNRGBA {
+			err = Error("Cannot convert to JPEG")
+			break
+		}
+
+		byteBuffer := bytes.Buffer{}
+
+		opt := jpeg.Options{
+			Quality: jpeg.DefaultQuality,
+		}
+
+		err = jpeg.Encode(&byteBuffer, ji.Image(), &opt)
+		if err != nil {
+			break
+		}
+		result = byteBuffer.Bytes()
+		break
+	}
+
+	if err != nil {
+		Alert("<1#10Failed to encode as JPEG:", err, INDENT, ji)
 	}
 	return result, err
 }
