@@ -85,7 +85,15 @@ func (d DemoPhotos) ReadSamples() {
 			if inspectionDir.NonEmpty() {
 				nm := f.TrimExtension().Base()
 				x := inspectionDir.JoinM(nm + ".jpg")
-				x.WriteBytesM(bytes)
+
+				targetSize := IPointWith(512, 768)
+
+				scaleFactor, targetRect := FitRectToRect(img.Size(), targetSize, 1.0, 0, 0.25)
+
+				Todo("scale according to FitRectToRect:", targetRect, scaleFactor)
+
+				scaled := img.ScaledTo(targetSize)
+				x.WriteBytesM(CheckOkWith(scaled.ToJPEG()))
 			}
 			break
 		}
