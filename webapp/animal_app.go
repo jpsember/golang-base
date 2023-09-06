@@ -46,6 +46,7 @@ func (oper AnimalOper) Perform(app *App) {
 	CreateDatabase(dataSourcePath.String())
 
 	if true && Alert("scale experiment") {
+		Pr("scaled photos:", SharedDemoPhotos.ScaledPhotoNames())
 		SharedDemoPhotos.ReadSamples()
 		Halt()
 	}

@@ -33,6 +33,8 @@ func GenerateRandomAnimals() {
 }
 
 type DemoPhotosStruct struct {
+	scaledPhotoNames []Path
+	scaledPhotoDir   Path
 }
 
 type DemoPhotos = *DemoPhotosStruct
@@ -49,29 +51,38 @@ func (d DemoPhotos) init() {
 
 }
 
-func (d DemoPhotos) ReadSamples() {
-	var inspectionDir Path
-	if false && Alert("Writing inspection images") {
-		dsk := HomeDirM().JoinM("Desktop")
-		CheckState(dsk.IsDir())
-		inspectionDir = dsk.JoinM("_animal_inspection_")
-		inspectionDir.MkDirsM()
+func (d DemoPhotos) ScaledPhotoNames() []Path {
+	if d.scaledPhotoNames == nil {
+		w := NewDirWalk(d.scaledPhotosDir()).IncludeExtensions("jpg")
+		d.scaledPhotoNames = w.FilesRelative()
 	}
+	return d.scaledPhotoNames
+}
 
+func (d DemoPhotos) scaledPhotosDir() Path {
+	if d.scaledPhotoDir.Empty() {
+		dirTarget := FindProjectDirM().JoinM("sample_photos_scaled")
+		dirTarget.MkDirsM()
+		d.scaledPhotoDir = dirTarget
+	}
+	return d.scaledPhotoDir
+}
+
+// Read all images (jpeg, png) in project_config/sample_photos, scale to our standard size,
+// and write to project_config/sample_photos_scaled.
+func (d DemoPhotos) ReadSamples() {
 	dir := FindProjectDirM().JoinM("sample_photos")
 	if !dir.Exists() {
 		Alert("!No such directory:", dir)
 		return
 	}
-	dirTarget := FindProjectDirM().JoinM("sample_photos_scaled")
-	dirTarget.MkDirsM()
 
 	w := NewDirWalk(dir).IncludeExtensions("jpg", "jpeg", "png")
+
 	for _, f := range w.Files() {
 
-		Pr("file:", f)
 		nm := f.TrimExtension().Base()
-		targetFile := dirTarget.JoinM(nm + ".jpg")
+		targetFile := d.scaledPhotosDir().JoinM(nm + ".jpg")
 		if targetFile.Exists() {
 			continue
 		}
@@ -95,17 +106,12 @@ func (d DemoPhotos) ReadSamples() {
 			scaled := ScaleImageToSize(img, targetSize)
 
 			targetFile.WriteBytesM(CheckOkWith(scaled.ToJPEG()))
-			if inspectionDir.NonEmpty() {
-				x := inspectionDir.JoinM(nm + ".jpg")
-				x.WriteBytesM(CheckOkWith(scaled.ToJPEG()))
-			}
 			break
 		}
 		if err != nil {
 			Alert("Trouble decoding:", f.Base(), err, INDENT, img)
 		}
 	}
-
 }
 
 func ScaleImageToSize(img jimg.JImage, targetSize IPoint) jimg.JImage {
