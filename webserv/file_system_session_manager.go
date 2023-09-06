@@ -94,7 +94,7 @@ func (s *FileSystemSessionManager) flush() {
 
 func (s *FileSystemSessionManager) getPath() Path {
 	if s.persistPath == "" {
-		pth := AscendToDirectoryContainingFileM("", "go.mod")
+		pth := ProjectDirM().JoinM("cache")
 		pth = pth.JoinM("webserv/cache")
 		if !pth.IsDir() {
 			pth.MkDirsM()

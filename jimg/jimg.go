@@ -130,6 +130,10 @@ func (ji JImage) Size() IPoint {
 	return ji.size
 }
 
+func (ji JImage) String() string {
+	return ji.ToJson().String()
+}
+
 func (ji JImage) ToJson() JSMap {
 	m := NewJSMap()
 	m.Put("", "JImage")
@@ -188,15 +192,39 @@ func (ji JImage) AsType(desiredType JImageType) (JImage, error) {
 }
 
 func (ji JImage) ToPNG() ([]byte, error) {
-	if ji.Type() != TypeNRGBA {
-		return nil, Error("Cannot convert to PNG", ji.ToJson())
+
+	var err error
+	var result []byte
+	for {
+		if ji.Type() != TypeNRGBA {
+			err = Error("Cannot convert to PNG")
+			break
+		}
+
+		byteBuffer := bytes.Buffer{}
+
+		// See https://stackoverflow.com/questions/46437169/png-encoding-with-go-is-slow
+		if Todo("using no-compression png encoder") {
+			enc := &png.Encoder{
+				CompressionLevel: png.NoCompression,
+			}
+			err = enc.Encode(&byteBuffer, ji.Image())
+		} else {
+			err = png.Encode(&byteBuffer, ji.Image())
+		}
+		if err != nil {
+			break
+		}
+		if err == nil {
+			result = byteBuffer.Bytes()
+		}
+		break
 	}
-	var bb bytes.Buffer
-	err := png.Encode(&bb, ji.Image())
+
 	if err != nil {
-		Pr("Failed to encode image as PNG")
+		Alert("<1#10Failed to encode as PNG:", err, INDENT, ji)
 	}
-	return bb.Bytes(), err
+	return result, err
 }
 
 func (ji JImage) ScaledTo(size IPoint) JImage {
@@ -222,6 +250,7 @@ func (ji JImage) ScaledTo(size IPoint) JImage {
 	return JImageOf(scaledImage)
 }
 
+// Deprecated.  Use ToPNG instead.
 func (ji JImage) EncodePNG() ([]byte, error) {
 	var err error
 	var result []byte

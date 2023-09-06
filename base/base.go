@@ -202,6 +202,8 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	// If there's a multi-session priority value, process it
 	//
 	if info.delayMs > 0 {
+		// Do this before locking, as it might attempt to use locks
+		FindProjectDirM()
 		debugLock.Lock()
 		flag := processAlertForMultipleSessions(info)
 		debugLock.Unlock()

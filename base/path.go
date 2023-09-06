@@ -15,12 +15,28 @@ var projectDir = EmptyPath
 
 var FileNotFoundError = Error("file not found")
 
+type cachedDirEvalFunc func(path Path) (Path, error)
+type cachedDir struct {
+	path Path
+	err  error
+	f    cachedDirEvalFunc
+}
+
+func newCachedDir(eval cachedDirEvalFunc) cachedDir {
+	t := cachedDir{
+		f: eval,
+	}
+	return t
+}
+
+// Deprecated.
 func FindFileUpward(name string, startDir Path) (Path, error) {
 	CheckArg(startDir.IsDir(), "not a directory")
 
 	currentDir := startDir
 	for currentDir.NonEmpty() {
 		candidate := currentDir.JoinM(name)
+		Pr("candidate:", candidate)
 		if candidate.Exists() {
 			return candidate, nil
 		}
@@ -31,7 +47,7 @@ func FindFileUpward(name string, startDir Path) (Path, error) {
 
 func ProjectDirM() Path {
 	if projectDir.Empty() {
-		projectDir = CheckOkWith(FindFileUpward(".git", CurrentDirectory())).Parent()
+		projectDir = AscendToDirectoryContainingFileM(EmptyPath, ".git")
 	}
 	return projectDir
 }

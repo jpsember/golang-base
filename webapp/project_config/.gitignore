@@ -1,0 +1,4 @@
+.go_flags.json
+sample_photos/*.jpg
+sample_photos/*.jpeg
+sample_photos/*.png

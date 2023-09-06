@@ -33,6 +33,7 @@ func (p AnimalFeedPage) Generate() {
 	if !HasAnimals() {
 		GenerateRandomAnimals()
 	}
+	SharedDemoPhotos.ReadSamples()
 
 	m.Col(4)
 	for i := 1; i < 12; i++ {
