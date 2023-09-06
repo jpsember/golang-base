@@ -51,7 +51,7 @@ func (d DemoPhotos) init() {
 
 func (d DemoPhotos) ReadSamples() {
 	var inspectionDir Path
-	if Alert("Writing inspection images") {
+	if false && Alert("Writing inspection images") {
 		dsk := HomeDirM().JoinM("Desktop")
 		CheckState(dsk.IsDir())
 		inspectionDir = dsk.JoinM("_animal_inspection_")
@@ -59,10 +59,23 @@ func (d DemoPhotos) ReadSamples() {
 	}
 
 	dir := FindProjectDirM().JoinM("sample_photos")
+	if !dir.Exists() {
+		Alert("!No such directory:", dir)
+		return
+	}
+	dirTarget := FindProjectDirM().JoinM("sample_photos_scaled")
+	dirTarget.MkDirsM()
+
 	w := NewDirWalk(dir).IncludeExtensions("jpg", "jpeg", "png")
 	for _, f := range w.Files() {
 
 		Pr("file:", f)
+		nm := f.TrimExtension().Base()
+		targetFile := dirTarget.JoinM(nm + ".jpg")
+		if targetFile.Exists() {
+			continue
+		}
+
 		var err error
 		var img jimg.JImage
 
@@ -75,24 +88,15 @@ func (d DemoPhotos) ReadSamples() {
 			if err != nil {
 				break
 			}
-			var bytes []byte
-			bytes, err = img.ToJPEG()
-			if err != nil {
-				break
-			}
-			Pr("encoded to:", len(bytes))
 
+			// Scale the image to our desired portrait size.
+			// Later we will support different sizes.
+			targetSize := IPointWith(800, 1200)
+			scaled := ScaleImageToSize(img, targetSize)
+
+			targetFile.WriteBytesM(CheckOkWith(scaled.ToJPEG()))
 			if inspectionDir.NonEmpty() {
-				nm := f.TrimExtension().Base()
 				x := inspectionDir.JoinM(nm + ".jpg")
-
-				targetSize := IPointWith(512, 768)
-
-				scaleFactor, targetRect := FitRectToRect(img.Size(), targetSize, 1.0, 0, 0.25)
-
-				Todo("scale according to FitRectToRect:", targetRect, scaleFactor)
-
-				scaled := img.ScaledTo(targetSize)
 				x.WriteBytesM(CheckOkWith(scaled.ToJPEG()))
 			}
 			break
@@ -102,4 +106,10 @@ func (d DemoPhotos) ReadSamples() {
 		}
 	}
 
+}
+
+func ScaleImageToSize(img jimg.JImage, targetSize IPoint) jimg.JImage {
+	img = img.AsDefaultTypeM()
+	_, targetRect := FitRectToRect(img.Size(), targetSize, 1.0, 0, -.5)
+	return img.ScaledToRect(targetSize, targetRect)
 }

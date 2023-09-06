@@ -281,6 +281,15 @@ func (ji JImage) ScaledTo(size IPoint) JImage {
 	return JImageOf(scaledImage)
 }
 
+func (ji JImage) ScaledToRect(targetSize IPoint, boundsWithinTarget Rect) JImage {
+	scaledImage := image.NewNRGBA(RectWithSize(targetSize).ToImageRectangle())
+	inputImage := ji.Image()
+	draw.ApproxBiLinear.Scale(scaledImage,
+		boundsWithinTarget.ToImageRectangle(),
+		inputImage, inputImage.Bounds(), draw.Over, nil)
+	return JImageOf(scaledImage)
+}
+
 // Deprecated.  Use ToPNG instead.
 func (ji JImage) EncodePNG() ([]byte, error) {
 	var err error

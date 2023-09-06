@@ -45,6 +45,10 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 	CreateDatabase(dataSourcePath.String())
 
+	if true && Alert("scale experiment") {
+		SharedDemoPhotos.ReadSamples()
+		Halt()
+	}
 	if false && Alert("creating a number of users") {
 		mr := NewJSRand().SetSeed(1965).Rand()
 		for i := 0; i < 30; i++ {
