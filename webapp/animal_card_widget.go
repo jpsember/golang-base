@@ -49,6 +49,7 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		if photoId == 0 {
 			Alert("!Animal has no photo")
 		} else {
+
 			newUrl, err := ReadImageIntoCache(photoId)
 			if err != nil {
 				Alert("!Problem reading image into cache;", err)
@@ -130,6 +131,7 @@ func (w AnimalCardWidget) AddChild(c Widget, manager WidgetManager) {
 
 func ReadImageIntoCache(blobId int) (string, error) {
 	s := SharedWebCache
+
 	url := s.CacheMap.Get(blobId)
 	var err error
 	if url == "" {

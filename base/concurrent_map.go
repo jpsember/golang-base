@@ -16,6 +16,12 @@ func NewConcurrentMap[K comparable, V any]() *ConcurrentMap[K, V] {
 	return &r
 }
 
+func NewConcurrentMapWith[K comparable, V any](contents map[K]V) *ConcurrentMap[K, V] {
+	r := ConcurrentMap[K, V]{}
+	r.wrappedMap = contents
+	return &r
+}
+
 // Get value for key, returning i) default value if key doesn't exist, ii) whether it existed
 func (m *ConcurrentMap[K, V]) OptValue(key K, defaultValue V) (result V, ok bool) {
 	m.lock.RLock()
@@ -32,6 +38,21 @@ func (m *ConcurrentMap[K, V]) Get(key K) V {
 	val := m.wrappedMap[key]
 	m.lock.RUnlock()
 	return val
+}
+
+func (m *ConcurrentMap[K, V]) GetAll() ([]K, []V) {
+	m.lock.RLock()
+	mp := m.wrappedMap
+	ln := len(mp)
+	keys := make([]K, ln)
+	values := make([]V, ln)
+	i := 0
+	for k, v := range mp {
+		keys[i] = k
+		values[i] = v
+	}
+	m.lock.RUnlock()
+	return keys, values
 }
 
 func (m *ConcurrentMap[K, V]) Put(key K, value V) V {
@@ -58,4 +79,11 @@ func (m *ConcurrentMap[K, V]) Clear() {
 	m.lock.Lock()
 	m.wrappedMap = make(map[K]V)
 	m.lock.Unlock()
+}
+
+func (m *ConcurrentMap[K, V]) Size() int {
+	m.lock.RLock()
+	result := len(m.wrappedMap)
+	m.lock.RUnlock()
+	return result
 }
