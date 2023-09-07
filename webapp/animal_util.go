@@ -26,13 +26,12 @@ func RandomAnimal(r *rand.Rand) AnimalBuilder {
 			Alert("?No demo photos found; animal(s) won't have photos")
 		} else {
 			i := r.Intn(len(nms))
-			var b Blob
-			b = NewBlob()
+			b := NewBlob()
 			pth := d.scaledPhotosDir().JoinM(nms[i])
-			// It will be a builder most of the time, but we will call ToBuilder() where necessary
-			b = b.ToBuilder().SetData(pth.ReadBytesM())
-			b = CheckOkWith(CreateBlob(b))
-			a.SetPhotoThumbnail(b.Id())
+			b.SetData(pth.ReadBytesM())
+			AssignBlobName(b)
+			b2 := CheckOkWith(CreateBlob(b))
+			a.SetPhotoThumbnail(b2.Id())
 		}
 	}
 	Todo("Issue #59: add random photo")
@@ -143,4 +142,20 @@ func ScaleImageToSize(img jimg.JImage, targetSize IPoint) jimg.JImage {
 	img = img.AsDefaultTypeM()
 	_, targetRect := FitRectToRect(img.Size(), targetSize, 1.0, 0, -.5)
 	return img.ScaledToRect(targetSize, targetRect)
+}
+
+func AssignBlobName(b BlobBuilder) {
+	if b.Name() == "" {
+		b.SetName(string(GenerateBlobId()))
+	}
+}
+
+func TrimBlob(b Blob) Blob {
+	CheckNotNil(b)
+	if len(b.Data()) > 50 {
+		b2 := b.Build().ToBuilder()
+		b2.SetData(DefaultBlob.Data())
+		b = b2.Build()
+	}
+	return b
 }

@@ -42,7 +42,11 @@ func (m *ConcurrentMap[K, V]) Get(key K) V {
 
 func (m *ConcurrentMap[K, V]) GetAll() ([]K, []V) {
 	m.lock.RLock()
-	mp := m.wrappedMap
+	defer m.lock.RUnlock()
+	return GetMapKeysAndValues(m.wrappedMap)
+}
+
+func GetMapKeysAndValues[K comparable, V any](mp map[K]V) ([]K, []V) {
 	ln := len(mp)
 	keys := make([]K, ln)
 	values := make([]V, ln)
@@ -50,8 +54,19 @@ func (m *ConcurrentMap[K, V]) GetAll() ([]K, []V) {
 	for k, v := range mp {
 		keys[i] = k
 		values[i] = v
+		i++
+
+		var q any
+		q = v
+
+		jv, ok := q.(DataClass)
+		if ok {
+			m := jv.ToJson().AsJSMap()
+			m.Delete("data")
+		}
+
 	}
-	m.lock.RUnlock()
+
 	return keys, values
 }
 

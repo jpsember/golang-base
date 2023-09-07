@@ -131,7 +131,6 @@ func (oper AnimalOper) Perform(app *App) {
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
-	SharedWebCache.SetCacheDir(oper.resources.JoinM("c"))
 
 	{
 		s := strings.Builder{}
@@ -199,6 +198,8 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 			sess.HandleAjaxRequest(w, req)
 		} else if path == "/" {
 			oper.processFullPageRequest(sess, w, req)
+		} else if strings.HasPrefix(path, "/r/") {
+			err = HandleBlobRequest(w, req, path[3:])
 		} else {
 			pr("handling resource request for:", path)
 			err = sess.HandleResourceRequest(w, req, oper.resources)
@@ -212,6 +213,17 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	if p := sess.GetRequestProblem(); p != "" {
 		Pr("...problem with request, URL:", req.RequestURI, INDENT, p)
 	}
+}
+
+func HandleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) error {
+	blob := SharedWebCache.GetBlobWithName(blobId)
+	if blob.Id() == 0 {
+		Alert("#50Can't find blob with name:", Quoted(blobId))
+	}
+	err := WriteResponse(w, "image/jpeg", blob.Data())
+	Todo("Have a content_type field in blob")
+	Todo("?Detect someone requesting huge numbers of items that don't exist?")
+	return err
 }
 
 func (oper AnimalOper) processFullPageRequest(sess Session, w http.ResponseWriter, req *http.Request) {

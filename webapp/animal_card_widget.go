@@ -49,13 +49,7 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		if photoId == 0 {
 			Alert("!Animal has no photo")
 		} else {
-
-			newUrl, err := ReadImageIntoCache(photoId)
-			if err != nil {
-				Alert("!Problem reading image into cache;", err)
-			} else {
-				imgUrl = newUrl
-			}
+			imgUrl = ReadImageIntoCache(photoId)
 		}
 
 		// Display an image
@@ -129,30 +123,32 @@ func (w AnimalCardWidget) AddChild(c Widget, manager WidgetManager) {
 	w.children.Add(c)
 }
 
-func ReadImageIntoCache(blobId int) (string, error) {
+func ReadImageIntoCache(blobId int) string {
 	s := SharedWebCache
-
-	url := s.CacheMap.Get(blobId)
-	var err error
-	if url == "" {
-		blob, err1 := ReadBlob(blobId)
-		if err1 != nil {
-			err = err1
-			Alert("#50Trouble reading blob:", blobId)
-		} else {
-			// Choose a name to store this as, something obscure
-			// For now, a simple mapping
-			imageName := "s" + IntToString(blobId) + ".jpg"
-			path := s.CacheDir.JoinM(imageName)
-			Todo("we need to write to a temp file first for thread safety")
-			path.WriteBytesM(blob.Data())
-			url = imageName
-			s.CacheMap.Provide(blobId, imageName)
-			Todo("trim cache periodically; when resource is requested but doesn't exist, some mechanism to have cache read it")
-		}
-	}
-	if err != nil {
+	blob := s.GetBlobWithId(blobId)
+	var url string
+	if blob.Id() == 0 {
 		url = "missing.jpg"
+	} else {
+		url = "r/" + blob.Name()
 	}
-	return url, err
+	//url := s.CacheMap.Get(blobId)
+	//if url == "" {
+	//	blob, err1 := ReadBlob(blobId)
+	//	if err1 != nil {
+	//		err = err1
+	//		Alert("#50Trouble reading blob:", blobId)
+	//	} else {
+	//		// Choose a name to store this as, something obscure
+	//		// For now, a simple mapping
+	//		imageName := "s" + IntToString(blobId) + ".jpg"
+	//		path := s.CacheDir.JoinM(imageName)
+	//		Todo("we need to write to a temp file first for thread safety")
+	//		path.WriteBytesM(blob.Data())
+	//		url = imageName
+	//		s.CacheMap.Provide(blobId, imageName)
+	//		Todo("trim cache periodically; when resource is requested but doesn't exist, some mechanism to have cache read it")
+	//	}
+	//}
+	return url
 }

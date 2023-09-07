@@ -22,7 +22,7 @@ func NewAnimalFeedPage(sess Session, parentWidget Widget) AnimalFeedPage {
 }
 
 func (p AnimalFeedPage) Generate() {
-	//SetWidgetDebugRendering()
+	SetWidgetDebugRendering()
 
 	m := p.sess.WidgetManager()
 	m.With(p.parentWidget)
@@ -33,7 +33,6 @@ func (p AnimalFeedPage) Generate() {
 	if !HasAnimals() {
 		GenerateRandomAnimals()
 	}
-	//SharedDemoPhotos.ReadSamples()
 
 	m.Col(4)
 	for i := 1; i < 12; i++ {
