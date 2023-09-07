@@ -131,6 +131,7 @@ func (oper AnimalOper) Perform(app *App) {
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
+	SharedWebCache.SetCacheDir(oper.resources.JoinM("c"))
 
 	{
 		s := strings.Builder{}

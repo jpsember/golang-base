@@ -62,7 +62,7 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		//imgUrl = IntToString(MyMod(picCounter, 3)) + ".jpg"
 		//Todo("!add support for image based on particular animal")
 		//Pr("imgUrl:", imgUrl)
-		m.Comment("animal image").VoidTag(`jimg class="card-jimg-top" src="`, imgUrl, `"`)
+		m.Comment("animal image").VoidTag(`img class="card-jimg-top" src="`, imgUrl, `"`)
 
 		// Display title and brief summary
 		m.Comments("title and summary").
@@ -129,6 +129,28 @@ func (w AnimalCardWidget) AddChild(c Widget, manager WidgetManager) {
 }
 
 func ReadImageIntoCache(blobId int) (string, error) {
-	Todo("if necessary, read image from database into cache or whatever")
-	return "missing.jpg", Error("not implemented yet")
+	s := SharedWebCache
+	url := s.CacheMap.Get(blobId)
+	var err error
+	if url == "" {
+		blob, err1 := ReadBlob(blobId)
+		if err1 != nil {
+			err = err1
+			Alert("#50Trouble reading blob:", blobId)
+		} else {
+			// Choose a name to store this as, something obscure
+			// For now, a simple mapping
+			imageName := "s" + IntToString(blobId) + ".jpg"
+			path := s.CacheDir.JoinM(imageName)
+			Todo("we need to write to a temp file first for thread safety")
+			path.WriteBytesM(blob.Data())
+			url = imageName
+			s.CacheMap.Provide(blobId, imageName)
+			Todo("trim cache periodically; when resource is requested but doesn't exist, some mechanism to have cache read it")
+		}
+	}
+	if err != nil {
+		url = "missing.jpg"
+	}
+	return url, err
 }
