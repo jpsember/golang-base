@@ -145,6 +145,8 @@ func (oper AnimalOper) Perform(app *App) {
 	var keyPath = keyDir.JoinM(ourUrl + ".key")
 	Pr("URL:", INDENT, `https://`+ourUrl)
 
+	ExitOnPanic()
+
 	http.HandleFunc("/",
 		func(w http.ResponseWriter, req *http.Request) {
 			defer func() {
@@ -220,7 +222,8 @@ func HandleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) 
 	if blob.Id() == 0 {
 		Alert("#50Can't find blob with name:", Quoted(blobId))
 	}
-	err := WriteResponse(w, "image/jpeg", blob.Data())
+
+	err := WriteResponse(w, InferContentTypeFromBlob(blob), blob.Data())
 	Todo("Have a content_type field in blob")
 	Todo("?Detect someone requesting huge numbers of items that don't exist?")
 	return err

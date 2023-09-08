@@ -1,9 +1,5 @@
 package base
 
-import (
-	_ "strings"
-)
-
 type JSListStruct struct {
 	wrappedList []JSEntity
 }
