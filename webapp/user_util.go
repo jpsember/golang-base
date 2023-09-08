@@ -6,6 +6,8 @@ import (
 )
 
 func RandomUser(r JSRand) UserBuilder {
+	CheckState(DevDatabase)
+
 	r = NullToRand(r)
 	a := NewUser()
 	a.SetEmail(RandomEmailAddress(r))
@@ -21,7 +23,8 @@ func HasUsers() bool {
 }
 
 func GenerateRandomUsers() {
-	Alert("<1Generating some random users")
+	CheckState(DevDatabase)
+
 	rnd := NewJSRand()
 
 	for i := 0; i < 8; i++ {
@@ -48,8 +51,8 @@ func createAnimalsUpTo(rnd JSRand, id int) {
 }
 
 func PopulateDatabase() {
+	CheckState(DevDatabase)
 
-	Alert("!<1Populating database if empty")
 	rnd := NewJSRand().SetSeed(1965)
 
 	for i := 0; i < 8; i++ {

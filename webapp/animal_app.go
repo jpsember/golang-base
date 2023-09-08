@@ -35,105 +35,25 @@ func (oper AnimalOper) GetHelp(bp *BasePrinter) {
 func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
+var DevDatabase = Alert("!Using development database")
+
+// If DevDatabase is active, and user with this name exists, their credentials are plugged in automatically
+// at the sign in page by default.
+const AutoSignInName = "manager1"
+
 func (oper AnimalOper) Perform(app *App) {
-	ClearAlertHistory()
+	//ClearAlertHistory()
+	ExitOnPanic()
 
 	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 
-	if false && Alert("Deleting database:", dataSourcePath) {
+	if false && DevDatabase && Alert("Deleting database:", dataSourcePath) {
 		DeleteDatabase(dataSourcePath)
 	}
 	CreateDatabase(dataSourcePath.String())
-
-	if false && Alert("scale experiment") {
-		Pr("scaled photos:", SharedDemoPhotos.ScaledPhotoNames())
-		SharedDemoPhotos.ReadSamples()
-		Halt()
+	if DevDatabase {
+		PopulateDatabase()
 	}
-	if false && Alert("creating a number of users") {
-		j := NewJSRand().SetSeed(1965)
-		for i := 0; i < 30; i++ {
-			u := NewUser()
-			u.SetName(RandomText(j, 3, false))
-			Pr("random name:", u.Name())
-			Pr("i:", i, "attempting to create user with name:", u.Name())
-			result, err := CreateUserWithName(u)
-			Pr("create user result:", result.Id(), "err:", err)
-			CheckOk(err)
-			if result.Id() == 0 {
-				Pr("failed to create user, must already exist?", u.Name())
-				continue
-			}
-			Pr("created user:", result.Id(), result.Name(), result)
-		}
-		Pr("sleeping then quitting")
-		SleepMs(2000)
-	}
-
-	if false && Alert("creating some users") {
-		GenerateRandomUsers()
-		SleepMs(2000)
-		Halt()
-	}
-	if false && Alert("creating a number of animals") {
-		GenerateRandomAnimals()
-		SleepMs(2000)
-		Halt()
-	}
-
-	if false && Alert("experimenting with iter") {
-
-		for pass := 0; pass < 2; pass++ {
-			var iter DbIter
-			if pass == 0 {
-				iter = UserIterator(17)
-				Pr(VERT_SP, "iterating by id")
-			} else {
-				iter = UserNameIterator("marcy")
-				Pr(VERT_SP, "iterating by name")
-			}
-
-			//the iterator is not doing anything
-
-			i := -1
-			for iter.HasNext() {
-				i++
-				user := iter.Next().(User)
-				CheckState(!iter.HasError())
-				Pr("i:", i, "id:", user.Id(), "name:", user.Name())
-			}
-		}
-		Halt("done iteration experiment")
-	}
-
-	if false && Alert("experiment") {
-		b1 := NewBlob().SetName("bravo")
-		b, err := CreateBlobWithName(b1)
-		CheckOk(err)
-
-		if b.Id() == 0 {
-			Pr("failed to create blob:", INDENT, b1)
-			Pr("assuming one already exists:")
-			b2, err1 := ReadBlobWithName(b1.Name())
-			Pr("err:", err1)
-			Pr("Existing blob:", INDENT, b2)
-		} else {
-			var x []byte
-			for i := 0; i < 2000; i++ {
-				x = append(x, byte(i))
-			}
-
-			b = b.ToBuilder().SetData(x)
-			Pr("Attempting to write blob:", INDENT, b)
-			err2 := UpdateBlob(b)
-			Pr("err?", err2)
-		}
-		Pr("sleeping to allow db flush")
-		SleepMs(2000)
-		Halt("done experiment")
-	}
-
-	PopulateDatabase()
 
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
@@ -151,8 +71,6 @@ func (oper AnimalOper) Perform(app *App) {
 	var certPath = keyDir.JoinM(ourUrl + ".crt")
 	var keyPath = keyDir.JoinM(ourUrl + ".key")
 	Pr("URL:", INDENT, `https://`+ourUrl)
-
-	ExitOnPanic()
 
 	http.HandleFunc("/",
 		func(w http.ResponseWriter, req *http.Request) {

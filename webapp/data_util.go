@@ -12,7 +12,7 @@ type BlobId string
 
 const blobIdLength = 10
 
-var AllowTestInputs = Alert("!Allowing test inputs (user name, password, etc)")
+var AllowTestInputs = DevDatabase //Alert("!Allowing test inputs (user name, password, etc)")
 
 func (b BlobId) String() string {
 	return string(b)
@@ -110,7 +110,18 @@ func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 	} else if !UserNameValidatorRegExp.MatchString(userName) {
 		err = ErrorUserNameIllegalCharacters
 	}
-	err, validatedName = replaceWithTestInput(err, validatedName, "a", "donor1")
+
+	var autoName string
+	if DevDatabase {
+		user, _ := ReadUserWithName(AutoSignInName)
+		if user.Id() != 0 {
+			autoName = user.Name()
+		}
+	}
+
+	if autoName != "" {
+		err, validatedName = replaceWithTestInput(err, validatedName, "a", autoName)
+	}
 	return validatedName, err
 }
 
