@@ -32,6 +32,7 @@ func (p CreateAnimalPage) Generate() {
 
 	m := p.GenerateHeader()
 
+	Todo("!Have ajax listener that can show advice without an actual error, e.g., if user left some fields blank")
 	m.Label("Create New Animal Record").Size(SizeLarge).AddHeading()
 	m.Col(6).Open()
 	{
@@ -42,12 +43,11 @@ func (p CreateAnimalPage) Generate() {
 		m.Size(SizeTiny).Label("A brief paragraph to appear in the 'card' view.").AddText()
 		m.Label("Details").Id(id_animal_details).AddInput()
 		m.Size(SizeTiny).Label("Additional paragraphs to appear on the 'details' view.").AddText()
-
+		
 		m.Listener(p.addListener)
 		m.Id(id_add).Label("Create").AddButton()
 	}
 	m.Close()
-
 }
 
 func (p CreateAnimalPage) addListener(sess Session, widget Widget) {
