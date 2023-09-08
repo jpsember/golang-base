@@ -27,7 +27,7 @@ func (p AnimalFeedPage) Generate() {
 	m := p.sess.WidgetManager()
 	m.With(p.parentWidget)
 
-	m.Size(SizeMicro).Align(AlignRight).Label("AnimalFeedPage, user:" + SessionUser(p.sess).Name()).AddHeading()
+	AddDevPageLabel(p.sess, "AnimalFeedPage")
 
 	// If no animals found, add some
 	if !HasAnimals() {

@@ -32,8 +32,8 @@ func (p LandingPage) Generate() {
 	m := p.sess.WidgetManager()
 	m.With(p.parentWidget)
 
-	m.Col(12)
-	m.Label("Landing Page").Align(AlignCenter).Size(SizeMicro).AddHeading()
+	AddDevPageLabel(p.sess, "LandingPage")
+
 	m.Label("gallery").Align(AlignRight).Size(SizeTiny).Listener(p.galleryListener).AddButton()
 	m.Col(6)
 	m.Open()
@@ -136,8 +136,18 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		sess.SetWidgetIdProblem(id_user_name, "Unable to log in at this time")
 		return
 	}
-	sp := NewAnimalFeedPage(sess, p.parentWidget)
-	sp.Generate()
+
+	switch user.UserClass() {
+	case webapp_data.UserClassDonor:
+		sp := NewAnimalFeedPage(sess, p.parentWidget)
+		sp.Generate()
+		break
+	case webapp_data.UserClassManager:
+		Todo("?Maybe make AnimalFeed, Manager pages implement a common interface")
+		sp := NewManagerPage(sess, p.parentWidget)
+		sp.Generate()
+	}
+
 }
 
 func (p LandingPage) signUpListener(s Session, widget Widget) {

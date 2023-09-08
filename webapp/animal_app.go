@@ -211,12 +211,17 @@ func AssignUserToSession(sess Session) {
 }
 
 func SessionUser(sess Session) User {
+	user := OptSessionUser(sess)
+	if user.Id() == 0 {
+		BadState("session user has id zero")
+	}
+	return user
+}
+
+func OptSessionUser(sess Session) User {
 	user, ok := sess.AppData.(User)
 	if !ok {
 		BadState("no User found in sess AppData:", INDENT, sess.AppData)
-	}
-	if user.Id() == 0 {
-		BadState("session user has id zero")
 	}
 	return user
 }

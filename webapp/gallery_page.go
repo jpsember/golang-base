@@ -28,7 +28,7 @@ func (p GalleryPage) Generate() {
 	m := p.sess.WidgetManager()
 	m.With(p.parentWidget)
 
-	m.Size(SizeMicro).Align(AlignRight).Label("AnimalFeedPage").AddHeading()
+	AddDevPageLabel(p.sess, "GalleryPage")
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
