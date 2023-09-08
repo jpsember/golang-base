@@ -6,21 +6,63 @@ import (
 
 // The simplest concrete Widget implementation
 type BaseWidgetObj struct {
-	Id            string
+	BaseId        string
 	Bounds        Rect
-	Listener      WidgetListener
+	listener      WidgetListener
 	hidden        bool
 	disabled      bool
 	staticContent any
 	idHashcode    int
+	size          WidgetSize
+	align         WidgetAlign
 }
 
 type BaseWidget = *BaseWidgetObj
 
 func NewBaseWidget(id string) BaseWidget {
 	t := &BaseWidgetObj{}
-	t.Id = id
+	t.BaseId = id
 	return t
+}
+
+func (w BaseWidget) String() string {
+	return "<" + w.BaseId + ">"
+}
+
+func (w BaseWidget) Id() string {
+	return w.BaseId
+}
+
+func (w BaseWidget) SetSize(size WidgetSize) {
+	w.size = size
+}
+
+func (w BaseWidget) SetAlign(align WidgetAlign) {
+	w.align = align
+}
+
+func (w BaseWidget) Align() WidgetAlign {
+	return w.align
+}
+
+func (w BaseWidget) Size() WidgetSize {
+	Todo("we can directly access embedded structs' fields (if they are public)")
+	return w.size
+}
+
+func (w BaseWidget) Listener() WidgetListener {
+	return w.listener
+}
+
+func (w BaseWidget) SetListener(listener WidgetListener) {
+	if w.listener != nil {
+		BadState("Widget", w.Id(), "already has a listener")
+	}
+	w.listener = listener
+}
+
+func (w BaseWidget) ClearChildren() {
+	NotImplemented()
 }
 
 func (w BaseWidget) Base() BaseWidget {
@@ -62,7 +104,7 @@ func (w BaseWidget) AddChild(c Widget, manager WidgetManager) {
 }
 
 func (w BaseWidget) ReceiveValue(sess Session, value string) {
-	Pr("Ignoring ReceiveValue for widget:", w.Id, "value:", Quoted(value))
+	Pr("Ignoring ReceiveValue for widget:", w.BaseId, "value:", Quoted(value))
 }
 
 var emptyWidgetList = make([]Widget, 0)
@@ -72,28 +114,16 @@ func (w BaseWidget) GetChildren() []Widget {
 }
 
 func (w BaseWidget) IdSummary() string {
-	if w.Id == "" {
+	if w.BaseId == "" {
 		return `(no id)`
 	}
-	return `Id: ` + w.Id
+	return `Id: ` + w.BaseId
 }
 
 func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	m.A(`<div id='`, w.Id, `'></div>`)
+	m.A(`<div id='`, w.BaseId, `'></div>`)
 }
 
 func (w BaseWidget) AuxId() string {
-	return w.Id + ".aux"
-}
-
-func (w BaseWidget) IdHashcode() int {
-	if w.idHashcode == 0 {
-		b := []byte(w.Id)
-		sum := 0
-		for _, x := range b {
-			sum += int(x)
-		}
-		w.idHashcode = MaxInt(sum&0xffff, 1)
-	}
-	return w.idHashcode
+	return w.BaseId + ".aux"
 }

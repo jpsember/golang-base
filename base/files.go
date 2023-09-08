@@ -5,34 +5,40 @@ import (
 	"os"
 )
 
-func AscendToDirectoryContainingFile(startDir Path, seekFile string) (Path, error) {
+func AscendToFileOrDirM(startDir Path, seekFile string) Path {
+	return CheckOkWith(AscendToFileOrDir(startDir, seekFile))
+}
+
+func AscendToFileOrDir(startDir Path, seekFile string) (Path, error) {
+	pr := PrIf(false)
 	CheckArg(NonEmpty(seekFile))
 
 	if startDir.Empty() {
 		startDir = CurrentDirectory()
 	}
+	pr("AscendToFileOrDir:", Quoted(seekFile), "startDir:", startDir)
 
-	pr := PrIf(false)
-
-	pr("AscendToDirectoryContainingFile, startDir:", startDir, "seekFile:", seekFile)
 	var path = startDir
 	for {
-		pr("path:", path)
+		if path.Empty() {
+			break
+		}
 		var cand, _ = path.Join(seekFile)
-		pr("candidate:", cand)
+		pr(INDENT, "-->", cand)
 		if cand.Exists() {
-			return path, nil
+			return cand, nil
 		}
-		if path.Empty() {
-			return path, Error("Cannot find", seekFile, "in tree containing", startDir)
-		}
-		pr("path:", path, "parent:", path.Parent())
 		path = path.Parent()
-		pr("path now:", path, "isEmpty:", path.Empty(), "empty str:", EmptyPath.String())
-		if path.Empty() {
-			return path, Error("Cannot find", seekFile, "in tree containing", startDir)
-		}
 	}
+	return EmptyPath, Error("Cannot find", Quoted(seekFile), "in tree containing:", startDir)
+}
+
+func AscendToDirectoryContainingFile(startDir Path, seekFile string) (Path, error) {
+	path, err := AscendToFileOrDir(startDir, seekFile)
+	if err == nil {
+		path = path.Parent()
+	}
+	return path, err
 }
 
 func AscendToDirectoryContainingFileM(startDir Path, seekFile string) Path {
@@ -151,7 +157,7 @@ func FindProjectDirM() Path {
 
 func FindProjectDir() (Path, error) {
 	if !cachedProjectDirFlag {
-		cachedProjectDir, cachedProjectDirErr = AscendToDirectoryContainingFile("", "project_config")
+		cachedProjectDir, cachedProjectDirErr = AscendToFileOrDir("", "project_config")
 		cachedProjectDirFlag = true
 	}
 	return cachedProjectDir, cachedProjectDirErr

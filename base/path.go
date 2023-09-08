@@ -15,33 +15,32 @@ var projectDir = EmptyPath
 
 var FileNotFoundError = Error("file not found")
 
-func FindFileUpward(name string, startDir Path) (Path, error) {
-	CheckArg(startDir.IsDir(), "not a directory")
-
-	currentDir := startDir
-	for currentDir.NonEmpty() {
-		candidate := currentDir.JoinM(name)
-		if candidate.Exists() {
-			return candidate, nil
-		}
-		currentDir = currentDir.Parent()
+func ProjectDir() (Path, error) {
+	var err error
+	if projectDir.Empty() {
+		projectDir, err = AscendToDirectoryContainingFile(EmptyPath, ".git")
 	}
-	return EmptyPath, FileNotFoundError
+	return projectDir, err
 }
 
 func ProjectDirM() Path {
-	if projectDir.Empty() {
-		projectDir = CheckOkWith(FindFileUpward(".git", CurrentDirectory())).Parent()
+	return CheckOkWith(ProjectDir())
+}
+
+func HomeDir() (Path, error) {
+	var err error
+	if homeDir.Empty() {
+		var p string
+		p, err = os.UserHomeDir()
+		if err == nil {
+			homeDir, err = NewPath(p)
+		}
 	}
-	return projectDir
+	return homeDir, err
 }
 
 func HomeDirM() Path {
-	if homeDir.Empty() {
-		p := CheckOkWith(os.UserHomeDir())
-		homeDir = NewPathM(p)
-	}
-	return homeDir
+	return CheckOkWith(HomeDir())
 }
 
 func TempFile(prefix string) (Path, error) {
@@ -63,14 +62,14 @@ func TempFileM(prefix string) Path {
 // Construct a Path from a string; return error if there is a problem
 func NewPath(s string) (Path, error) {
 	if s == "" {
-		return "", Error("Path is empty")
+		return EmptyPath, Error("Path is empty")
 	}
 	var cleaned = filepath.Clean(s)
 	if cleaned != s {
-		return "", Error("Path isn't clean:", Quoted(s), "; should be:", Quoted(cleaned))
+		return EmptyPath, Error("Path isn't clean:", Quoted(s), "; should be:", Quoted(cleaned))
 	}
 	if strings.HasPrefix(s, "..") {
-		return "", Error("Illegal path:", Quoted(s))
+		return EmptyPath, Error("Illegal path:", Quoted(s))
 	}
 	return Path(s), nil
 }
@@ -95,8 +94,16 @@ func NewPathM(s string) Path {
 
 // Join path to a relative path (string)
 func (path Path) Join(s string) (Path, error) {
-	j := filepath.Join(string(path), s)
+	j := filepath.Join(path.toString(), s)
 	return NewPath(j)
+}
+
+func (path Path) toString() string {
+	return string(path)
+}
+
+func (path Path) AsNonEmptyString() string {
+	return string(path.AssertNonEmpty())
 }
 
 // Join path to a relative path (string); panic if error
@@ -123,7 +130,7 @@ func (path Path) String() string {
 }
 
 // Panic if path is empty
-func (path Path) CheckNonEmpty() Path {
+func (path Path) AssertNonEmpty() Path {
 	if path.Empty() {
 		BadArg("Path is empty")
 	}
@@ -132,8 +139,7 @@ func (path Path) CheckNonEmpty() Path {
 
 // Get parent of (nonempty) path; returns empty path if it has no parent
 func (path Path) Parent() Path {
-	path.CheckNonEmpty()
-	input := string(path)
+	input := path.AsNonEmptyString()
 	var s = filepath.Dir(input)
 	if s == input {
 		return EmptyPath
@@ -143,24 +149,22 @@ func (path Path) Parent() Path {
 
 // Determine if path refers to a file (or directory)
 func (path Path) Exists() bool {
-	path.CheckNonEmpty()
-	_, err := os.Stat(string(path))
+	_, err := os.Stat(path.AsNonEmptyString())
 	return err == nil
 }
 
 func (path Path) IsDir() bool {
-	fileInfo, err := os.Stat(string(path))
+	fileInfo, err := os.Stat(path.toString())
 	return err == nil && fileInfo.IsDir()
 }
 
 func (path Path) IsRoot() bool {
-	path.CheckNonEmpty()
-	return path.String() == "/"
+	return path.AsNonEmptyString() == "/"
 }
 
 // Determine if path is empty
 func (path Path) Empty() bool {
-	return string(path) == ""
+	return path.toString() == ""
 }
 
 // Write string to file
@@ -175,8 +179,7 @@ func (path Path) WriteStringM(content string) {
 
 // Write bytes to file
 func (path Path) WriteBytes(content []byte) error {
-	path.CheckNonEmpty()
-	return os.WriteFile(string(path), content, 0644)
+	return os.WriteFile(path.AsNonEmptyString(), content, 0644)
 }
 
 // Write string to file; panic if error
@@ -186,8 +189,7 @@ func (path Path) WriteBytesM(content []byte) {
 
 // Get the filename denoted by (nonempty) path
 func (path Path) Base() string {
-	path.CheckNonEmpty()
-	return filepath.Base(string(path))
+	return filepath.Base(path.AsNonEmptyString())
 }
 
 func (path Path) MkDirs() error {
@@ -212,10 +214,10 @@ func (path Path) RemakeDirM(substring string) {
 
 func (path Path) DeleteDirectory(substring string) error {
 	CheckArg(!path.Empty())
-	if len(substring) < 5 || !strings.Contains(string(path), substring) {
+	if len(substring) < 5 || !strings.Contains(path.toString(), substring) {
 		BadArg("DeleteDirectory, path doesn't contain suitably long substring:", path, Quoted(substring))
 	}
-	return os.RemoveAll(string(path))
+	return os.RemoveAll(path.toString())
 }
 
 func (path Path) DeleteDirectoryM(substring string) {
@@ -227,7 +229,7 @@ func (path Path) DeleteFile() error {
 	if !path.Exists() {
 		return nil
 	}
-	return os.Remove(string(path))
+	return os.Remove(path.toString())
 }
 
 func (path Path) DeleteFileM() {
@@ -240,7 +242,7 @@ func (path Path) MoveTo(target Path) error {
 	if target.Exists() && !target.IsDir() {
 		return Error("Can't move to existing file:", target)
 	}
-	return os.Rename(string(path), string(target))
+	return os.Rename(path.toString(), target.toString())
 }
 
 func ExtensionFrom(path string) string {
@@ -248,11 +250,11 @@ func ExtensionFrom(path string) string {
 }
 
 func (path Path) Extension() string {
-	return ExtensionFrom(path.String())
+	return ExtensionFrom(path.toString())
 }
 
 func (path Path) TrimExtension() Path {
-	p := path.CheckNonEmpty().String()
+	p := path.AsNonEmptyString()
 	ext := filepath.Ext(p)
 	if ext != "" {
 		i := len(p)
@@ -263,7 +265,7 @@ func (path Path) TrimExtension() Path {
 
 func (path Path) SetExtension(ext string) Path {
 	CheckNonEmpty(ext)
-	return NewPathM(path.TrimExtension().String() + "." + ext)
+	return NewPathM(path.TrimExtension().toString() + "." + ext)
 }
 
 func (path Path) NonEmpty() bool {
@@ -277,13 +279,11 @@ func (path Path) EnsureExists(message ...any) {
 }
 
 func (path Path) IsAbs() bool {
-	path.CheckNonEmpty()
-	return filepath.IsAbs(path.String())
+	return filepath.IsAbs(path.AsNonEmptyString())
 }
 
 func (path Path) GetAbs() (Path, error) {
-	path.CheckNonEmpty()
-	pth, err := filepath.Abs(path.String())
+	pth, err := filepath.Abs(path.AsNonEmptyString())
 	result := EmptyPath
 	if err == nil {
 		result, err = NewPath(pth)
@@ -323,16 +323,16 @@ func (path Path) Info(message ...any) JSMap {
 		}
 		if path.IsAbs() {
 			m.Put("2 name", path.Base())
-			m.Put("3 parent", path.Parent().String())
+			m.Put("3 parent", path.Parent().toString())
 			absPath = path
 		} else {
-			relName := path.String()
+			relName := path.toString()
 			curr := CurrentDirectory()
 			m.Put("2 rel", relName)
-			m.Put("3 cdir", curr.String())
+			m.Put("3 cdir", curr.toString())
 			absPath = curr.JoinPathM(path)
 		}
-		m.Put("4 abs", absPath.String())
+		m.Put("4 abs", absPath.toString())
 		m.Put("1 status", content)
 	}
 	return m

@@ -110,7 +110,10 @@ const (
 // Increase the indent amount to the next tab stop (4 spaces), and generate a linefeed
 func (b *BasePrinter) Indent() *BasePrinter {
 	b.indentColumn += defaultIndentationColumn
-	return b.Cr()
+	if b.column > 0 {
+		b.Cr()
+	}
+	return b
 }
 
 // Move the indent amount to the previous tab stop, and generate a linefeed

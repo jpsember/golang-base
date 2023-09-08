@@ -5,6 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
+	"fmt"
 	"golang.org/x/crypto/pbkdf2"
 )
 
@@ -36,6 +37,20 @@ func EncryptBytes(bytes []byte, password string) ([]byte, error) {
 
 	return ciphertextAndNonceAndSalt, nil
 }
+
+func GenerateUUID() string {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	CheckOk(err)
+	return fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
+}
+
+//func GenerateBlobId() string {
+//    b := make([]byte, 8)
+//    _, err := rand.Read(b)
+//	CheckOk(err)
+//    return fmt.Sprintf("%X", b)
+//}
 
 func encryptHelper(plaintext, key []byte) ([]byte, error) {
 	// Generate a 96-bit nonce using a CSPRNG.

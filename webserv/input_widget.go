@@ -16,7 +16,7 @@ type InputWidget = *InputWidgetObj
 func NewInputWidget(id string, label HtmlString, password bool) InputWidget {
 	w := InputWidgetObj{
 		BaseWidgetObj: BaseWidgetObj{
-			Id: id,
+			BaseId: id,
 		},
 		Label:    label,
 		Password: password,
@@ -41,11 +41,11 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	// The HTML input element has id "foo.aux"
 	// If there is a problem with the input, its text will have id "foo.problem"
 
-	m.A(`<div id="`, w.Id, `">`)
+	m.A(`<div id="`, w.BaseId, `">`)
 
 	m.DoIndent()
 
-	problemId := WidgetIdWithProblem(w.Id)
+	problemId := WidgetIdWithProblem(w.BaseId)
 	problemText := state.OptString(problemId, "")
 	if false && Alert("always problem") {
 		problemText = "sample problem information"
@@ -66,10 +66,10 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		m.A(` border-danger border-3`) // Adding border-3 makes the text shift a bit on error, maybe not desirable
 	}
 
-	m.A(`" type="`, Ternary(w.Password, "password", "text"), `" id="`, w.Id, `.aux" value="`)
-	value := WidgetStringValue(state, w.Id)
+	m.A(`" type="`, Ternary(w.Password, "password", "text"), `" id="`, w.BaseId, `.aux" value="`)
+	value := WidgetStringValue(state, w.BaseId)
 	m.Escape(value)
-	m.A(`" onchange='jsVal("`, w.Id, `")'>`).Cr()
+	m.A(`" onchange='jsVal("`, w.BaseId, `")'>`).Cr()
 
 	if hasProblem {
 		m.Comment("Problem")

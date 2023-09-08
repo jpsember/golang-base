@@ -10,6 +10,9 @@ cmd/*_demo
 
 webserv/cache
 
+# Cache for serving images from database... can this be an in-memory cache instead?
+webserv/resources/c
+
 # Generated data classes
 gen
 

@@ -3,6 +3,7 @@ package base
 import (
 	"errors"
 	"fmt"
+	"os"
 	"reflect"
 	"regexp"
 	"runtime/debug"
@@ -11,6 +12,13 @@ import (
 	"sync"
 	"time"
 )
+
+var exitOnPanic = false
+
+func ExitOnPanic() {
+	exitOnPanic = true
+	Alert("?<1Exiting program on panics")
+}
 
 var Dashes = "------------------------------------------------------------------------------------------\n"
 
@@ -137,10 +145,12 @@ func auxAbort(skipCount int, prefix string, message ...any) {
 			fmt.Println(st)
 			nestedAbortFlag = false
 		}
-		// I don't think we want to exit the program; rather, just panic
+
+		if exitOnPanic {
+			os.Exit(1)
+		}
 		Pr("about to panic:", msg)
 		panic(msg)
-		//os.Exit(1)
 	} else {
 		TestAbortMessageLog.WriteString(msg + "\n")
 	}
@@ -202,6 +212,8 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	// If there's a multi-session priority value, process it
 	//
 	if info.delayMs > 0 {
+		// Do this before locking, as it might attempt to use locks
+		FindProjectDirM()
 		debugLock.Lock()
 		flag := processAlertForMultipleSessions(info)
 		debugLock.Unlock()
@@ -819,4 +831,99 @@ func CatchPanic(handler func()) {
 			handler()
 		}
 	}
+}
+
+func ByteSlice(bytes []byte, start int, length int) []byte {
+	ln := len(bytes)
+
+	if start < 0 {
+		start = ln + start
+	}
+	start = Clamp(start, 0, ln)
+	end := Clamp(start+length, start, ln)
+	return bytes[start:end]
+}
+
+func appendHex(sb *strings.Builder, value uint64, ndigits int) {
+	for ch := 0; ch < ndigits; ch++ {
+		shiftCount := (ndigits - 1 - ch) << 2
+		val := int((value >> shiftCount) & 0xf)
+
+		var c byte
+		if val < 10 {
+			c = ('0' + byte(val))
+		} else {
+			c = ('a' + byte(val-10))
+		}
+		sb.WriteByte(c)
+	}
+}
+
+func HexDump(byteArray []byte) string {
+	return hexDump(byteArray, false)
+}
+
+func HexDumpWithASCII(byteArray []byte) string {
+	return hexDump(byteArray, true)
+}
+
+func hexDump(byteArray []byte, withASCII bool) string {
+	sb := strings.Builder{}
+
+	const groupSize = 1 << 2 // Must be power of 2
+
+	const rowSize = 16
+	const hideZeros = true
+	const groups = true
+
+	length := len(byteArray)
+	i := 0
+	for i < length {
+		rSize := rowSize
+		if rSize+i > length {
+			rSize = length - i
+		}
+		address := i
+		appendHex(&sb, uint64(address), 4)
+		sb.WriteString(`: `)
+		if groups {
+			sb.WriteString("| ")
+		}
+		for j := 0; j < rowSize; j++ {
+			if j < rSize {
+				val := byteArray[i+j]
+				if hideZeros && val == 0 {
+					sb.WriteString("  ")
+				} else {
+					appendHex(&sb, uint64(val), 2)
+				}
+			} else {
+				sb.WriteString("  ")
+			}
+			sb.WriteByte(' ')
+			if groups {
+				if (j & (groupSize - 1)) == groupSize-1 {
+					sb.WriteString("| ")
+				}
+			}
+		}
+		if withASCII {
+			sb.WriteByte(' ')
+
+			for j := 0; j < rSize; j++ {
+				v := byteArray[i+j]
+				if v < 0x20 || v >= 0x80 {
+					v = '.'
+				}
+				sb.WriteByte(v)
+				if groups && ((j & (groupSize - 1)) == groupSize-1) {
+					sb.WriteByte(' ')
+				}
+			}
+		}
+		sb.WriteByte('\n')
+		i += rSize
+	}
+	return sb.String()
+
 }

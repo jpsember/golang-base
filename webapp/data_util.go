@@ -2,6 +2,7 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"net/mail"
 	"strings"
 	"sync"
@@ -172,9 +173,51 @@ func replaceWithTestInput(err error, value string, shortcutForTest string, fullV
 	if AllowTestInputs {
 		if value == shortcutForTest || value == "" {
 			value = fullValueForTest
-			Alert("<2replaceWithTestInput; replacing: " + shortcutForTest + " with: " + value)
+			Alert("?<2replaceWithTestInput; replacing: " + shortcutForTest + " with: " + value)
 			err = nil
 		}
 	}
 	return err, value
+}
+
+var contentTypeNames = []string{
+	"image/jpeg", //
+	"image/png",  //
+}
+
+var contentTypeSignatures = []byte{
+	3, 0xff, 0xd8, 0xff, // jpeg
+	8, 137, 80, 78, 71, 13, 10, 26, 10, // png
+}
+
+func InferContentTypeFromBlob(blob Blob) string {
+	result := ""
+	data := blob.Data()
+
+	sig := contentTypeSignatures
+
+	i := 0
+	for fn := 0; i < len(sig); fn++ {
+		recSize := int(sig[i])
+		j := i + 1
+		i += recSize + 1
+		match := true
+		for k := 0; k < recSize; k++ {
+			if sig[j+k] != data[k] {
+				match = false
+				break
+			}
+		}
+		if match {
+			result = contentTypeNames[fn]
+			break
+		}
+	}
+
+	if result == "" {
+		Alert("#50<1Failed to determine content-type from bytes:", CR,
+			HexDumpWithASCII(ByteSlice(blob.Data(), 0, 16)))
+		result = "application/octet-stream"
+	}
+	return result
 }

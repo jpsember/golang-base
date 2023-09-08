@@ -15,7 +15,7 @@ func NewTextWidget(id string, size WidgetSize) TextWidget {
 	t := &TextWidgetObj{
 		size: size,
 	}
-	t.Id = id
+	t.BaseId = id
 	return t
 }
 
@@ -33,8 +33,8 @@ func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	args.Add(`div`)
 
 	if !wasStatic {
-		args.Add(`div id='` + w.Id + `'`)
-		m.OpenTag(`div id='` + w.Id + `'`)
+		args.Add(`div id='` + w.BaseId + `'`)
+		m.OpenTag(`div id='` + w.BaseId + `'`)
 	}
 	if w.size != SizeDefault {
 		Todo("?A better way to do this, no doubt")

@@ -23,7 +23,7 @@ func (m JSMap) AsFloat() float64 {
 }
 
 func (m JSMap) AsString() string {
-	panic("The AsString() method is not supported for JSMapStruct")
+	panic("The toString() method is not supported for JSMapStruct")
 }
 
 func (m JSMap) AsBool() bool {

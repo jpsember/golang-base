@@ -161,8 +161,8 @@ func (r Rect) AspectRatio() float64 {
 // The padVsCrop ranges from 0: maximum padding to 1: maximum cropping.
 // The horzBias and vertBias take effect if the dimension is being cropped, and ranges from -1 ... 1,
 // where 0 causes the image to be centered along that dimension.
-// A vertBias of e.g. .25 favors cropping lower parts of the image, the intuition being that a portrait
-// input will have a person's face in the upper part.
+// A vertBias of e.g. -.25 favors cropping lower parts of the image (where Y axis points down), the intuition
+// being that a portrait input will have a person's face in the upper part.
 // Returns the scaling factor applied, and the bounds of the scaled source image within the target
 // rectangle's coordinate system.  Both source and target rectangles are assumed to have origins at 0,0.
 func FitRectToRect(srcSize IPoint, targSize IPoint, padVsCropBias float64, horzBias float64, vertBias float64) (float64, Rect) {
@@ -179,8 +179,15 @@ func FitRectToRect(srcSize IPoint, targSize IPoint, padVsCropBias float64, horzB
 	targAspect := targSize.AspectRatio()
 	scaleMin := targWidth / srcWidth
 	scaleMax := targHeight / srcHeight
+	Pr("srcAsp:", srcAspect, "targAsp:", targAspect, "padvcrop:", padVsCropBias)
 	if targAspect < srcAspect {
 		padVsCropBias = 1 - padVsCropBias
+		Pr("new padvcrop:", padVsCropBias)
+		if false { // Maybe I need to flip the horz/vert bias too?
+			tmp := horzBias
+			horzBias = vertBias
+			vertBias = tmp
+		}
 	}
 
 	scale := (1-padVsCropBias)*scaleMin + padVsCropBias*scaleMax
@@ -201,6 +208,8 @@ func FitRectToRect(srcSize IPoint, targSize IPoint, padVsCropBias float64, horzB
 	if cropHeight > 0 {
 		cropBiasVertValue = vertBias
 	}
+
+	Pr("cropWidth:", cropWidth, "cropHeight:", cropHeight, "croipBiasH:", cropBiasHorzValue, "v:", cropBiasVertValue)
 
 	resultRect := RectWithFloat(
 		-cropWidth*((cropBiasHorzValue*.5)+.5),

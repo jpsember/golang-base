@@ -77,7 +77,7 @@ func readYCbCrImage() jimg.JImage {
 
 func writeImg(img jimg.JImage, filename string) {
 	p := NewPathM(filename)
-	by := CheckOkWith(img.EncodePNG())
+	by := CheckOkWith(img.ToPNG())
 	p.WriteBytesM(by)
 }
 

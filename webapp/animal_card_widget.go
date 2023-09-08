@@ -25,13 +25,13 @@ func OpenAnimalCardWidget(m WidgetManager, baseId string, animal Animal, viewBut
 
 func newAnimalCardWidget(widgetId string, animal Animal) AnimalCardWidget {
 	w := AnimalCardWidgetObj{}
-	w.Base().Id = widgetId
+	w.Base().BaseId = widgetId
 	w.animal = animal
 	w.children = NewArray[Widget]()
 	return &w
 }
 
-var picCounter = 0
+//var picCounter = 0
 
 func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
@@ -44,11 +44,20 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	m.Comments("AnimalCardWidget").OpenTag(`div class="card bg-light mb-3 animal-card"`)
 	{
+		imgUrl := "unknown"
+		photoId := w.animal.PhotoThumbnail()
+		if photoId == 0 {
+			Alert("!Animal has no photo")
+		} else {
+			imgUrl = ReadImageIntoCache(photoId)
+		}
+
 		// Display an image
-		picCounter++
-		imgUrl := IntToString(MyMod(picCounter, 3)) + ".jpg"
-		Todo("!add support for image based on particular animal")
-		m.Comment("animal image").VoidTag(`jimg class="card-jimg-top" src="`, imgUrl, `"`)
+		//picCounter++
+		//imgUrl = IntToString(MyMod(picCounter, 3)) + ".jpg"
+		//Todo("!add support for image based on particular animal")
+		//Pr("imgUrl:", imgUrl)
+		m.Comment("animal image").VoidTag(`img class="card-jimg-top" src="`, imgUrl, `"`)
 
 		// Display title and brief summary
 		m.Comments("title and summary").
@@ -112,4 +121,34 @@ const maxChildren = 1
 func (w AnimalCardWidget) AddChild(c Widget, manager WidgetManager) {
 	CheckState(w.children.Size() < maxChildren)
 	w.children.Add(c)
+}
+
+func ReadImageIntoCache(blobId int) string {
+	s := SharedWebCache
+	blob := s.GetBlobWithId(blobId)
+	var url string
+	if blob.Id() == 0 {
+		url = "missing.jpg"
+	} else {
+		url = "r/" + blob.Name()
+	}
+	//url := s.CacheMap.Get(blobId)
+	//if url == "" {
+	//	blob, err1 := ReadBlob(blobId)
+	//	if err1 != nil {
+	//		err = err1
+	//		Alert("#50Trouble reading blob:", blobId)
+	//	} else {
+	//		// Choose a name to store this as, something obscure
+	//		// For now, a simple mapping
+	//		imageName := "s" + IntToString(blobId) + ".jpg"
+	//		path := s.CacheDir.JoinM(imageName)
+	//		Todo("we need to write to a temp file first for thread safety")
+	//		path.WriteBytesM(blob.Data())
+	//		url = imageName
+	//		s.CacheMap.Provide(blobId, imageName)
+	//		Todo("trim cache periodically; when resource is requested but doesn't exist, some mechanism to have cache read it")
+	//	}
+	//}
+	return url
 }

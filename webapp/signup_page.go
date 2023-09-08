@@ -35,7 +35,6 @@ func (p SignUpPage) Generate() {
 	m := p.sess.WidgetManager()
 	m.With(p.parentWidget)
 
-	m.Col(12)
 	m.Label("Sign Up Page").Size(SizeLarge).AddHeading()
 	m.Col(6).Open()
 	{
@@ -75,7 +74,7 @@ func auxValidateUserName(s Session, widget Widget, value string, flag ValidateFl
 	pr("validated:", value, "error:", err)
 
 	// We want to update the state even if the name is illegal, so user can see what he typed in
-	s.State.Put(WidgetId(widget), value)
+	s.State.Put(widget.Id(), value)
 	s.SetWidgetProblem(widget, err)
 }
 
@@ -89,7 +88,7 @@ func auxValidateUserPwd(s Session, widget Widget, value string, flag ValidateFla
 	pr("auxValidateUserPwd:", value)
 	value, err := ValidateUserPassword(value, flag)
 	pr("afterward:", value, "err:", err)
-	s.State.Put(WidgetId(widget), value)
+	s.State.Put(widget.Id(), value)
 	s.SetWidgetProblem(widget, err)
 	return err
 }
@@ -110,7 +109,7 @@ func (p SignUpPage) auxValidateMatchPwd(s Session, widget Widget, value string, 
 		err = Ternary(value == "", ErrorEmptyUserPassword, ErrorUserPasswordsDontMatch)
 	}
 
-	s.State.Put(WidgetId(widget), value)
+	s.State.Put(widget.Id(), value)
 	s.SetWidgetProblem(widget, err)
 }
 
@@ -125,7 +124,7 @@ func auxValidateEmail(s Session, widget Widget, value string, flag ValidateFlag)
 	}
 	var err error
 	value, err = ValidateEmailAddress(value, flag)
-	s.State.Put(WidgetId(widget), value)
+	s.State.Put(widget.Id(), value)
 	s.SetWidgetProblem(widget, err)
 }
 

@@ -36,7 +36,7 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AnimalOper) Perform(app *App) {
-	ClearAlertHistory()
+	//ClearAlertHistory()
 
 	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 
@@ -45,6 +45,11 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 	CreateDatabase(dataSourcePath.String())
 
+	if false && Alert("scale experiment") {
+		Pr("scaled photos:", SharedDemoPhotos.ScaledPhotoNames())
+		SharedDemoPhotos.ReadSamples()
+		Halt()
+	}
 	if false && Alert("creating a number of users") {
 		mr := NewJSRand().SetSeed(1965).Rand()
 		for i := 0; i < 30; i++ {
@@ -59,13 +64,19 @@ func (oper AnimalOper) Perform(app *App) {
 				Pr("failed to create user, must already exist?", u.Name())
 				continue
 			}
-			Pr("created user:", result.Id(), result.Name())
+			Pr("created user:", result.Id(), result.Name(), result)
 		}
 		Pr("sleeping then quitting")
 		SleepMs(2000)
 	}
 
-	if true && Alert("experimenting with iter") {
+	if false && Alert("creating a number of animals") {
+		GenerateRandomAnimals()
+		SleepMs(2000)
+		Halt()
+	}
+
+	if false && Alert("experimenting with iter") {
 
 		for pass := 0; pass < 2; pass++ {
 			var iter DbIter
@@ -134,6 +145,8 @@ func (oper AnimalOper) Perform(app *App) {
 	var keyPath = keyDir.JoinM(ourUrl + ".key")
 	Pr("URL:", INDENT, `https://`+ourUrl)
 
+	ExitOnPanic()
+
 	http.HandleFunc("/",
 		func(w http.ResponseWriter, req *http.Request) {
 			defer func() {
@@ -151,34 +164,12 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 }
 
-func DoIterExperiment(iter DbIter) {
-
-	sampleId := 122
-	sampleName := `mm`
-
-	Pr("Performing iter experiment with:", INDENT, iter)
-	count := 0
-	for iter.HasNext() {
-		Todo("can we use generics to have this return a User?")
-		result := iter.Next().(User)
-		Pr("Result:", result.Id(), ":", result.Name(), "(count:", count, ")")
-		if sampleId != 0 && count%8 == 3 {
-			Pr("Looking for", sampleName, "by id", sampleId, ":", CheckOkWith(ReadUser(sampleId)).Name())
-		}
-		count++
-		if count > 200 {
-			Pr("reached max count")
-			break
-		}
-	}
-}
-
 // A handler such as this must be thread safe!
 func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	pr := PrIf(false)
 	pr("handler, request:", req.RequestURI)
 
-	if Alert("!If full page requested, discarding sessions") {
+	if false && Alert("!If full page requested, discarding sessions") {
 		url, err := url.Parse(req.RequestURI)
 		if err == nil && url.Path == "/" {
 			sess := DetermineSession(oper.sessionManager, w, req, false)
@@ -209,6 +200,8 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 			sess.HandleAjaxRequest(w, req)
 		} else if path == "/" {
 			oper.processFullPageRequest(sess, w, req)
+		} else if strings.HasPrefix(path, "/r/") {
+			err = HandleBlobRequest(w, req, path[3:])
 		} else {
 			pr("handling resource request for:", path)
 			err = sess.HandleResourceRequest(w, req, oper.resources)
@@ -222,6 +215,17 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	if p := sess.GetRequestProblem(); p != "" {
 		Pr("...problem with request, URL:", req.RequestURI, INDENT, p)
 	}
+}
+
+func HandleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) error {
+	blob := SharedWebCache.GetBlobWithName(blobId)
+	if blob.Id() == 0 {
+		Alert("#50Can't find blob with name:", Quoted(blobId))
+	}
+
+	err := WriteResponse(w, InferContentTypeFromBlob(blob), blob.Data())
+	Todo("?Detect someone requesting huge numbers of items that don't exist?")
+	return err
 }
 
 func (oper AnimalOper) processFullPageRequest(sess Session, w http.ResponseWriter, req *http.Request) {

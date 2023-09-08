@@ -246,7 +246,7 @@ func (a *App) SpecifyStartDir(path Path) {
 	if path.String() == "/" {
 		BadArg("start dir is system root:", path)
 	}
-	a.startDir = path.CheckNonEmpty()
+	a.startDir = path.AssertNonEmpty()
 }
 
 func (a *App) StartDir() Path {

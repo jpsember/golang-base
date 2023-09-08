@@ -17,6 +17,7 @@ type WidgetManagerObj struct {
 	pendingListener             WidgetListener
 	parentStack                 *Array[Widget]
 	pendingSize                 WidgetSize
+	pendingAlign                WidgetAlign
 	pendingId                   string
 	pendingLabel                string
 	anonymousIdCounter          int
@@ -79,6 +80,12 @@ func (m WidgetManager) consumeOptionalPendingId() string {
 // Set size for next widget (what size means depends upon the widget type).
 func (m WidgetManager) Size(size WidgetSize) WidgetManager {
 	m.pendingSize = size
+	return m
+}
+
+// Set horizontal alignment for next widget
+func (m WidgetManager) Align(align WidgetAlign) WidgetManager {
+	m.pendingAlign = align
 	return m
 }
 
@@ -164,9 +171,15 @@ func (m WidgetManager) consumePendingLabel() string {
 }
 
 func (m WidgetManager) consumePendingSize() WidgetSize {
-	size := m.pendingSize
+	x := m.pendingSize
 	m.pendingSize = SizeDefault
-	return size
+	return x
+}
+
+func (m WidgetManager) consumePendingAlign() WidgetAlign {
+	x := m.pendingAlign
+	m.pendingAlign = AlignDefault
+	return x
 }
 
 func (m WidgetManager) consumePendingStringDefaultValue() string {
@@ -196,7 +209,8 @@ func (m WidgetManager) clearPendingComponentFields() {
 	verifyUsed(m.pendingLabel == "", "pendingLabel")
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
 	verifyUsed(m.pendingListener == nil, "pendingListener")
-	verifyUsed(m.pendingSize == 0, "pendingSize")
+	verifyUsed(m.pendingSize == SizeDefault, "pendingSize")
+	verifyUsed(m.pendingAlign == AlignDefault, "pendingAlign")
 
 	m.mComboChoices = nil
 	m.mPendingDefaultIntValue = 0
@@ -209,8 +223,7 @@ func (m WidgetManager) clearPendingComponentFields() {
  * Add widget to the hierarchy
  */
 func (m WidgetManager) Add(widget Widget) WidgetManager {
-	b := widget.Base()
-	id := b.Id
+	id := widget.Id()
 	if id != "" {
 		if m.Exists(id) {
 			BadState("<1Attempt to add widget with duplicate id:", id)
@@ -230,7 +243,7 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 // The container is marked for repainting.
 func (m WidgetManager) With(container Widget) WidgetManager {
 	pr := PrIf(false)
-	id := WidgetId(container)
+	id := container.Id()
 	pr(VERT_SP, "With:", id, "at:", CallerLocation(1))
 
 	CheckState(m.Exists(id))
@@ -241,7 +254,8 @@ func (m WidgetManager) With(container Widget) WidgetManager {
 	pr("removing all child widgets")
 	// Discard any existing child widgets
 	m.removeWidgets(container.Children())
-	container.Children().Clear()
+	container.ClearChildren()
+
 	pr("after removal, current widget map:", INDENT, m.WidgetMapSummary())
 
 	m.parentStack.Clear()
@@ -320,7 +334,9 @@ func (m WidgetManager) getStaticContentAndId() (string, string) {
 
 func (m WidgetManager) AddHeading() WidgetManager {
 	staticContent, id := m.getStaticContentAndId()
-	w := NewHeadingWidget(id, m.consumePendingSize())
+	w := NewHeadingWidget(id)
+	w.SetSize(m.consumePendingSize())
+	w.SetAlign(m.consumePendingAlign())
 	if staticContent != "" {
 		w.SetStaticContent(staticContent)
 	}
@@ -329,9 +345,7 @@ func (m WidgetManager) AddHeading() WidgetManager {
 
 func (m WidgetManager) assignPendingListener(widget Widget) {
 	if m.pendingListener != nil {
-		b := widget.Base()
-		CheckState(widget.Base().Listener == nil, "Widget", b.Id, "already has a listener")
-		widget.Base().Listener = m.pendingListener
+		widget.SetListener(m.pendingListener)
 		m.pendingListener = nil
 	}
 }
@@ -342,15 +356,17 @@ func (m WidgetManager) AddText() WidgetManager {
 	if staticContent != "" {
 		w.SetStaticContent(staticContent)
 	}
-	m.Log("Adding text, id:", w.Id)
+	m.Log("Adding text, id:", w.BaseId)
 	return m.Add(w)
 }
 
 func (m WidgetManager) AddButton() ButtonWidget {
-	w := NewButtonWidget(m.consumePendingSize())
-	w.Id = m.consumeOptionalPendingId()
+	w := NewButtonWidget()
+	w.BaseId = m.consumeOptionalPendingId()
+	w.SetSize(m.consumePendingSize())
+	w.SetAlign(m.consumePendingAlign())
 	m.assignPendingListener(w)
-	m.Log("Adding button, id:", w.Id)
+	m.Log("Adding button, id:", w.BaseId)
 	w.Label = NewHtmlString(m.consumePendingLabel())
 	m.Add(w)
 	return w
@@ -393,7 +409,7 @@ func (m WidgetManager) removeWidgets(widgets *Array[Widget]) {
 
 // Remove widget (if it exists), and the subtree of widgets it may contain.
 func (m WidgetManager) Remove(widget Widget) WidgetManager {
-	id := WidgetId(widget)
+	id := widget.Id()
 	if m.Exists(id) {
 		delete(m.widgetMap, id)
 		m.removeWidgets(widget.Children())
@@ -418,13 +434,12 @@ func SetWidgetDebugRendering() {
 }
 
 func GetStaticOrDynamicLabel(widget Widget, state JSMap) (string, bool) {
-	w := widget.Base()
 	Todo("?we are assuming static content is a string here")
-	sc := w.StaticContent()
+	sc := widget.StaticContent()
 	if sc != nil {
 		return sc.(string), true
 	} else {
-		return WidgetStringValue(state, w.Id), false
+		return WidgetStringValue(state, widget.Id()), false
 	}
 }
 
@@ -434,11 +449,9 @@ func (m WidgetManager) Repaint(w Widget) {
 	if m.repaintSet == nil {
 		return
 	}
-	b := w.Base()
 	pr := PrIf(debRepaint)
-	id := b.Id
-	pr("Repaint:", id)
-	if m.repaintSet.Add(id) {
+	pr("Repaint:", w)
+	if m.repaintSet.Add(w.Id()) {
 		pr("...adding to set")
 	}
 }

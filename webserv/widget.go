@@ -1,15 +1,26 @@
 package webserv
 
 import (
+	"fmt"
 	. "github.com/jpsember/golang-base/base"
 )
 
 // The interface that all widgets must support
 type Widget interface {
-	Base() BaseWidget
+	Id() string
+	Listener() WidgetListener
+	SetListener(WidgetListener)
+
+	Enabled() bool
 	RenderTo(m MarkupBuilder, state JSMap)
 	Children() *Array[Widget]
 	AddChild(c Widget, manager WidgetManager)
+	ClearChildren()
+
+	SetStaticContent(content any)
+	StaticContent() any
+
+	fmt.Stringer
 }
 
 // This general type of listener can serve as a validator as well
@@ -31,9 +42,14 @@ const (
 	SizeHuge
 )
 
-func WidgetId(widget Widget) string {
-	return widget.Base().Id
-}
+type WidgetAlign int
+
+const (
+	AlignDefault WidgetAlign = iota
+	AlignCenter
+	AlignLeft
+	AlignRight
+)
 
 func WidgetErrorCount(root Widget, state JSMap) int {
 	count := 0
@@ -41,7 +57,7 @@ func WidgetErrorCount(root Widget, state JSMap) int {
 }
 
 func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
-	problemId := WidgetIdWithProblem(w.Base().Id)
+	problemId := WidgetIdWithProblem(w.Id())
 	if state.OptString(problemId, "") != "" {
 		count++
 	}

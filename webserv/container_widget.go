@@ -36,20 +36,32 @@ func NewContainerWidget(id string) ContainerWidget {
 		cells:    NewArray[GridCell](),
 		columns:  12,
 	}
-	w.Id = id
+	w.BaseId = id
 	return &w
 }
+
+func (w ContainerWidget) String() string {
+	return "<" + w.BaseId + " ContainerWidget>"
+}
+
 func (w ContainerWidget) Children() *Array[Widget] {
 	return w.children
+}
+
+func (w ContainerWidget) ClearChildren() {
+	w.children.Clear()
+	w.cells.Clear()
+	// Reset the columns to the default (12)
+	w.columns = 12
 }
 
 func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	w.children.Add(c)
 	pr := PrIf(false)
-	pr("adding widget to container:", INDENT, w)
+	pr(VERT_SP, "ContainerWidget", w.BaseId, "adding child", c.Id(), "to container", w.BaseId, "columns:", w.columns)
 	cols := w.columns
 	if cols == 0 {
-		BadState("no pending columns for widget:", WidgetId(c))
+		BadState("no pending columns for widget:", c.Id())
 	}
 	cell := GridCell{
 		Width: cols,
@@ -62,6 +74,7 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 		cell.Location = IPointWith(0, cell.Location.Y+1)
 		Todo("!add support for cell heights > 1")
 	}
+	pr("added cell, now:", w.cells)
 	w.cells.Add(cell)
 }
 
@@ -70,9 +83,10 @@ func (w ContainerWidget) SetColumns(columns int) {
 }
 
 func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
+	CheckState(w.cells.Size() == w.children.Size())
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
-	m.Comments(`ContainerWidget`, w.IdSummary()).OpenTag(`div id='` + w.Id + `'`)
+	m.Comments(`ContainerWidget`, w.IdSummary()).OpenTag(`div id='` + w.BaseId + `'`)
 	if w.Visible() {
 		prevPoint := IPointWith(0, -1)
 		for index, child := range w.children.Array() {
@@ -86,10 +100,9 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 				prevPoint = IPointWith(0, cell.Location.Y)
 			}
 
-			b := child.Base()
 			s := `div class="col-sm-` + IntToString(cell.Width) + `"`
 			if WidgetDebugRenderingFlag {
-				s += ` style="background-color:` + DebugColor(b.IdHashcode()) + `;`
+				s += ` style="background-color:` + DebugColorForString(child.Id()) + `;`
 				s += `border-style:double;`
 				s += `"`
 			}
@@ -97,11 +110,12 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			if WidgetDebugRenderingFlag {
 				// Render a div that contains some information
 				{
-					m.A(`<div id='`, w.Id, `'`, ` style="font-size:50%; font-family:monospace;">`)
+					m.A(`<div id='`, w.BaseId, `'`, ` style="font-size:50%; font-family:monospace;">`)
 				}
 
-				if b.Id[0] != '.' {
-					m.A(`Id:`, b.Id, ` `)
+				id := child.Id()
+				if id[0] != '.' /* || Alert("Including anon ids" )*/ {
+					m.A(`Id:`, id, ` `)
 				}
 				m.A(`Cols:`, cell.Width, ` `)
 				{

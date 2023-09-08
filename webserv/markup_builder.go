@@ -57,8 +57,7 @@ func (b MarkupBuilder) DoOutdent() MarkupBuilder {
 }
 
 func (b MarkupBuilder) RenderInvisible(w Widget) MarkupBuilder {
-	base := w.Base()
-	b.A(`<div id='`, base.Id, `'></div>`)
+	b.A(`<div id='`, w.Id(), `'></div>`)
 	b.Cr()
 	return b
 }
@@ -242,7 +241,7 @@ func (b MarkupBuilder) VerifyEnd(expectedStackSize int, widget Widget) {
 	s := b.tagStack.Size()
 	if s != expectedStackSize {
 		BadState("<1tag stack size", s, "!=", expectedStackSize, INDENT,
-			"after widget:", WidgetId(widget), Info(widget))
+			"after widget:", widget.Id(), Info(widget))
 	}
 }
 
