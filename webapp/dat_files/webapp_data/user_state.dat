@@ -1,4 +1,4 @@
 enum {
-    userstate_waiting_activation,
-    userstate_active,
+    user_state_waiting_activation,
+    user_state_active,
 }

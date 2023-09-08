@@ -110,7 +110,7 @@ func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 	} else if !UserNameValidatorRegExp.MatchString(userName) {
 		err = ErrorUserNameIllegalCharacters
 	}
-	err, validatedName = replaceWithTestInput(err, validatedName, "a", "joeuser42")
+	err, validatedName = replaceWithTestInput(err, validatedName, "a", "donor1")
 	return validatedName, err
 }
 
@@ -220,4 +220,9 @@ func InferContentTypeFromBlob(blob Blob) string {
 		result = "application/octet-stream"
 	}
 	return result
+}
+
+func RandomEmailAddress(r JSRand) string {
+	r = NullToRand(r)
+	return RandomWord(r) + "@" + RandomWord(r) + ".net"
 }

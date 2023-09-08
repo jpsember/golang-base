@@ -99,11 +99,11 @@ func newWebCache() WebCache {
 		IdMap:   make(map[int]blobData),
 		MaxSize: 1000,
 	}
-	if Alert("Using small cache size") {
+	if false && Alert("Using small cache size") {
 		t.MaxSize = 20
 	}
 	t.SetName("SharedWebCache")
-	t.AlertVerbose()
+	//t.AlertVerbose()
 	return t
 }
 

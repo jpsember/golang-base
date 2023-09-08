@@ -110,17 +110,17 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		return
 	}
 	if AutoActivateUser {
-		if userData.State() == webapp_data.UserstateWaitingActivation {
+		if userData.State() == webapp_data.UserStateWaitingActivation {
 			Alert("Activating user automatically (without email verification)")
-			userData = userData.ToBuilder().SetState(webapp_data.UserstateActive).Build()
+			userData = userData.ToBuilder().SetState(webapp_data.UserStateActive).Build()
 			webapp_data.UpdateUser(userData)
 		}
 	}
 	errMsg := ""
 	switch userData.State() {
-	case webapp_data.UserstateActive:
+	case webapp_data.UserStateActive:
 		// This is ok.
-	case webapp_data.UserstateWaitingActivation:
+	case webapp_data.UserStateWaitingActivation:
 		errMsg = "This user has not been activated yet"
 	default:
 		errMsg = "This user is in an unsupported state"
@@ -132,11 +132,10 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		return
 	}
 
-	if !TryRegisteringUserAsLoggedIn(userId, true) {
+	if !TryRegisteringUserAsLoggedIn(sess, user, true) {
 		sess.SetWidgetIdProblem(id_user_name, "Unable to log in at this time")
 		return
 	}
-
 	sp := NewAnimalFeedPage(sess, p.parentWidget)
 	sp.Generate()
 }

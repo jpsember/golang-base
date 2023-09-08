@@ -2,6 +2,7 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"net/http"
 	"sync"
 )
@@ -15,17 +16,20 @@ func IsUserLoggedIn(userId int) bool {
 	return loggedInUsersSet.Contains(userId)
 }
 
-func TryRegisteringUserAsLoggedIn(userId int, loggedInState bool) bool {
+func TryRegisteringUserAsLoggedIn(sess Session, user webapp_data.User, loggedInState bool) bool {
 	loggedInUsersSetLock.Lock()
 	defer loggedInUsersSetLock.Unlock()
 
+	userId := user.Id()
 	currentState := loggedInUsersSet.Contains(userId)
 	changed := currentState != loggedInState
 	if changed {
 		if loggedInState {
 			loggedInUsersSet.Add(userId)
+			sess.AppData = user
 		} else {
 			loggedInUsersSet.Remove(userId)
+			sess.AppData = nil
 		}
 	}
 	return changed

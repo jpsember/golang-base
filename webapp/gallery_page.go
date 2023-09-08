@@ -99,7 +99,7 @@ func zebraListener(s Session, widget Widget) {
 
 	s.State.Put(alertWidget.BaseId,
 		strings.TrimSpace(newVal+" "+
-			RandomText(myRand.Rand(), 55, false)))
+			RandomText(myRand, 55, false)))
 	s.WidgetManager().Repaint(alertWidget)
 }
 

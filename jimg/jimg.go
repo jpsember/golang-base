@@ -333,3 +333,8 @@ func (ji JImage) SetTransparentPurple() {
 		}
 	}
 }
+
+func (ji JImage) ScaleToSize(targetSize IPoint) JImage {
+	_, targetRect := FitRectToRect(ji.Size(), targetSize, 1.0, 0, -.5)
+	return ji.ScaledToRect(targetSize, targetRect)
+}

@@ -36,7 +36,7 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AnimalOper) Perform(app *App) {
-	//ClearAlertHistory()
+	ClearAlertHistory()
 
 	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 
@@ -51,10 +51,10 @@ func (oper AnimalOper) Perform(app *App) {
 		Halt()
 	}
 	if false && Alert("creating a number of users") {
-		mr := NewJSRand().SetSeed(1965).Rand()
+		j := NewJSRand().SetSeed(1965)
 		for i := 0; i < 30; i++ {
 			u := NewUser()
-			u.SetName(RandomText(mr, 3, false))
+			u.SetName(RandomText(j, 3, false))
 			Pr("random name:", u.Name())
 			Pr("i:", i, "attempting to create user with name:", u.Name())
 			result, err := CreateUserWithName(u)
@@ -70,6 +70,11 @@ func (oper AnimalOper) Perform(app *App) {
 		SleepMs(2000)
 	}
 
+	if false && Alert("creating some users") {
+		GenerateRandomUsers()
+		SleepMs(2000)
+		Halt()
+	}
 	if false && Alert("creating a number of animals") {
 		GenerateRandomAnimals()
 		SleepMs(2000)
@@ -128,6 +133,8 @@ func (oper AnimalOper) Perform(app *App) {
 		Halt("done experiment")
 	}
 
+	PopulateDatabase()
+
 	oper.sessionManager = BuildSessionMap()
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
@@ -181,12 +188,11 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	sess := DetermineSession(oper.sessionManager, w, req, true)
 	if sess.AppData == nil {
-		oper.AssignUserToSession(sess)
+		AssignUserToSession(sess)
 		oper.constructPageWidget(sess)
 
 		user, ok := sess.AppData.(User)
 		CheckState(ok, "no User found in sess AppData:", INDENT, sess.AppData)
-		Todo("!have convention of prefixing enums with e.g. 'UserState_'")
 		CheckState(
 			user.Id() == 0)
 		NewLandingPage(sess, sess.PageWidget).Generate()
@@ -282,6 +288,17 @@ func (oper AnimalOper) constructPageWidget(sess Session) {
 }
 
 // A new session was created; assign an 'unknown' user to it
-func (oper AnimalOper) AssignUserToSession(sess Session) {
+func AssignUserToSession(sess Session) {
 	sess.AppData = NewUser().Build()
+}
+
+func SessionUser(sess Session) User {
+	user, ok := sess.AppData.(User)
+	if !ok {
+		BadState("no User found in sess AppData:", INDENT, sess.AppData)
+	}
+	if user.Id() == 0 {
+		BadState("session user has id zero")
+	}
+	return user
 }
