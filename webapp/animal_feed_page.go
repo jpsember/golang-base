@@ -7,16 +7,14 @@ import (
 )
 
 type AnimalFeedPageStruct struct {
-	sess         Session
-	parentWidget Widget
+	BasicPage
 }
 
 type AnimalFeedPage = *AnimalFeedPageStruct
 
 func NewAnimalFeedPage(sess Session, parentWidget Widget) AnimalFeedPage {
 	t := &AnimalFeedPageStruct{
-		sess:         sess,
-		parentWidget: parentWidget,
+		NewBasicPage(sess, parentWidget),
 	}
 	return t
 }
@@ -24,10 +22,9 @@ func NewAnimalFeedPage(sess Session, parentWidget Widget) AnimalFeedPage {
 func (p AnimalFeedPage) Generate() {
 	//SetWidgetDebugRendering()
 
-	m := p.sess.WidgetManager()
-	m.With(p.parentWidget)
-
-	AddDevPageLabel(p.sess, "AnimalFeedPage")
+	m := p.session.WidgetManager()
+	m.With(p.parentPage)
+	AddDevPageLabel(p.session, "AnimalFeedPage")
 
 	// If no animals found, add some
 	if !HasAnimals() {

@@ -6,16 +6,14 @@ import (
 )
 
 type ManagerPageStruct struct {
-	sess         Session
-	parentWidget Widget
+	BasicPage
 }
 
 type ManagerPage = *ManagerPageStruct
 
 func NewManagerPage(sess Session, parentWidget Widget) ManagerPage {
 	t := &ManagerPageStruct{
-		sess:         sess,
-		parentWidget: parentWidget,
+		NewBasicPage(sess, parentWidget),
 	}
 	return t
 }
@@ -23,10 +21,10 @@ func NewManagerPage(sess Session, parentWidget Widget) ManagerPage {
 func (p ManagerPage) Generate() {
 	SetWidgetDebugRendering()
 
-	m := p.sess.WidgetManager()
-	m.With(p.parentWidget)
+	m := p.session.WidgetManager()
+	m.With(p.parentPage)
 
-	AddDevPageLabel(p.sess, "ManagerPage")
+	AddDevPageLabel(p.session, "ManagerPage")
 
 	// Row of buttons at top.
 	m.Open()
@@ -43,6 +41,5 @@ func (p ManagerPage) Generate() {
 }
 
 func (p ManagerPage) newAnimalListener(sess Session, widget Widget) {
-	sp := NewCreateAnimalPage(sess, p.parentWidget)
-	sp.Generate()
+	NewCreateAnimalPage(sess, p.parentPage).Generate()
 }

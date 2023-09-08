@@ -6,17 +6,14 @@ import (
 )
 
 type CreateAnimalPageStruct struct {
-	sess         Session
-	parentWidget Widget
+	BasicPage
 }
 
 type CreateAnimalPage = *CreateAnimalPageStruct
 
-func NewCreateAnimalPage(sess Session, parentWidget Widget) CreateAnimalPage {
-
+func NewCreateAnimalPage(sess Session, parentWidget Widget) AbstractPage {
 	t := &CreateAnimalPageStruct{
-		sess:         sess,
-		parentWidget: parentWidget,
+		NewBasicPage(sess, parentWidget),
 	}
 	return t
 }
@@ -24,10 +21,10 @@ func NewCreateAnimalPage(sess Session, parentWidget Widget) CreateAnimalPage {
 func (p CreateAnimalPage) Generate() {
 	SetWidgetDebugRendering()
 
-	m := p.sess.WidgetManager()
-	m.With(p.parentWidget)
+	m := p.session.WidgetManager()
+	m.With(p.parentPage)
 
-	AddDevPageLabel(p.sess, "CreateAnimalPage")
+	AddDevPageLabel(p.session, "CreateAnimalPage")
 
 	Todo("")
 	//// Row of buttons at top.

@@ -7,32 +7,26 @@ import (
 )
 
 type LandingPageStruct struct {
-	sess         Session
-	parentWidget Widget
+	BasicPage
 }
 
 type LandingPage = *LandingPageStruct
 
 func NewLandingPage(sess Session, parentWidget Widget) LandingPage {
 	t := &LandingPageStruct{
-		sess:         sess,
-		parentWidget: parentWidget,
+		NewBasicPage(sess, parentWidget),
 	}
 	return t
 }
 
 func (p LandingPage) Generate() {
-	s := p.sess.State
+	s := p.session.State
 	s.DeleteEach(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
 
-	if false && Alert("!prefilling user name and password") {
-		s.Put(id_user_name, "Bartholemew").Put(id_user_pwd, "01234password")
-	}
+	m := p.session.WidgetManager()
+	m.With(p.parentPage)
 
-	m := p.sess.WidgetManager()
-	m.With(p.parentWidget)
-
-	AddDevPageLabel(p.sess, "LandingPage")
+	AddDevPageLabel(p.session, "LandingPage")
 
 	m.Label("gallery").Align(AlignRight).Size(SizeTiny).Listener(p.galleryListener).AddButton()
 	m.Col(6)
@@ -84,7 +78,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 	sess.SetWidgetIdProblem(id_user_name, err1)
 	sess.SetWidgetIdProblem(id_user_pwd, err2)
 
-	errcount := WidgetErrorCount(p.parentWidget, sess.State)
+	errcount := WidgetErrorCount(p.parentPage, sess.State)
 	if errcount != 0 {
 		return
 	}
@@ -139,24 +133,24 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 
 	switch user.UserClass() {
 	case webapp_data.UserClassDonor:
-		sp := NewAnimalFeedPage(sess, p.parentWidget)
+		sp := NewAnimalFeedPage(sess, p.parentPage)
 		sp.Generate()
 		break
 	case webapp_data.UserClassManager:
 		Todo("?Maybe make AnimalFeed, Manager pages implement a common interface")
-		sp := NewManagerPage(sess, p.parentWidget)
+		sp := NewManagerPage(sess, p.parentPage)
 		sp.Generate()
 	}
 
 }
 
 func (p LandingPage) signUpListener(s Session, widget Widget) {
-	sp := NewSignUpPage(s, p.parentWidget)
+	sp := NewSignUpPage(s, p.parentPage)
 	sp.Generate()
 }
 
 func (p LandingPage) galleryListener(sess Session, widget Widget) {
-	NewGalleryPage(sess, p.parentWidget).Generate()
+	NewGalleryPage(sess, p.parentPage).Generate()
 }
 
 func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {

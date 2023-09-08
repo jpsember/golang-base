@@ -7,16 +7,14 @@ import (
 )
 
 type GalleryPageStruct struct {
-	sess         Session
-	parentWidget Widget
+	BasicPage
 }
 
 type GalleryPage = *GalleryPageStruct
 
 func NewGalleryPage(sess Session, parentWidget Widget) GalleryPage {
 	t := &GalleryPageStruct{
-		sess:         sess,
-		parentWidget: parentWidget,
+		NewBasicPage(sess, parentWidget),
 	}
 	return t
 }
@@ -25,10 +23,9 @@ func (p GalleryPage) Generate() {
 
 	SetWidgetDebugRendering()
 
-	m := p.sess.WidgetManager()
-	m.With(p.parentWidget)
-
-	AddDevPageLabel(p.sess, "GalleryPage")
+	m := p.session.WidgetManager()
+	m.With(p.parentPage)
+	AddDevPageLabel(p.session, "GalleryPage")
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
