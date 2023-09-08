@@ -43,13 +43,6 @@ func (p ManagerPage) Generate() {
 }
 
 func (p ManagerPage) newAnimalListener(sess Session, widget Widget) {
-
-	if Todo("CreateAnimalPage") {
-
-	} else {
-		//
-		//sp := CreateAnimalPage(sess, p.parentWidget)
-		//sp.Generate()
-	}
-
+	sp := NewCreateAnimalPage(sess, p.parentWidget)
+	sp.Generate()
 }
