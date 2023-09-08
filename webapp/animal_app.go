@@ -224,7 +224,6 @@ func HandleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) 
 	}
 
 	err := WriteResponse(w, InferContentTypeFromBlob(blob), blob.Data())
-	Todo("Have a content_type field in blob")
 	Todo("?Detect someone requesting huge numbers of items that don't exist?")
 	return err
 }

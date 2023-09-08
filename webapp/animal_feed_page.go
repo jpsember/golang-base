@@ -22,7 +22,7 @@ func NewAnimalFeedPage(sess Session, parentWidget Widget) AnimalFeedPage {
 }
 
 func (p AnimalFeedPage) Generate() {
-	SetWidgetDebugRendering()
+	//SetWidgetDebugRendering()
 
 	m := p.sess.WidgetManager()
 	m.With(p.parentWidget)

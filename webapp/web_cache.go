@@ -33,6 +33,7 @@ func (c WebCache) GetBlobWithId(id int) blobData {
 	c.lock.RUnlock()
 
 	if data == nil {
+		c.Log("GetBlobWithId", id, " not found; reading into cache")
 		blob, err := ReadBlob(id)
 		logError(err)
 		data = blob
@@ -40,7 +41,6 @@ func (c WebCache) GetBlobWithId(id int) blobData {
 			c.add(blob)
 		}
 	}
-	c.Log("GetBlobWithId", id, "=>", data.Name())
 	return data
 }
 
@@ -50,6 +50,7 @@ func (c WebCache) GetBlobWithName(name blobName) blobData {
 	c.lock.RUnlock()
 
 	if data == nil {
+		c.Log("GetBlobWithName", name, " not found; reading into cache")
 		blob, err := ReadBlobWithName(name)
 		logError(err)
 		data = blob
@@ -57,7 +58,6 @@ func (c WebCache) GetBlobWithName(name blobName) blobData {
 			c.add(blob)
 		}
 	}
-	c.Log("GetBlobWithName", name, "=>", data.Id())
 	return data
 }
 
@@ -74,7 +74,7 @@ func (c WebCache) add(blob blobData) {
 // This should only be performed while we have the write lock.
 func (c WebCache) trim() {
 	currentSize := len(c.IdMap)
-	if currentSize < c.MaxSize {
+	if currentSize <= c.MaxSize {
 		return
 	}
 	c.Log("Trimming, size:", currentSize, "exceeds max:", c.MaxSize)
@@ -84,11 +84,11 @@ func (c WebCache) trim() {
 	newNameMap := make(map[blobName]blobData)
 	for i, b := range oldBlobs {
 		if (i & 1) == 0 {
-			Pr("attempting to store in id map:", TrimBlob(b))
 			newIdMap[b.Id()] = b
 			newNameMap[b.Name()] = b
 		}
 	}
+	c.Log("...new size:", len(newIdMap))
 	c.IdMap = newIdMap
 	c.NameMap = newNameMap
 }
@@ -100,7 +100,7 @@ func newWebCache() WebCache {
 		MaxSize: 1000,
 	}
 	if Alert("Using small cache size") {
-		t.MaxSize = 8
+		t.MaxSize = 20
 	}
 	t.SetName("SharedWebCache")
 	t.AlertVerbose()
