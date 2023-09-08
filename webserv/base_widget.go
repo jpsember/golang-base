@@ -46,7 +46,6 @@ func (w BaseWidget) Align() WidgetAlign {
 }
 
 func (w BaseWidget) Size() WidgetSize {
-	Todo("we can directly access embedded structs' fields (if they are public)")
 	return w.size
 }
 

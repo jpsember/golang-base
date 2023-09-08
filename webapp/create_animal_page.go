@@ -1,7 +1,6 @@
 package webapp
 
 import (
-	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webserv"
 )
 
@@ -15,18 +14,14 @@ func NewCreateAnimalPage(sess Session, parentWidget Widget) AbstractPage {
 	t := &CreateAnimalPageStruct{
 		NewBasicPage(sess, parentWidget),
 	}
+	t.devLabel = "create_animal_page"
 	return t
 }
 
 func (p CreateAnimalPage) Generate() {
 	SetWidgetDebugRendering()
-
-	m := p.session.WidgetManager()
-	m.With(p.parentPage)
-
-	AddDevPageLabel(p.session, "CreateAnimalPage")
-
-	Todo("")
+	p.GenerateHeader()
+	
 	//// Row of buttons at top.
 	//m.Open()
 	//{

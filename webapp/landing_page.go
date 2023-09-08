@@ -16,6 +16,7 @@ func NewLandingPage(sess Session, parentWidget Widget) LandingPage {
 	t := &LandingPageStruct{
 		NewBasicPage(sess, parentWidget),
 	}
+	t.devLabel = "landing_page"
 	return t
 }
 
@@ -23,10 +24,7 @@ func (p LandingPage) Generate() {
 	s := p.session.State
 	s.DeleteEach(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
 
-	m := p.session.WidgetManager()
-	m.With(p.parentPage)
-
-	AddDevPageLabel(p.session, "LandingPage")
+	m := p.GenerateHeader()
 
 	m.Label("gallery").Align(AlignRight).Size(SizeTiny).Listener(p.galleryListener).AddButton()
 	m.Col(6)
@@ -145,8 +143,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 }
 
 func (p LandingPage) signUpListener(s Session, widget Widget) {
-	sp := NewSignUpPage(s, p.parentPage)
-	sp.Generate()
+	NewSignUpPage(s, widget).Generate()
 }
 
 func (p LandingPage) galleryListener(sess Session, widget Widget) {

@@ -16,15 +16,12 @@ func NewAnimalFeedPage(sess Session, parentWidget Widget) AnimalFeedPage {
 	t := &AnimalFeedPageStruct{
 		NewBasicPage(sess, parentWidget),
 	}
+	t.devLabel = "animal_feed_page"
 	return t
 }
 
 func (p AnimalFeedPage) Generate() {
-	//SetWidgetDebugRendering()
-
-	m := p.session.WidgetManager()
-	m.With(p.parentPage)
-	AddDevPageLabel(p.session, "AnimalFeedPage")
+	m := p.GenerateHeader()
 
 	// If no animals found, add some
 	if !HasAnimals() {

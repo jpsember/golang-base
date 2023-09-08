@@ -15,16 +15,12 @@ func NewManagerPage(sess Session, parentWidget Widget) ManagerPage {
 	t := &ManagerPageStruct{
 		NewBasicPage(sess, parentWidget),
 	}
+	t.devLabel = "manager_page"
 	return t
 }
 
 func (p ManagerPage) Generate() {
-	SetWidgetDebugRendering()
-
-	m := p.session.WidgetManager()
-	m.With(p.parentPage)
-
-	AddDevPageLabel(p.session, "ManagerPage")
+	m := p.GenerateHeader()
 
 	// Row of buttons at top.
 	m.Open()

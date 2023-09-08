@@ -20,18 +20,18 @@ type SignUpPageStruct struct {
 
 type SignUpPage = *SignUpPageStruct
 
-func NewSignUpPage(sess Session, parentWidget Widget) SignUpPage {
+func NewSignUpPage(session Session, parentPage Widget) SignUpPage {
 	t := &SignUpPageStruct{
-		NewBasicPage(sess, parentWidget),
+		NewBasicPage(session, parentPage),
 	}
+	t.devLabel = "signup_page"
 	return t
 }
 
 func (p SignUpPage) Generate() {
 
 	p.session.DeleteStateKeys(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
-	m := p.session.WidgetManager()
-	m.With(p.parentPage)
+	m := p.GenerateHeader()
 
 	m.Label("Sign Up Page").Size(SizeLarge).AddHeading()
 	m.Col(6).Open()

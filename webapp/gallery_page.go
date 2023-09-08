@@ -16,16 +16,12 @@ func NewGalleryPage(sess Session, parentWidget Widget) GalleryPage {
 	t := &GalleryPageStruct{
 		NewBasicPage(sess, parentWidget),
 	}
+	t.devLabel = "gallery_page"
 	return t
 }
 
 func (p GalleryPage) Generate() {
-
-	SetWidgetDebugRendering()
-
-	m := p.session.WidgetManager()
-	m.With(p.parentPage)
-	AddDevPageLabel(p.session, "GalleryPage")
+	m := p.GenerateHeader()
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
