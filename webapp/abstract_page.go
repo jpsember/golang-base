@@ -29,7 +29,7 @@ func NewBasicPage(session Session, parentPage Widget) BasicPage {
 // Some common boilerplate that is typically some of the first code that
 // Generate() would otherwise execute.
 func (p BasicPage) GenerateHeader() WidgetManager {
-	SetWidgetDebugRendering()
+	//SetWidgetDebugRendering()
 	m := p.session.WidgetManager()
 	m.With(p.parentPage)
 	if p.devLabel != "" {
