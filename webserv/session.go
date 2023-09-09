@@ -125,15 +125,37 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 
 func (s Session) HandleUploadRequest(w http.ResponseWriter, req *http.Request, widgetId string) {
 
+	defer s.discardRequest()
+	Todo("!lots of duplicated code here with HandleAjaxRequest")
+	s.Mutex.Lock()
+	s.responseWriter = w
+	s.request = req
+	s.requestProblem = ""
+
+	s.WidgetManager().clearRepaintSet()
+
+	s.processUpload(w, req, widgetId)
+
+	// Send the usual ajax response
+
+	s.sendAjaxResponse()
+
+}
+
+func (s Session) processUpload(w http.ResponseWriter, req *http.Request, widgetId string) {
+
 	if req.Method != "POST" {
-		return Error("upload request was not POST")
+		s.SetRequestProblem("upload request was not POST")
+		return
 	}
 
 	// From https://freshman.tech/file-upload-golang/
 	const MAX_UPLOAD_SIZE = 10_000_000
 	req.Body = http.MaxBytesReader(w, req.Body, MAX_UPLOAD_SIZE)
 	if err := req.ParseMultipartForm(MAX_UPLOAD_SIZE); err != nil {
-		return Error("The uploaded file is too big. Please choose an file that's less than 10MB in size")
+		Todo("this should be returned to the user as a widget error msg")
+		s.SetRequestProblem("The uploaded file is too big. Please choose an file that's less than 10MB in size")
+		return
 	}
 
 	// The argument to FormFile must match the name attribute
@@ -141,7 +163,8 @@ func (s Session) HandleUploadRequest(w http.ResponseWriter, req *http.Request, w
 
 	file, _ /*fileHeader*/, err := req.FormFile(widgetId + ".input")
 	if err != nil {
-		return Error("trouble getting request FormFile:", err)
+		s.SetRequestProblem("trouble getting request FormFile:", err)
+		return
 	}
 
 	defer file.Close()
@@ -149,7 +172,8 @@ func (s Session) HandleUploadRequest(w http.ResponseWriter, req *http.Request, w
 	var buf bytes.Buffer
 	length, err1 := io.Copy(io.Writer(&buf), file)
 	if err1 != nil {
-		return Error("failed to read uploaded file into byte array:", err1)
+		s.SetRequestProblem("failed to read uploaded file into byte array:", err1)
+		return
 	}
 	Pr("bytes buffer length:", len(buf.Bytes()), "read:", length)
 
@@ -160,22 +184,19 @@ func (s Session) HandleUploadRequest(w http.ResponseWriter, req *http.Request, w
 	//
 	Todo("!Must ensure thread safety while working with the user session")
 
-	widget := sess.WidgetManager().Opt(widgetId)
+	widget := s.WidgetManager().Opt(widgetId)
 	if widget == nil {
-		return Error("handling upload request, can't find widget:", widgetId)
+		s.SetRequestProblem("handling upload request, can't find widget:", widgetId)
+		return
 	}
 	fileUploadWidget, ok := widget.(FileUpload)
 	if !ok {
-		return Error("handling upload request, widget isn't expected type:", widgetId)
+		s.SetRequestProblem("handling upload request, widget isn't expected type:", widgetId)
+		return
 	}
 	fileUploadWidget.SetReceivedBytes(result)
 	defer fileUploadWidget.SetReceivedBytes(nil)
-	fileUploadWidget.Listener()(sess, fileUploadWidget)
-
-	// Send the usual ajax response
-
-	sess.sendAjaxResponse()
-	return nil
+	fileUploadWidget.Listener()(s, fileUploadWidget)
 }
 
 // Serve a request for a resource

@@ -1,12 +1,10 @@
 package webapp
 
 import (
-	"bytes"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
-	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -142,6 +140,8 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 		var text string
 		var flag bool
 
+		Todo("Some of this should be handled by our webserv library")
+
 		pr("url path:", path)
 		if path == "/ajax" {
 			sess.HandleAjaxRequest(w, req)
@@ -152,7 +152,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 		} else if text, flag = extractPrefix(path, `/upload/`); flag {
 			Pr("handling upload request with:", text)
 			sess.HandleUploadRequest(w, req, text)
-			err = HandleUploadRequest(sess, w, req, text)
+			//err = HandleUploadRequest(sess, w, req, text)
 		} else {
 			pr("handling resource request for:", path)
 			err = sess.HandleResourceRequest(w, req, oper.resources)
@@ -184,63 +184,6 @@ func HandleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) 
 	err := WriteResponse(w, InferContentTypeFromBlob(blob), blob.Data())
 	Todo("?Detect someone requesting huge numbers of items that don't exist?")
 	return err
-}
-
-func HandleUploadRequest(sess Session, w http.ResponseWriter, req *http.Request, widgetId string) error {
-
-	Todo("upload request should be handled by webserver package, with some hooks...")
-
-	if req.Method != "POST" {
-		return Error("upload request was not POST")
-	}
-
-	// From https://freshman.tech/file-upload-golang/
-	const MAX_UPLOAD_SIZE = 10_000_000
-	req.Body = http.MaxBytesReader(w, req.Body, MAX_UPLOAD_SIZE)
-	if err := req.ParseMultipartForm(MAX_UPLOAD_SIZE); err != nil {
-		return Error("The uploaded file is too big. Please choose an file that's less than 10MB in size")
-	}
-
-	// The argument to FormFile must match the name attribute
-	// of the file input on the frontend; not sure what that is about
-
-	file, _ /*fileHeader*/, err := req.FormFile(widgetId + ".input")
-	if err != nil {
-		return Error("trouble getting request FormFile:", err)
-	}
-
-	defer file.Close()
-
-	var buf bytes.Buffer
-	length, err1 := io.Copy(io.Writer(&buf), file)
-	if err1 != nil {
-		return Error("failed to read uploaded file into byte array:", err1)
-	}
-	Pr("bytes buffer length:", len(buf.Bytes()), "read:", length)
-
-	CheckArg(len(buf.Bytes()) == int(length))
-	result := buf.Bytes()
-
-	// Note, we don't need to know the widget until this point
-	//
-	Todo("!Must ensure thread safety while working with the user session")
-
-	widget := sess.WidgetManager().Opt(widgetId)
-	if widget == nil {
-		return Error("handling upload request, can't find widget:", widgetId)
-	}
-	fileUploadWidget, ok := widget.(FileUpload)
-	if !ok {
-		return Error("handling upload request, widget isn't expected type:", widgetId)
-	}
-	fileUploadWidget.SetReceivedBytes(result)
-	defer fileUploadWidget.SetReceivedBytes(nil)
-	fileUploadWidget.Listener()(sess, fileUploadWidget)
-
-	// Send the usual ajax response
-
-	sess.sendAjaxResponse()
-	return nil
 }
 
 func (oper AnimalOper) processFullPageRequest(sess Session, w http.ResponseWriter, req *http.Request) {
