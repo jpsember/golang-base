@@ -127,7 +127,7 @@ func auxValidateEmail(s Session, widget Widget, value string, flag ValidateFlag)
 }
 
 func (p SignUpPage) signUpListener(s Session, widget Widget) {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("state:", INDENT, s.State)
 
 	auxValidateUserName(s, getWidget(s, id_user_name), s.State.OptString(id_user_name, ""), 0)

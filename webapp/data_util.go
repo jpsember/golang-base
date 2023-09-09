@@ -245,3 +245,5 @@ func BlobSummary(blob Blob) JSMap {
 	r.Put("data", HexDumpWithASCII(ByteSlice(blob.Data(), 0, 16)))
 	return r
 }
+
+var AnimalPicSizeNormal = IPointWith(600, 800)

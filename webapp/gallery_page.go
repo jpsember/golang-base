@@ -2,6 +2,8 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/jimg"
+	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
 	"strings"
 )
@@ -20,12 +22,21 @@ func NewGalleryPage(sess Session, parentWidget Widget) GalleryPage {
 	return t
 }
 
+const sampleImageId = "sample_image"
+
 func (p GalleryPage) Generate() {
 	m := p.GenerateHeader()
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
 	m.Add(alertWidget)
+
+	m.Open()
+	m.Col(6)
+	m.Id("sample_upload").Label("Photo").Listener(p.uploadListener).AddFileUpload()
+	imgWidget := m.Id("sample_image").AddImage()
+	imgWidget.URLProvider = p.provideURL
+	m.Close()
 
 	m.Col(4)
 	m.Label("uniform delta").AddText()
@@ -119,4 +130,89 @@ func checkboxListener(s Session, widget Widget) {
 
 	s.State.Put(wid, newVal)
 	// Repainting isn't necessary, as the web page has already done this
+}
+
+func (p GalleryPage) uploadListener(s Session, widget Widget) {
+	pr := PrIf(true)
+
+	m := s.WidgetManager()
+
+	fileUploadWidget := widget.(FileUpload)
+
+	var jpeg []byte
+	var imageId int
+	var img jimg.JImage
+	var err error
+
+	problem := ""
+	for {
+		problem = "Decoding image"
+		if img, err = jimg.DecodeImage(fileUploadWidget.ReceivedBytes()); err != nil {
+			break
+		}
+		pr("decoded:", INDENT, img)
+
+		problem = "Converting to default type"
+		if img, err = img.AsDefaultType(); err != nil {
+			break
+		}
+		pr("converted to default type")
+
+		problem = "Problem with dimensions"
+		if Clamp(img.Size().X, 50, 3000) != img.Size().X || //
+			Clamp(img.Size().Y, 50, 3000) != img.Size().Y {
+			break
+		}
+
+		pr("dimensions ok")
+
+		img = img.ScaleToSize(IPointWith(400, 600))
+
+		problem = "Converting image"
+		if jpeg, err = img.ToJPEG(); err != nil {
+			break
+		}
+		pr("encoded as jpeg")
+
+		problem = "Storing image"
+
+		b := NewBlob()
+		b.SetData(jpeg)
+		AssignBlobName(b)
+		var created Blob
+		if created, err = CreateBlob(b); err != nil {
+			break
+		}
+		imageId = created.Id()
+		pr("created blob, id:", BlobSummary(created))
+		problem = ""
+		break
+	}
+	if problem != "" {
+		Pr("Problem with upload:", problem)
+		if err != nil {
+			Pr("...error was:", err)
+		}
+		s.SetWidgetProblem(widget, "Trouble uploading image: "+problem)
+	} else {
+		// Store the id of the blob in the image widget
+		s.State.Put(sampleImageId, imageId)
+		pr("stored image id into state:", INDENT, s.State)
+	}
+	m.RepaintIds(sampleImageId)
+}
+
+func (p GalleryPage) provideURL() string {
+	pr := PrIf(true)
+	url := ""
+	s := p.session
+	imageId := s.State.OptInt(sampleImageId, 0)
+
+	pr("provideURL, image id read from state:", imageId)
+
+	if imageId != 0 {
+		url = ReadImageIntoCache(imageId)
+		pr("read into cache, url:", url)
+	}
+	return url
 }

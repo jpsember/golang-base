@@ -25,7 +25,7 @@ type CreateAnimalPage = *CreateAnimalPageStruct
 
 func NewCreateAnimalPage(sess Session, parentWidget Widget) AbstractPage {
 	t := &CreateAnimalPageStruct{
-		NewBasicPage(sess, parentWidget),
+		BasicPage: NewBasicPage(sess, parentWidget),
 	}
 	t.devLabel = "create_animal_page"
 	return t
@@ -118,6 +118,8 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget Widget) {
 
 		pr("dimensions ok")
 
+		img = img.ScaleToSize(AnimalPicSizeNormal)
+
 		problem = "Converting image"
 		if jpeg, err = img.ToJPEG(); err != nil {
 			break
@@ -147,6 +149,9 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget Widget) {
 		}
 		s.SetWidgetProblem(widget, "Trouble uploading image: "+problem)
 	} else {
+		// Discard the old blob whose id we are now replacing
+		DiscardBlob(s.State.OptInt(id_animal_display_pic, 0))
+
 		// Store the id of the blob in the image widget
 		s.State.Put(id_animal_display_pic, imageId)
 		pr("stored image id into state:", INDENT, s.State)
@@ -156,7 +161,7 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget Widget) {
 }
 
 func (p CreateAnimalPage) provideURL() string {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	url := ""
 	s := p.session
 	imageId := s.State.OptInt(id_animal_display_pic, 0)
@@ -168,4 +173,10 @@ func (p CreateAnimalPage) provideURL() string {
 		pr("read into cache, url:", url)
 	}
 	return url
+}
+
+func DiscardBlob(id int) {
+	if id != 0 {
+		Todo("#50Discard blob id", id)
+	}
 }

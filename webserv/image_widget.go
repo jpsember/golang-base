@@ -21,7 +21,7 @@ func NewImageWidget(id string) ImageWidget {
 }
 
 func (w ImageWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("rendering:", w.Id())
 
 	if !w.Visible() {

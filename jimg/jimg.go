@@ -257,6 +257,7 @@ func (ji JImage) ToJPEG() ([]byte, error) {
 	return result, err
 }
 
+// Deprecated.  Use ScaledToSize, which uses our fit algorithm.
 func (ji JImage) ScaledTo(size IPoint) JImage {
 
 	var targetX, targetY int

@@ -306,7 +306,7 @@ func (s Session) processRepaintFlags(repaintSet StringSet, debugDepth int, w Wid
 
 const respKeyWidgetsToRefresh = "w"
 
-var debRepaint = true && Alert("debRepaint")
+var debRepaint = false && Alert("debRepaint")
 
 // Send Ajax response back to client.
 func (s Session) sendAjaxResponse() {
