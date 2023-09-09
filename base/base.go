@@ -58,6 +58,7 @@ func isNil(value any) bool {
 	return value == nil
 }
 
+// Deprecated.  This is not reliable as nil is not always equal to nil, due to a code smell in the go language.
 func CheckNotNil[T any](value T, message ...any) T {
 	if isNil(value) {
 		auxAbort(1, "Argument is nil", message...)
@@ -400,7 +401,9 @@ func JoinLists(list1 []any, list2 []any) []any {
 
 // Move this to some other package later
 func CopyOfBytes(array []byte) []byte {
-	CheckNotNil(array)
+	if array == nil {
+		BadArg("nil array")
+	}
 	result := make([]byte, len(array))
 	copy(result, array)
 	return result

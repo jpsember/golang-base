@@ -45,7 +45,7 @@ func CurrencyToString(amount Currency) string {
 	return result
 }
 
-func GenerateBlobId() BlobId {
+func GenerateBlobName() BlobId {
 	alph := "0123456789abcdef"
 	sb := strings.Builder{}
 	lock.Lock()

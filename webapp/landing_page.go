@@ -27,7 +27,7 @@ func (p LandingPage) Generate() {
 	m := p.GenerateHeader()
 
 	m.Open()
-	m.Id("sample_upload").Label("Photo").AddFileUpload()
+	m.Id("sample_upload").Label("Photo").Listener(p.sampleListener).AddFileUpload()
 	m.Close()
 
 	m.Label("gallery").Align(AlignRight).Size(SizeTiny).Listener(p.galleryListener).AddButton()
@@ -174,4 +174,7 @@ func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {
 		Todo("Send email")
 	}
 	sess.SetWidgetIdProblem(id_user_name, "An email has been sent with a link to change your password.")
+}
+
+func (p LandingPage) sampleListener(sess Session, widget Widget) {
 }

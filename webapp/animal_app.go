@@ -91,9 +91,11 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 }
 
+var jumped bool
+
 // A handler such as this must be thread safe!
 func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("handler, request:", req.RequestURI)
 
 	if false && Alert("!If full page requested, discarding sessions") {
@@ -113,9 +115,24 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 
 		user, ok := sess.AppData.(User)
 		CheckState(ok, "no User found in sess AppData:", INDENT, sess.AppData)
-		CheckState(
-			user.Id() == 0)
+		CheckState(user.Id() == 0)
+
 		NewLandingPage(sess, sess.PageWidget).Generate()
+
+		if !jumped && Alert("Jumping to new animal page") {
+			jumped = true
+			for {
+				user2, _ := ReadUserWithName("manager1")
+				if user2.Id() == 0 {
+					break
+				}
+				if !TryRegisteringUserAsLoggedIn(sess, user2, true) {
+					break
+				}
+				NewCreateAnimalPage(sess, sess.PageWidget).Generate()
+				break
+			}
+		}
 	}
 
 	url, err := url.Parse(req.RequestURI)
@@ -169,18 +186,9 @@ func HandleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) 
 }
 
 func HandleUploadRequest(sess Session, w http.ResponseWriter, req *http.Request, widgetId string) error {
-	Todo("!Must ensure thread safety while working with the user session")
 
 	if req.Method != "POST" {
 		return Error("upload request was not POST")
-	}
-	widget := sess.WidgetManager().Opt(widgetId)
-	if widget == nil {
-		return Error("handling upload request, can't find widget:", widgetId)
-	}
-	fileUploadWidget, ok := widget.(FileUpload)
-	if !ok {
-		return Error("handling upload request, widget isn't expected type:", widgetId)
 	}
 
 	// From https://freshman.tech/file-upload-golang/
@@ -191,36 +199,17 @@ func HandleUploadRequest(sess Session, w http.ResponseWriter, req *http.Request,
 	}
 
 	// The argument to FormFile must match the name attribute
-	// of the file input on the frontend
+	// of the file input on the frontend; not sure what that is about
 
-	file, _ /*fileHeader*/, err := req.FormFile("file")
+	file, _ /*fileHeader*/, err := req.FormFile(widgetId + ".input")
 	if err != nil {
 		return Error("trouble getting request FormFile:", err)
 	}
-	Todo("do something with fileHeader?")
 
 	defer file.Close()
 
-	//// Create the uploads folder if it doesn't
-	//// already exist
-	//err = os.MkdirAll("./uploads", os.ModePerm)
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//
-	//// Create a new file in the uploads directory
-	//dst, err := os.Create(fmt.Sprintf("./uploads/%d%s", time.Now().UnixNano(), filepath.Ext(fileHeader.Filename)))
-	//if err != nil {
-	//	http.Error(w, err.Error(), http.StatusInternalServerError)
-	//	return
-	//}
-	//
-	//defer dst.Close()
-
 	var buf bytes.Buffer
-	foo := io.Writer(&buf)
-	length, err1 := io.Copy(foo, file)
+	length, err1 := io.Copy(io.Writer(&buf), file)
 	if err1 != nil {
 		return Error("failed to read uploaded file into byte array:", err1)
 	}
@@ -228,7 +217,22 @@ func HandleUploadRequest(sess Session, w http.ResponseWriter, req *http.Request,
 
 	CheckArg(len(buf.Bytes()) == int(length))
 	result := buf.Bytes()
-	Todo("do something with result (length:", len(result), " and file upload widget", fileUploadWidget)
+
+	// Note, we don't need to know the widget until this point
+	//
+	Todo("!Must ensure thread safety while working with the user session")
+
+	widget := sess.WidgetManager().Opt(widgetId)
+	if widget == nil {
+		return Error("handling upload request, can't find widget:", widgetId)
+	}
+	fileUploadWidget, ok := widget.(FileUpload)
+	if !ok {
+		return Error("handling upload request, widget isn't expected type:", widgetId)
+	}
+	fileUploadWidget.SetReceivedBytes(result)
+	defer fileUploadWidget.SetReceivedBytes(nil)
+	fileUploadWidget.Listener()(sess, fileUploadWidget)
 	return nil
 }
 

@@ -1,7 +1,7 @@
 package webapp
 
 import (
-	_ "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webserv"
 )
 
@@ -23,6 +23,7 @@ func NewBasicPage(session Session, parentPage Widget) BasicPage {
 		session:    session,
 		parentPage: parentPage,
 	}
+	Todo("?Not sure structs are required for pages; session, parentpage could probably be found from widget manager")
 	return t
 }
 

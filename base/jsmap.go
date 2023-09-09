@@ -200,7 +200,6 @@ func (m JSMap) GetMap(key string) *JSMapStruct {
 }
 
 func (m JSMap) OptMap(key string) *JSMapStruct {
-	CheckNotNil(key, "nil key for OptMap")
 	var val = m.wrappedMap[key]
 	if val == nil {
 		return nil

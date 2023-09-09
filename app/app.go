@@ -197,9 +197,8 @@ func (a *App) auxStart() {
 	}
 
 	if a.operWithJsonArgs != nil {
-
 		a.operDataClassArgs = a.operWithJsonArgs.GetArguments()
-		CheckNotNil(a.operDataClassArgs, "No arguments returned by oper")
+		CheckArg(a.operDataClassArgs != nil, "No arguments returned by oper")
 		a.genArgsFlag = c.Get(ClArgGenArgs)
 		var path = NewPathOrEmptyM(c.GetString(ClArgArgsFile))
 

@@ -42,7 +42,6 @@ var JSTrue = buildKeyword("true", MakeJBool(true))
 var JSFalse = buildKeyword("false", MakeJBool(false))
 
 func (p *JSONParser) WithText(text string) *JSONParser {
-	CheckNotNil(text)
 	p.textBytes = []byte(text)
 	p.cursor = 0
 	// Let's always have the cursor sitting at non-whitespace

@@ -349,9 +349,16 @@ func (m WidgetManager) AddHeading() WidgetManager {
 
 func (m WidgetManager) assignPendingListener(widget Widget) {
 	if m.pendingListener != nil {
-		widget.SetListener(m.pendingListener)
-		m.pendingListener = nil
+		m.assignRequiredPendingListener(widget)
 	}
+}
+
+func (m WidgetManager) assignRequiredPendingListener(widget Widget) {
+	if m.pendingListener == nil {
+		BadState("no listener found for widget", widget.Id())
+	}
+	widget.SetListener(m.pendingListener)
+	m.pendingListener = nil
 }
 
 func (m WidgetManager) AddText() WidgetManager {
@@ -382,6 +389,13 @@ func (m WidgetManager) AddSpace() WidgetManager {
 
 func (m WidgetManager) AddFileUpload() FileUpload {
 	w := NewFileUpload(m.consumePendingId(), NewHtmlString(m.consumePendingLabel()))
+	m.assignRequiredPendingListener(w)
+	m.Add(w)
+	return w
+}
+
+func (m WidgetManager) AddImage() ImageWidget {
+	w := NewImageWidget(m.consumePendingId())
 	m.assignPendingListener(w)
 	m.Add(w)
 	return w
@@ -456,15 +470,27 @@ func GetStaticOrDynamicLabel(widget Widget, state JSMap) (string, bool) {
 
 // Mark a widget for repainting.  Does nothing if there is no repaintSet (i.e., it is not being done within
 // an AJAX call)
-func (m WidgetManager) Repaint(w Widget) {
-	if m.repaintSet == nil {
-		return
+func (m WidgetManager) Repaint(w Widget) WidgetManager {
+	if m.repaintSet != nil {
+
+		pr := PrIf(debRepaint)
+		pr("Repaint:", w)
+		if m.repaintSet.Add(w.Id()) {
+			pr("...adding to set")
+		}
 	}
-	pr := PrIf(debRepaint)
-	pr("Repaint:", w)
-	if m.repaintSet.Add(w.Id()) {
-		pr("...adding to set")
+	return m
+}
+
+// Mark widgets for repainting (if they exist).  Does nothing if there is no repaintSet.
+func (m WidgetManager) RepaintIds(ids ...string) WidgetManager {
+	for _, id := range ids {
+		w := m.Opt(id)
+		if w != nil {
+			m.Repaint(w)
+		}
 	}
+	return m
 }
 
 func (m WidgetManager) clearRepaintSet() {

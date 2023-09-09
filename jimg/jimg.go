@@ -87,7 +87,6 @@ func ImageTypeStr(imgType JImageType) string {
 var zer = image.Point{}
 
 func JImageOf(img image.Image) JImage {
-	CheckNotNil(img)
 	if img.Bounds().Min != zer {
 		Pr("origin of image is not at (0,0);", img.Bounds())
 	}

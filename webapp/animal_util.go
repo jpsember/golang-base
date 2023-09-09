@@ -50,6 +50,7 @@ func GenerateRandomAnimals() {
 
 func AssignBlobName(b BlobBuilder) {
 	if b.Name() == "" {
-		b.SetName(string(GenerateBlobId()))
+		Todo("We should continue to do this until we find an unused blob, with appropriate lock")
+		b.SetName(string(GenerateBlobName()))
 	}
 }

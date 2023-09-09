@@ -109,7 +109,9 @@ func (p *JSONParser) ParseList() (JSList, error) {
 }
 
 func (js JSList) Add(value any) JSList {
-	CheckNotNil(value)
+	if value == nil {
+		BadArg("value is nil")
+	}
 	js.wrappedList = append(js.wrappedList, ToJSEntity(value))
 	return js
 }

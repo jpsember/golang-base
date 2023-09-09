@@ -6,7 +6,8 @@ import (
 
 type FileUploadObj struct {
 	BaseWidgetObj
-	Label HtmlString
+	Label         HtmlString
+	receivedBytes []byte
 }
 
 type FileUpload = *FileUploadObj
@@ -24,8 +25,9 @@ func (w FileUpload) RenderTo(m MarkupBuilder, state JSMap) {
 		return
 	}
 
-	uniqueTag := w.BaseId + ".aux"
+	inputId := w.BaseId + ".input"
 	formId := w.BaseId + ".form"
+	inputName := w.BaseId + ".input"
 
 	m.Comment("file upload")
 
@@ -42,19 +44,23 @@ func (w FileUpload) RenderTo(m MarkupBuilder, state JSMap) {
 			labelHtml := w.Label
 			if labelHtml != nil {
 				m.Comment("Label")
-				m.OpenTag(`label for="`, uniqueTag, `" class="form-label" style="font-size:70%"`)
+				m.OpenTag(`label for="`, inputId, `" class="form-label" style="font-size:70%"`)
 				m.Escape(labelHtml)
 				m.CloseTag()
 			}
 		}
 
-		m.VoidTag(`input class="form-control" type="file" name="file" id="`, uniqueTag, `" onchange='jsUpload("`, w.Id(), `")'`)
-		Todo("Is id requred on input?")
-		Todo("is multiple required?")
-
+		m.VoidTag(`input class="form-control" type="file" name="`, inputName, `" id="`, inputId, `" onchange='jsUpload("`, w.Id(), `")'`)
 		m.CloseTag()
-
 	}
 
 	m.CloseTag()
+}
+
+func (w FileUpload) SetReceivedBytes(result []byte) {
+	w.receivedBytes = result
+}
+
+func (w FileUpload) ReceivedBytes() []byte {
+	return w.receivedBytes
 }
