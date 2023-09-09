@@ -26,6 +26,10 @@ func (p LandingPage) Generate() {
 
 	m := p.GenerateHeader()
 
+	m.Open()
+	m.Id("sample_upload").Label("Photo").AddFileUpload()
+	m.Close()
+
 	m.Label("gallery").Align(AlignRight).Size(SizeTiny).Listener(p.galleryListener).AddButton()
 	m.Col(6)
 	m.Open()

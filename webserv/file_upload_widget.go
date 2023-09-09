@@ -34,12 +34,10 @@ func (w FileUpload) RenderTo(m MarkupBuilder, state JSMap) {
 	m.OpenTag(`div id="`, w.BaseId, `" class="mb-3"`)
 	{
 
-		// <form method="post" enctype="multipart/form-data">
-		//  <label for="file">File</label>
-		//  <input id="file" name="file" type="file" />
-		//  <button>Upload</button>
-		//</form>
-		m.OpenTag(`form id="`, formId, `" method="post" enctype="multipart/form-data"`)
+		m.OpenTag(`form id="`, formId, `" enctype="multipart/form-data" method="post" `)
+
+		// I suspect the multipart/form-data has nothing to do with file uploads, but is for forms in general
+
 		{
 			labelHtml := w.Label
 			if labelHtml != nil {
@@ -49,9 +47,13 @@ func (w FileUpload) RenderTo(m MarkupBuilder, state JSMap) {
 				m.CloseTag()
 			}
 		}
+
+		m.VoidTag(`input class="form-control" type="file" name="file" id="`, uniqueTag, `" onchange='jsUpload("`, w.Id(), `")'`)
+		Todo("Is id requred on input?")
+		Todo("is multiple required?")
+
 		m.CloseTag()
 
-		m.VoidTag(`input class="form-control" type="file"  name="file" id="`, uniqueTag, `" onchange='jsUpload("`, w.Id(), `")'`)
 	}
 
 	m.CloseTag()

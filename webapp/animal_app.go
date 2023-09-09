@@ -193,14 +193,11 @@ func HandleUploadRequest(sess Session, w http.ResponseWriter, req *http.Request,
 	// The argument to FormFile must match the name attribute
 	// of the file input on the frontend
 
-	Pr("request FormFile:", req.MultipartForm.File)
-	Todo("this multipart map is empty.  Am I using a multi upload when I should be using single?")
-	
-	file, fileHeader, err := req.FormFile("file")
+	file, _ /*fileHeader*/, err := req.FormFile("file")
 	if err != nil {
 		return Error("trouble getting request FormFile:", err)
 	}
-	Todo("do something with fileHeader?", fileHeader)
+	Todo("do something with fileHeader?")
 
 	defer file.Close()
 
@@ -229,8 +226,9 @@ func HandleUploadRequest(sess Session, w http.ResponseWriter, req *http.Request,
 	}
 	Pr("bytes buffer length:", len(buf.Bytes()), "read:", length)
 
-	result := buf.Bytes()[0:length]
-	Todo("do something with result", result, "and file upload widget", fileUploadWidget)
+	CheckArg(len(buf.Bytes()) == int(length))
+	result := buf.Bytes()
+	Todo("do something with result (length:", len(result), " and file upload widget", fileUploadWidget)
 	return nil
 }
 
