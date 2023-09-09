@@ -108,12 +108,51 @@ function jsVal(id) {
     makeAjaxCall(request_key_widget,id,request_key_value,x.value)
 }
 
-// An onClick event has occurred within a button
+// An onchange event has occurred within a file upload
+function jsUpload(id) {
+    db("jsUpload",id)
+
+
+//     function uploadFiles() {
+ //const url = 'https://httpbin.org/post';
+
+
+     const addr = window.location.href.split('?')[0];
+    const url = new URL(addr + 'upload/' + id);
+    // url.searchParams.
+    // for (let i = 0; i < args.length; i+=2) {
+    //     url.searchParams.set(args[i],args[i+1])
+    // }
+    const xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+            processServerResponse(this.responseText)
+        }
+    };
+    xhttp.open('POST', url);
+    formElem = document.getElementById(id+'.form')
+     const data = new FormData(formElem);
+    xhttp.send(data);
+//   const method = 'post';
+//
+//   const xhr = new XMLHttpRequest();
+//
+
+//
+//   xhr.open(method, url);
+//   xhr.send(data);
+// }
+//
+
+  //  makeAjaxCall(request_key_widget, id)
+}
+
+
+// An onclick event has occurred within a button
 function jsButton(id) {
     db("jsButton",id)
     makeAjaxCall(request_key_widget, id)
 }
-
 // An click event has occurred within a checkbox
 function jsCheckboxClicked(id) {
     db("jsCheckboxClicked", id)

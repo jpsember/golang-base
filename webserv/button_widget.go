@@ -55,6 +55,7 @@ func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if !w.Enabled() {
 		m.A(` disabled`)
 	}
+
 	m.A(` onclick='jsButton("`, w.BaseId, `")'>`)
 	m.Escape(w.Label)
 	m.A(`</button>`)

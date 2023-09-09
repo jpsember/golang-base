@@ -1,10 +1,12 @@
 package webapp
 
 import (
+	"bytes"
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -91,7 +93,7 @@ func (oper AnimalOper) Perform(app *App) {
 
 // A handler such as this must be thread safe!
 func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(false)
+	pr := PrIf(true)
 	pr("handler, request:", req.RequestURI)
 
 	if false && Alert("!If full page requested, discarding sessions") {
@@ -118,14 +120,21 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	url, err := url.Parse(req.RequestURI)
 	if err == nil {
+
 		path := url.Path
+		var text string
+		var flag bool
+
 		pr("url path:", path)
 		if path == "/ajax" {
 			sess.HandleAjaxRequest(w, req)
 		} else if path == "/" {
 			oper.processFullPageRequest(sess, w, req)
-		} else if strings.HasPrefix(path, "/r/") {
-			err = HandleBlobRequest(w, req, path[3:])
+		} else if text, flag = extractPrefix(path, "/r/"); flag {
+			err = HandleBlobRequest(w, req, text)
+		} else if text, flag = extractPrefix(path, `/upload/`); flag {
+			Pr("handling upload request with:", text)
+			err = HandleUploadRequest(sess, w, req, text)
 		} else {
 			pr("handling resource request for:", path)
 			err = sess.HandleResourceRequest(w, req, oper.resources)
@@ -141,6 +150,13 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+func extractPrefix(text string, prefix string) (string, bool) {
+	if strings.HasPrefix(text, prefix) {
+		return text[len(prefix):], true
+	}
+	return text, false
+}
+
 func HandleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) error {
 	blob := SharedWebCache.GetBlobWithName(blobId)
 	if blob.Id() == 0 {
@@ -150,6 +166,72 @@ func HandleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) 
 	err := WriteResponse(w, InferContentTypeFromBlob(blob), blob.Data())
 	Todo("?Detect someone requesting huge numbers of items that don't exist?")
 	return err
+}
+
+func HandleUploadRequest(sess Session, w http.ResponseWriter, req *http.Request, widgetId string) error {
+	Todo("!Must ensure thread safety while working with the user session")
+
+	if req.Method != "POST" {
+		return Error("upload request was not POST")
+	}
+	widget := sess.WidgetManager().Opt(widgetId)
+	if widget == nil {
+		return Error("handling upload request, can't find widget:", widgetId)
+	}
+	fileUploadWidget, ok := widget.(FileUpload)
+	if !ok {
+		return Error("handling upload request, widget isn't expected type:", widgetId)
+	}
+
+	// From https://freshman.tech/file-upload-golang/
+	const MAX_UPLOAD_SIZE = 10_000_000
+	req.Body = http.MaxBytesReader(w, req.Body, MAX_UPLOAD_SIZE)
+	if err := req.ParseMultipartForm(MAX_UPLOAD_SIZE); err != nil {
+		return Error("The uploaded file is too big. Please choose an file that's less than 10MB in size")
+	}
+
+	// The argument to FormFile must match the name attribute
+	// of the file input on the frontend
+
+	Pr("request FormFile:", req.MultipartForm.File)
+	Todo("this multipart map is empty.  Am I using a multi upload when I should be using single?")
+	
+	file, fileHeader, err := req.FormFile("file")
+	if err != nil {
+		return Error("trouble getting request FormFile:", err)
+	}
+	Todo("do something with fileHeader?", fileHeader)
+
+	defer file.Close()
+
+	//// Create the uploads folder if it doesn't
+	//// already exist
+	//err = os.MkdirAll("./uploads", os.ModePerm)
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+	//
+	//// Create a new file in the uploads directory
+	//dst, err := os.Create(fmt.Sprintf("./uploads/%d%s", time.Now().UnixNano(), filepath.Ext(fileHeader.Filename)))
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusInternalServerError)
+	//	return
+	//}
+	//
+	//defer dst.Close()
+
+	var buf bytes.Buffer
+	foo := io.Writer(&buf)
+	length, err1 := io.Copy(foo, file)
+	if err1 != nil {
+		return Error("failed to read uploaded file into byte array:", err1)
+	}
+	Pr("bytes buffer length:", len(buf.Bytes()), "read:", length)
+
+	result := buf.Bytes()[0:length]
+	Todo("do something with result", result, "and file upload widget", fileUploadWidget)
+	return nil
 }
 
 func (oper AnimalOper) processFullPageRequest(sess Session, w http.ResponseWriter, req *http.Request) {

@@ -48,6 +48,10 @@ func (m WidgetManager) Get(id string) Widget {
 	return w
 }
 
+func (m WidgetManager) Opt(id string) Widget {
+	return m.find(id)
+}
+
 func (m WidgetManager) find(id string) Widget {
 	return m.widgetMap[id]
 }
@@ -374,6 +378,13 @@ func (m WidgetManager) AddButton() ButtonWidget {
 
 func (m WidgetManager) AddSpace() WidgetManager {
 	return m.Add(NewBaseWidget(m.consumeOptionalPendingId()))
+}
+
+func (m WidgetManager) AddFileUpload() FileUpload {
+	w := NewFileUpload(m.consumePendingId(), NewHtmlString(m.consumePendingLabel()))
+	m.assignPendingListener(w)
+	m.Add(w)
+	return w
 }
 
 func (m WidgetManager) AddCheckbox() CheckboxWidget {
