@@ -1,8 +1,10 @@
 package webserv
 
 import (
+	"bytes"
 	. "github.com/jpsember/golang-base/base"
 	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	"io"
 	"net/http"
 	"sync"
 )
@@ -121,6 +123,61 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 	s.sendAjaxResponse()
 }
 
+func (s Session) HandleUploadRequest(w http.ResponseWriter, req *http.Request, widgetId string) {
+
+	if req.Method != "POST" {
+		return Error("upload request was not POST")
+	}
+
+	// From https://freshman.tech/file-upload-golang/
+	const MAX_UPLOAD_SIZE = 10_000_000
+	req.Body = http.MaxBytesReader(w, req.Body, MAX_UPLOAD_SIZE)
+	if err := req.ParseMultipartForm(MAX_UPLOAD_SIZE); err != nil {
+		return Error("The uploaded file is too big. Please choose an file that's less than 10MB in size")
+	}
+
+	// The argument to FormFile must match the name attribute
+	// of the file input on the frontend; not sure what that is about
+
+	file, _ /*fileHeader*/, err := req.FormFile(widgetId + ".input")
+	if err != nil {
+		return Error("trouble getting request FormFile:", err)
+	}
+
+	defer file.Close()
+
+	var buf bytes.Buffer
+	length, err1 := io.Copy(io.Writer(&buf), file)
+	if err1 != nil {
+		return Error("failed to read uploaded file into byte array:", err1)
+	}
+	Pr("bytes buffer length:", len(buf.Bytes()), "read:", length)
+
+	CheckArg(len(buf.Bytes()) == int(length))
+	result := buf.Bytes()
+
+	// Note, we don't need to know the widget until this point
+	//
+	Todo("!Must ensure thread safety while working with the user session")
+
+	widget := sess.WidgetManager().Opt(widgetId)
+	if widget == nil {
+		return Error("handling upload request, can't find widget:", widgetId)
+	}
+	fileUploadWidget, ok := widget.(FileUpload)
+	if !ok {
+		return Error("handling upload request, widget isn't expected type:", widgetId)
+	}
+	fileUploadWidget.SetReceivedBytes(result)
+	defer fileUploadWidget.SetReceivedBytes(nil)
+	fileUploadWidget.Listener()(sess, fileUploadWidget)
+
+	// Send the usual ajax response
+
+	sess.sendAjaxResponse()
+	return nil
+}
+
 // Serve a request for a resource
 func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request, resourcePath Path) error {
 	defer s.discardRequest()
@@ -228,7 +285,7 @@ func (s Session) processRepaintFlags(repaintSet StringSet, debugDepth int, w Wid
 
 const respKeyWidgetsToRefresh = "w"
 
-var debRepaint = false && Alert("debRepaint")
+var debRepaint = true && Alert("debRepaint")
 
 // Send Ajax response back to client.
 func (s Session) sendAjaxResponse() {

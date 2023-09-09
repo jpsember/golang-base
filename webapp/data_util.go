@@ -237,3 +237,11 @@ func RandomEmailAddress(r JSRand) string {
 	r = NullToRand(r)
 	return RandomWord(r) + "@" + RandomWord(r) + ".net"
 }
+
+func BlobSummary(blob Blob) JSMap {
+	b := blob.Build().ToBuilder()
+	b.SetData(nil)
+	r := b.ToJson().AsJSMap()
+	r.Put("data", HexDumpWithASCII(ByteSlice(blob.Data(), 0, 16)))
+	return r
+}

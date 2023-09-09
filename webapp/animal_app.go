@@ -151,6 +151,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 			err = HandleBlobRequest(w, req, text)
 		} else if text, flag = extractPrefix(path, `/upload/`); flag {
 			Pr("handling upload request with:", text)
+			sess.HandleUploadRequest(w, req, text)
 			err = HandleUploadRequest(sess, w, req, text)
 		} else {
 			pr("handling resource request for:", path)
@@ -186,6 +187,8 @@ func HandleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) 
 }
 
 func HandleUploadRequest(sess Session, w http.ResponseWriter, req *http.Request, widgetId string) error {
+
+	Todo("upload request should be handled by webserver package, with some hooks...")
 
 	if req.Method != "POST" {
 		return Error("upload request was not POST")
@@ -233,6 +236,10 @@ func HandleUploadRequest(sess Session, w http.ResponseWriter, req *http.Request,
 	fileUploadWidget.SetReceivedBytes(result)
 	defer fileUploadWidget.SetReceivedBytes(nil)
 	fileUploadWidget.Listener()(sess, fileUploadWidget)
+
+	// Send the usual ajax response
+
+	sess.sendAjaxResponse()
 	return nil
 }
 

@@ -4,8 +4,12 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
+// This general type of listener can serve as a validator as well
+type ImageURLProvider func() string
+
 type ImageWidgetObj struct {
 	BaseWidgetObj
+	URLProvider ImageURLProvider
 }
 
 type ImageWidget = *ImageWidgetObj
@@ -17,6 +21,9 @@ func NewImageWidget(id string) ImageWidget {
 }
 
 func (w ImageWidget) RenderTo(m MarkupBuilder, state JSMap) {
+	pr := PrIf(true)
+	pr("rendering:", w.Id())
+
 	if !w.Visible() {
 		m.RenderInvisible(w)
 		return
@@ -25,9 +32,33 @@ func (w ImageWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.Comment("image")
 
 	// The outermost element must have the widget's id!  Or chaos happens during repainting.
-	//
-	var imageSource = "https://upload.wikimedia.org/wikipedia/en/a/a9/Example.jpg"
 
-	m.OpenTag(`img src="`, imageSource, `" class="img-fluid" alt="uploaded image"`)
+	m.OpenTag(`div id="`, w.BaseId, `"`)
+
+	{
+		var imageSource string
+
+		if w.URLProvider != nil {
+			imageSource = w.URLProvider()
+			pr("url provider returned image source:", imageSource)
+			if imageSource == "" {
+				imageSource = "https://upload.wikimedia.org/wikipedia/en/a/a9/Example.jpg"
+			}
+		} else {
+			pr("no URLProvider!")
+		}
+
+		//blobId := state.OptInt(w.Id(), 0)
+		//if blobId != 0 {
+		//	imageSource = ReadImageIntoCache(blobId)
+		//}
+
+		// The outermost element must have the widget's id!  Or chaos happens during repainting.
+		//
+
+		m.VoidTag(`img src="`, imageSource, `" class="img-fluid" alt="uploaded image"`)
+
+	}
 	m.CloseTag()
+	pr("done render")
 }

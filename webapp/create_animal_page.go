@@ -55,7 +55,8 @@ func (p CreateAnimalPage) Generate() {
 
 	m.Open()
 	m.Id(id_animal_uploadpic).Label("Photo").Listener(p.uploadPhotoListener).AddFileUpload()
-	m.Id(id_animal_display_pic).AddImage()
+	imgWidget := m.Id(id_animal_display_pic).AddImage()
+	imgWidget.URLProvider = p.provideURL
 	m.Close()
 }
 
@@ -83,25 +84,31 @@ func ValidateAnimalName(s Session, widget Widget) {
 }
 
 func (p CreateAnimalPage) uploadPhotoListener(s Session, widget Widget) {
+	pr := PrIf(true)
+
+	m := s.WidgetManager()
+
 	fu := widget.(FileUpload)
 	by := fu.ReceivedBytes()
 
 	var jpeg []byte
-
+	var imageId int
 	var img jimg.JImage
 	var err error
+
 	problem := ""
 	for {
 		problem = "Decoding image"
 		if img, err = jimg.DecodeImage(by); err != nil {
 			break
 		}
-		Pr("decoded:", INDENT, img)
+		pr("decoded:", INDENT, img)
 
 		problem = "Converting to default type"
 		if img, err = img.AsDefaultType(); err != nil {
 			break
 		}
+		pr("converted to default type")
 
 		problem = "Problem with dimensions"
 		if Clamp(img.Size().X, 50, 3000) != img.Size().X || //
@@ -109,10 +116,13 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget Widget) {
 			break
 		}
 
+		pr("dimensions ok")
+
 		problem = "Converting image"
 		if jpeg, err = img.ToJPEG(); err != nil {
 			break
 		}
+		pr("encoded as jpeg")
 
 		problem = "Storing image"
 
@@ -120,9 +130,12 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget Widget) {
 		b := NewBlob()
 		b.SetData(jpeg)
 		AssignBlobName(b)
-		if _, err = CreateBlob(b); err != nil {
+		var created Blob
+		if created, err = CreateBlob(b); err != nil {
 			break
 		}
+		imageId = created.Id()
+		pr("created blob, id:", BlobSummary(created))
 
 		problem = ""
 		break
@@ -133,7 +146,26 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget Widget) {
 			Pr("...error was:", err)
 		}
 		s.SetWidgetProblem(widget, "Trouble uploading image: "+problem)
+	} else {
+		// Store the id of the blob in the image widget
+		s.State.Put(id_animal_display_pic, imageId)
+		pr("stored image id into state:", INDENT, s.State)
 	}
-	m := s.WidgetManager()
+	pr("repainting animal_display_pic")
 	m.RepaintIds(id_animal_display_pic)
+}
+
+func (p CreateAnimalPage) provideURL() string {
+	pr := PrIf(true)
+	url := ""
+	s := p.session
+	imageId := s.State.OptInt(id_animal_display_pic, 0)
+
+	pr("provideURL, image id read from state:", imageId)
+
+	if imageId != 0 {
+		url = ReadImageIntoCache(imageId)
+		pr("read into cache, url:", url)
+	}
+	return url
 }

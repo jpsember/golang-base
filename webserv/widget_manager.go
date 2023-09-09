@@ -396,6 +396,7 @@ func (m WidgetManager) AddFileUpload() FileUpload {
 
 func (m WidgetManager) AddImage() ImageWidget {
 	w := NewImageWidget(m.consumePendingId())
+	Pr("created image widget, id:", w.Id())
 	m.assignPendingListener(w)
 	m.Add(w)
 	return w
@@ -486,8 +487,11 @@ func (m WidgetManager) Repaint(w Widget) WidgetManager {
 func (m WidgetManager) RepaintIds(ids ...string) WidgetManager {
 	for _, id := range ids {
 		w := m.Opt(id)
+		Pr("repaint:", id, "found:", w)
 		if w != nil {
 			m.Repaint(w)
+		} else {
+			Alert("#50<1Can't find widget to repaint with id:", id)
 		}
 	}
 	return m
