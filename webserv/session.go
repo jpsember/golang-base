@@ -377,14 +377,14 @@ func (s Session) GetWidgetId() string {
 	return id
 }
 
-// Read request's widget value as a string
+// Read request's widget value as a string; trim any whitespace
 func (s Session) GetValueString() string {
 	value, err := getSingleValue(s.widgetValues)
 	if err != nil {
 		s.SetRequestProblem("Unable to get widget value")
 		return ""
 	}
-	return value
+	return strings.TrimSpace(value)
 }
 
 // Read request's widget value as a boolean
@@ -399,6 +399,17 @@ func (s Session) GetValueBoolean() bool {
 		s.SetRequestProblem("Unable to parse boolean widget value:", Quoted(str))
 		return false
 	}
+}
+
+// Read widget's State value as a string, trimming whitespace
+func (s Session) GetStateString(id string) string {
+	value := s.State.OptString(id, "")
+	return strings.TrimSpace(value)
+}
+
+// Read widget's State value as a boolean
+func (s Session) GetStateBoolean(id string) bool {
+	return s.State.OptBool(id, false)
 }
 
 func (s Session) GetWidget() Widget {

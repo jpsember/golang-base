@@ -117,7 +117,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 
 		NewLandingPage(sess, sess.PageWidget).Generate()
 
-		if !jumped && false && Alert("Jumping to new animal page") {
+		if !jumped && true && Alert("Jumping to new animal page") {
 			jumped = true
 			for {
 				user2, _ := ReadUserWithName("manager1")

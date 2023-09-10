@@ -54,7 +54,9 @@ func (p LandingPage) Generate() {
 }
 
 func (p LandingPage) validateUserName(s Session, widget Widget) {
+	Pr("validateUserName, widget:", widget.Id(), "state:", INDENT, s.State)
 	auxValidateUserName(s, widget, s.GetValueString(), VALIDATE_ONLY_NONEMPTY)
+	Pr(" after, state:", INDENT, s.State)
 }
 
 func (p LandingPage) validateUserPwd(s Session, widget Widget) {

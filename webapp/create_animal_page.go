@@ -44,7 +44,7 @@ func (p CreateAnimalPage) Generate() {
 	{
 		m.Col(12)
 		Todo("when does the INPUT store the state?")
-		m.Label("Name").Id(id_animal_name).Listener(ValidateAnimalName).AddInput()
+		m.Label("Name").Id(id_animal_name).Listener(AnimalNameListener).AddInput()
 
 		m.Label("Summary").Id(id_animal_summary).AddInput()
 		m.Size(SizeTiny).Label("A brief paragraph to appear in the 'card' view.").AddText()
@@ -116,14 +116,27 @@ func (p CreateAnimalPage) addListener(s Session, widget Widget) {
 	NewManagerPage(s, p.parentPage).Generate()
 }
 
+func AnimalNameListener(s Session, widget Widget) {
+	Pr("validate animal name, widget id:", widget.Id(), "state:", s.State)
+
+	// The requested value for the widget has been passed in the ajax map, but is not yet known to us otherwise.
+	n := s.GetValueString()
+
+	// Store the requested value to the widget, even if it subsequently fails validation.
+	Todo("?A utility method for this")
+	s.State.Put(widget.Id(), n)
+
+	ValidateAnimalName(s, widget)
+}
+
 func ValidateAnimalName(s Session, widget Widget) {
+	n := s.GetStateString(widget.Id())
+
 	errStr := ""
-	Pr("validate animal name, widget id:", widget.Id())
 
-	n := WidgetStrValue(s, widget)
-	Pr("str value:", n)
+	Todo("?A utility method for this")
+	s.State.Put(widget.Id(), n)
 
-	n = strings.TrimSpace(n)
 	for {
 		ln := len(n)
 		if ln < 3 || ln > 20 {
@@ -132,9 +145,6 @@ func ValidateAnimalName(s Session, widget Widget) {
 		}
 		break
 	}
-
-	// Store the ...
-	//s.State.Put(widget.Id(), n)
 
 	if errStr != "" {
 		s.SetWidgetProblem(widget, errStr)
