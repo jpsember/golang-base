@@ -197,7 +197,6 @@ func (p GalleryPage) uploadListener(s Session, widget Widget) {
 	} else {
 		// Store the id of the blob in the image widget
 		s.State.Put(sampleImageId, imageId)
-		pr("stored image id into state:", INDENT, s.State)
 	}
 	m.RepaintIds(sampleImageId)
 }

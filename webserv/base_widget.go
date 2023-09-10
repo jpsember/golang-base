@@ -60,10 +60,6 @@ func (w BaseWidget) SetListener(listener WidgetListener) {
 	w.listener = listener
 }
 
-func (w BaseWidget) ClearChildren() {
-	NotImplemented()
-}
-
 func (w BaseWidget) Base() BaseWidget {
 	return w
 }

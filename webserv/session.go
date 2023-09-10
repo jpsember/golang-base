@@ -6,6 +6,7 @@ import (
 	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 )
 
@@ -418,6 +419,7 @@ func (s Session) SetWidgetIdProblem(widgetId string, problem any) {
 }
 
 func (s Session) SetWidgetProblem(widget Widget, problem any) {
+	Pr("SetWidgetProblem:", widget.Id(), "problem:", problem)
 	var text string
 	if problem != nil {
 		switch t := problem.(type) {
@@ -430,6 +432,7 @@ func (s Session) SetWidgetProblem(widget Widget, problem any) {
 		}
 	}
 	s.auxSetWidgetProblem(widget, text)
+	Pr("state now:", INDENT, s.State)
 }
 
 func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {
@@ -456,11 +459,31 @@ func (s Session) RequestClientInfo(sb MarkupBuilder) {
 	}
 }
 
+// Deprecated.
 func (s Session) DeleteStateKeys(keys ...string) {
 	m := s.State.MutableWrapped()
 	for _, k := range keys {
 		delete(m, k)
 		delete(m, WidgetIdWithProblem(k))
+	}
+}
+
+func (s Session) DeleteStateErrors() {
+	m := s.State.MutableWrapped()
+	Todo("safe to delete key while iterating through them?")
+	for k, _ := range m {
+		if strings.HasSuffix(k, ".error") {
+			delete(m, k)
+		}
+	}
+}
+
+func (s Session) DeleteStateFieldsWithPrefix(prefix string) {
+	m := s.State.MutableWrapped()
+	for k, _ := range m {
+		if strings.HasPrefix(k, ".error") {
+			delete(m, k)
+		}
 	}
 }
 

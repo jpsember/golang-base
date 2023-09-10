@@ -258,7 +258,8 @@ func (m WidgetManager) With(container Widget) WidgetManager {
 	pr("removing all child widgets")
 	// Discard any existing child widgets
 	m.removeWidgets(container.Children())
-	container.ClearChildren()
+	cont := container.(ContainerWidget)
+	cont.ClearChildren()
 
 	pr("after removal, current widget map:", INDENT, m.WidgetMapSummary())
 

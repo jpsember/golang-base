@@ -15,7 +15,7 @@ type Widget interface {
 	RenderTo(m MarkupBuilder, state JSMap)
 	Children() *Array[Widget]
 	AddChild(c Widget, manager WidgetManager)
-	ClearChildren()
+	//ClearChildren()
 
 	SetStaticContent(content any)
 	StaticContent() any

@@ -30,7 +30,7 @@ func NewSignUpPage(session Session, parentPage Widget) SignUpPage {
 
 func (p SignUpPage) Generate() {
 
-	p.session.DeleteStateKeys(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
+	p.session.DeleteStateErrors()
 	m := p.GenerateHeader()
 
 	m.Label("Sign Up Page").Size(SizeLarge).AddHeading()
@@ -140,6 +140,7 @@ func (p SignUpPage) signUpListener(s Session, widget Widget) {
 	b.SetPassword(s.State.OptString(id_user_pwd, ""))
 	b.SetEmail(s.State.OptString(id_user_email, ""))
 
+	Todo("don't create the user until we are sure the other fields have no errors")
 	ub, err := CreateUserWithName(b)
 
 	CheckOk(err)

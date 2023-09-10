@@ -51,6 +51,18 @@ func (w FileUpload) RenderTo(m MarkupBuilder, state JSMap) {
 		}
 
 		m.VoidTag(`input class="form-control" type="file" name="`, inputName, `" id="`, inputId, `" onchange='jsUpload("`, w.Id(), `")'`)
+
+		problemId := WidgetIdWithProblem(w.BaseId)
+		problemText := state.OptString(problemId, "")
+
+		hasProblem := problemText != ""
+
+		if hasProblem {
+			m.Comment("Problem")
+			m.A(`<div class="form-text text-danger" style="font-size:  70%">`)
+			m.Escape(problemText).A(`</div>`)
+		}
+
 		m.CloseTag()
 	}
 

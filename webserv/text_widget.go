@@ -43,8 +43,12 @@ func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	m.OpenTag(args.Array()...)
 
-	for _, c := range h.Paragraphs() {
-		m.A(`<p>`, c, `</p>`).Cr()
+	{
+
+		for _, c := range h.Paragraphs() {
+			m.A(`<p>`, c, `</p>`).Cr()
+		}
+
 	}
 	m.CloseTag()
 }

@@ -8,13 +8,14 @@ import (
 	"strings"
 )
 
+const anim_state_prefix = "_create_animal_."
 const (
-	id_animal_name        = "a_name"
-	id_animal_summary     = "a_summary"
-	id_animal_details     = "a_details"
-	id_add                = "a_add"
-	id_animal_uploadpic   = "a_photo"
-	id_animal_display_pic = "a_pic"
+	id_animal_name        = anim_state_prefix + "name"
+	id_animal_summary     = anim_state_prefix + "summary"
+	id_animal_details     = anim_state_prefix + "details"
+	id_add                = anim_state_prefix + "add"
+	id_animal_uploadpic   = anim_state_prefix + "photo"
+	id_animal_display_pic = anim_state_prefix + "pic"
 )
 
 type CreateAnimalPageStruct struct {
@@ -33,7 +34,8 @@ func NewCreateAnimalPage(sess Session, parentWidget Widget) AbstractPage {
 
 func (p CreateAnimalPage) Generate() {
 	//SetWidgetDebugRendering()
-
+	p.session.DeleteStateFieldsWithPrefix(anim_state_prefix)
+	//p.session.DeleteStateErrors()
 	m := p.GenerateHeader()
 
 	Todo("!Have ajax listener that can show advice without an actual error, e.g., if user left some fields blank")
@@ -41,6 +43,7 @@ func (p CreateAnimalPage) Generate() {
 	m.Col(6).Open()
 	{
 		m.Col(12)
+		Todo("when does the INPUT store the state?")
 		m.Label("Name").Id(id_animal_name).Listener(ValidateAnimalName).AddInput()
 
 		m.Label("Summary").Id(id_animal_summary).AddInput()
@@ -60,26 +63,118 @@ func (p CreateAnimalPage) Generate() {
 	m.Close()
 }
 
-func (p CreateAnimalPage) addListener(sess Session, widget Widget) {
-	if Todo("CreateAnimal") {
+func SessionStrValue(s Session, id string) string {
+	return s.State.OptString(id, "")
+}
 
+func WidgetStrValue(s Session, widget Widget) string {
+	return SessionStrValue(s, widget.Id())
+}
+
+func SessionIntValue(s Session, id string) int {
+	return s.State.OptInt(id, 0)
+}
+
+func WidgetIntValue(s Session, widget Widget) int {
+	return SessionIntValue(s, widget.Id())
+}
+
+func (p CreateAnimalPage) addListener(s Session, widget Widget) {
+	pr := PrIf(true)
+	pr("state:", INDENT, s.State)
+
+	p.session.DeleteStateErrors()
+
+	wName := getWidget(s, id_animal_name)
+	wSummary := getWidget(s, id_animal_summary)
+	wDetails := getWidget(s, id_animal_details)
+	wPhoto := getWidget(s, id_animal_display_pic)
+	mUpload := getWidget(s, id_animal_uploadpic)
+
+	ValidateAnimalName(s, wName)
+	ValidateAnimalInfo(s, wSummary, 20, 200)
+	ValidateAnimalInfo(s, wDetails, 200, 2000)
+	ValidateAnimalPhoto(s, wPhoto, mUpload)
+
+	errcount := WidgetErrorCount(p.parentPage, s.State)
+	if errcount != 0 {
+		return
 	}
+
+	b := NewAnimal()
+	b.SetName(strings.TrimSpace(WidgetStrValue(s, wName)))
+	b.SetSummary(strings.TrimSpace(WidgetStrValue(s, wSummary)))
+	b.SetDetails(strings.TrimSpace(WidgetStrValue(s, wDetails)))
+	b.SetPhotoThumbnail(WidgetIntValue(s, wPhoto))
+	ub, err := CreateAnimal(b)
+	CheckOk(err)
+
+	Pr("created animal:", INDENT, ub)
+
+	Todo("discard state, i.e. the edited fields; use a common prefix to simplify")
+	Todo("Do a 'back' operation to go back to the previous page")
+	NewManagerPage(s, p.parentPage).Generate()
 }
 
 func ValidateAnimalName(s Session, widget Widget) {
 	errStr := ""
-	n := s.GetValueString()
+	Pr("validate animal name, widget id:", widget.Id())
+
+	n := WidgetStrValue(s, widget)
+	Pr("str value:", n)
+
 	n = strings.TrimSpace(n)
 	for {
 		ln := len(n)
 		if ln < 3 || ln > 20 {
-			errStr = "Length should be 3...20 characters"
+			errStr = "Length should be 3...20 characters" + " (currently: " + n + ")"
 			break
 		}
 		break
 	}
+
+	// Store the ...
+	//s.State.Put(widget.Id(), n)
+
 	if errStr != "" {
 		s.SetWidgetProblem(widget, errStr)
+	}
+}
+
+func ValidateAnimalInfo(s Session, widget Widget, minLength int, maxLength int) {
+	errStr := ""
+	Todo("a utility method for reading widget values as strings")
+	n := WidgetStrValue(s, widget)
+	n = strings.TrimSpace(n)
+	Pr("validateAnimalInfo, maxLen:", maxLength, "id:", widget.Id())
+	for {
+		ln := len(n)
+
+		errStr = "Please add more info here."
+		if false && Alert("allowing empty fields") {
+			minLength = 0
+		}
+		if ln < minLength {
+			break
+		}
+		errStr = "Please type no more than " + IntToString(maxLength) + " characters."
+		if ln > maxLength {
+			break
+		}
+
+		errStr = ""
+		break
+	}
+	if errStr != "" {
+		s.SetWidgetProblem(widget, errStr)
+	}
+}
+
+func ValidateAnimalPhoto(s Session, valueWidget Widget, reportWidget Widget) {
+	n := WidgetIntValue(s, valueWidget)
+	Pr("validate animal photo, widget int value:", n, "widget:", valueWidget)
+	if n == 0 {
+		s.SetWidgetProblem(reportWidget, "Please upload a photo")
 	}
 }
 
@@ -150,11 +245,10 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget Widget) {
 		s.SetWidgetProblem(widget, "Trouble uploading image: "+problem)
 	} else {
 		// Discard the old blob whose id we are now replacing
-		DiscardBlob(s.State.OptInt(id_animal_display_pic, 0))
+		DiscardBlob(SessionIntValue(s, id_animal_display_pic))
 
 		// Store the id of the blob in the image widget
 		s.State.Put(id_animal_display_pic, imageId)
-		pr("stored image id into state:", INDENT, s.State)
 	}
 	pr("repainting animal_display_pic")
 	m.RepaintIds(id_animal_display_pic)
@@ -164,7 +258,7 @@ func (p CreateAnimalPage) provideURL() string {
 	pr := PrIf(false)
 	url := ""
 	s := p.session
-	imageId := s.State.OptInt(id_animal_display_pic, 0)
+	imageId := SessionIntValue(s, id_animal_display_pic)
 
 	pr("provideURL, image id read from state:", imageId)
 
