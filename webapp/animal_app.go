@@ -120,8 +120,10 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 		if !jumped && true && Alert("Jumping to different page") {
 			jumped = true
 			for {
-				NewGalleryPage(sess, sess.PageWidget).Generate()
-				break
+				if false {
+					NewGalleryPage(sess, sess.PageWidget).Generate()
+					break
+				}
 				user2, _ := ReadUserWithName("manager1")
 				if user2.Id() == 0 {
 					break

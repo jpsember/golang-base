@@ -2,6 +2,7 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"strings"
 )
 
 var DummyError = Error("Example error message")
@@ -29,7 +30,15 @@ func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, p
 		Password: password,
 		listener: listener,
 	}
+	w.Base().LowListen = inputListenWrapper
 	return &w
+}
+
+func inputListenWrapper(sess Session, widget Widget, value string) (string, error) {
+	inp := widget.(InputWidget)
+	value = strings.TrimSpace(value)
+	result, err := inp.listener(sess, inp, value)
+	return result, err
 }
 
 var HtmlStringNbsp = NewHtmlStringEscaped("&nbsp;")

@@ -77,7 +77,8 @@ const USER_NAME_MAX_LENGTH = 20
 
 var ErrorEmptyUserName = Error("Please enter your name")
 var ErrorUserNameTooLong = Error("Your name is too long")
-var ErrorUserNameIllegalCharacters = Error("Your name has illegal characters")
+var ErrorUserNameIllegalCharacters = Error("Name has illegal characters")
+var ErrorEmptyAnimalName = Error("Please enter a name")
 
 var ErrorEmptyUserPassword = Error("Please enter a password")
 var ErrorEmptyUserEmail = Error("Please enter an email address")
@@ -92,8 +93,37 @@ const USER_PASSWORD_MIN_LENGTH = 8
 const USER_PASSWORD_MAX_LENGTH = 20
 const USER_EMAIL_MAX_LENGTH = 40
 
+const ANIMAL_NAME_MAX_LENGTH = 16
+const ANIMAL_NAME_MIN_LENGTH = 2
+
+var ErrorAnimalNameTooShort = Error("The name is too short")
+var ErrorAnimalNameTooLong = Error("The name is too long")
+var ErrorAnimalNameIllegalCharacters = Error("Your name has illegal characters")
+
 var UserNameValidatorRegExp = Regexp(`^[a-zA-Z0-9_]+(?: [a-zA-Z0-9_]+)*$`)
 var UserPasswordValidatorRegExp = Regexp(`^[^ ]+$`)
+var AnimalNameValidatorRegExp = Regexp(`^[a-zA-Z]+(?: [a-zA-Z]+)*$`)
+
+func ValidateAnimalName(name string, flag ValidateFlag) (string, error) {
+	name = strings.TrimSpace(name)
+	Todo("?Replace two or more spaces by a single space")
+	validatedName := name
+	var err error
+
+	if name == "" {
+		if !flag.Has(VALIDATE_EMPTYOK) {
+			err = ErrorEmptyAnimalName
+		}
+	} else if len(name) > ANIMAL_NAME_MAX_LENGTH {
+		err = ErrorAnimalNameTooLong
+	} else if len(name) < ANIMAL_NAME_MIN_LENGTH {
+		err = ErrorAnimalNameTooShort
+	} else if !AnimalNameValidatorRegExp.MatchString(name) {
+		err = ErrorAnimalNameIllegalCharacters
+	}
+
+	return validatedName, err
+}
 
 func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 	userName = strings.TrimSpace(userName)
