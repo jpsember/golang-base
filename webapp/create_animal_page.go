@@ -117,25 +117,20 @@ func (p CreateAnimalPage) addListener(s Session, widget Widget) {
 }
 
 func AnimalNameListener(s Session, widget Widget) {
-	Pr("validate animal name, widget id:", widget.Id(), "state:", s.State)
+	Pr("AnimalNameListener, widget id:", widget.Id(), "state:", INDENT, s.State)
 
 	// The requested value for the widget has been passed in the ajax map, but is not yet known to us otherwise.
-	n := s.GetValueString()
-
-	// Store the requested value to the widget, even if it subsequently fails validation.
-	Todo("?A utility method for this")
-	s.State.Put(widget.Id(), n)
+	updated := s.GetValueString()
+	Pr("updated value:", updated)
 
 	ValidateAnimalName(s, widget)
 }
 
 func ValidateAnimalName(s Session, widget Widget) {
 	n := s.GetStateString(widget.Id())
+	Pr("ValidateAnimalName:", n)
 
 	errStr := ""
-
-	Todo("?A utility method for this")
-	s.State.Put(widget.Id(), n)
 
 	for {
 		ln := len(n)
@@ -146,9 +141,9 @@ func ValidateAnimalName(s Session, widget Widget) {
 		break
 	}
 
-	if errStr != "" {
-		s.SetWidgetProblem(widget, errStr)
-	}
+	// Maybe update the problem whether it exists or not, to trigger a repaint
+	Pr("setting widget problem to:", Quoted(errStr))
+	s.SetWidgetProblem(widget, errStr)
 }
 
 func ValidateAnimalInfo(s Session, widget Widget, minLength int, maxLength int) {
@@ -161,7 +156,7 @@ func ValidateAnimalInfo(s Session, widget Widget, minLength int, maxLength int) 
 		ln := len(n)
 
 		errStr = "Please add more info here."
-		if false && Alert("allowing empty fields") {
+		if true && Alert("allowing empty fields") {
 			minLength = 0
 		}
 		if ln < minLength {
@@ -247,13 +242,18 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget Widget) {
 		problem = ""
 		break
 	}
+
+	if err != nil {
+		Pr("...error was:", err)
+	}
 	if problem != "" {
-		Pr("Problem with upload:", problem)
-		if err != nil {
-			Pr("...error was:", err)
-		}
-		s.SetWidgetProblem(widget, "Trouble uploading image: "+problem)
-	} else {
+		problem = "Trouble uploading image: " + problem
+	}
+
+	// Update the problem in any case, to remove an old problem if there is now not one.
+	s.SetWidgetProblem(widget, problem)
+	if problem == "" {
+
 		// Discard the old blob whose id we are now replacing
 		DiscardBlob(SessionIntValue(s, id_animal_display_pic))
 

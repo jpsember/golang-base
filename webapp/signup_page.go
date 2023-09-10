@@ -72,6 +72,7 @@ func auxValidateUserName(s Session, widget Widget, value string, flag ValidateFl
 	pr("validated:", value, "error:", err)
 
 	// We want to update the state even if the name is illegal, so user can see what he typed in
+	Alert("Not sure this is necessary; as long as we haven't modified things during validation")
 	s.State.Put(widget.Id(), value)
 	s.SetWidgetProblem(widget, err)
 }

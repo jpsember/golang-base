@@ -93,9 +93,6 @@ func zebraListener(s Session, widget Widget) {
 	// Get the requested new value for the widget
 	newVal := s.GetValueString()
 
-	// Store this as the new value for this widget within the session state map
-	s.State.Put(widget.Id(), newVal)
-
 	// Increment the alert class, and update its message
 	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
 
@@ -121,14 +118,8 @@ func buttonListener(s Session, widget Widget) {
 }
 
 func checkboxListener(s Session, widget Widget) {
-	wid := s.GetWidgetId()
-
 	// Get the requested new value for the widget
-	newVal := s.GetValueBoolean()
-
-	Todo("It is safe to not check if there was a RequestProblem, as any state changes will still go through validation...")
-
-	s.State.Put(wid, newVal)
+	s.GetValueBoolean()
 	// Repainting isn't necessary, as the web page has already done this
 }
 

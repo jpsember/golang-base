@@ -256,7 +256,6 @@ func (s Session) processClientMessage() {
 	// for that widget
 	//
 	widget := s.GetWidget()
-
 	if !s.Ok() {
 		return
 	}
@@ -368,7 +367,10 @@ func getSingleValue(array []string) (string, error) {
 }
 
 // Read request's (single) widget id
+// Deprecated.
 func (s Session) GetWidgetId() string {
+	Todo("this method should probably be deprecated")
+
 	id, err := getSingleValue(s.widgetIds)
 	if err != nil {
 		s.SetRequestProblem("Unable to get widget id")
@@ -377,28 +379,49 @@ func (s Session) GetWidgetId() string {
 	return id
 }
 
-// Read request's widget value as a string; trim any whitespace
+// Read request's widget value as a string; trim any whitespace.  Store to state as well.
 func (s Session) GetValueString() string {
+	Todo("Rename this to emphasize that the value is also being stored in the state")
 	value, err := getSingleValue(s.widgetValues)
+	Pr("GetValueString, got:", value, "err:", err)
 	if err != nil {
 		s.SetRequestProblem("Unable to get widget value")
 		return ""
 	}
-	return strings.TrimSpace(value)
+	value = strings.TrimSpace(value)
+
+	widgetId := s.GetWidgetId()
+	CheckState(widgetId != "")
+
+	Pr("Storing value:", widgetId, ":", Quoted(value), "into state map")
+	s.State.Put(widgetId, value)
+
+	//// Clear any error associated with this
+	//s.DeleteStateError(widgetId)
+	return value
 }
 
-// Read request's widget value as a boolean
+// Read request's widget value as a boolean.  Store to state as well.
 func (s Session) GetValueBoolean() bool {
-	str := s.GetValueString()
-	switch str {
-	case "true":
-		return true
-	case "false":
-		return false
-	default:
-		s.SetRequestProblem("Unable to parse boolean widget value:", Quoted(str))
+	value, err := getSingleValue(s.widgetValues)
+	if err != nil {
+		s.SetRequestProblem("Unable to get widget value")
 		return false
 	}
+	var result bool
+	switch value {
+	case "true":
+		result = true
+	case "false":
+		result = false
+	default:
+		s.SetRequestProblem("Unable to parse boolean widget value:", Quoted(value))
+		return false
+	}
+	widgetId := s.GetWidgetId()
+	CheckState(widgetId != "")
+	s.State.Put(widgetId, result)
+	return result
 }
 
 // Read widget's State value as a string, trimming whitespace
@@ -443,13 +466,13 @@ func (s Session) SetWidgetProblem(widget Widget, problem any) {
 		}
 	}
 	s.auxSetWidgetProblem(widget, text)
-	Pr("state now:", INDENT, s.State)
 }
 
 func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {
 	key := WidgetIdWithProblem(widget.Id())
 	state := s.State
 	existingProblem := state.OptString(key, "")
+	Pr("auxSetWidgetProblem, existing:", Quoted(existingProblem), "new:", Quoted(problemText))
 	if existingProblem != problemText {
 		if problemText == "" {
 			state.Delete(key)
@@ -487,6 +510,11 @@ func (s Session) DeleteStateErrors() {
 			delete(m, k)
 		}
 	}
+}
+
+func (s Session) DeleteStateError(id string) {
+	m := s.State.MutableWrapped()
+	delete(m, id)
 }
 
 func (s Session) DeleteStateFieldsWithPrefix(prefix string) {
