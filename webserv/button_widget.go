@@ -6,15 +6,35 @@ import (
 
 type ButtonWidgetObj struct {
 	BaseWidgetObj
-	Label HtmlString
+	Label    HtmlString
+	listener ButtonWidgetListener
 }
 
 type ButtonWidget = *ButtonWidgetObj
 
-func NewButtonWidget() ButtonWidget {
-	b := &ButtonWidgetObj{}
+func NewButtonWidget(listener ButtonWidgetListener) ButtonWidget {
+	if listener == nil {
+		listener = doNothingButtonListener
+	}
+	b := &ButtonWidgetObj{
+		listener: listener,
+	}
+	b.BaseWidgetObj.LowListen = buttonListenWrapper
 	return b
 }
+
+func buttonListenWrapper(sess Session, widget Widget, value string) (string, error) {
+	b := widget.(ButtonWidget)
+	err := b.listener(sess, widget)
+	return "", err
+}
+
+func doNothingButtonListener(sess Session, widget Widget) error {
+	Alert("<1#50Button has no listener yet:", widget.Id())
+	return nil
+}
+
+type ButtonWidgetListener func(sess Session, widget Widget) error
 
 func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	if !w.Visible() {

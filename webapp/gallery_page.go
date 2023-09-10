@@ -41,7 +41,7 @@ func (p GalleryPage) Generate() {
 	m.Col(4)
 	m.Label("uniform delta").AddText()
 	m.Col(8)
-	m.Id("x58").Label(`X58`).Listener(buttonListener).AddButton().SetEnabled(false)
+	m.Id("x58").Label(`X58`).Listener(buttonListener).AddButton(nil).SetEnabled(false)
 
 	m.Col(2).AddSpace()
 	m.Col(3).AddSpace()
@@ -51,7 +51,7 @@ func (p GalleryPage) Generate() {
 	m.Col(6)
 	m.Listener(birdListener)
 	m.Label("Bird").Id("bird")
-	m.AddInput()
+	m.AddInput(nil)
 
 	m.Col(6)
 	m.Open()
@@ -60,7 +60,7 @@ func (p GalleryPage) Generate() {
 	m.Close()
 
 	m.Col(4)
-	m.Id("launch").Label(`Launch`).Listener(buttonListener).AddButton()
+	m.Id("launch").Label(`Launch`).AddButton(buttonListener)
 
 	m.Col(8)
 	m.Label(`Sample text; is 5 < 26? A line feed
@@ -73,7 +73,7 @@ Multiple line feeds:
 
 	m.Col(4)
 	m.Listener(zebraListener)
-	m.Label("Animal").Id("zebra").AddInput()
+	m.Label("Animal").Id("zebra").AddInput(nil)
 }
 
 func birdListener(s Session, widget Widget) {
@@ -104,8 +104,8 @@ func zebraListener(s Session, widget Widget) {
 	s.WidgetManager().Repaint(alertWidget)
 }
 
-func buttonListener(s Session, widget Widget) {
-	wid := s.GetWidgetId()
+func buttonListener(s Session, widget Widget) error {
+	wid := widget.Id()
 	newVal := "Clicked: " + wid
 
 	// Increment the alert class, and update its message
@@ -115,6 +115,7 @@ func buttonListener(s Session, widget Widget) {
 	s.State.Put(alertWidget.BaseId,
 		strings.TrimSpace(newVal))
 	s.WidgetManager().Repaint(alertWidget)
+	return nil
 }
 
 func checkboxListener(s Session, widget Widget) {

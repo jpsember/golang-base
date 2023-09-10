@@ -4,27 +4,40 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
+var DummyError = Error("Example error message")
+
 // A Widget that displays editable text
 type InputWidgetObj struct {
 	BaseWidgetObj
 	Label    HtmlString
 	Password bool
+	listener InputWidgetListener
 }
 
 type InputWidget = *InputWidgetObj
+type InputWidgetListener func(sess Session, widget Widget, value string) (string, error)
 
-func NewInputWidget(id string, label HtmlString, password bool) InputWidget {
+func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, password bool) InputWidget {
+	if listener == nil {
+		listener = dummyInputWidgetListener
+	}
 	w := InputWidgetObj{
 		BaseWidgetObj: BaseWidgetObj{
 			BaseId: id,
 		},
 		Label:    label,
 		Password: password,
+		listener: listener,
 	}
 	return &w
 }
 
 var HtmlStringNbsp = NewHtmlStringEscaped("&nbsp;")
+
+func dummyInputWidgetListener(sess Session, widget Widget, value string) (string, error) {
+	Alert("#50No InputWidgetListener implemented for id:", widget.Id())
+	return "garbage", DummyError
+}
 
 func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 

@@ -44,15 +44,15 @@ func (p CreateAnimalPage) Generate() {
 	{
 		m.Col(12)
 		Todo("when does the INPUT store the state?")
-		m.Label("Name").Id(id_animal_name).Listener(AnimalNameListener).AddInput()
+		m.Label("Name").Id(id_animal_name).AddInput(AnimalNameListener)
 
-		m.Label("Summary").Id(id_animal_summary).AddInput()
+		m.Label("Summary").Id(id_animal_summary).AddInput(p.AnimalTextListener)
 		m.Size(SizeTiny).Label("A brief paragraph to appear in the 'card' view.").AddText()
-		m.Label("Details").Id(id_animal_details).AddInput()
+		m.Label("Details").Id(id_animal_details).AddInput(p.AnimalTextListener)
 		m.Size(SizeTiny).Label("Additional paragraphs to appear on the 'details' view.").AddText()
 
 		m.Listener(p.addListener)
-		m.Id(id_add).Label("Create").AddButton()
+		m.Id(id_add).Label("Create").AddButton(nil)
 	}
 	m.Close()
 
@@ -61,6 +61,10 @@ func (p CreateAnimalPage) Generate() {
 	imgWidget := m.Id(id_animal_display_pic).AddImage()
 	imgWidget.URLProvider = p.provideURL
 	m.Close()
+}
+
+func (p CreateAnimalPage) AnimalTextListener(sess Session, widget Widget, value string) (string, error) {
+	return "garbage", DummyError
 }
 
 func SessionStrValue(s Session, id string) string {
@@ -116,14 +120,16 @@ func (p CreateAnimalPage) addListener(s Session, widget Widget) {
 	NewManagerPage(s, p.parentPage).Generate()
 }
 
-func AnimalNameListener(s Session, widget Widget) {
+func AnimalNameListener(s Session, widget Widget, value string) (string, error) {
 	Pr("AnimalNameListener, widget id:", widget.Id(), "state:", INDENT, s.State)
 
+	Todo("finish implementing; " + value)
 	// The requested value for the widget has been passed in the ajax map, but is not yet known to us otherwise.
 	updated := s.GetValueString()
 	Pr("updated value:", updated)
 
 	ValidateAnimalName(s, widget)
+	return "garbage", DummyError
 }
 
 func ValidateAnimalName(s Session, widget Widget) {

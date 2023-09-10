@@ -15,11 +15,11 @@ type AnimalCardWidgetObj struct {
 
 type AnimalCardWidget = *AnimalCardWidgetObj
 
-func OpenAnimalCardWidget(m WidgetManager, baseId string, animal Animal, viewButtonListener WidgetListener) {
+func OpenAnimalCardWidget(m WidgetManager, baseId string, animal Animal, viewButtonListener ButtonWidgetListener) {
 	widget := newAnimalCardWidget(baseId, animal)
 	m.OpenContainer(widget)
 	// Create a button within this card
-	m.Id(baseId + "_view").Label(`View`).Listener(viewButtonListener).Size(SizeSmall).AddButton()
+	m.Id(baseId + "_view").Label(`View`).Listener(viewButtonListener).Size(SizeSmall).AddButton(viewButtonListener)
 	m.Close()
 }
 

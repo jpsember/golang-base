@@ -14,14 +14,14 @@ type WidgetManagerObj struct {
 	mPendingFloatingPointFlag   bool
 	mPendingDefaultFloatValue   float64
 	mPendingDefaultIntValue     int
-	pendingListener             WidgetListener
-	parentStack                 *Array[Widget]
-	pendingSize                 WidgetSize
-	pendingAlign                WidgetAlign
-	pendingId                   string
-	pendingLabel                string
-	anonymousIdCounter          int
-	repaintSet                  StringSet
+	//pendingListener             WidgetListener
+	parentStack        *Array[Widget]
+	pendingSize        WidgetSize
+	pendingAlign       WidgetAlign
+	pendingId          string
+	pendingLabel       string
+	anonymousIdCounter int
+	repaintSet         StringSet
 }
 
 func NewWidgetManager(session Session) WidgetManager {
@@ -212,7 +212,7 @@ func (m WidgetManager) clearPendingComponentFields() {
 	verifyUsed(m.mPendingStringDefaultValue == "", "mPendingStringDefaultValue")
 	verifyUsed(m.pendingLabel == "", "pendingLabel")
 	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
-	verifyUsed(m.pendingListener == nil, "pendingListener")
+	//verifyUsed(m.pendingListener == nil, "pendingListener")
 	verifyUsed(m.pendingSize == SizeDefault, "pendingSize")
 	verifyUsed(m.pendingAlign == AlignDefault, "pendingAlign")
 
@@ -308,19 +308,19 @@ func (m WidgetManager) currentPanel() Widget {
 	return m.parentStack.Last()
 }
 
-func (m WidgetManager) AddInput() WidgetManager {
-	return m.auxAddInput(false)
+func (m WidgetManager) AddInput(listener InputWidgetListener) WidgetManager {
+	return m.auxAddInput(listener, false)
 }
 
-func (m WidgetManager) auxAddInput(password bool) WidgetManager {
+func (m WidgetManager) auxAddInput(listener InputWidgetListener, password bool) WidgetManager {
 	id := m.consumeOptionalPendingId()
-	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()), password)
+	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()), listener, password)
 	m.assignPendingListener(t)
 	return m.Add(t)
 }
 
-func (m WidgetManager) AddPassword() WidgetManager {
-	return m.auxAddInput(true)
+func (m WidgetManager) AddPassword(listener InputWidgetListener) WidgetManager {
+	return m.auxAddInput(listener, true)
 }
 
 // Utility method to determine the label and id for text fields (text fields, headings).
@@ -349,18 +349,21 @@ func (m WidgetManager) AddHeading() WidgetManager {
 }
 
 func (m WidgetManager) assignPendingListener(widget Widget) {
-	if m.pendingListener != nil {
-		m.assignRequiredPendingListener(widget)
-	}
+	Alert("<1#50No longer supported, assignPendingListener() method")
+	//
+	//if m.pendingListener != nil {
+	//	m.assignRequiredPendingListener(widget)
+	//}
 }
 
-func (m WidgetManager) assignRequiredPendingListener(widget Widget) {
-	if m.pendingListener == nil {
-		BadState("no listener found for widget", widget.Id())
-	}
-	widget.SetListener(m.pendingListener)
-	m.pendingListener = nil
-}
+//
+//func (m WidgetManager) assignRequiredPendingListener(widget Widget) {
+//	if m.pendingListener == nil {
+//		BadState("no listener found for widget", widget.Id())
+//	}
+//	widget.SetListener(m.pendingListener)
+//	m.pendingListener = nil
+//}
 
 func (m WidgetManager) AddText() WidgetManager {
 	staticContent, id := m.getStaticContentAndId()
@@ -372,8 +375,8 @@ func (m WidgetManager) AddText() WidgetManager {
 	return m.Add(w)
 }
 
-func (m WidgetManager) AddButton() ButtonWidget {
-	w := NewButtonWidget()
+func (m WidgetManager) AddButton(listener ButtonWidgetListener) ButtonWidget {
+	w := NewButtonWidget(listener)
 	w.BaseId = m.consumeOptionalPendingId()
 	w.SetSize(m.consumePendingSize())
 	w.SetAlign(m.consumePendingAlign())
@@ -389,8 +392,9 @@ func (m WidgetManager) AddSpace() WidgetManager {
 }
 
 func (m WidgetManager) AddFileUpload() FileUpload {
+	Todo("add listener to FileUpload Widget")
 	w := NewFileUpload(m.consumePendingId(), NewHtmlString(m.consumePendingLabel()))
-	m.assignRequiredPendingListener(w)
+	//m.assignRequiredPendingListener(w)
 	m.Add(w)
 	return w
 }
@@ -418,10 +422,16 @@ func (m WidgetManager) checkboxHelper(switchFlag bool) CheckboxWidget {
 	return w
 }
 
-func (m WidgetManager) Listener(listener WidgetListener) WidgetManager {
-	m.pendingListener = listener
+func (m WidgetManager) Listener(listener any) WidgetManager {
+	Alert("<1#50No longer supported, Listener() method")
+	//m.pendingListener = listener
 	return m
 }
+
+//func (m WidgetManager) Listener(listener WidgetListener) WidgetManager {
+//	m.pendingListener = listener
+//	return m
+//}
 
 func (m WidgetManager) AllocateAnonymousId() string {
 	m.anonymousIdCounter++

@@ -69,9 +69,11 @@ type SessionStruct struct {
 	request        *http.Request
 	// If nonempty, problem detected with current request
 	requestProblem string
-	widgetIds      []string
-	widgetValues   []string
-	clientInfo     []string
+	//widgetIds      []string
+	//widgetValues   []string
+	clientInfo  []string
+	widgetId    string
+	widgetValue string
 }
 
 func NewSession() Session {
@@ -197,7 +199,7 @@ func (s Session) processUpload(w http.ResponseWriter, req *http.Request, widgetI
 	}
 	fileUploadWidget.SetReceivedBytes(result)
 	defer fileUploadWidget.SetReceivedBytes(nil)
-	fileUploadWidget.Listener()(s, fileUploadWidget)
+	fileUploadWidget.LowListener()(s, fileUploadWidget, s.widgetValue)
 }
 
 // Serve a request for a resource
@@ -235,10 +237,21 @@ func (s Session) parseAjaxRequest(req *http.Request) {
 	//  i=<client information as json map, encoded as string>
 	v := req.URL.Query()
 
+	Pr("parseAjaxRequest:", req.URL.Query())
+
 	// A url can contain multiple values for a parameter, though we
 	// will expected just one.
-	s.widgetValues, _ = v[clientKeyValue]
-	s.widgetIds, _ = v[clientKeyWidget]
+
+	t1 := v[clientKeyWidget]
+	t2 := v[clientKeyValue]
+	// A value is optional, as buttons don't send them.
+	if len(t1) == 1 && len(t2) <= 1 {
+		s.widgetId = t1[0]
+		if len(t2) == 1 {
+			s.widgetValue = t2[0]
+		}
+	}
+
 	s.clientInfo, _ = v[clientKeyInfo]
 }
 
@@ -247,7 +260,7 @@ func (s Session) processClientMessage() {
 	if info, err := getSingleValue(s.clientInfo); err == nil {
 		s.processClientInfo(info)
 		// If there isn't a widget message as well, do nothing else
-		if len(s.widgetIds) == 0 {
+		if s.widgetId == "" {
 			return
 		}
 	}
@@ -259,17 +272,24 @@ func (s Session) processClientMessage() {
 	if !s.Ok() {
 		return
 	}
-	listener := widget.Listener()
-	if listener == nil {
-		Todo("?Is it ok to have no listener?")
-		//s.SetRequestProblem("no listener for id", b.Id)
-		return
-	}
+
 	if !widget.Enabled() {
 		s.SetRequestProblem("widget is disabled", widget)
 		return
 	}
-	listener(s, widget)
+
+	if widget.LowListener() == nil {
+		Alert("#50Widget has no low-level listener:", Info(widget))
+		return
+	}
+	updatedValue, err := widget.LowListener()(s, widget, s.widgetValue)
+
+	s.State.Put(widget.Id(), updatedValue)
+	if err != nil {
+		Pr("got error from widget listener:", widget.Id(), INDENT, err)
+		s.SetWidgetProblem(widget, err.Error())
+	}
+
 }
 
 func (s Session) processClientInfo(infoString string) {
@@ -337,8 +357,8 @@ func (s Session) discardRequest() {
 	s.responseWriter = nil
 	s.request = nil
 	s.requestProblem = ""
-	s.widgetValues = nil
-	s.widgetIds = nil
+	s.widgetValue = ""
+	s.widgetId = ""
 	s.WidgetManager().clearRepaintSet()
 	s.Mutex.Unlock()
 }
@@ -346,7 +366,7 @@ func (s Session) discardRequest() {
 func (s Session) SetRequestProblem(message ...any) Session {
 	if s.requestProblem == "" {
 		s.requestProblem = "Problem with ajax request: " + ToString(message...)
-		Alert("<2 setting request problem:", s.requestProblem)
+		Alert("#50<2 setting request problem:", s.requestProblem)
 	}
 	return s
 }
@@ -370,24 +390,18 @@ func getSingleValue(array []string) (string, error) {
 // Deprecated.
 func (s Session) GetWidgetId() string {
 	Todo("this method should probably be deprecated")
-
-	id, err := getSingleValue(s.widgetIds)
-	if err != nil {
-		s.SetRequestProblem("Unable to get widget id")
-		return ""
+	id := s.widgetId
+	if id == "" {
+		s.SetRequestProblem("No widget id")
 	}
 	return id
 }
 
 // Read request's widget value as a string; trim any whitespace.  Store to state as well.
+// Deprecated.
 func (s Session) GetValueString() string {
 	Todo("Rename this to emphasize that the value is also being stored in the state")
-	value, err := getSingleValue(s.widgetValues)
-	Pr("GetValueString, got:", value, "err:", err)
-	if err != nil {
-		s.SetRequestProblem("Unable to get widget value")
-		return ""
-	}
+	value := s.widgetValue
 	value = strings.TrimSpace(value)
 
 	widgetId := s.GetWidgetId()
@@ -403,11 +417,7 @@ func (s Session) GetValueString() string {
 
 // Read request's widget value as a boolean.  Store to state as well.
 func (s Session) GetValueBoolean() bool {
-	value, err := getSingleValue(s.widgetValues)
-	if err != nil {
-		s.SetRequestProblem("Unable to get widget value")
-		return false
-	}
+	value := s.widgetValue
 	var result bool
 	switch value {
 	case "true":

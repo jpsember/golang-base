@@ -26,21 +26,21 @@ func (p LandingPage) Generate() {
 
 	m := p.GenerateHeader()
 
-	m.Label("gallery").Align(AlignRight).Size(SizeTiny).Listener(p.galleryListener).AddButton()
+	m.Label("gallery").Align(AlignRight).Size(SizeTiny).Listener(p.galleryListener).AddButton(nil)
 	m.Col(6)
 	m.Open()
 	{
 		m.Col(12)
 		m.Label("User name").Id(id_user_name).Listener(
-			p.validateUserName).AddInput()
-		m.Label("Password").Id(id_user_pwd).Listener(p.validateUserPwd).AddPassword()
+			p.validateUserName).AddInput(nil)
+		m.Label("Password").Id(id_user_pwd).Listener(p.validateUserPwd).AddPassword(nil)
 		m.Open()
 		m.Col(6)
 		{
-			m.Listener(p.signInListener).Label("Sign In").AddButton()
+			m.Listener(p.signInListener).Label("Sign In").AddButton(nil)
 			m.Listener(p.forgotPwdListener).Label("I forgot my password")
 			m.Size(SizeTiny)
-			m.AddButton()
+			m.AddButton(nil)
 		}
 		m.Close()
 	}
@@ -48,7 +48,7 @@ func (p LandingPage) Generate() {
 	m.Open()
 	{
 		m.Listener(p.signUpListener)
-		m.Label("Sign Up").AddButton()
+		m.Label("Sign Up").AddButton(nil)
 	}
 	m.Close()
 }

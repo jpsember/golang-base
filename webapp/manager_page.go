@@ -25,7 +25,7 @@ func (p ManagerPage) Generate() {
 	// Row of buttons at top.
 	m.Open()
 	{
-		m.Listener(p.newAnimalListener).Label("New Animal").AddButton()
+		m.Listener(p.newAnimalListener).Label("New Animal").AddButton(nil)
 	}
 	m.Close()
 

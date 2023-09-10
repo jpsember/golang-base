@@ -8,14 +8,11 @@ import (
 // The interface that all widgets must support
 type Widget interface {
 	Id() string
-	Listener() WidgetListener
-	SetListener(WidgetListener)
-
+	LowListener() LowLevelWidgetListener
 	Enabled() bool
 	RenderTo(m MarkupBuilder, state JSMap)
 	Children() *Array[Widget]
 	AddChild(c Widget, manager WidgetManager)
-	//ClearChildren()
 
 	SetStaticContent(content any)
 	StaticContent() any
@@ -24,7 +21,8 @@ type Widget interface {
 }
 
 // This general type of listener can serve as a validator as well
-type WidgetListener func(sess Session, widget Widget)
+// type WidgetListener func(sess Session, widget Widget)
+type LowLevelWidgetListener func(sess Session, widget Widget, value string) (string, error)
 
 type WidgetMap = map[string]Widget
 

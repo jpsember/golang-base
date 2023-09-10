@@ -6,9 +6,10 @@ import (
 
 // The simplest concrete Widget implementation
 type BaseWidgetObj struct {
-	BaseId        string
-	Bounds        Rect
-	listener      WidgetListener
+	BaseId string
+	Bounds Rect
+
+	LowListen     LowLevelWidgetListener
 	hidden        bool
 	disabled      bool
 	staticContent any
@@ -23,6 +24,10 @@ func NewBaseWidget(id string) BaseWidget {
 	t := &BaseWidgetObj{}
 	t.BaseId = id
 	return t
+}
+
+func (w BaseWidget) LowListener() LowLevelWidgetListener {
+	return w.LowListen
 }
 
 func (w BaseWidget) String() string {
@@ -49,16 +54,16 @@ func (w BaseWidget) Size() WidgetSize {
 	return w.size
 }
 
-func (w BaseWidget) Listener() WidgetListener {
-	return w.listener
-}
+//func (w BaseWidget) Listener() WidgetListener {
+//	return w.listener
+//}
 
-func (w BaseWidget) SetListener(listener WidgetListener) {
-	if w.listener != nil {
-		BadState("Widget", w.Id(), "already has a listener")
-	}
-	w.listener = listener
-}
+//func (w BaseWidget) SetListener(listener WidgetListener) {
+//	if w.listener != nil {
+//		BadState("Widget", w.Id(), "already has a listener")
+//	}
+//	w.listener = listener
+//}
 
 func (w BaseWidget) Base() BaseWidget {
 	return w

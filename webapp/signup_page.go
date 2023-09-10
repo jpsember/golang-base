@@ -37,15 +37,15 @@ func (p SignUpPage) Generate() {
 	m.Col(6).Open()
 	{
 		m.Col(12)
-		m.Label("User name").Id(id_user_name).Listener(p.validateUserName).AddInput()
-		m.Label("Password").Id(id_user_pwd).Listener(p.validateUserPwd).AddPassword()
-		m.Label("Password Again").Id(id_user_pwd_verify).Listener(p.validateMatchPwd).AddPassword()
-		m.Label("Email").Id(id_user_email).Listener(p.validateEmail).AddInput()
+		m.Label("User name").Id(id_user_name).Listener(p.validateUserName).AddInput(nil)
+		m.Label("Password").Id(id_user_pwd).Listener(p.validateUserPwd).AddPassword(nil)
+		m.Label("Password Again").Id(id_user_pwd_verify).Listener(p.validateMatchPwd).AddPassword(nil)
+		m.Label("Email").Id(id_user_email).Listener(p.validateEmail).AddInput(nil)
 		m.Size(SizeTiny).Label("We will never share your email address with anyone.").AddText()
 		m.Col(6)
 		m.AddSpace()
 		m.Listener(p.signUpListener)
-		m.Id(id_sign_up).Label("Sign Up").AddButton()
+		m.Id(id_sign_up).Label("Sign Up").AddButton(nil)
 	}
 	m.Close()
 }
