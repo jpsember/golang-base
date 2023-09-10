@@ -55,7 +55,7 @@ func (p CreateAnimalPage) Generate() {
 	m.Close()
 
 	m.Open()
-	m.Id(id_animal_uploadpic).Label("Photo").Listener(p.uploadPhotoListener).AddFileUpload()
+	m.Id(id_animal_uploadpic).Label("Photo").AddFileUpload(p.uploadPhotoListener)
 	imgWidget := m.Id(id_animal_display_pic).AddImage()
 	imgWidget.URLProvider = p.provideURL
 	m.Close()
@@ -175,13 +175,13 @@ func ValidateAnimalPhoto(s Session, valueWidget Widget, reportWidget Widget) {
 	}
 }
 
-func (p CreateAnimalPage) uploadPhotoListener(s Session, widget Widget) {
+func (p CreateAnimalPage) uploadPhotoListener(s Session, widget FileUpload, by []byte) error {
 	pr := PrIf(true)
 
 	m := s.WidgetManager()
 
-	fu := widget.(FileUpload)
-	by := fu.ReceivedBytes()
+	//fu := widget.(FileUpload)
+	//by := fu.ReceivedBytes()
 
 	var jpeg []byte
 	var imageId int
@@ -235,25 +235,21 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget Widget) {
 		break
 	}
 
-	if err != nil {
-		Pr("...error was:", err)
-	}
-	if problem != "" {
-		problem = "Trouble uploading image: " + problem
+	if err == nil && problem != "" {
+		err = Error(problem)
 	}
 
-	// Update the problem in any case, to remove an old problem if there is now not one.
-	s.SetWidgetProblem(widget, problem)
-	if problem == "" {
-
+	if err == nil {
 		// Discard the old blob whose id we are now replacing
 		DiscardBlob(SessionIntValue(s, id_animal_display_pic))
 
 		// Store the id of the blob in the image widget
 		s.State.Put(id_animal_display_pic, imageId)
+
+		pr("repainting animal_display_pic")
+		m.RepaintIds(id_animal_display_pic)
 	}
-	pr("repainting animal_display_pic")
-	m.RepaintIds(id_animal_display_pic)
+	return err
 }
 
 func (p CreateAnimalPage) provideURL() string {

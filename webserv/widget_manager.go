@@ -391,10 +391,17 @@ func (m WidgetManager) AddSpace() WidgetManager {
 	return m.Add(NewBaseWidget(m.consumeOptionalPendingId()))
 }
 
-func (m WidgetManager) AddFileUpload() FileUpload {
+func doNothingFileUploadListener(sess Session, widget FileUpload, value []byte) error {
+	Pr("'do nothing' FileUploadListener called with bytes:", len(value))
+	return nil
+}
+
+func (m WidgetManager) AddFileUpload(listener FileUploadWidgetListener) FileUpload {
+	if listener == nil {
+		listener = doNothingFileUploadListener
+	}
 	Todo("add listener to FileUpload Widget")
-	w := NewFileUpload(m.consumePendingId(), NewHtmlString(m.consumePendingLabel()))
-	//m.assignRequiredPendingListener(w)
+	w := NewFileUpload(m.consumePendingId(), NewHtmlString(m.consumePendingLabel()), listener)
 	m.Add(w)
 	return w
 }

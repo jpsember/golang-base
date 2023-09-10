@@ -33,7 +33,7 @@ func (p GalleryPage) Generate() {
 
 	m.Open()
 	m.Col(6)
-	m.Id("sample_upload").Label("Photo").Listener(p.uploadListener).AddFileUpload()
+	m.Id("sample_upload").Label("Photo").AddFileUpload(p.uploadListener)
 	imgWidget := m.Id("sample_image").AddImage()
 	imgWidget.URLProvider = p.provideURL
 	m.Close()
@@ -124,12 +124,10 @@ func checkboxListener(s Session, widget Widget) {
 	// Repainting isn't necessary, as the web page has already done this
 }
 
-func (p GalleryPage) uploadListener(s Session, widget Widget) {
+func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, value []byte) error {
 	pr := PrIf(true)
 
 	m := s.WidgetManager()
-
-	fileUploadWidget := widget.(FileUpload)
 
 	var jpeg []byte
 	var imageId int
@@ -139,7 +137,7 @@ func (p GalleryPage) uploadListener(s Session, widget Widget) {
 	problem := ""
 	for {
 		problem = "Decoding image"
-		if img, err = jimg.DecodeImage(fileUploadWidget.ReceivedBytes()); err != nil {
+		if img, err = jimg.DecodeImage(value); err != nil {
 			break
 		}
 		pr("decoded:", INDENT, img)
@@ -180,17 +178,21 @@ func (p GalleryPage) uploadListener(s Session, widget Widget) {
 		problem = ""
 		break
 	}
+
+	var errOut error
+
 	if problem != "" {
 		Pr("Problem with upload:", problem)
 		if err != nil {
 			Pr("...error was:", err)
 		}
-		s.SetWidgetProblem(widget, "Trouble uploading image: "+problem)
+		errOut = Error(problem)
 	} else {
 		// Store the id of the blob in the image widget
 		s.State.Put(sampleImageId, imageId)
+		m.RepaintIds(sampleImageId)
 	}
-	m.RepaintIds(sampleImageId)
+	return errOut
 }
 
 func (p GalleryPage) provideURL() string {

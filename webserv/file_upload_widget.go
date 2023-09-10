@@ -4,18 +4,21 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
+type FileUploadWidgetListener func(sess Session, widget FileUpload, value []byte) error
+
 type FileUploadObj struct {
 	BaseWidgetObj
-	Label         HtmlString
-	receivedBytes []byte
+	Label HtmlString
+	listener FileUploadWidgetListener
 }
 
 type FileUpload = *FileUploadObj
 
-func NewFileUpload(id string, label HtmlString) FileUpload {
+func NewFileUpload(id string, label HtmlString, listener FileUploadWidgetListener) FileUpload {
 	t := &FileUploadObj{}
 	t.BaseId = id
 	t.Label = label
+	t.listener = listener
 	return t
 }
 
@@ -69,10 +72,3 @@ func (w FileUpload) RenderTo(m MarkupBuilder, state JSMap) {
 	m.CloseTag()
 }
 
-func (w FileUpload) SetReceivedBytes(result []byte) {
-	w.receivedBytes = result
-}
-
-func (w FileUpload) ReceivedBytes() []byte {
-	return w.receivedBytes
-}

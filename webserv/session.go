@@ -142,64 +142,78 @@ func (s Session) HandleUploadRequest(w http.ResponseWriter, req *http.Request, w
 	// Send the usual ajax response
 
 	s.sendAjaxResponse()
-
 }
 
 func (s Session) processUpload(w http.ResponseWriter, req *http.Request, widgetId string) {
 
-	if req.Method != "POST" {
-		s.SetRequestProblem("upload request was not POST")
-		return
-	}
-
-	// From https://freshman.tech/file-upload-golang/
-	const MAX_UPLOAD_SIZE = 10_000_000
-	req.Body = http.MaxBytesReader(w, req.Body, MAX_UPLOAD_SIZE)
-	if err := req.ParseMultipartForm(MAX_UPLOAD_SIZE); err != nil {
-		Todo("this should be returned to the user as a widget error msg")
-		s.SetRequestProblem("The uploaded file is too big. Please choose an file that's less than 10MB in size")
-		return
-	}
-
-	// The argument to FormFile must match the name attribute
-	// of the file input on the frontend; not sure what that is about
-
-	file, _ /*fileHeader*/, err := req.FormFile(widgetId + ".input")
-	if err != nil {
-		s.SetRequestProblem("trouble getting request FormFile:", err)
-		return
-	}
-
-	defer file.Close()
-
-	var buf bytes.Buffer
-	length, err1 := io.Copy(io.Writer(&buf), file)
-	if err1 != nil {
-		s.SetRequestProblem("failed to read uploaded file into byte array:", err1)
-		return
-	}
-	Pr("bytes buffer length:", len(buf.Bytes()), "read:", length)
-
-	CheckArg(len(buf.Bytes()) == int(length))
-	result := buf.Bytes()
-
-	// Note, we don't need to know the widget until this point
-	//
-	Todo("!Must ensure thread safety while working with the user session")
+	var fileUploadWidget FileUpload
 
 	widget := s.WidgetManager().Opt(widgetId)
 	if widget == nil {
-		s.SetRequestProblem("handling upload request, can't find widget:", widgetId)
+		Alert("Can't find upload widget:", widgetId)
 		return
 	}
-	fileUploadWidget, ok := widget.(FileUpload)
-	if !ok {
-		s.SetRequestProblem("handling upload request, widget isn't expected type:", widgetId)
+	var ok bool
+	if fileUploadWidget, ok = widget.(FileUpload); !ok {
+		Alert("Not an UploadWidget:", widgetId)
 		return
 	}
-	fileUploadWidget.SetReceivedBytes(result)
-	defer fileUploadWidget.SetReceivedBytes(nil)
-	fileUploadWidget.LowListener()(s, fileUploadWidget, s.widgetValue)
+
+	problem := ""
+	var result []byte
+
+	for {
+
+		problem = "upload request was not POST"
+		if req.Method != "POST" {
+			break
+		}
+
+		// From https://freshman.tech/file-upload-golang/
+
+		problem = "The uploaded file is too big. Please choose an file that's less than 10MB in size"
+		{
+			const MAX_UPLOAD_SIZE = 10_000_000
+			req.Body = http.MaxBytesReader(w, req.Body, MAX_UPLOAD_SIZE)
+			if err := req.ParseMultipartForm(MAX_UPLOAD_SIZE); err != nil {
+				Todo("this should be returned to the user as a widget error msg")
+				break
+			}
+		}
+
+		// The argument to FormFile must match the name attribute
+		// of the file input on the frontend; not sure what that is about
+
+		problem = "trouble getting request FormFile"
+		file, _, err1 := req.FormFile(widgetId + ".input")
+		if err1 != nil {
+			break
+		}
+
+		problem = "failed to read uploaded file into byte array"
+		var buf bytes.Buffer
+		length, err1 := io.Copy(io.Writer(&buf), file)
+		file.Close()
+		if err1 != nil {
+			break
+		}
+
+		CheckArg(len(buf.Bytes()) == int(length))
+		result = buf.Bytes()
+
+		// Note, we don't need to know the widget until this point
+		//
+		Todo("!Must ensure thread safety while working with the user session")
+
+		problem = ""
+		break
+	}
+	if problem != "" {
+		s.SetWidgetProblem(fileUploadWidget, problem)
+		Alert("Problem with upload:", problem)
+		return
+	}
+	fileUploadWidget.listener(s, fileUploadWidget, result)
 }
 
 // Serve a request for a resource
@@ -461,7 +475,6 @@ func (s Session) SetWidgetIdProblem(widgetId string, problem any) {
 }
 
 func (s Session) SetWidgetProblem(widget Widget, problem any) {
-	Pr("SetWidgetProblem:", widget.Id(), "problem:", problem)
 	var text string
 	if problem != nil {
 		switch t := problem.(type) {
@@ -480,8 +493,8 @@ func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {
 	key := WidgetIdWithProblem(widget.Id())
 	state := s.State
 	existingProblem := state.OptString(key, "")
-	Pr("auxSetWidgetProblem, existing:", Quoted(existingProblem), "new:", Quoted(problemText))
 	if existingProblem != problemText {
+		Pr("SetWidgetProblem:", widget.Id(), "from:", existingProblem, "to:", problemText)
 		if problemText == "" {
 			state.Delete(key)
 		} else {
