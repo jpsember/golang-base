@@ -237,8 +237,6 @@ func (s Session) parseAjaxRequest(req *http.Request) {
 	//  i=<client information as json map, encoded as string>
 	v := req.URL.Query()
 
-	Pr("parseAjaxRequest:", req.URL.Query())
-
 	// A url can contain multiple values for a parameter, though we
 	// will expected just one.
 
@@ -287,9 +285,9 @@ func (s Session) processClientMessage() {
 	s.State.Put(widget.Id(), updatedValue)
 	if err != nil {
 		Pr("got error from widget listener:", widget.Id(), INDENT, err)
-		s.SetWidgetProblem(widget, err.Error())
 	}
-
+	// Always update the problem, in case we are clearing a previous error
+	s.SetWidgetProblem(widget, err)
 }
 
 func (s Session) processClientInfo(infoString string) {

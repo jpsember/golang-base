@@ -19,6 +19,7 @@ type InputWidget = *InputWidgetObj
 type InputWidgetListener func(sess Session, widget Widget, value string) (string, error)
 
 func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, password bool) InputWidget {
+	Todo("?Add multi-line input fields, different font sizes")
 	if listener == nil {
 		listener = dummyInputWidgetListener
 	}
@@ -35,9 +36,11 @@ func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, p
 }
 
 func inputListenWrapper(sess Session, widget Widget, value string) (string, error) {
+	Pr("...input listener, id:", widget.Id())
 	inp := widget.(InputWidget)
 	value = strings.TrimSpace(value)
 	result, err := inp.listener(sess, inp, value)
+	Pr("...got result back:", result, "err:", err)
 	return result, err
 }
 

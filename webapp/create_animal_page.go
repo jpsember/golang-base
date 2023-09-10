@@ -35,7 +35,6 @@ func NewCreateAnimalPage(sess Session, parentWidget Widget) AbstractPage {
 func (p CreateAnimalPage) Generate() {
 	//SetWidgetDebugRendering()
 	p.session.DeleteStateFieldsWithPrefix(anim_state_prefix)
-	//p.session.DeleteStateErrors()
 	m := p.GenerateHeader()
 
 	Todo("!Have ajax listener that can show advice without an actual error, e.g., if user left some fields blank")
@@ -62,8 +61,16 @@ func (p CreateAnimalPage) Generate() {
 	m.Close()
 }
 
+func AnimalNameListener(s Session, widget Widget, value string) (string, error) {
+	return ValidateAnimalName(value, VALIDATE_EMPTYOK)
+}
+
 func (p CreateAnimalPage) AnimalTextListener(sess Session, widget Widget, value string) (string, error) {
-	return "garbage", DummyError
+	if widget.Id() == id_animal_summary {
+		return animalInfoListener(sess, widget, value, 20, 200, true)
+	} else {
+		return animalInfoListener(sess, widget, value, 200, 2000, true)
+	}
 }
 
 func SessionStrValue(s Session, id string) string {
@@ -84,9 +91,9 @@ func WidgetIntValue(s Session, widget Widget) int {
 
 func (p CreateAnimalPage) addListener(s Session, widget Widget) error {
 	pr := PrIf(true)
-	pr("state:", INDENT, s.State)
+	//pr("state:", INDENT, s.State)
 
-	p.session.DeleteStateErrors()
+	//p.session.DeleteStateErrors()
 
 	wName := getWidget(s, id_animal_name)
 	wSummary := getWidget(s, id_animal_summary)
@@ -95,28 +102,18 @@ func (p CreateAnimalPage) addListener(s Session, widget Widget) error {
 	mUpload := getWidget(s, id_animal_uploadpic)
 
 	{
-		Todo("have a method to do this, ideally:")
-		widg := wName
-		id := widg.Id()
-		Todo("Should we be manipulating widget ids (strings) or widgets?")
-		// Get value of widget, as a string
-		value := s.State.OptString(id, "")
-		// Validate this value (full validation)
-		result, err := ValidateAnimalName(value, 0)
-		// If there was a problem, set it
-		s.SetWidgetProblem(widg, err)
-		// Store validated value; if it has changed, repaint the widget
-		if result != value {
-			s.State.Put(id, result)
-			s.WidgetManager().Repaint(widg)
-		}
+		text := WidgetStrValue(s, wName)
+		result, err := ValidateAnimalName(text, 0)
+		s.SetWidgetProblem(wName, err)
+		Todo("We need to store new animal name value here perhaps", result)
 	}
 
-	ValidateAnimalInfo(s, wSummary, 20, 200)
-	ValidateAnimalInfo(s, wDetails, 200, 2000)
+	preSubmitValidateText(s, wSummary, 20, 200, 0)
+	preSubmitValidateText(s, wDetails, 200, 2000, 0)
 	ValidateAnimalPhoto(s, wPhoto, mUpload)
 
 	errcount := WidgetErrorCount(p.parentPage, s.State)
+	pr("error count:", errcount)
 	if errcount != 0 {
 		return nil
 	}
@@ -129,7 +126,7 @@ func (p CreateAnimalPage) addListener(s Session, widget Widget) error {
 	ub, err := CreateAnimal(b)
 	CheckOk(err)
 
-	Pr("created animal:", INDENT, ub)
+	pr("created animal:", INDENT, ub)
 
 	Todo("discard state, i.e. the edited fields; use a common prefix to simplify")
 	Todo("Do a 'back' operation to go back to the previous page")
@@ -137,55 +134,17 @@ func (p CreateAnimalPage) addListener(s Session, widget Widget) error {
 	return nil
 }
 
-func AnimalNameListener(s Session, widget Widget, value string) (string, error) {
-	Pr("AnimalNameListener, widget id:", widget.Id(), "value:", Quoted(value))
-	return ValidateAnimalName(value, VALIDATE_EMPTYOK)
-	//Todo("finish implementing; " + value)
-	//// The requested value for the widget has been passed in the ajax map, but is not yet known to us otherwise.
-	//updated := s.GetValueString()
-	//Pr("updated value:", updated)
-	//
-	//ValidateAnimalName(s, widget)
-	//return "garbage", DummyError
-}
-
-//
-//func ValidateAnimalName(s Session, widget Widget) {
-//	n := s.GetStateString(widget.Id())
-//	Pr("ValidateAnimalName:", n)
-//
-//	errStr := ""
-//
-//	for {
-//		ln := len(n)
-//		if ln < 3 || ln > 20 {
-//			errStr = "Length should be 3...20 characters" + " (currently: " + n + ")"
-//			break
-//		}
-//		break
-//	}
-//
-//	// Maybe update the problem whether it exists or not, to trigger a repaint
-//	Pr("setting widget problem to:", Quoted(errStr))
-//	s.SetWidgetProblem(widget, errStr)
-//}
-
-func ValidateAnimalInfo(s Session, widget Widget, minLength int, maxLength int) {
+func animalInfoListener(s Session, widget Widget, n string, minLength int, maxLength int, emptyOk bool) (string, error) {
 	errStr := ""
-	Todo("a utility method for reading widget values as strings")
-	n := WidgetStrValue(s, widget)
-	n = strings.TrimSpace(n)
-	Pr("validateAnimalInfo, maxLen:", maxLength, "id:", widget.Id())
+
 	for {
 		ln := len(n)
 
 		errStr = "Please add more info here."
-		if true && Alert("allowing empty fields") {
-			minLength = 0
-		}
-		if ln < minLength {
+		if ln < minLength && !(ln == 0 && emptyOk) {
 			break
 		}
+
 		errStr = "Please type no more than " + IntToString(maxLength) + " characters."
 		if ln > maxLength {
 			break
@@ -194,9 +153,18 @@ func ValidateAnimalInfo(s Session, widget Widget, minLength int, maxLength int) 
 		errStr = ""
 		break
 	}
+	var err error
 	if errStr != "" {
-		s.SetWidgetProblem(widget, errStr)
+		err = Error(errStr)
 	}
+	return n, err
+}
+
+func preSubmitValidateText(s Session, widget Widget, minLength int, maxLength int, flags ValidateFlag) {
+	n := WidgetStrValue(s, widget)
+	n, err := animalInfoListener(s, widget, n, minLength, maxLength, flags.Has(VALIDATE_EMPTYOK))
+	s.SetWidgetProblem(widget, err)
+	Todo("We need to store new value here perhaps")
 }
 
 func ValidateAnimalPhoto(s Session, valueWidget Widget, reportWidget Widget) {
