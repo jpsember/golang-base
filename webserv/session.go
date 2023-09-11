@@ -324,7 +324,7 @@ func (s Session) processRepaintFlags(repaintSet StringSet, debugDepth int, w Wid
 
 	if repaint {
 		m := NewMarkupBuilder()
-		w.RenderTo(s, m)
+		RenderWidget(w, s, m)
 		refmap.Put(id, m.String())
 	}
 

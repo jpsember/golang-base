@@ -19,11 +19,6 @@ func NewFileUpload(id string, label HtmlString, listener FileUploadWidgetListene
 }
 
 func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
-	if !w.Visible() {
-		m.RenderInvisible(w)
-		return
-	}
-
 	inputId := w.BaseId + ".input"
 	formId := w.BaseId + ".form"
 	inputName := w.BaseId + ".input"

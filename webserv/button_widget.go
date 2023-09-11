@@ -37,11 +37,6 @@ func doNothingButtonListener(sess Session, widget Widget) error {
 type ButtonWidgetListener func(sess Session, widget Widget) error
 
 func (w ButtonWidget) RenderTo(s Session, m MarkupBuilder) {
-	if !w.Visible() {
-		m.RenderInvisible(w)
-		return
-	}
-
 	//tx := TextAlignStr(w.Align())
 	if w.size == SizeTiny {
 		// For now, interpreting SizeTiny to mean a non-underlined, link-styled button that is very small:

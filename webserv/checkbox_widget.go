@@ -50,11 +50,6 @@ func checkboxListenWrapper(sess Session, widget Widget, value string) (string, e
 }
 
 func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
-	if !w.Visible() {
-		m.RenderInvisible(w)
-		return
-	}
-
 	auxId := w.AuxId()
 
 	m.Comment("CheckboxWidget")

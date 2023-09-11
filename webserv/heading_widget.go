@@ -14,25 +14,21 @@ func NewHeadingWidget(id string) HeadingWidget {
 }
 
 func (w HeadingWidget) RenderTo(s Session, m MarkupBuilder) {
-	if !w.Visible() {
-		m.RenderInvisible(w)
-	} else {
-		textContent, _ := s.GetStaticOrDynamicLabel(w)
-		tag := wsHeadingSize[w.Size()]
-		m.A(`<`, tag)
+	textContent, _ := s.GetStaticOrDynamicLabel(w)
+	tag := wsHeadingSize[w.Size()]
+	m.A(`<`, tag)
 
-		// Have some special handling for the Micro size; very small text, and right justified
-		if w.size == SizeMicro {
-			m.A(` style="font-size:50%"`)
-		}
-		tx := wsHeadingAlign[w.Align()]
-		if tx != "" {
-			m.A(` class="`, tx, `"`)
-		}
-		m.A(` id='`, w.BaseId, `'>`)
-		m.Escape(textContent)
-		m.A(`</`, tag, `>`)
+	// Have some special handling for the Micro size; very small text, and right justified
+	if w.size == SizeMicro {
+		m.A(` style="font-size:50%"`)
 	}
+	tx := wsHeadingAlign[w.Align()]
+	if tx != "" {
+		m.A(` class="`, tx, `"`)
+	}
+	m.A(` id='`, w.BaseId, `'>`)
+	m.Escape(textContent)
+	m.A(`</`, tag, `>`)
 	m.Cr()
 }
 

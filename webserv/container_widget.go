@@ -30,7 +30,6 @@ type ContainerWidgetObj struct {
 type ContainerWidget = *ContainerWidgetObj
 
 func NewContainerWidget(id string) ContainerWidget {
-	Todo("!might simplify a lot of things if widgets had references to their own managers")
 	w := ContainerWidgetObj{
 		children: NewArray[Widget](),
 		cells:    NewArray[GridCell](),

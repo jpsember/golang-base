@@ -20,11 +20,6 @@ func NewTextWidget(id string, size WidgetSize) TextWidget {
 }
 
 func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
-	if !w.Visible() {
-		m.RenderInvisible(w)
-		return
-	}
-
 	textContent, wasStatic := s.GetStaticOrDynamicLabel(w)
 
 	h := NewHtmlString(textContent)

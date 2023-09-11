@@ -208,7 +208,7 @@ func (oper AnimalOper) processFullPageRequest(sess Session, w http.ResponseWrite
 	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
-	sess.PageWidget.RenderTo(sess, sb)
+	RenderWidget(sess.PageWidget, sess, sb)
 	sess.RequestClientInfo(sb)
 	oper.writeFooter(w, sb)
 }

@@ -132,7 +132,7 @@ func RenderAnimalCard(s Session, w_animal Animal, m MarkupBuilder, button Widget
 						Todo("!Add ability to add style = 'width:100%; font-size:75%;' to the child button")
 						Todo("!add:  <button class='btn btn-primary btn-sm'> to button")
 						Todo("assuming session doesn't need to be sent here")
-						vb.RenderTo(s, m)
+						RenderWidget(vb, s, m)
 					}
 				}
 				m.CloseTag()

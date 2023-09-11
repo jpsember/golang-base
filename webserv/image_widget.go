@@ -22,14 +22,8 @@ func NewImageWidget(id string) ImageWidget {
 }
 
 func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
-
 	pr := PrIf(false)
 	pr("rendering:", w.Id())
-
-	if !w.Visible() {
-		m.RenderInvisible(w)
-		return
-	}
 
 	m.Comment("image")
 

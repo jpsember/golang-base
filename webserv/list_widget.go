@@ -30,8 +30,6 @@ func NewListWidget(id string, list ListInterface, renderer ListItemRenderer, lis
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-	Todo("The RenderInvisible could be handled elsewhere")
-
 	pr := PrIf(true)
 
 	m.Comment("ListWidget")

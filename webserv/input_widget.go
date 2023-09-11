@@ -50,12 +50,6 @@ func dummyInputWidgetListener(sess Session, widget InputWidget, value string) (s
 }
 
 func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
-
-	if !w.Visible() {
-		m.RenderInvisible(w)
-		return
-	}
-
 	// While <input> are span tags, our widget should be considered a block element
 
 	// The outermost element must have id "foo", since we will be replacing that id's outerhtml

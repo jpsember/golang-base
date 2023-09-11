@@ -10,6 +10,8 @@ type Widget interface {
 	Id() string
 	LowListener() LowLevelWidgetListener
 	Enabled() bool
+	Visible() bool
+	// This should not be called directly; rather, RenderWidget() to handle invisible widgets properly
 	RenderTo(s *SessionStruct, m MarkupBuilder)
 	Children() *Array[Widget]
 	AddChild(c Widget, manager WidgetManager)
@@ -68,4 +70,12 @@ func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
 func WidgetIdWithProblem(id string) string {
 	CheckArg(id != "")
 	return id + ".problem"
+}
+
+func RenderWidget(w Widget, s Session, m MarkupBuilder) {
+	if !w.Visible() {
+		m.A(`<div id='`, w.Id(), `'></div>`).Cr()
+	} else {
+		w.RenderTo(s, m)
+	}
 }
