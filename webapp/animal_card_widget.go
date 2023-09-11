@@ -19,7 +19,7 @@ func OpenAnimalCardWidget(m WidgetManager, baseId string, animal Animal, viewBut
 	widget := newAnimalCardWidget(baseId, animal)
 	m.OpenContainer(widget)
 	// Create a button within this card
-	m.Id(baseId + "_view").Label(`View`).Listener(viewButtonListener).Size(SizeSmall).AddButton(viewButtonListener)
+	m.Id(baseId + "_view").Label(`View`).Size(SizeSmall).AddButton(viewButtonListener)
 	m.Close()
 }
 

@@ -21,6 +21,8 @@ func NewImageWidget(id string) ImageWidget {
 }
 
 func (w ImageWidget) RenderTo(m MarkupBuilder, state JSMap) {
+	Todo("Have support for scaling down requested image")
+
 	pr := PrIf(false)
 	pr("rendering:", w.Id())
 
@@ -48,16 +50,9 @@ func (w ImageWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			pr("no URLProvider!")
 		}
 
-		//blobId := state.OptInt(w.Id(), 0)
-		//if blobId != 0 {
-		//	imageSource = ReadImageIntoCache(blobId)
-		//}
-
 		// The outermost element must have the widget's id!  Or chaos happens during repainting.
 		//
-
 		m.VoidTag(`img src="`, imageSource, `" class="img-fluid" alt="uploaded image"`)
-
 	}
 	m.CloseTag()
 	pr("done render")

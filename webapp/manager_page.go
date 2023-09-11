@@ -22,10 +22,11 @@ func NewManagerPage(sess Session, parentWidget Widget) ManagerPage {
 func (p ManagerPage) Generate() {
 	m := p.GenerateHeader()
 
+	Todo("If we are generating a new page, we shouldn't try to store the error in the old one")
 	// Row of buttons at top.
 	m.Open()
 	{
-		m.Listener(p.newAnimalListener).Label("New Animal").AddButton(nil)
+		m.Label("New Animal").AddButton(p.newAnimalListener)
 	}
 	m.Close()
 
@@ -36,6 +37,7 @@ func (p ManagerPage) Generate() {
 
 }
 
-func (p ManagerPage) newAnimalListener(sess Session, widget Widget) {
+func (p ManagerPage) newAnimalListener(sess Session, widget Widget) error {
 	NewCreateAnimalPage(sess, p.parentPage).Generate()
+	return nil
 }

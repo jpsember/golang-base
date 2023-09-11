@@ -69,11 +69,9 @@ type SessionStruct struct {
 	request        *http.Request
 	// If nonempty, problem detected with current request
 	requestProblem string
-	//widgetIds      []string
-	//widgetValues   []string
-	clientInfo  []string
-	widgetId    string
-	widgetValue string
+	clientInfo     []string
+	ajaxWidget     Widget
+	widgetValue    string
 }
 
 func NewSession() Session {
@@ -201,10 +199,7 @@ func (s Session) processUpload(w http.ResponseWriter, req *http.Request, widgetI
 		CheckArg(len(buf.Bytes()) == int(length))
 		result = buf.Bytes()
 
-		// Note, we don't need to know the widget until this point
-		//
 		Todo("!Must ensure thread safety while working with the user session")
-
 		problem = ""
 		break
 	}
@@ -256,14 +251,15 @@ func (s Session) parseAjaxRequest(req *http.Request) {
 
 	t1 := v[clientKeyWidget]
 	t2 := v[clientKeyValue]
+	var wid string
 	// A value is optional, as buttons don't send them.
 	if len(t1) == 1 && len(t2) <= 1 {
-		s.widgetId = t1[0]
+		wid = t1[0]
 		if len(t2) == 1 {
 			s.widgetValue = t2[0]
 		}
 	}
-
+	s.ajaxWidget = s.WidgetManager().Opt(wid)
 	s.clientInfo, _ = v[clientKeyInfo]
 }
 
@@ -272,7 +268,7 @@ func (s Session) processClientMessage() {
 	if info, err := getSingleValue(s.clientInfo); err == nil {
 		s.processClientInfo(info)
 		// If there isn't a widget message as well, do nothing else
-		if s.widgetId == "" {
+		if s.ajaxWidget == nil {
 			return
 		}
 	}
@@ -280,8 +276,9 @@ func (s Session) processClientMessage() {
 	// At present, we will assume that the request consists of a single widget id, and perhaps a single value
 	// for that widget
 	//
-	widget := s.GetWidget()
-	if !s.Ok() {
+	widget := s.ajaxWidget
+	if widget == nil {
+		s.SetRequestProblem("no widget found", widget)
 		return
 	}
 
@@ -370,7 +367,7 @@ func (s Session) discardRequest() {
 	s.request = nil
 	s.requestProblem = ""
 	s.widgetValue = ""
-	s.widgetId = ""
+	s.ajaxWidget = nil
 	s.WidgetManager().clearRepaintSet()
 	s.Mutex.Unlock()
 }
@@ -396,77 +393,6 @@ func getSingleValue(array []string) (string, error) {
 		return array[0], nil
 	}
 	return "", Error("expected single string, got:", array)
-}
-
-// Read request's (single) widget id
-// Deprecated.
-func (s Session) GetWidgetId() string {
-	Todo("this method should probably be deprecated")
-	id := s.widgetId
-	if id == "" {
-		s.SetRequestProblem("No widget id")
-	}
-	return id
-}
-
-// Read request's widget value as a string; trim any whitespace.  Store to state as well.
-// Deprecated.
-func (s Session) GetValueString() string {
-	Todo("Rename this to emphasize that the value is also being stored in the state")
-	value := s.widgetValue
-	value = strings.TrimSpace(value)
-
-	widgetId := s.GetWidgetId()
-	CheckState(widgetId != "")
-
-	Pr("Storing value:", widgetId, ":", Quoted(value), "into state map")
-	s.State.Put(widgetId, value)
-
-	//// Clear any error associated with this
-	//s.DeleteStateError(widgetId)
-	return value
-}
-
-// Read request's widget value as a boolean.  Store to state as well.
-func (s Session) GetValueBoolean() bool {
-	value := s.widgetValue
-	var result bool
-	switch value {
-	case "true":
-		result = true
-	case "false":
-		result = false
-	default:
-		s.SetRequestProblem("Unable to parse boolean widget value:", Quoted(value))
-		return false
-	}
-	widgetId := s.GetWidgetId()
-	CheckState(widgetId != "")
-	s.State.Put(widgetId, result)
-	return result
-}
-
-// Read widget's State value as a string, trimming whitespace
-func (s Session) GetStateString(id string) string {
-	value := s.State.OptString(id, "")
-	return strings.TrimSpace(value)
-}
-
-// Read widget's State value as a boolean
-func (s Session) GetStateBoolean(id string) bool {
-	return s.State.OptBool(id, false)
-}
-
-func (s Session) GetWidget() Widget {
-	widgetId := s.GetWidgetId()
-	if s.Ok() {
-		widget, ok := s.widgetMap()[widgetId]
-		if ok {
-			return widget
-		}
-		s.SetRequestProblem("no widget found with id", widgetId)
-	}
-	return nil
 }
 
 func (s Session) SetWidgetIdProblem(widgetId string, problem any) {
@@ -514,15 +440,6 @@ func (s Session) RequestClientInfo(sb MarkupBuilder) {
 	}
 }
 
-// Deprecated.
-func (s Session) DeleteStateKeys(keys ...string) {
-	m := s.State.MutableWrapped()
-	for _, k := range keys {
-		delete(m, k)
-		delete(m, WidgetIdWithProblem(k))
-	}
-}
-
 func (s Session) DeleteStateErrors() {
 	m := s.State.MutableWrapped()
 	Todo("safe to delete key while iterating through them?")
@@ -546,5 +463,3 @@ func (s Session) DeleteStateFieldsWithPrefix(prefix string) {
 		}
 	}
 }
-
-var cachedCurrentDirectoryString = CurrentDirectory().String()

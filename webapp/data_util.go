@@ -142,7 +142,7 @@ func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 	}
 
 	var autoName string
-	if DevDatabase {
+	if DevDatabase && !Alert("disabling this for now") {
 		user, _ := ReadUserWithName(AutoSignInName)
 		if user.Id() != 0 {
 			autoName = user.Name()

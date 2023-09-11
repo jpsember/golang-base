@@ -16,7 +16,7 @@ type InputWidgetObj struct {
 }
 
 type InputWidget = *InputWidgetObj
-type InputWidgetListener func(sess Session, widget Widget, value string) (string, error)
+type InputWidgetListener func(sess Session, widget InputWidget, value string) (string, error)
 
 func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, password bool) InputWidget {
 	Todo("?Add multi-line input fields, different font sizes")
@@ -36,17 +36,15 @@ func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, p
 }
 
 func inputListenWrapper(sess Session, widget Widget, value string) (string, error) {
-	Pr("...input listener, id:", widget.Id())
 	inp := widget.(InputWidget)
 	value = strings.TrimSpace(value)
 	result, err := inp.listener(sess, inp, value)
-	Pr("...got result back:", result, "err:", err)
 	return result, err
 }
 
 var HtmlStringNbsp = NewHtmlStringEscaped("&nbsp;")
 
-func dummyInputWidgetListener(sess Session, widget Widget, value string) (string, error) {
+func dummyInputWidgetListener(sess Session, widget InputWidget, value string) (string, error) {
 	Alert("#50No InputWidgetListener implemented for id:", widget.Id())
 	return "garbage", DummyError
 }

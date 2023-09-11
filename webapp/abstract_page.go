@@ -32,7 +32,6 @@ func NewBasicPage(session Session, parentPage Widget) BasicPage {
 func (p BasicPage) GenerateHeader() WidgetManager {
 	//SetWidgetDebugRendering()
 	m := p.session.WidgetManager()
-	Pr("parent page:", Info(p.parentPage))
 	m.With(p.parentPage)
 	if p.devLabel != "" {
 		AddDevPageLabel(p.session, p.devLabel)

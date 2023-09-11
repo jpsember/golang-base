@@ -37,15 +37,14 @@ func (p SignUpPage) Generate() {
 	m.Col(6).Open()
 	{
 		m.Col(12)
-		m.Label("User name").Id(id_user_name).Listener(p.validateUserName).AddInput(nil)
-		m.Label("Password").Id(id_user_pwd).Listener(p.validateUserPwd).AddPassword(nil)
-		m.Label("Password Again").Id(id_user_pwd_verify).Listener(p.validateMatchPwd).AddPassword(nil)
-		m.Label("Email").Id(id_user_email).Listener(p.validateEmail).AddInput(nil)
+		m.Label("User name").Id(id_user_name).AddInput(p.validateUserName)
+		m.Label("Password").Id(id_user_pwd).AddPassword(p.validateUserPwd)
+		m.Label("Password Again").Id(id_user_pwd_verify).AddPassword(p.validateMatchPwd)
+		m.Label("Email").Id(id_user_email).AddInput(p.validateEmail)
 		m.Size(SizeTiny).Label("We will never share your email address with anyone.").AddText()
 		m.Col(6)
 		m.AddSpace()
-		m.Listener(p.signUpListener)
-		m.Id(id_sign_up).Label("Sign Up").AddButton(nil)
+		m.Id(id_sign_up).Label("Sign Up").AddButton(p.signUpListener)
 	}
 	m.Close()
 }
@@ -54,52 +53,40 @@ func getWidget(sess Session, id string) Widget {
 	return sess.WidgetManager().Get(id)
 }
 
-func (p SignUpPage) validateUserName(s Session, widget Widget) {
+func (p SignUpPage) validateUserName(s Session, widget InputWidget, value string) (string, error) {
 	// It is here in the listener that we read the 'client requested' value for the widget
 	// from the ajax parameters, and write it to the state.  We will validate it here.
-	auxValidateUserName(s, widget, s.GetValueString(), VALIDATE_EMPTYOK)
+	return ValidateUserName(value, VALIDATE_EMPTYOK)
 }
 
-func auxValidateUserName(s Session, widget Widget, value string, flag ValidateFlag) {
-	pr := PrIf(false)
+func (p SignUpPage) auxValidateUserName(s Session, widget Widget, value string, flag ValidateFlag) {
+	pr := PrIf(true)
 	pr("auxValidateUserName")
-
-	// It is here in the listener that we read the 'client requested' value for the widget
-	// from the ajax parameters, and write it to the state.  We will validate it here.
-
 	pr("value:", value)
 	value, err := ValidateUserName(value, flag)
 	pr("validated:", value, "error:", err)
-
-	// We want to update the state even if the name is illegal, so user can see what he typed in
-	Alert("Not sure this is necessary; as long as we haven't modified things during validation")
-	s.State.Put(widget.Id(), value)
 	s.SetWidgetProblem(widget, err)
 }
 
-func (p SignUpPage) validateUserPwd(s Session, widget Widget) {
-	value := s.GetValueString()
-	auxValidateUserPwd(s, widget, value, VALIDATE_EMPTYOK)
+func (p SignUpPage) validateUserPwd(s Session, widget InputWidget, value string) (string, error) {
+	return value, p.auxValidateUserPwd(s, widget, value, VALIDATE_EMPTYOK)
 }
 
-func auxValidateUserPwd(s Session, widget Widget, value string, flag ValidateFlag) error {
+func (p SignUpPage) auxValidateUserPwd(s Session, widget Widget, value string, flag ValidateFlag) error {
 	pr := PrIf(false)
 	pr("auxValidateUserPwd:", value)
 	value, err := ValidateUserPassword(value, flag)
 	pr("afterward:", value, "err:", err)
-	s.State.Put(widget.Id(), value)
-	s.SetWidgetProblem(widget, err)
 	return err
 }
 
-func (p SignUpPage) validateMatchPwd(s Session, widget Widget) {
-	value := s.GetValueString()
-	p.auxValidateMatchPwd(s, widget, value, VALIDATE_EMPTYOK)
+func (p SignUpPage) validateMatchPwd(s Session, widget InputWidget, value string) (string, error) {
+	return p.auxValidateMatchPwd(s, widget, value, VALIDATE_EMPTYOK)
 }
 
-func (p SignUpPage) auxValidateMatchPwd(s Session, widget Widget, value string, flag ValidateFlag) {
+func (p SignUpPage) auxValidateMatchPwd(s Session, widget InputWidget, value string, flag ValidateFlag) (string, error) {
 	if flag.Has(VALIDATE_EMPTYOK) && value == "" {
-		return
+		return value, nil
 	}
 	var err error
 	value1 := s.State.OptString(id_user_pwd, "")
@@ -107,51 +94,66 @@ func (p SignUpPage) auxValidateMatchPwd(s Session, widget Widget, value string, 
 	if value1 != value {
 		err = Ternary(value == "", ErrorEmptyUserPassword, ErrorUserPasswordsDontMatch)
 	}
-
-	s.State.Put(widget.Id(), value)
-	s.SetWidgetProblem(widget, err)
+	return value, err
 }
 
-func (p SignUpPage) validateEmail(s Session, widget Widget) {
-	value := s.GetValueString()
-	auxValidateEmail(s, widget, value, VALIDATE_EMPTYOK)
+func (p SignUpPage) validateEmail(s Session, widget InputWidget, value string) (string, error) {
+	return p.auxValidateEmail(s, widget, value, VALIDATE_EMPTYOK)
 }
 
-func auxValidateEmail(s Session, widget Widget, value string, flag ValidateFlag) {
-	if flag.Has(VALIDATE_EMPTYOK) && value == "" {
-		return
-	}
-	var err error
-	value, err = ValidateEmailAddress(value, flag)
-	s.State.Put(widget.Id(), value)
-	s.SetWidgetProblem(widget, err)
+func (p SignUpPage) auxValidateEmail(s Session, widget Widget, value string, flag ValidateFlag) (string, error) {
+	return ValidateEmailAddress(value, flag)
 }
 
-func (p SignUpPage) signUpListener(s Session, widget Widget) {
-	pr := PrIf(false)
-	pr("state:", INDENT, s.State)
+func (p SignUpPage) signUpListener(s Session, widget Widget) error {
+	pr := PrIf(true)
+	pr("signUpListener, state:", INDENT, s.State)
 
-	auxValidateUserName(s, getWidget(s, id_user_name), s.State.OptString(id_user_name, ""), 0)
-	auxValidateUserPwd(s, getWidget(s, id_user_pwd), s.State.OptString(id_user_pwd, ""), 0)
-	p.auxValidateMatchPwd(s, getWidget(s, id_user_pwd_verify), s.State.OptString(id_user_pwd_verify, ""), 0)
-	auxValidateEmail(s, getWidget(s, id_user_email), s.State.OptString(id_user_email, ""), 0)
+	p.auxValidateUserName(s, getWidget(s, id_user_name), s.State.OptString(id_user_name, ""), 0)
+	p.auxValidateUserPwd(s, getWidget(s, id_user_pwd), s.State.OptString(id_user_pwd, ""), 0)
+	p.auxValidateMatchPwd(s, getWidget(s, id_user_pwd_verify).(InputWidget), s.State.OptString(id_user_pwd_verify, ""), 0)
+	p.auxValidateEmail(s, getWidget(s, id_user_email), s.State.OptString(id_user_email, ""), 0)
 
 	b := NewUser()
 	b.SetName(s.State.OptString(id_user_name, ""))
 	b.SetPassword(s.State.OptString(id_user_pwd, ""))
 	b.SetEmail(s.State.OptString(id_user_email, ""))
 
-	Todo("don't create the user until we are sure the other fields have no errors")
-	ub, err := CreateUserWithName(b)
-
-	CheckOk(err)
-
-	if ub == nil {
-		s.SetWidgetIdProblem(id_user_name, "This user already exists")
-		return
+	errcount := WidgetErrorCount(p.parentPage, s.State)
+	pr("error count:", errcount)
+	if errcount != 0 {
+		return nil
 	}
+
+	problem := ""
+	Todo("don't create the user until we are sure the other fields have no errors")
+	var err error
+	var ub User
+
+	for {
+
+		problem = "A user with that name already exists."
+		ub, err = CreateUserWithName(b)
+		if err != nil {
+			break
+		}
+		if ub.Id() == 0 {
+			break
+		}
+		break
+	}
+
+	if err != nil {
+		return err
+	}
+	if problem != "" {
+		s.SetWidgetProblem(getWidget(s, id_user_name), problem)
+		return nil
+	}
+
 	Pr("created user:", INDENT, ub)
 
 	Todo("add support for WaitingActivation")
 	Todo("if everything worked out, change the displayed page / login state?")
+	return nil
 }

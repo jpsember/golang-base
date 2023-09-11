@@ -41,7 +41,7 @@ func (p GalleryPage) Generate() {
 	m.Col(4)
 	m.Label("uniform delta").AddText()
 	m.Col(8)
-	m.Id("x58").Label(`X58`).Listener(buttonListener).AddButton(nil).SetEnabled(false)
+	m.Id("x58").Label(`X58`).AddButton(buttonListener).SetEnabled(false)
 
 	m.Col(2).AddSpace()
 	m.Col(3).AddSpace()
@@ -49,14 +49,13 @@ func (p GalleryPage) Generate() {
 	m.Col(4).AddSpace()
 
 	m.Col(6)
-	m.Listener(birdListener)
 	m.Label("Bird").Id("bird")
-	m.AddInput(nil)
+	m.AddInput(birdListener)
 
 	m.Col(6)
 	m.Open()
-	m.Id("x59").Label(`Label for X59`).Listener(checkboxListener).AddCheckbox()
-	m.Id("x60").Label(`With fruit`).Listener(checkboxListener).AddSwitch()
+	m.Id("x59").Label(`Label for X59`).AddCheckbox(p.checkboxListener)
+	m.Id("x60").Label(`With fruit`).AddSwitch(p.checkboxListener)
 	m.Close()
 
 	m.Col(4)
@@ -72,26 +71,19 @@ Multiple line feeds:
 	m.AddText()
 
 	m.Col(4)
-	m.Listener(zebraListener)
-	m.Label("Animal").Id("zebra").AddInput(nil)
+	m.Label("Animal").Id("zebra").AddInput(zebraListener)
 }
 
-func birdListener(s Session, widget Widget) {
+func birdListener(s Session, widget InputWidget, newVal string) (string, error) {
+	var err error
 	Todo("?can we have sessions produce listener functions with appropriate handling of sess any?")
-	newVal := s.GetValueString()
-	s.SetWidgetProblem(widget, nil)
-	s.State.Put(widget.Id(), newVal)
-	Todo("!do validation as a global function somewhere")
 	if newVal == "parrot" {
-		s.SetWidgetProblem(widget, "No parrots, please!")
+		err = Error("No parrots, please!")
 	}
-	s.WidgetManager().Repaint(widget)
+	return newVal, err
 }
 
-func zebraListener(s Session, widget Widget) {
-
-	// Get the requested new value for the widget
-	newVal := s.GetValueString()
+func zebraListener(s Session, widget InputWidget, newVal string) (string, error) {
 
 	// Increment the alert class, and update its message
 	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
@@ -102,6 +94,7 @@ func zebraListener(s Session, widget Widget) {
 		strings.TrimSpace(newVal+" "+
 			RandomText(myRand, 55, false)))
 	s.WidgetManager().Repaint(alertWidget)
+	return newVal, nil
 }
 
 func buttonListener(s Session, widget Widget) error {
@@ -118,10 +111,9 @@ func buttonListener(s Session, widget Widget) error {
 	return nil
 }
 
-func checkboxListener(s Session, widget Widget) {
-	// Get the requested new value for the widget
-	s.GetValueBoolean()
-	// Repainting isn't necessary, as the web page has already done this
+func (p GalleryPage) checkboxListener(s Session, widget CheckboxWidget, state bool) (bool, error) {
+	Pr("new state:", state)
+	return state, nil
 }
 
 func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, value []byte) error {

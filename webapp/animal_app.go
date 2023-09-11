@@ -3,6 +3,7 @@ package webapp
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/jimg"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
 	"log"
@@ -45,19 +46,21 @@ func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
 	ExitOnPanic()
 
+	oper.sessionManager = BuildSessionMap()
+	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
+	oper.resources = oper.appRoot.JoinM("resources")
+
 	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 
 	if false && DevDatabase && Alert("Deleting database:", dataSourcePath) {
 		DeleteDatabase(dataSourcePath)
 	}
 	CreateDatabase(dataSourcePath.String())
+	oper.prepareDatabase()
+
 	if DevDatabase {
 		PopulateDatabase()
 	}
-
-	oper.sessionManager = BuildSessionMap()
-	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
-	oper.resources = oper.appRoot.JoinM("resources")
 
 	{
 		s := strings.Builder{}
@@ -262,4 +265,23 @@ func OptSessionUser(sess Session) User {
 		BadState("no User found in sess AppData:", INDENT, sess.AppData)
 	}
 	return user
+}
+
+func (oper AnimalOper) prepareDatabase() {
+	if b, _ := ReadBlob(1); b.Id() == 0 {
+		// Generate default images as blobs
+		oper.resources = oper.appRoot.JoinM("resources")
+
+		animalPicPlaceholderPath := oper.resources.JoinM("placeholder.jpg")
+		img := CheckOkWith(jimg.DecodeImage(animalPicPlaceholderPath.ReadBytesM()))
+		img = img.ScaleToSize(AnimalPicSizeNormal)
+		jpeg := CheckOkWith(img.ToJPEG())
+		Todo("?Later, keep the original image around for crop adjustments; but for now, scale and store immediately")
+		b := NewBlob()
+		b.SetData(jpeg)
+		AssignBlobName(b)
+		created, err := CreateBlob(b)
+		CheckOk(err)
+		CheckState(created.Id() == 1, "unexpected id for placeholder:", created.Id())
+	}
 }

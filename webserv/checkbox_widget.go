@@ -2,23 +2,51 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"strconv"
 )
+
+type CheckboxWidgetListener func(sess Session, widget CheckboxWidget, state bool) (bool, error)
 
 // A Widget that displays a checkbox
 type CheckboxWidgetObj struct {
 	BaseWidgetObj
 	Label      HtmlString
+	listener   CheckboxWidgetListener
 	switchFlag bool
 }
 
 type CheckboxWidget = *CheckboxWidgetObj
 
-func NewCheckboxWidget(switchFlag bool, id string, label HtmlString) CheckboxWidget {
-	w := CheckboxWidgetObj{}
+func doNothingCheckboxListener(sess Session, widget CheckboxWidget, state bool) (bool, error) {
+	Pr("'do nothing' doNothingCheckboxListener called")
+	return state, nil
+}
+
+func NewCheckboxWidget(switchFlag bool, id string, label HtmlString, listener CheckboxWidgetListener) CheckboxWidget {
+	if listener == nil {
+		listener = doNothingCheckboxListener
+	}
+	w := CheckboxWidgetObj{
+		Label:      label,
+		switchFlag: switchFlag,
+		listener:   listener,
+	}
 	w.Base().BaseId = id
-	w.Label = label
-	w.switchFlag = switchFlag
+	w.Base().LowListen = checkboxListenWrapper
 	return &w
+}
+
+func checkboxListenWrapper(sess Session, widget Widget, value string) (string, error) {
+	highLevelListener := widget.(CheckboxWidget)
+	boolValue := false
+	if b, err := strconv.ParseBool(value); err != nil {
+		Alert("trouble parsing bool from:", Quoted(value))
+	} else {
+		boolValue = b
+	}
+
+	result, err := highLevelListener.listener(sess, highLevelListener, boolValue)
+	return strconv.FormatBool(result), err
 }
 
 func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {

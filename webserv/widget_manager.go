@@ -315,7 +315,6 @@ func (m WidgetManager) AddInput(listener InputWidgetListener) WidgetManager {
 func (m WidgetManager) auxAddInput(listener InputWidgetListener, password bool) WidgetManager {
 	id := m.consumeOptionalPendingId()
 	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()), listener, password)
-	m.assignPendingListener(t)
 	return m.Add(t)
 }
 
@@ -348,14 +347,6 @@ func (m WidgetManager) AddHeading() WidgetManager {
 	return m.Add(w)
 }
 
-func (m WidgetManager) assignPendingListener(widget Widget) {
-	Alert("<1#50No longer supported, assignPendingListener() method")
-	//
-	//if m.pendingListener != nil {
-	//	m.assignRequiredPendingListener(widget)
-	//}
-}
-
 //
 //func (m WidgetManager) assignRequiredPendingListener(widget Widget) {
 //	if m.pendingListener == nil {
@@ -380,7 +371,6 @@ func (m WidgetManager) AddButton(listener ButtonWidgetListener) ButtonWidget {
 	w.BaseId = m.consumeOptionalPendingId()
 	w.SetSize(m.consumePendingSize())
 	w.SetAlign(m.consumePendingAlign())
-	m.assignPendingListener(w)
 	m.Log("Adding button, id:", w.BaseId)
 	w.Label = NewHtmlString(m.consumePendingLabel())
 	m.Add(w)
@@ -400,7 +390,6 @@ func (m WidgetManager) AddFileUpload(listener FileUploadWidgetListener) FileUplo
 	if listener == nil {
 		listener = doNothingFileUploadListener
 	}
-	Todo("add listener to FileUpload Widget")
 	w := NewFileUpload(m.consumePendingId(), NewHtmlString(m.consumePendingLabel()), listener)
 	m.Add(w)
 	return w
@@ -408,37 +397,23 @@ func (m WidgetManager) AddFileUpload(listener FileUploadWidgetListener) FileUplo
 
 func (m WidgetManager) AddImage() ImageWidget {
 	w := NewImageWidget(m.consumePendingId())
-	Pr("created image widget, id:", w.Id())
-	m.assignPendingListener(w)
 	m.Add(w)
 	return w
 }
 
-func (m WidgetManager) AddCheckbox() CheckboxWidget {
-	return m.checkboxHelper(false)
+func (m WidgetManager) AddCheckbox(listener CheckboxWidgetListener) CheckboxWidget {
+	return m.checkboxHelper(listener, false)
 }
 
-func (m WidgetManager) AddSwitch() CheckboxWidget {
-	return m.checkboxHelper(true)
+func (m WidgetManager) AddSwitch(listener CheckboxWidgetListener) CheckboxWidget {
+	return m.checkboxHelper(listener, true)
 }
 
-func (m WidgetManager) checkboxHelper(switchFlag bool) CheckboxWidget {
-	w := NewCheckboxWidget(switchFlag, m.consumePendingId(), NewHtmlString(m.consumePendingLabel()))
-	m.assignPendingListener(w)
+func (m WidgetManager) checkboxHelper(listener CheckboxWidgetListener, switchFlag bool) CheckboxWidget {
+	w := NewCheckboxWidget(switchFlag, m.consumePendingId(), NewHtmlString(m.consumePendingLabel()), listener)
 	m.Add(w)
 	return w
 }
-
-func (m WidgetManager) Listener(listener any) WidgetManager {
-	Alert("<1#50No longer supported, Listener() method")
-	//m.pendingListener = listener
-	return m
-}
-
-//func (m WidgetManager) Listener(listener WidgetListener) WidgetManager {
-//	m.pendingListener = listener
-//	return m
-//}
 
 func (m WidgetManager) AllocateAnonymousId() string {
 	m.anonymousIdCounter++

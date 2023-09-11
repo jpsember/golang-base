@@ -26,45 +26,38 @@ func (p LandingPage) Generate() {
 
 	m := p.GenerateHeader()
 
-	m.Label("gallery").Align(AlignRight).Size(SizeTiny).Listener(p.galleryListener).AddButton(nil)
+	m.Label("gallery").Align(AlignRight).Size(SizeTiny).AddButton(p.galleryListener)
 	m.Col(6)
 	m.Open()
 	{
 		m.Col(12)
-		m.Label("User name").Id(id_user_name).Listener(
-			p.validateUserName).AddInput(nil)
-		m.Label("Password").Id(id_user_pwd).Listener(p.validateUserPwd).AddPassword(nil)
+		m.Label("User name").Id(id_user_name).AddInput(p.validateUserName)
+		m.Label("Password").Id(id_user_pwd).AddPassword(p.validateUserPwd)
 		m.Open()
 		m.Col(6)
 		{
-			m.Listener(p.signInListener).Label("Sign In").AddButton(nil)
-			m.Listener(p.forgotPwdListener).Label("I forgot my password")
-			m.Size(SizeTiny)
-			m.AddButton(nil)
+			m.Label("Sign In").AddButton(p.signInListener)
+			m.Label("I forgot my password").Size(SizeTiny).AddButton(p.forgotPwdListener)
 		}
 		m.Close()
 	}
 	m.Close()
 	m.Open()
 	{
-		m.Listener(p.signUpListener)
-		m.Label("Sign Up").AddButton(nil)
+		m.Label("Sign Up").AddButton(p.signUpListener)
 	}
 	m.Close()
 }
 
-func (p LandingPage) validateUserName(s Session, widget Widget) {
-	Pr("validateUserName, widget:", widget.Id(), "state:", INDENT, s.State)
-	auxValidateUserName(s, widget, s.GetValueString(), VALIDATE_ONLY_NONEMPTY)
-	Pr(" after, state:", INDENT, s.State)
+func (p LandingPage) validateUserName(s Session, widget InputWidget, name string) (string, error) {
+	return ValidateUserName(name, VALIDATE_EMPTYOK)
 }
 
-func (p LandingPage) validateUserPwd(s Session, widget Widget) {
-	value := s.GetValueString()
-	auxValidateUserPwd(s, widget, value, VALIDATE_ONLY_NONEMPTY)
+func (p LandingPage) validateUserPwd(s Session, widget InputWidget, content string) (string, error) {
+	return ValidateUserPassword(content, VALIDATE_ONLY_NONEMPTY)
 }
 
-func (p LandingPage) signInListener(sess Session, widget Widget) {
+func (p LandingPage) signInListener(sess Session, widget Widget) error {
 
 	s := sess.State
 	userName := s.OptString(id_user_name, "")
@@ -78,101 +71,120 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 	sess.SetWidgetIdProblem(id_user_name, err1)
 	sess.SetWidgetIdProblem(id_user_pwd, err2)
 
-	errcount := WidgetErrorCount(p.parentPage, sess.State)
-	if errcount != 0 {
-		return
-	}
+	var user webapp_data.User
+	prob := ""
+	for {
+		errcount := WidgetErrorCount(p.parentPage, sess.State)
+		if errcount != 0 {
+			break
+		}
 
-	user, err := webapp_data.ReadUserWithName(userName)
-	userId := user.Id()
-	CheckOk(err)
+		var err error
+		user, err = webapp_data.ReadUserWithName(userName)
+		userId := user.Id()
+		CheckOk(err)
 
-	if userId == 0 {
-		sess.SetWidgetIdProblem(id_user_name, "No such user, or incorrect password")
-		return
-	}
+		prob = "No such user, or incorrect password"
+		if userId == 0 {
+			break
+		}
 
-	if IsUserLoggedIn(userId) {
-		Todo("Log user out of other sessions?")
-		sess.SetWidgetIdProblem(id_user_name, "User is already logged in")
-		return
-	}
+		prob = "User is already logged in"
+		if IsUserLoggedIn(userId) {
+			return nil
+		}
 
-	userData, _ := webapp_data.ReadUser(userId)
-	if userData.Id() == 0 {
-		sess.SetWidgetIdProblem(id_user_name, "User is unavaliable; sorry")
-		return
+		prob = "User is unavaliable; sorry"
+		userData, _ := webapp_data.ReadUser(userId)
+		if userData.Id() == 0 {
+			break
+		}
+
+		if AutoActivateUser {
+			if userData.State() == webapp_data.UserStateWaitingActivation {
+				Alert("Activating user automatically (without email verification)")
+				userData = userData.ToBuilder().SetState(webapp_data.UserStateActive).Build()
+				webapp_data.UpdateUser(userData)
+			}
+		}
+
+		prob = ""
+		switch userData.State() {
+		case webapp_data.UserStateActive:
+			// This is ok.
+		case webapp_data.UserStateWaitingActivation:
+			prob = "This user has not been activated yet"
+		default:
+			prob = "This user is in an unsupported state"
+		}
+		if prob != "" {
+			break
+		}
+
+		prob = "Unable to log in at this time"
+		if !TryRegisteringUserAsLoggedIn(sess, user, true) {
+			break
+		}
+
+		prob = ""
+		break
 	}
-	if AutoActivateUser {
-		if userData.State() == webapp_data.UserStateWaitingActivation {
-			Alert("Activating user automatically (without email verification)")
-			userData = userData.ToBuilder().SetState(webapp_data.UserStateActive).Build()
-			webapp_data.UpdateUser(userData)
+	if prob != "" {
+		sess.SetWidgetIdProblem(id_user_name, prob)
+	} else {
+		switch user.UserClass() {
+		case webapp_data.UserClassDonor:
+			sp := NewAnimalFeedPage(sess, p.parentPage)
+			sp.Generate()
+			break
+		case webapp_data.UserClassManager:
+			Todo("?Maybe make AnimalFeed, Manager pages implement a common interface")
+			sp := NewManagerPage(sess, p.parentPage)
+			sp.Generate()
 		}
 	}
-	errMsg := ""
-	switch userData.State() {
-	case webapp_data.UserStateActive:
-		// This is ok.
-	case webapp_data.UserStateWaitingActivation:
-		errMsg = "This user has not been activated yet"
-	default:
-		errMsg = "This user is in an unsupported state"
-		Alert("Unsupported user state:", INDENT, userData)
-	}
-
-	if errMsg != "" {
-		sess.SetWidgetIdProblem(id_user_name, errMsg)
-		return
-	}
-
-	if !TryRegisteringUserAsLoggedIn(sess, user, true) {
-		sess.SetWidgetIdProblem(id_user_name, "Unable to log in at this time")
-		return
-	}
-
-	switch user.UserClass() {
-	case webapp_data.UserClassDonor:
-		sp := NewAnimalFeedPage(sess, p.parentPage)
-		sp.Generate()
-		break
-	case webapp_data.UserClassManager:
-		Todo("?Maybe make AnimalFeed, Manager pages implement a common interface")
-		sp := NewManagerPage(sess, p.parentPage)
-		sp.Generate()
-	}
-
+	return nil
 }
 
-func (p LandingPage) signUpListener(s Session, widget Widget) {
-	NewSignUpPage(s, widget).Generate()
+func (p LandingPage) signUpListener(s Session, widget Widget) error {
+	NewSignUpPage(s, p.parentPage).Generate()
+	return nil
 }
 
-func (p LandingPage) galleryListener(sess Session, widget Widget) {
+func (p LandingPage) galleryListener(sess Session, widget Widget) error {
 	NewGalleryPage(sess, p.parentPage).Generate()
+	return nil
 }
 
-func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {
+func (p LandingPage) forgotPwdListener(sess Session, widget Widget) error {
 
-	s := sess.State
-	userName := s.OptString(id_user_name, "")
+	problem := ""
+	for {
 
-	if userName == "" {
-		Todo("disable button if no user name entered")
-		return
+		s := sess.State
+		userName := s.OptString(id_user_name, "")
+
+		Todo("Change this to 'enter your email' instead")
+		problem = "Please enter your user name"
+		if userName == "" {
+			break
+		}
+
+		user, err := webapp_data.ReadUserWithName(userName)
+		userId := user.Id()
+
+		if err != nil {
+			Alert("Not revealing that 'no such user exists' in forgot password logic")
+		}
+		if userId != 0 {
+			Todo("Send email")
+		}
+		sess.SetWidgetIdProblem(id_user_name, "An email has been sent with a link to change your password.")
+		break
 	}
 
-	user, err := webapp_data.ReadUserWithName(userName)
-	userId := user.Id()
-
-	if err != nil {
-		Alert("Not revealing that 'no such user exists' in forgot password logic")
+	if problem != "" {
+		return Error(problem)
 	}
-	if userId != 0 {
-		Todo("Send email")
-	}
-	sess.SetWidgetIdProblem(id_user_name, "An email has been sent with a link to change your password.")
-}
-
-func (p LandingPage) sampleListener(sess Session, widget Widget) {
+	return nil
 }

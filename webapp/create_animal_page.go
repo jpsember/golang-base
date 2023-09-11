@@ -50,7 +50,7 @@ func (p CreateAnimalPage) Generate() {
 		m.Label("Details").Id(id_animal_details).AddInput(p.AnimalTextListener)
 		m.Size(SizeTiny).Label("Additional paragraphs to appear on the 'details' view.").AddText()
 
-		m.Id(id_add).Label("Create").AddButton(p.addListener)
+		m.Id(id_add).Label("Create").AddButton(p.addButtonListener)
 	}
 	m.Close()
 
@@ -61,11 +61,11 @@ func (p CreateAnimalPage) Generate() {
 	m.Close()
 }
 
-func AnimalNameListener(s Session, widget Widget, value string) (string, error) {
+func AnimalNameListener(s Session, widget InputWidget, value string) (string, error) {
 	return ValidateAnimalName(value, VALIDATE_EMPTYOK)
 }
 
-func (p CreateAnimalPage) AnimalTextListener(sess Session, widget Widget, value string) (string, error) {
+func (p CreateAnimalPage) AnimalTextListener(sess Session, widget InputWidget, value string) (string, error) {
 	if widget.Id() == id_animal_summary {
 		return animalInfoListener(sess, widget, value, 20, 200, true)
 	} else {
@@ -89,7 +89,7 @@ func WidgetIntValue(s Session, widget Widget) int {
 	return SessionIntValue(s, widget.Id())
 }
 
-func (p CreateAnimalPage) addListener(s Session, widget Widget) error {
+func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
 	pr := PrIf(true)
 	//pr("state:", INDENT, s.State)
 
@@ -176,12 +176,9 @@ func ValidateAnimalPhoto(s Session, valueWidget Widget, reportWidget Widget) {
 }
 
 func (p CreateAnimalPage) uploadPhotoListener(s Session, widget FileUpload, by []byte) error {
-	pr := PrIf(true)
+	pr := PrIf(false)
 
 	m := s.WidgetManager()
-
-	//fu := widget.(FileUpload)
-	//by := fu.ReceivedBytes()
 
 	var jpeg []byte
 	var imageId int
@@ -258,6 +255,9 @@ func (p CreateAnimalPage) provideURL() string {
 	s := p.session
 	imageId := SessionIntValue(s, id_animal_display_pic)
 
+	if imageId == 0 {
+		imageId = 1 // This is the default placeholder blob id
+	}
 	pr("provideURL, image id read from state:", imageId)
 
 	if imageId != 0 {
