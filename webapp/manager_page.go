@@ -20,7 +20,13 @@ func NewManagerPage(sess Session, parentWidget Widget) ManagerPage {
 	return t
 }
 
+const manager_id_prefix = "manager."
+const (
+	id_manager_list = manager_id_prefix + "list"
+)
+
 func (p ManagerPage) Generate() {
+	SetWidgetDebugRendering()
 	m := p.GenerateHeader()
 
 	Todo("If we are generating a new page, we shouldn't try to store the error in the old one")
@@ -31,13 +37,13 @@ func (p ManagerPage) Generate() {
 	}
 	m.Close()
 
-	Todo("ability to store some user-specific data types in the session other than the state")
-
 	// Scrolling list of animals for this manager.
 	m.Open()
 	Todo("?Scrolling list of manager's animals")
 	al := p.animalList()
 	Todo("do something with", al)
+	m.Id(id_manager_list).AddList(al, p.listListener)
+
 	m.Close()
 
 }
@@ -48,7 +54,6 @@ func (p ManagerPage) newAnimalListener(sess Session, widget Widget) error {
 }
 
 func (p ManagerPage) animalList() AnimalList {
-
 	alist := p.session.OptSessionData(SessionKey_MgrList)
 	if alist == nil {
 		alist = p.constructAnimalList()
@@ -59,12 +64,15 @@ func (p ManagerPage) animalList() AnimalList {
 
 func (p ManagerPage) constructAnimalList() AnimalList {
 	animalList := NewAnimalList()
-	Pr("empty elements:", animalList.GetPageElements(0))
-
 	managerId := SessionUser(p.session).Id()
 	animalList.elements = getManagerAnimals(managerId)
 	Pr("animals for manager", managerId, ":", INDENT, animalList.elements)
 	return animalList
+}
+
+func (p ManagerPage) listListener(sess Session, widget ListWidget) error {
+	Pr("listener event:", widget.Id())
+	return nil
 }
 
 func getManagerAnimals(managerId int) []int {
@@ -77,6 +85,7 @@ func getManagerAnimals(managerId int) []int {
 			result = append(result, anim.Id())
 		}
 	}
+	Pr("returning:", result)
 	return result
 }
 

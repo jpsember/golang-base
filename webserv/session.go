@@ -476,7 +476,7 @@ func (s Session) PutSessionData(key string, value any) {
 
 func (s Session) OptSessionData(key string) any {
 	value := s.AppData[key]
-	Pr("Getting user data", key, "=>", TypeOf(value))
+	//Pr("Getting user data", key, "=>", TypeOf(value))
 	return value
 }
 

@@ -322,6 +322,12 @@ func (m WidgetManager) AddPassword(listener InputWidgetListener) WidgetManager {
 	return m.auxAddInput(listener, true)
 }
 
+func (m WidgetManager) AddList(list ListInterface, listener ListWidgetListener) WidgetManager {
+	id := m.consumeOptionalPendingId()
+	t := NewListWidget(id, list, listener)
+	return m.Add(t)
+}
+
 // Utility method to determine the label and id for text fields (text fields, headings).
 // The label can either be expressed as a string (static content),
 // or an id (dynamic content, read from session state).  If static, there should *not* be
