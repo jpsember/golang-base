@@ -87,19 +87,19 @@ func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
 	//p.session.DeleteStateErrors()
 
 	{
-		text := s.SessionStrValue(id_animal_name)
+		text := s.WidgetStrValue(id_animal_name)
 		result, err := ValidateAnimalName(text, 0)
-		s.SetWidgetIdProblem(id_animal_name, err)
+		s.SetWidgetProblem(id_animal_name, err)
 		Todo("We need to store new animal name value here perhaps", result)
 	}
 
 	preCreateValidateText(s, id_animal_summary, 20, 200, 0)
 	preCreateValidateText(s, id_animal_details, 200, 2000, 0)
 	{
-		picId := s.SessionIntValue(id_animal_display_pic)
+		picId := s.WidgetIntValue(id_animal_display_pic)
 		Todo("We should have a setWidgetProblem method that takes ids, not Widgets")
 		if picId == 0 {
-			s.SetWidgetIdProblem(id_animal_uploadpic, "Please upload a photo")
+			s.SetWidgetProblem(id_animal_uploadpic, "Please upload a photo")
 		}
 	}
 
@@ -110,10 +110,10 @@ func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
 	}
 
 	b := NewAnimal()
-	b.SetName(strings.TrimSpace(s.SessionStrValue(id_animal_name)))
-	b.SetSummary(strings.TrimSpace(s.SessionStrValue(id_animal_summary)))
-	b.SetDetails(strings.TrimSpace(s.SessionStrValue(id_animal_details)))
-	b.SetPhotoThumbnail(s.SessionIntValue(id_animal_display_pic))
+	b.SetName(strings.TrimSpace(s.WidgetStrValue(id_animal_name)))
+	b.SetSummary(strings.TrimSpace(s.WidgetStrValue(id_animal_summary)))
+	b.SetDetails(strings.TrimSpace(s.WidgetStrValue(id_animal_details)))
+	b.SetPhotoThumbnail(s.WidgetIntValue(id_animal_display_pic))
 	b.SetManagerId(SessionUser(s).Id())
 	ub, err := CreateAnimal(b)
 	CheckOk(err)
@@ -156,9 +156,9 @@ func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (s
 }
 
 func preCreateValidateText(s Session, widgetId string, minLength int, maxLength int, flags ValidateFlag) {
-	n := s.SessionStrValue(widgetId)
+	n := s.WidgetStrValue(widgetId)
 	n, err := animalInfoListener(n, minLength, maxLength, flags.Has(VALIDATE_EMPTYOK))
-	s.SetWidgetIdProblem(widgetId, err)
+	s.SetWidgetProblem(widgetId, err)
 }
 
 func (p CreateAnimalPage) uploadPhotoListener(s Session, widget FileUpload, by []byte) error {
@@ -227,7 +227,7 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget FileUpload, by [
 	if err == nil {
 		picId := id_animal_display_pic
 		// Discard the old blob whose id we are now replacing
-		DiscardBlob(s.SessionIntValue(picId))
+		DiscardBlob(s.WidgetIntValue(picId))
 
 		// Store the id of the blob in the image widget
 		s.State.Put(picId, imageId)
@@ -244,7 +244,7 @@ func (p CreateAnimalPage) provideURL() string {
 	pr := PrIf(false)
 	url := ""
 	s := p.session
-	imageId := s.SessionIntValue(id_animal_display_pic)
+	imageId := s.WidgetIntValue(id_animal_display_pic)
 
 	if imageId == 0 {
 		imageId = 1 // This is the default placeholder blob id

@@ -68,8 +68,8 @@ func (p LandingPage) signInListener(sess Session, widget Widget) error {
 	var err2 error
 	pwd, err2 = ValidateEmailAddress(pwd, VALIDATE_ONLY_NONEMPTY)
 
-	sess.SetWidgetIdProblem(id_user_name, err1)
-	sess.SetWidgetIdProblem(id_user_pwd, err2)
+	sess.SetWidgetProblem(id_user_name, err1)
+	sess.SetWidgetProblem(id_user_pwd, err2)
 
 	var user webapp_data.User
 	prob := ""
@@ -130,7 +130,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) error {
 		break
 	}
 	if prob != "" {
-		sess.SetWidgetIdProblem(id_user_name, prob)
+		sess.SetWidgetProblem(id_user_name, prob)
 	} else {
 		switch user.UserClass() {
 		case webapp_data.UserClassDonor:
@@ -179,7 +179,7 @@ func (p LandingPage) forgotPwdListener(sess Session, widget Widget) error {
 		if userId != 0 {
 			Todo("Send email")
 		}
-		sess.SetWidgetIdProblem(id_user_name, "An email has been sent with a link to change your password.")
+		sess.SetWidgetProblem(id_user_name, "An email has been sent with a link to change your password.")
 		break
 	}
 

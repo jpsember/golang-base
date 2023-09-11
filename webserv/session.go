@@ -137,18 +137,18 @@ func (s Session) HandleUploadRequest(w http.ResponseWriter, req *http.Request, w
 	s.sendAjaxResponse()
 }
 
-func (s Session) processUpload(w http.ResponseWriter, req *http.Request, widgetId string) {
+func (s Session) processUpload(w http.ResponseWriter, req *http.Request, uploadWidgetId string) {
 
 	var fileUploadWidget FileUpload
 
-	widget := s.WidgetManager().Opt(widgetId)
+	widget := s.WidgetManager().Opt(uploadWidgetId)
 	if widget == nil {
-		Alert("Can't find upload widget:", widgetId)
+		Alert("Can't find upload widget:", uploadWidgetId)
 		return
 	}
 	var ok bool
 	if fileUploadWidget, ok = widget.(FileUpload); !ok {
-		Alert("Not an UploadWidget:", widgetId)
+		Alert("Not an UploadWidget:", uploadWidgetId)
 		return
 	}
 
@@ -178,7 +178,7 @@ func (s Session) processUpload(w http.ResponseWriter, req *http.Request, widgetI
 		// of the file input on the frontend; not sure what that is about
 
 		problem = "trouble getting request FormFile"
-		file, _, err1 := req.FormFile(widgetId + ".input")
+		file, _, err1 := req.FormFile(uploadWidgetId + ".input")
 		if err1 != nil {
 			break
 		}
@@ -200,12 +200,12 @@ func (s Session) processUpload(w http.ResponseWriter, req *http.Request, widgetI
 	}
 
 	// Always update the problem, in case we are clearing a previous error
-	s.SetWidgetProblem(fileUploadWidget, problem)
+	s.SetWidgetProblem(uploadWidgetId, problem)
 	if problem == "" {
 		err := fileUploadWidget.listener(s, fileUploadWidget, result)
 		problem = StringFromOptError(err)
 	}
-	s.SetWidgetProblem(fileUploadWidget, problem)
+	s.SetWidgetProblem(uploadWidgetId, problem)
 }
 
 // Serve a request for a resource
@@ -274,6 +274,7 @@ func (s Session) processClientMessage() {
 	// At present, we will assume that the request consists of a single widget id, and perhaps a single value
 	// for that widget
 	//
+	Todo("Should we store only the widget id, not the full ajax widget?")
 	widget := s.ajaxWidget
 	if widget == nil {
 		s.SetRequestProblem("no widget found", widget)
@@ -296,7 +297,7 @@ func (s Session) processClientMessage() {
 		Pr("got error from widget listener:", widget.Id(), INDENT, err)
 	}
 	// Always update the problem, in case we are clearing a previous error
-	s.SetWidgetProblem(widget, err)
+	s.SetWidgetProblem(widget.Id(), err)
 }
 
 func (s Session) processClientInfo(infoString string) {
@@ -392,19 +393,7 @@ func (s Session) Ok() bool {
 	return s.requestProblem == ""
 }
 
-func getSingleValue(array []string) (string, error) {
-	if array != nil && len(array) == 1 {
-		return array[0], nil
-	}
-	return "", Error("expected single string, got:", array)
-}
-
-func (s Session) SetWidgetIdProblem(widgetId string, problem any) {
-	widget := s.WidgetManager().Get(widgetId)
-	s.SetWidgetProblem(widget, problem)
-}
-
-func (s Session) SetWidgetProblem(widget Widget, problem any) {
+func (s Session) SetWidgetProblem(widgetId string, problem any) {
 	var text string
 	if problem != nil {
 		switch t := problem.(type) {
@@ -416,11 +405,11 @@ func (s Session) SetWidgetProblem(widget Widget, problem any) {
 			BadArg("<1Unsupported type")
 		}
 	}
-	s.auxSetWidgetProblem(widget, text)
+	s.auxSetWidgetProblem(widgetId, text)
 }
 
-func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {
-	key := WidgetIdWithProblem(widget.Id())
+func (s Session) auxSetWidgetProblem(widgetId string, problemText string) {
+	key := WidgetIdWithProblem(widgetId)
 	state := s.State
 	existingProblem := state.OptString(key, "")
 	if existingProblem != problemText {
@@ -430,7 +419,7 @@ func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {
 		} else {
 			state.Put(key, problemText)
 		}
-		s.WidgetManager().Repaint(widget)
+		s.WidgetManager().RepaintIds(widgetId)
 	}
 }
 
@@ -473,26 +462,11 @@ func (s Session) DeleteStateFieldsWithPrefix(prefix string) {
 // ------------------------------------------------------------------------------------
 
 // Read widget value (given its id); assumed to be an int.
-func (s Session) SessionIntValue(id string) int {
-	Todo("rename this; get rid of 'Session' prefix?")
+func (s Session) WidgetIntValue(id string) int {
 	return s.State.OptInt(id, 0)
 }
 
 // Read widget value (given its id); assumed to be a string.
-func (s Session) SessionStrValue(id string) string {
+func (s Session) WidgetStrValue(id string) string {
 	return s.State.OptString(id, "")
-}
-
-// Read widget value (given its pointer); assumed to be a string.
-// Deprecated.
-func (s Session) WidgetStrValued(widget Widget) string {
-	Todo("deprecate the Widget versions, use ids instead?")
-	Todo("Have widget ids be a distinct type for type safety?")
-	return s.SessionStrValue(widget.Id())
-}
-
-// Read widget value (given its pointer); assumed to be an int.
-// Deprecated.
-func (s Session) WidgetIntValued(widget Widget) int {
-	return s.SessionIntValue(widget.Id())
 }

@@ -59,13 +59,13 @@ func (p SignUpPage) validateUserName(s Session, widget InputWidget, value string
 	return ValidateUserName(value, VALIDATE_EMPTYOK)
 }
 
-func (p SignUpPage) auxValidateUserName(s Session, widget Widget, value string, flag ValidateFlag) {
+func (p SignUpPage) auxValidateUserName(s Session, widgetId string, value string, flag ValidateFlag) {
 	pr := PrIf(true)
 	pr("auxValidateUserName")
 	pr("value:", value)
 	value, err := ValidateUserName(value, flag)
 	pr("validated:", value, "error:", err)
-	s.SetWidgetProblem(widget, err)
+	s.SetWidgetProblem(widgetId, err)
 }
 
 func (p SignUpPage) validateUserPwd(s Session, widget InputWidget, value string) (string, error) {
@@ -109,7 +109,7 @@ func (p SignUpPage) signUpListener(s Session, widget Widget) error {
 	pr := PrIf(true)
 	pr("signUpListener, state:", INDENT, s.State)
 
-	p.auxValidateUserName(s, getWidget(s, id_user_name), s.State.OptString(id_user_name, ""), 0)
+	p.auxValidateUserName(s, id_user_name, s.State.OptString(id_user_name, ""), 0)
 	p.auxValidateUserPwd(s, getWidget(s, id_user_pwd), s.State.OptString(id_user_pwd, ""), 0)
 	p.auxValidateMatchPwd(s, getWidget(s, id_user_pwd_verify).(InputWidget), s.State.OptString(id_user_pwd_verify, ""), 0)
 	p.auxValidateEmail(s, getWidget(s, id_user_email), s.State.OptString(id_user_email, ""), 0)
@@ -147,7 +147,7 @@ func (p SignUpPage) signUpListener(s Session, widget Widget) error {
 		return err
 	}
 	if problem != "" {
-		s.SetWidgetProblem(getWidget(s, id_user_name), problem)
+		s.SetWidgetProblem(id_user_name, problem)
 		return nil
 	}
 
