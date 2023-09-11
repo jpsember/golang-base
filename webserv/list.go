@@ -8,16 +8,4 @@ type ListInterface interface {
 	GetPageElements(pageNumber int) []int
 }
 
-//
-//type ListStruct struct {
-//	ElementsPerPage int
-//
-//}
-//
-//type List = *ListStruct
-//
-//func NewList() List {
-//	t := &ListStruct{}
-//	return t
-//}
-//
+type ListItemRenderer func(widget ListWidget, elementId int, m MarkupBuilder)

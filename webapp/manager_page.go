@@ -29,7 +29,7 @@ func (p ManagerPage) Generate() {
 	SetWidgetDebugRendering()
 	m := p.GenerateHeader()
 
-	Todo("If we are generating a new page, we shouldn't try to store the error in the old one")
+	Todo("?If we are generating a new page, we shouldn't try to store the error in the old one")
 	// Row of buttons at top.
 	m.Open()
 	{
@@ -39,10 +39,8 @@ func (p ManagerPage) Generate() {
 
 	// Scrolling list of animals for this manager.
 	m.Open()
-	Todo("?Scrolling list of manager's animals")
 	al := p.animalList()
-	Todo("do something with", al)
-	m.Id(id_manager_list).AddList(al, p.listListener)
+	m.Id(id_manager_list).AddList(al, nil, p.listListener)
 
 	m.Close()
 

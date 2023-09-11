@@ -21,7 +21,6 @@ func IsUserLoggedIn(userId int) bool {
 
 func TryRegisteringUserAsLoggedIn(userId int, loggedInState bool) bool {
 	// Don't have webserv refer to webapp_data
-	Todo("don't have webserv coupled to webapp")
 	loggedInUsersSetLock.Lock()
 	defer loggedInUsersSetLock.Unlock()
 	currentState := loggedInUsersSet.Contains(userId)
