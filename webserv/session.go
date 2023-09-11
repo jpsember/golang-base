@@ -3,7 +3,6 @@ package webserv
 import (
 	"bytes"
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"github.com/jpsember/golang-base/webserv/gen/webserv_data"
 	"io"
 	"net/http"
@@ -20,20 +19,18 @@ func IsUserLoggedIn(userId int) bool {
 	return loggedInUsersSet.Contains(userId)
 }
 
-func TryRegisteringUserAsLoggedIn(sess Session, user webapp_data.User, loggedInState bool) bool {
+func TryRegisteringUserAsLoggedIn(userId int, loggedInState bool) bool {
+	// Don't have webserv refer to webapp_data
+	Todo("don't have webserv coupled to webapp")
 	loggedInUsersSetLock.Lock()
 	defer loggedInUsersSetLock.Unlock()
-
-	userId := user.Id()
 	currentState := loggedInUsersSet.Contains(userId)
 	changed := currentState != loggedInState
 	if changed {
 		if loggedInState {
 			loggedInUsersSet.Add(userId)
-			sess.AppData = user
 		} else {
 			loggedInUsersSet.Remove(userId)
-			sess.AppData = nil
 		}
 	}
 	return changed
@@ -54,7 +51,7 @@ type SessionStruct struct {
 	Id string
 
 	// For storing an application Oper, for example
-	AppData any
+	AppData map[string]any
 
 	// widget representing the entire page; nil if not constructed yet
 	PageWidget Widget
@@ -81,9 +78,11 @@ func NewSession() Session {
 	s := SessionStruct{
 		State:       NewJSMap(),
 		BrowserInfo: ourDefaultBrowserInfo,
+		AppData:     make(map[string]any),
 	}
 	Todo("!Restore user session from filesystem/database")
 	Todo("?ClientInfo (browser info) not sent soon enough")
+	Pr("Created a new session, UserData:", s.AppData)
 	return &s
 }
 
@@ -468,4 +467,23 @@ func (s Session) WidgetIntValue(id string) int {
 // Read widget value (given its id); assumed to be a string.
 func (s Session) WidgetStrValue(id string) string {
 	return s.State.OptString(id, "")
+}
+
+func (s Session) PutSessionData(key string, value any) {
+	Pr("Storing user data", key, "=>", TypeOf(value))
+	s.AppData[key] = value
+}
+
+func (s Session) OptSessionData(key string) any {
+	value := s.AppData[key]
+	Pr("Getting user data", key, "=>", TypeOf(value))
+	return value
+}
+
+func (s Session) GetSessionData(key string) any {
+	value := s.OptSessionData(key)
+	if value == nil {
+		BadState("UserData is null for:", key)
+	}
+	return value
 }

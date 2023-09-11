@@ -110,13 +110,11 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	}
 
 	sess := DetermineSession(oper.sessionManager, w, req, true)
-	if sess.AppData == nil {
-		AssignUserToSession(sess)
-		oper.constructPageWidget(sess)
-
-		user, ok := sess.AppData.(User)
-		CheckState(ok, "no User found in sess AppData:", INDENT, sess.AppData)
+	optUser := sess.OptSessionData(UserKey_User)
+	if optUser == nil {
+		user := AssignUserToSession(sess)
 		CheckState(user.Id() == 0)
+		oper.constructPageWidget(sess)
 
 		NewLandingPage(sess, sess.PageWidget).Generate()
 
@@ -131,7 +129,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 				if user2.Id() == 0 {
 					break
 				}
-				if !TryRegisteringUserAsLoggedIn(sess, user2, true) {
+				if !TryLoggingIn(sess, user2) {
 					break
 				}
 
@@ -251,23 +249,9 @@ func (oper AnimalOper) constructPageWidget(sess Session) {
 }
 
 // A new session was created; assign an 'unknown' user to it
-func AssignUserToSession(sess Session) {
-	sess.AppData = NewUser().Build()
-}
-
-func SessionUser(sess Session) User {
-	user := OptSessionUser(sess)
-	if user.Id() == 0 {
-		BadState("session user has id zero")
-	}
-	return user
-}
-
-func OptSessionUser(sess Session) User {
-	user, ok := sess.AppData.(User)
-	if !ok {
-		BadState("no User found in sess AppData:", INDENT, sess.AppData)
-	}
+func AssignUserToSession(sess Session) User {
+	user := DefaultUser
+	sess.PutSessionData(UserKey_User, user)
 	return user
 }
 
@@ -289,3 +273,30 @@ func (oper AnimalOper) prepareDatabase() {
 		CheckState(created.Id() == 1, "unexpected id for placeholder:", created.Id())
 	}
 }
+
+const (
+	UserKey_User    = "user"
+	UserKey_MgrList = "mgr.list"
+)
+
+func TryLoggingIn(s Session, user User) bool {
+	success := false
+	if TryRegisteringUserAsLoggedIn(user.Id(), true) {
+		success = true
+		s.PutSessionData(UserKey_User, user)
+	}
+	return success
+}
+
+func SessionUser(sess Session) User {
+	user := OptSessionUser(sess)
+	if user.Id() == 0 {
+		BadState("session user has id zero")
+	}
+	return user
+}
+
+func OptSessionUser(sess Session) User {
+	return sess.GetSessionData(UserKey_User).(User)
+}
+

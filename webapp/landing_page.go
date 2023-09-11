@@ -122,7 +122,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) error {
 		}
 
 		prob = "Unable to log in at this time"
-		if !TryRegisteringUserAsLoggedIn(sess, user, true) {
+		if !TryLoggingIn(sess, user) {
 			break
 		}
 
