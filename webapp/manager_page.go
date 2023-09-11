@@ -30,6 +30,8 @@ func (p ManagerPage) Generate() {
 	}
 	m.Close()
 
+	Todo("ability to store some user-specific data types in the session other than the state")
+
 	// Scrolling list of animals for this manager.
 	m.Open()
 	Todo("?Scrolling list of manager's animals")

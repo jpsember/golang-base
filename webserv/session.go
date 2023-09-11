@@ -274,7 +274,6 @@ func (s Session) processClientMessage() {
 	// At present, we will assume that the request consists of a single widget id, and perhaps a single value
 	// for that widget
 	//
-	Todo("Should we store only the widget id, not the full ajax widget?")
 	widget := s.ajaxWidget
 	if widget == nil {
 		s.SetRequestProblem("no widget found", widget)

@@ -134,7 +134,13 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 				if !TryRegisteringUserAsLoggedIn(sess, user2, true) {
 					break
 				}
-				NewCreateAnimalPage(sess, sess.PageWidget).Generate()
+
+				if false {
+					NewCreateAnimalPage(sess, sess.PageWidget).Generate()
+					break
+				}
+
+				NewManagerPage(sess, sess.PageWidget).Generate()
 				break
 			}
 		}

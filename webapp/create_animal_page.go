@@ -82,22 +82,17 @@ func (p CreateAnimalPage) AnimalTextListener(sess Session, widget InputWidget, v
 
 func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
 	pr := PrIf(true)
-	//pr("state:", INDENT, s.State)
-
-	//p.session.DeleteStateErrors()
 
 	{
 		text := s.WidgetStrValue(id_animal_name)
-		result, err := ValidateAnimalName(text, 0)
+		_, err := ValidateAnimalName(text, 0)
 		s.SetWidgetProblem(id_animal_name, err)
-		Todo("We need to store new animal name value here perhaps", result)
 	}
 
 	preCreateValidateText(s, id_animal_summary, 20, 200, 0)
 	preCreateValidateText(s, id_animal_details, 200, 2000, 0)
 	{
 		picId := s.WidgetIntValue(id_animal_display_pic)
-		Todo("We should have a setWidgetProblem method that takes ids, not Widgets")
 		if picId == 0 {
 			s.SetWidgetProblem(id_animal_uploadpic, "Please upload a photo")
 		}
@@ -120,7 +115,8 @@ func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
 
 	pr("created animal:", INDENT, ub)
 
-	Todo("discard state, i.e. the edited fields; use a common prefix to simplify")
+	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
+
 	Todo("Do a 'back' operation to go back to the previous page")
 	NewManagerPage(s, p.parentPage).Generate()
 	return nil
