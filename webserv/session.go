@@ -484,13 +484,15 @@ func (s Session) SessionStrValue(id string) string {
 }
 
 // Read widget value (given its pointer); assumed to be a string.
-func (s Session) WidgetStrValue(widget Widget) string {
+// Deprecated.
+func (s Session) WidgetStrValued(widget Widget) string {
 	Todo("deprecate the Widget versions, use ids instead?")
 	Todo("Have widget ids be a distinct type for type safety?")
 	return s.SessionStrValue(widget.Id())
 }
 
 // Read widget value (given its pointer); assumed to be an int.
-func (s Session) WidgetIntValue(widget Widget) int {
+// Deprecated.
+func (s Session) WidgetIntValued(widget Widget) int {
 	return s.SessionIntValue(widget.Id())
 }

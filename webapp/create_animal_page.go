@@ -74,9 +74,9 @@ func AnimalNameListener(s Session, widget InputWidget, value string) (string, er
 
 func (p CreateAnimalPage) AnimalTextListener(sess Session, widget InputWidget, value string) (string, error) {
 	if widget.Id() == id_animal_summary {
-		return animalInfoListener(sess, widget, value, 20, 200, true)
+		return animalInfoListener(value, 20, 200, true)
 	} else {
-		return animalInfoListener(sess, widget, value, 200, 2000, true)
+		return animalInfoListener(value, 200, 2000, true)
 	}
 }
 
@@ -86,22 +86,22 @@ func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
 
 	//p.session.DeleteStateErrors()
 
-	wName := getWidget(s, id_animal_name)
-	wSummary := getWidget(s, id_animal_summary)
-	wDetails := getWidget(s, id_animal_details)
-	wPhoto := getWidget(s, id_animal_display_pic)
-	mUpload := getWidget(s, id_animal_uploadpic)
-
 	{
-		text := s.WidgetStrValue(wName)
+		text := s.SessionStrValue(id_animal_name)
 		result, err := ValidateAnimalName(text, 0)
-		s.SetWidgetProblem(wName, err)
+		s.SetWidgetIdProblem(id_animal_name, err)
 		Todo("We need to store new animal name value here perhaps", result)
 	}
 
-	preSubmitValidateText(s, wSummary, 20, 200, 0)
-	preSubmitValidateText(s, wDetails, 200, 2000, 0)
-	ValidateAnimalPhoto(s, wPhoto, mUpload)
+	preCreateValidateText(s, id_animal_summary, 20, 200, 0)
+	preCreateValidateText(s, id_animal_details, 200, 2000, 0)
+	{
+		picId := s.SessionIntValue(id_animal_display_pic)
+		Todo("We should have a setWidgetProblem method that takes ids, not Widgets")
+		if picId == 0 {
+			s.SetWidgetIdProblem(id_animal_uploadpic, "Please upload a photo")
+		}
+	}
 
 	errcount := WidgetErrorCount(p.parentPage, s.State)
 	pr("error count:", errcount)
@@ -110,10 +110,10 @@ func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
 	}
 
 	b := NewAnimal()
-	b.SetName(strings.TrimSpace(s.WidgetStrValue(wName)))
-	b.SetSummary(strings.TrimSpace(s.WidgetStrValue(wSummary)))
-	b.SetDetails(strings.TrimSpace(s.WidgetStrValue(wDetails)))
-	b.SetPhotoThumbnail(s.WidgetIntValue(wPhoto))
+	b.SetName(strings.TrimSpace(s.SessionStrValue(id_animal_name)))
+	b.SetSummary(strings.TrimSpace(s.SessionStrValue(id_animal_summary)))
+	b.SetDetails(strings.TrimSpace(s.SessionStrValue(id_animal_details)))
+	b.SetPhotoThumbnail(s.SessionIntValue(id_animal_display_pic))
 	b.SetManagerId(SessionUser(s).Id())
 	ub, err := CreateAnimal(b)
 	CheckOk(err)
@@ -126,7 +126,7 @@ func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
 	return nil
 }
 
-func animalInfoListener(s Session, widget Widget, n string, minLength int, maxLength int, emptyOk bool) (string, error) {
+func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (string, error) {
 	errStr := ""
 
 	if Alert("?Allowing zero characters in summary, details fields") {
@@ -155,17 +155,10 @@ func animalInfoListener(s Session, widget Widget, n string, minLength int, maxLe
 	return n, err
 }
 
-func preSubmitValidateText(s Session, widget Widget, minLength int, maxLength int, flags ValidateFlag) {
-	n := s.WidgetStrValue(widget)
-	n, err := animalInfoListener(s, widget, n, minLength, maxLength, flags.Has(VALIDATE_EMPTYOK))
-	s.SetWidgetProblem(widget, err)
-}
-
-func ValidateAnimalPhoto(s Session, valueWidget Widget, reportWidget Widget) {
-	n := s.WidgetIntValue(valueWidget)
-	if n == 0 {
-		s.SetWidgetProblem(reportWidget, "Please upload a photo")
-	}
+func preCreateValidateText(s Session, widgetId string, minLength int, maxLength int, flags ValidateFlag) {
+	n := s.SessionStrValue(widgetId)
+	n, err := animalInfoListener(n, minLength, maxLength, flags.Has(VALIDATE_EMPTYOK))
+	s.SetWidgetIdProblem(widgetId, err)
 }
 
 func (p CreateAnimalPage) uploadPhotoListener(s Session, widget FileUpload, by []byte) error {
@@ -227,15 +220,20 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget FileUpload, by [
 
 	err = UpdateErrorWithString(err, problem)
 
+	// The listener widget id is the *upload* widget.  We want to store the
+	// appropriately transformed image in the *display_pic* widget (and save
+	// that version to the database).
+	//
 	if err == nil {
+		picId := id_animal_display_pic
 		// Discard the old blob whose id we are now replacing
-		DiscardBlob(s.SessionIntValue(id_animal_display_pic))
+		DiscardBlob(s.SessionIntValue(picId))
 
 		// Store the id of the blob in the image widget
-		s.State.Put(id_animal_display_pic, imageId)
+		s.State.Put(picId, imageId)
 
 		pr("repainting animal_display_pic")
-		m.RepaintIds(id_animal_display_pic)
+		m.RepaintIds(picId)
 
 		pr("state:", s.State)
 	}
