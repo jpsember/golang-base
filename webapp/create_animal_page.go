@@ -42,7 +42,6 @@ func (p CreateAnimalPage) Generate() {
 	m.Col(6).Open()
 	{
 		m.Col(12)
-		Todo("when does the INPUT store the state?")
 		m.Label("Name").Id(id_animal_name).AddInput(AnimalNameListener)
 
 		m.Label("Summary").Id(id_animal_summary).AddInput(p.AnimalTextListener)
@@ -58,6 +57,14 @@ func (p CreateAnimalPage) Generate() {
 	m.Id(id_animal_uploadpic).Label("Photo").AddFileUpload(p.uploadPhotoListener)
 	imgWidget := m.Id(id_animal_display_pic).AddImage()
 	imgWidget.URLProvider = p.provideURL
+
+	// Scale the photos based on browser resolution
+	{
+		Todo("?Investigate relationship between pixel ratio, screen size")
+		w := p.session.BrowserInfo.ScreenSizeX()
+		modifiedSize := AnimalPicSizeNormal.ScaledBy(float64(w) / 4500)
+		imgWidget.FixedSize = modifiedSize
+	}
 	m.Close()
 }
 
@@ -73,22 +80,6 @@ func (p CreateAnimalPage) AnimalTextListener(sess Session, widget InputWidget, v
 	}
 }
 
-func SessionStrValue(s Session, id string) string {
-	return s.State.OptString(id, "")
-}
-
-func WidgetStrValue(s Session, widget Widget) string {
-	return SessionStrValue(s, widget.Id())
-}
-
-func SessionIntValue(s Session, id string) int {
-	return s.State.OptInt(id, 0)
-}
-
-func WidgetIntValue(s Session, widget Widget) int {
-	return SessionIntValue(s, widget.Id())
-}
-
 func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
 	pr := PrIf(true)
 	//pr("state:", INDENT, s.State)
@@ -102,7 +93,7 @@ func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
 	mUpload := getWidget(s, id_animal_uploadpic)
 
 	{
-		text := WidgetStrValue(s, wName)
+		text := s.WidgetStrValue(wName)
 		result, err := ValidateAnimalName(text, 0)
 		s.SetWidgetProblem(wName, err)
 		Todo("We need to store new animal name value here perhaps", result)
@@ -119,10 +110,11 @@ func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
 	}
 
 	b := NewAnimal()
-	b.SetName(strings.TrimSpace(WidgetStrValue(s, wName)))
-	b.SetSummary(strings.TrimSpace(WidgetStrValue(s, wSummary)))
-	b.SetDetails(strings.TrimSpace(WidgetStrValue(s, wDetails)))
-	b.SetPhotoThumbnail(WidgetIntValue(s, wPhoto))
+	b.SetName(strings.TrimSpace(s.WidgetStrValue(wName)))
+	b.SetSummary(strings.TrimSpace(s.WidgetStrValue(wSummary)))
+	b.SetDetails(strings.TrimSpace(s.WidgetStrValue(wDetails)))
+	b.SetPhotoThumbnail(s.WidgetIntValue(wPhoto))
+	b.SetManagerId(SessionUser(s).Id())
 	ub, err := CreateAnimal(b)
 	CheckOk(err)
 
@@ -137,6 +129,9 @@ func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
 func animalInfoListener(s Session, widget Widget, n string, minLength int, maxLength int, emptyOk bool) (string, error) {
 	errStr := ""
 
+	if Alert("?Allowing zero characters in summary, details fields") {
+		minLength = 0
+	}
 	for {
 		ln := len(n)
 
@@ -161,15 +156,13 @@ func animalInfoListener(s Session, widget Widget, n string, minLength int, maxLe
 }
 
 func preSubmitValidateText(s Session, widget Widget, minLength int, maxLength int, flags ValidateFlag) {
-	n := WidgetStrValue(s, widget)
+	n := s.WidgetStrValue(widget)
 	n, err := animalInfoListener(s, widget, n, minLength, maxLength, flags.Has(VALIDATE_EMPTYOK))
 	s.SetWidgetProblem(widget, err)
-	Todo("We need to store new value here perhaps")
 }
 
 func ValidateAnimalPhoto(s Session, valueWidget Widget, reportWidget Widget) {
-	n := WidgetIntValue(s, valueWidget)
-	Pr("validate animal photo, widget int value:", n, "widget:", valueWidget)
+	n := s.WidgetIntValue(valueWidget)
 	if n == 0 {
 		s.SetWidgetProblem(reportWidget, "Please upload a photo")
 	}
@@ -232,19 +225,19 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget FileUpload, by [
 		break
 	}
 
-	if err == nil && problem != "" {
-		err = Error(problem)
-	}
+	err = UpdateErrorWithString(err, problem)
 
 	if err == nil {
 		// Discard the old blob whose id we are now replacing
-		DiscardBlob(SessionIntValue(s, id_animal_display_pic))
+		DiscardBlob(s.SessionIntValue(id_animal_display_pic))
 
 		// Store the id of the blob in the image widget
 		s.State.Put(id_animal_display_pic, imageId)
 
 		pr("repainting animal_display_pic")
 		m.RepaintIds(id_animal_display_pic)
+
+		pr("state:", s.State)
 	}
 	return err
 }
@@ -253,7 +246,7 @@ func (p CreateAnimalPage) provideURL() string {
 	pr := PrIf(false)
 	url := ""
 	s := p.session
-	imageId := SessionIntValue(s, id_animal_display_pic)
+	imageId := s.SessionIntValue(id_animal_display_pic)
 
 	if imageId == 0 {
 		imageId = 1 // This is the default placeholder blob id

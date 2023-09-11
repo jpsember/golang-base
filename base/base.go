@@ -930,3 +930,18 @@ func hexDump(byteArray []byte, withASCII bool) string {
 	return sb.String()
 
 }
+
+func StringFromOptError(err error) string {
+	if err != nil {
+		return err.Error()
+	} else {
+		return ""
+	}
+}
+
+func UpdateErrorWithString(err error, message string) error {
+	if err == nil && message != "" {
+		err = Error(message)
+	}
+	return err
+}

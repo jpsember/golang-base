@@ -4,6 +4,7 @@ import (
 	"bytes"
 	. "github.com/jpsember/golang-base/base"
 	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	"github.com/jpsember/golang-base/webserv/gen/webserv_data"
 	"io"
 	"net/http"
 	"strings"
@@ -62,6 +63,7 @@ type SessionStruct struct {
 	// JSMap containing widget values, other user session state
 	State JSMap
 
+	BrowserInfo   webserv_data.ClientInfo
 	widgetManager WidgetManager
 
 	// Current request variables
@@ -73,11 +75,15 @@ type SessionStruct struct {
 	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
 }
 
+var ourDefaultBrowserInfo = webserv_data.NewClientInfo().SetDevicePixelRatio(1.25).SetScreenSizeX(2560).SetScreenSizeY(1440).Build()
+
 func NewSession() Session {
 	s := SessionStruct{
-		State: NewJSMap(),
+		State:       NewJSMap(),
+		BrowserInfo: ourDefaultBrowserInfo,
 	}
 	Todo("!Restore user session from filesystem/database")
+	Todo("?ClientInfo (browser info) not sent soon enough")
 	return &s
 }
 
@@ -192,12 +198,14 @@ func (s Session) processUpload(w http.ResponseWriter, req *http.Request, widgetI
 		problem = ""
 		break
 	}
-	if problem != "" {
-		s.SetWidgetProblem(fileUploadWidget, problem)
-		Alert("Problem with upload:", problem)
-		return
+
+	// Always update the problem, in case we are clearing a previous error
+	s.SetWidgetProblem(fileUploadWidget, problem)
+	if problem == "" {
+		err := fileUploadWidget.listener(s, fileUploadWidget, result)
+		problem = StringFromOptError(err)
 	}
-	fileUploadWidget.listener(s, fileUploadWidget, result)
+	s.SetWidgetProblem(fileUploadWidget, problem)
 }
 
 // Serve a request for a resource
@@ -297,7 +305,11 @@ func (s Session) processClientInfo(infoString string) {
 		Pr("failed to parse json:", err, INDENT, infoString)
 		return
 	}
-	Todo("!process client info:", INDENT, json)
+	s.BrowserInfo = webserv_data.NewClientInfo(). //
+							SetDevicePixelRatio(json.OptFloat32("dp", 1.0)). //
+							SetScreenSizeX(json.OptInt("sw", 2000)).         //
+							SetScreenSizeY(json.OptInt("sh", 0)).Build()
+	Todo("?Datagen generated parse() methods don't report errors cleanly; we will need a wrapper?")
 }
 
 func (s Session) processRepaintFlags(repaintSet StringSet, debugDepth int, w Widget, refmap JSMap, repaint bool) {
@@ -412,7 +424,7 @@ func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {
 	state := s.State
 	existingProblem := state.OptString(key, "")
 	if existingProblem != problemText {
-		Pr("SetWidgetProblem:", widget.Id(), "from:", existingProblem, "to:", problemText)
+		// Pr("SetWidgetProblem:", widget.Id(), "from:", existingProblem, "to:", problemText)
 		if problemText == "" {
 			state.Delete(key)
 		} else {
@@ -454,4 +466,31 @@ func (s Session) DeleteStateFieldsWithPrefix(prefix string) {
 			delete(m, k)
 		}
 	}
+}
+
+// ------------------------------------------------------------------------------------
+// Accessing values of widgets other than the widget currently being listened to
+// ------------------------------------------------------------------------------------
+
+// Read widget value (given its id); assumed to be an int.
+func (s Session) SessionIntValue(id string) int {
+	Todo("rename this; get rid of 'Session' prefix?")
+	return s.State.OptInt(id, 0)
+}
+
+// Read widget value (given its id); assumed to be a string.
+func (s Session) SessionStrValue(id string) string {
+	return s.State.OptString(id, "")
+}
+
+// Read widget value (given its pointer); assumed to be a string.
+func (s Session) WidgetStrValue(widget Widget) string {
+	Todo("deprecate the Widget versions, use ids instead?")
+	Todo("Have widget ids be a distinct type for type safety?")
+	return s.SessionStrValue(widget.Id())
+}
+
+// Read widget value (given its pointer); assumed to be an int.
+func (s Session) WidgetIntValue(widget Widget) int {
+	return s.SessionIntValue(widget.Id())
 }

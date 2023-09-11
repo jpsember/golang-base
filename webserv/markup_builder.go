@@ -105,13 +105,6 @@ func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 	return b
 }
 
-// Deprecated.
-func (b MarkupBuilder) Pr(message ...any) MarkupBuilder {
-	Alert("#20<1Deprecated Pr")
-	b.A(ToString(message...))
-	return b
-}
-
 // Append an HTML comment.
 func (b MarkupBuilder) Comment(messages ...any) MarkupBuilder {
 	b.A(`<!-- `)

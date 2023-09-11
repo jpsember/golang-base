@@ -147,19 +147,17 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 		var text string
 		var flag bool
 
-		Todo("Some of this should be handled by our webserv library")
-
 		pr("url path:", path)
 		if path == "/ajax" {
 			sess.HandleAjaxRequest(w, req)
 		} else if path == "/" {
 			oper.processFullPageRequest(sess, w, req)
 		} else if text, flag = extractPrefix(path, "/r/"); flag {
-			err = HandleBlobRequest(w, req, text)
+			pr("handling blob request with:", text)
+			err = oper.handleBlobRequest(w, req, text)
 		} else if text, flag = extractPrefix(path, `/upload/`); flag {
-			Pr("handling upload request with:", text)
+			pr("handling upload request with:", text)
 			sess.HandleUploadRequest(w, req, text)
-			//err = HandleUploadRequest(sess, w, req, text)
 		} else {
 			pr("handling resource request for:", path)
 			err = sess.HandleResourceRequest(w, req, oper.resources)
@@ -182,7 +180,7 @@ func extractPrefix(text string, prefix string) (string, bool) {
 	return text, false
 }
 
-func HandleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) error {
+func (oper AnimalOper) handleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) error {
 	blob := SharedWebCache.GetBlobWithName(blobId)
 	if blob.Id() == 0 {
 		Alert("#50Can't find blob with name:", Quoted(blobId))

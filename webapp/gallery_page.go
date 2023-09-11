@@ -117,7 +117,7 @@ func (p GalleryPage) checkboxListener(s Session, widget CheckboxWidget, state bo
 }
 
 func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, value []byte) error {
-	pr := PrIf(true)
+	pr := PrIf(false)
 
 	m := s.WidgetManager()
 

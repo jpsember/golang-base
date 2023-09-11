@@ -2,6 +2,9 @@ class {
    // Unique id
    int id;
 
+   // Id of manager (user) that created the animal
+   int manager_id;
+
    enum AnimalState state;
 
    string name;

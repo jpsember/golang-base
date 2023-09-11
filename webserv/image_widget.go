@@ -10,6 +10,7 @@ type ImageURLProvider func() string
 type ImageWidgetObj struct {
 	BaseWidgetObj
 	URLProvider ImageURLProvider
+	FixedSize   IPoint // If not (0,0), size to display image as
 }
 
 type ImageWidget = *ImageWidgetObj
@@ -21,7 +22,6 @@ func NewImageWidget(id string) ImageWidget {
 }
 
 func (w ImageWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	Todo("Have support for scaling down requested image")
 
 	pr := PrIf(false)
 	pr("rendering:", w.Id())
@@ -50,9 +50,14 @@ func (w ImageWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			pr("no URLProvider!")
 		}
 
-		// The outermost element must have the widget's id!  Or chaos happens during repainting.
-		//
-		m.VoidTag(`img src="`, imageSource, `" class="img-fluid" alt="uploaded image"`)
+		m.A(`<img src="`, imageSource, `" alt="uploaded image"`)
+		if w.FixedSize.IsPositive() {
+			m.A(` width="`, w.FixedSize.X, `" height="`, w.FixedSize.Y, `" class="img-thumbnail"`)
+		} else {
+			m.A(` class="img-thumbnail image-fluid"`)
+		}
+		m.A(`>`)
+
 	}
 	m.CloseTag()
 	pr("done render")

@@ -1,0 +1,6 @@
+class {
+    float device_pixel_ratio = 1;
+    // Until we have proper support for IPoints, store components individually:
+    int screen_size_x = 2000;
+    int screen_size_y = 1200;
+}
