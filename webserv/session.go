@@ -487,3 +487,7 @@ func (s Session) GetSessionData(key string) any {
 	}
 	return value
 }
+
+func (s Session) DeleteSessionData(key string) {
+	delete(s.AppData, key)
+}

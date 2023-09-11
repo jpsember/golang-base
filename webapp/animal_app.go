@@ -110,7 +110,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	}
 
 	sess := DetermineSession(oper.sessionManager, w, req, true)
-	optUser := sess.OptSessionData(UserKey_User)
+	optUser := sess.OptSessionData(SessionKey_User)
 	if optUser == nil {
 		user := AssignUserToSession(sess)
 		CheckState(user.Id() == 0)
@@ -251,7 +251,7 @@ func (oper AnimalOper) constructPageWidget(sess Session) {
 // A new session was created; assign an 'unknown' user to it
 func AssignUserToSession(sess Session) User {
 	user := DefaultUser
-	sess.PutSessionData(UserKey_User, user)
+	sess.PutSessionData(SessionKey_User, user)
 	return user
 }
 
@@ -275,15 +275,15 @@ func (oper AnimalOper) prepareDatabase() {
 }
 
 const (
-	UserKey_User    = "user"
-	UserKey_MgrList = "mgr.list"
+	SessionKey_User    = "user"
+	SessionKey_MgrList = "mgr.list"
 )
 
 func TryLoggingIn(s Session, user User) bool {
 	success := false
 	if TryRegisteringUserAsLoggedIn(user.Id(), true) {
 		success = true
-		s.PutSessionData(UserKey_User, user)
+		s.PutSessionData(SessionKey_User, user)
 	}
 	return success
 }
@@ -297,6 +297,5 @@ func SessionUser(sess Session) User {
 }
 
 func OptSessionUser(sess Session) User {
-	return sess.GetSessionData(UserKey_User).(User)
+	return sess.GetSessionData(SessionKey_User).(User)
 }
-

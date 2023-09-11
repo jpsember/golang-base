@@ -842,9 +842,13 @@ func ByteSlice(bytes []byte, start int, length int) []byte {
 	if start < 0 {
 		start = ln + start
 	}
-	start = Clamp(start, 0, ln)
-	end := Clamp(start+length, start, ln)
-	return bytes[start:end]
+	return ClampedSlice(bytes, start, start+length)
+}
+
+func ClampedSlice[K any](slice []K, start int, end int) []K {
+	start = Clamp(start, 0, len(slice))
+	end = Clamp(end, start, len(slice))
+	return slice[start:end]
 }
 
 func appendHex(sb *strings.Builder, value uint64, ndigits int) {

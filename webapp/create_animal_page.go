@@ -49,7 +49,7 @@ func (p CreateAnimalPage) Generate() {
 		m.Label("Details").Id(id_animal_details).AddInput(p.AnimalTextListener)
 		m.Size(SizeTiny).Label("Additional paragraphs to appear on the 'details' view.").AddText()
 
-		m.Id(id_add).Label("Create").AddButton(p.addButtonListener)
+		m.Id(id_add).Label("Create").AddButton(p.createAnimalButtonListener)
 	}
 	m.Close()
 
@@ -80,7 +80,7 @@ func (p CreateAnimalPage) AnimalTextListener(sess Session, widget InputWidget, v
 	}
 }
 
-func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
+func (p CreateAnimalPage) createAnimalButtonListener(s Session, widget Widget) error {
 	pr := PrIf(true)
 
 	{
@@ -116,6 +116,9 @@ func (p CreateAnimalPage) addButtonListener(s Session, widget Widget) error {
 	pr("created animal:", INDENT, ub)
 
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
+
+	Todo("Discard any existing manager animal list, as its contents have now changed")
+	s.DeleteSessionData(SessionKey_MgrList)
 
 	Todo("Do a 'back' operation to go back to the previous page")
 	NewManagerPage(s, p.parentPage).Generate()

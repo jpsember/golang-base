@@ -2,6 +2,7 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
 )
 
@@ -20,7 +21,6 @@ func NewManagerPage(sess Session, parentWidget Widget) ManagerPage {
 }
 
 func (p ManagerPage) Generate() {
-	Todo("I suspect we don't need to store the session in the page, as we only ever call the Generate function")
 	m := p.GenerateHeader()
 
 	Todo("If we are generating a new page, we shouldn't try to store the error in the old one")
@@ -36,7 +36,8 @@ func (p ManagerPage) Generate() {
 	// Scrolling list of animals for this manager.
 	m.Open()
 	Todo("?Scrolling list of manager's animals")
-	p.animalList(p.session)
+	al := p.animalList()
+	Todo("do something with", al)
 	m.Close()
 
 }
@@ -46,16 +47,37 @@ func (p ManagerPage) newAnimalListener(sess Session, widget Widget) error {
 	return nil
 }
 
-func (p ManagerPage) animalList(sess Session) AnimalList {
+func (p ManagerPage) animalList() AnimalList {
 
-	alist := sess.OptSessionData(UserKey_MgrList)
+	alist := p.session.OptSessionData(SessionKey_MgrList)
 	if alist == nil {
-		als := NewAnimalList()
-		sess.PutSessionData(UserKey_MgrList, als)
-		Pr("empty elements:", als.GetPageElements(0))
-		alist = als
+		alist = p.constructAnimalList()
+		p.session.PutSessionData(SessionKey_MgrList, alist)
 	}
 	return alist.(AnimalList)
+}
+
+func (p ManagerPage) constructAnimalList() AnimalList {
+	animalList := NewAnimalList()
+	Pr("empty elements:", animalList.GetPageElements(0))
+
+	managerId := SessionUser(p.session).Id()
+	animalList.elements = getManagerAnimals(managerId)
+	Pr("animals for manager", managerId, ":", INDENT, animalList.elements)
+	return animalList
+}
+
+func getManagerAnimals(managerId int) []int {
+	Todo("?A compound index on managerId+animalId would help here, but probably not worth it for now")
+	var result []int
+	iter := AnimalIterator(0)
+	for iter.HasNext() {
+		anim := iter.Next().(Animal)
+		if anim.ManagerId() == managerId {
+			result = append(result, anim.Id())
+		}
+	}
+	return result
 }
 
 type AnimalListStruct struct {
@@ -78,10 +100,4 @@ func (a AnimalList) GetPageElements(pageNumber int) []int {
 	pgEnd := pgStart + k
 
 	return ClampedSlice(a.elements, pgStart, pgEnd)
-}
-
-func ClampedSlice[K any](slice []K, start int, end int) []K {
-	start = Clamp(start, 0, len(slice))
-	end = Clamp(end, start, len(slice))
-	return slice[start:end]
 }
