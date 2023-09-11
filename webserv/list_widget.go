@@ -36,14 +36,17 @@ func (w ListWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	m.Comment("ListWidget")
 	m.OpenTag(`div id="`, w.BaseId, `"`)
+	m.OpenTag(`div class="row"`)
 	{
 		elementIds := w.list.GetPageElements(w.currentPageNumber)
 		pr("rendering page num:", w.currentPageNumber, "element ids:", elementIds)
 		Todo("Why is the state map included with the renderTo method?")
 		for _, id := range elementIds {
+			m.Comment("--------------------------- rendering id:", id)
 			w.renderer(w, id, m)
 		}
 	}
+	m.CloseTag()
 	m.CloseTag()
 
 }

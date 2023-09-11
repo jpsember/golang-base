@@ -26,7 +26,7 @@ const (
 )
 
 func (p ManagerPage) Generate() {
-	SetWidgetDebugRendering()
+	//SetWidgetDebugRendering()
 	m := p.GenerateHeader()
 
 	Todo("?If we are generating a new page, we shouldn't try to store the error in the old one")
@@ -38,17 +38,13 @@ func (p ManagerPage) Generate() {
 	m.Close()
 
 	// Scrolling list of animals for this manager.
-	m.Open()
+	//m.Open()
+	//m.Col(4)
 	al := p.animalList()
-	m.Id(id_manager_list).AddList(al, nil, p.listListener)
+	m.Id(id_manager_list).AddList(al, p.renderItem, p.listListener)
 
-	m.Close()
+	//m.Close()
 
-}
-
-func (p ManagerPage) newAnimalListener(sess Session, widget Widget) error {
-	NewCreateAnimalPage(sess, p.parentPage).Generate()
-	return nil
 }
 
 func (p ManagerPage) animalList() AnimalList {
@@ -68,6 +64,11 @@ func (p ManagerPage) constructAnimalList() AnimalList {
 	return animalList
 }
 
+func (p ManagerPage) newAnimalListener(sess Session, widget Widget) error {
+	NewCreateAnimalPage(sess, p.parentPage).Generate()
+	return nil
+}
+
 func (p ManagerPage) listListener(sess Session, widget ListWidget) error {
 	Pr("listener event:", widget.Id())
 	return nil
@@ -76,15 +77,48 @@ func (p ManagerPage) listListener(sess Session, widget ListWidget) error {
 func getManagerAnimals(managerId int) []int {
 	Todo("?A compound index on managerId+animalId would help here, but probably not worth it for now")
 	var result []int
-	iter := AnimalIterator(0)
-	for iter.HasNext() {
-		anim := iter.Next().(Animal)
-		if anim.ManagerId() == managerId {
+
+	if Alert("choosing a much larger random list") {
+		iter := AnimalIterator(0)
+		for iter.HasNext() {
+			anim := iter.Next().(Animal)
 			result = append(result, anim.Id())
 		}
+
+	} else {
+		iter := AnimalIterator(0)
+		for iter.HasNext() {
+			anim := iter.Next().(Animal)
+			if anim.ManagerId() == managerId {
+				result = append(result, anim.Id())
+			}
+		}
 	}
+
 	Pr("returning:", result)
 	return result
+}
+
+func (p ManagerPage) renderItem(widget ListWidget, elementId int, m MarkupBuilder) {
+
+	anim, err := ReadAnimal(elementId)
+	if err != nil {
+		Alert("#50error rendering item, no animal found with id:", elementId)
+		return
+	}
+
+	if false {
+		m.OpenTag(`div class="card bg-light mb-3"`)
+		m.A("animal ", elementId)
+		m.CloseTag()
+		return
+	}
+
+	//<div class="card bg-light mb-3 animal-card">
+
+	m.OpenTag(`div class="col-sm-4"`)
+	RenderAnimalCard(anim, m, nil)
+	m.CloseTag()
 }
 
 type AnimalListStruct struct {

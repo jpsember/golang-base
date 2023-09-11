@@ -134,6 +134,10 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 				}
 
 				if false {
+					NewAnimalFeedPage(sess, sess.PageWidget).Generate()
+					break
+				}
+				if false {
 					NewCreateAnimalPage(sess, sess.PageWidget).Generate()
 					break
 				}

@@ -107,10 +107,10 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 				s += `"`
 			}
 			m.Comments(`child`).OpenTag(s)
-			if WidgetDebugRenderingFlag {
+			if false && WidgetDebugRenderingFlag {
 				// Render a div that contains some information
 				{
-					m.A(`<div id='`, w.BaseId, `'`, ` style="font-size:50%; font-family:monospace;">`)
+					m.A(`<div style="font-size:50%; font-family:monospace;">`)
 				}
 
 				id := child.Id()
