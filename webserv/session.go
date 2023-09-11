@@ -65,13 +65,12 @@ type SessionStruct struct {
 	widgetManager WidgetManager
 
 	// Current request variables
-	responseWriter http.ResponseWriter
-	request        *http.Request
-	// If nonempty, problem detected with current request
-	requestProblem string
-	clientInfo     []string
-	ajaxWidget     Widget
-	widgetValue    string
+	responseWriter   http.ResponseWriter
+	request          *http.Request
+	requestProblem   string // If nonempty, problem detected with current request
+	clientInfoString string // If nonempty information sent from client about screen size, etc
+	ajaxWidget       Widget // If not nil, the widget sending the ajax
+	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
 }
 
 func NewSession() Session {
@@ -114,9 +113,7 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 	s.Mutex.Lock()
 	s.responseWriter = w
 	s.request = req
-	s.requestProblem = ""
 	s.parseAjaxRequest(req)
-	s.WidgetManager().clearRepaintSet()
 	if false && Alert("dumping") {
 		Pr("Query:", INDENT, req.URL.Query())
 	}
@@ -125,20 +122,12 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s Session) HandleUploadRequest(w http.ResponseWriter, req *http.Request, widgetId string) {
-
-	defer s.discardRequest()
-	Todo("!lots of duplicated code here with HandleAjaxRequest")
 	s.Mutex.Lock()
+	defer s.discardRequest()
 	s.responseWriter = w
 	s.request = req
-	s.requestProblem = ""
-
-	s.WidgetManager().clearRepaintSet()
-
 	s.processUpload(w, req, widgetId)
-
 	// Send the usual ajax response
-
 	s.sendAjaxResponse()
 }
 
@@ -213,11 +202,9 @@ func (s Session) processUpload(w http.ResponseWriter, req *http.Request, widgetI
 
 // Serve a request for a resource
 func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request, resourcePath Path) error {
-	defer s.discardRequest()
 	s.Mutex.Lock()
+	defer s.discardRequest()
 	s.responseWriter = w
-	s.request = req
-	s.requestProblem = ""
 
 	var err error
 	resource := req.URL.Path
@@ -256,17 +243,20 @@ func (s Session) parseAjaxRequest(req *http.Request) {
 	if len(t1) == 1 && len(t2) <= 1 {
 		wid = t1[0]
 		if len(t2) == 1 {
-			s.widgetValue = t2[0]
+			s.ajaxWidgetValue = t2[0]
 		}
 	}
 	s.ajaxWidget = s.WidgetManager().Opt(wid)
-	s.clientInfo, _ = v[clientKeyInfo]
+	clientInfoArray := v[clientKeyInfo]
+	if clientInfoArray != nil && len(clientInfoArray) == 1 {
+		s.clientInfoString = clientInfoArray[0]
+	}
 }
 
 func (s Session) processClientMessage() {
 	// Process client info, if it was sent
-	if info, err := getSingleValue(s.clientInfo); err == nil {
-		s.processClientInfo(info)
+	if s.clientInfoString != "" {
+		s.processClientInfo(s.clientInfoString)
 		// If there isn't a widget message as well, do nothing else
 		if s.ajaxWidget == nil {
 			return
@@ -291,7 +281,7 @@ func (s Session) processClientMessage() {
 		Alert("#50Widget has no low-level listener:", Info(widget))
 		return
 	}
-	updatedValue, err := widget.LowListener()(s, widget, s.widgetValue)
+	updatedValue, err := widget.LowListener()(s, widget, s.ajaxWidgetValue)
 
 	s.State.Put(widget.Id(), updatedValue)
 	if err != nil {
@@ -359,17 +349,19 @@ func (s Session) sendAjaxResponse() {
 
 // Discard state added to session to serve a request; release session lock.
 func (s Session) discardRequest() {
-	problem := s.GetRequestProblem()
+	defer s.Mutex.Unlock()
+	problem := s.requestProblem
 	if problem != "" {
 		Pr("Problem processing client message:", INDENT, problem)
 	}
 	s.responseWriter = nil
 	s.request = nil
 	s.requestProblem = ""
-	s.widgetValue = ""
 	s.ajaxWidget = nil
+	s.ajaxWidgetValue = ""
+	s.clientInfoString = ""
+
 	s.WidgetManager().clearRepaintSet()
-	s.Mutex.Unlock()
 }
 
 func (s Session) SetRequestProblem(message ...any) Session {
