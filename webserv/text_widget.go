@@ -19,13 +19,13 @@ func NewTextWidget(id string, size WidgetSize) TextWidget {
 	return t
 }
 
-func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
+func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 	if !w.Visible() {
 		m.RenderInvisible(w)
 		return
 	}
 
-	textContent, wasStatic := GetStaticOrDynamicLabel(w, state)
+	textContent, wasStatic := s.GetStaticOrDynamicLabel(w)
 
 	h := NewHtmlString(textContent)
 

@@ -31,7 +31,7 @@ func newAnimalCardWidget(widgetId string, animal Animal) AnimalCardWidget {
 	return &w
 }
 
-func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
+func (w AnimalCardWidget) RenderTo(s Session, m MarkupBuilder) {
 	if !w.Visible() {
 		m.RenderInvisible(w)
 		return
@@ -40,7 +40,7 @@ func (w AnimalCardWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	ch := w.GetChildren()
 	CheckState(len(ch) == 1, "expected single 'view' button widget")
 	vb := ch[0]
-	RenderAnimalCard(w.animal, m, vb)
+	RenderAnimalCard(s, w.animal, m, vb)
 }
 
 func (w AnimalCardWidget) GetChildren() []Widget {
@@ -66,7 +66,7 @@ func ReadImageIntoCache(blobId int) string {
 	return url
 }
 
-func RenderAnimalCard(w_animal Animal, m MarkupBuilder, button Widget) {
+func RenderAnimalCard(s Session, w_animal Animal, m MarkupBuilder, button Widget) {
 
 	// Open a bootstrap card
 
@@ -131,8 +131,8 @@ func RenderAnimalCard(w_animal Animal, m MarkupBuilder, button Widget) {
 
 						Todo("!Add ability to add style = 'width:100%; font-size:75%;' to the child button")
 						Todo("!add:  <button class='btn btn-primary btn-sm'> to button")
-						Todo("assuming state doesn't need to be sent here")
-						vb.RenderTo(m, nil)
+						Todo("assuming session doesn't need to be sent here")
+						vb.RenderTo(s, m)
 					}
 				}
 				m.CloseTag()

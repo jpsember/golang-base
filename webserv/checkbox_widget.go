@@ -49,7 +49,7 @@ func checkboxListenWrapper(sess Session, widget Widget, value string) (string, e
 	return strconv.FormatBool(result), err
 }
 
-func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
+func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 	if !w.Visible() {
 		m.RenderInvisible(w)
 		return
@@ -74,7 +74,7 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		{
 			m.VoidTag(
 				`input class="form-check-input" type="checkbox" id="`, auxId, `"`, role,
-				Ternary(WidgetBooleanValue(state, w.BaseId), ` checked`, ``),
+				Ternary(s.WidgetBooleanValue(w.Id()), ` checked`, ``),
 				` onclick='jsCheckboxClicked("`, w.BaseId, `")'`)
 
 			{

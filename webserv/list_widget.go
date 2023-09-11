@@ -29,7 +29,7 @@ func NewListWidget(id string, list ListInterface, renderer ListItemRenderer, lis
 	return &w
 }
 
-func (w ListWidget) RenderTo(m MarkupBuilder, state JSMap) {
+func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	Todo("The RenderInvisible could be handled elsewhere")
 
 	pr := PrIf(true)
@@ -40,7 +40,6 @@ func (w ListWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	{
 		elementIds := w.list.GetPageElements(w.currentPageNumber)
 		pr("rendering page num:", w.currentPageNumber, "element ids:", elementIds)
-		Todo("Why is the state map included with the renderTo method?")
 		for _, id := range elementIds {
 			m.Comment("--------------------------- rendering id:", id)
 			w.renderer(w, id, m)
@@ -48,7 +47,6 @@ func (w ListWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	}
 	m.CloseTag()
 	m.CloseTag()
-
 }
 
 func defaultRenderer(widget ListWidget, elementId int, m MarkupBuilder) {

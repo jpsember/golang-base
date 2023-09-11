@@ -10,7 +10,7 @@ type Widget interface {
 	Id() string
 	LowListener() LowLevelWidgetListener
 	Enabled() bool
-	RenderTo(m MarkupBuilder, state JSMap)
+	RenderTo(s *SessionStruct, m MarkupBuilder)
 	Children() *Array[Widget]
 	AddChild(c Widget, manager WidgetManager)
 

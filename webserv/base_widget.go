@@ -120,7 +120,7 @@ func (w BaseWidget) IdSummary() string {
 	return `Id: ` + w.BaseId
 }
 
-func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
+func (w BaseWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.A(`<div id='`, w.BaseId, `'></div>`)
 }
 

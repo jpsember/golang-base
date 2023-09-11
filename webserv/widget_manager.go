@@ -458,16 +458,6 @@ func SetWidgetDebugRendering() {
 	WidgetDebugRenderingFlag = true
 }
 
-func GetStaticOrDynamicLabel(widget Widget, state JSMap) (string, bool) {
-	Todo("?we are assuming static content is a string here")
-	sc := widget.StaticContent()
-	if sc != nil {
-		return sc.(string), true
-	} else {
-		return WidgetStringValue(state, widget.Id()), false
-	}
-}
-
 // Mark a widget for repainting.  Does nothing if there is no repaintSet (i.e., it is not being done within
 // an AJAX call)
 func (m WidgetManager) Repaint(w Widget) WidgetManager {

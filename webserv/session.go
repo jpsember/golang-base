@@ -324,7 +324,7 @@ func (s Session) processRepaintFlags(repaintSet StringSet, debugDepth int, w Wid
 
 	if repaint {
 		m := NewMarkupBuilder()
-		w.RenderTo(m, s.State)
+		w.RenderTo(s, m)
 		refmap.Put(id, m.String())
 	}
 
@@ -458,12 +458,17 @@ func (s Session) DeleteStateFieldsWithPrefix(prefix string) {
 // Accessing values of widgets other than the widget currently being listened to
 // ------------------------------------------------------------------------------------
 
-// Read widget value (given its id); assumed to be an int.
+// Read widget value; assumed to be an int.
 func (s Session) WidgetIntValue(id string) int {
 	return s.State.OptInt(id, 0)
 }
 
-// Read widget value (given its id); assumed to be a string.
+// Read widget value; assumed to be a boolean.
+func (s Session) WidgetBooleanValue(id string) bool {
+	return s.State.OptBool(id, false)
+}
+
+// Read widget value; assumed to be a string.
 func (s Session) WidgetStrValue(id string) string {
 	return s.State.OptString(id, "")
 }
@@ -489,4 +494,14 @@ func (s Session) GetSessionData(key string) any {
 
 func (s Session) DeleteSessionData(key string) {
 	delete(s.AppData, key)
+}
+
+func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
+	Todo("?we are assuming static content is a string here")
+	sc := widget.StaticContent()
+	if sc != nil {
+		return sc.(string), true
+	} else {
+		return s.WidgetStrValue(widget.Id()), false
+	}
 }

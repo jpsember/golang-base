@@ -49,7 +49,7 @@ func dummyInputWidgetListener(sess Session, widget InputWidget, value string) (s
 	return "garbage", DummyError
 }
 
-func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
+func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	if !w.Visible() {
 		m.RenderInvisible(w)
@@ -69,7 +69,7 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.DoIndent()
 
 	problemId := WidgetIdWithProblem(w.BaseId)
-	problemText := state.OptString(problemId, "")
+	problemText := s.WidgetStrValue(problemId)
 	if false && Alert("always problem") {
 		problemText = "sample problem information"
 	}
@@ -90,7 +90,7 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	}
 
 	m.A(`" type="`, Ternary(w.Password, "password", "text"), `" id="`, w.BaseId, `.aux" value="`)
-	value := WidgetStringValue(state, w.BaseId)
+	value := s.WidgetStrValue(w.Id())
 	m.Escape(value)
 	m.A(`" onchange='jsVal("`, w.BaseId, `")'>`).Cr()
 

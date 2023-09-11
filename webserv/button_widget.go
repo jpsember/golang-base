@@ -36,7 +36,7 @@ func doNothingButtonListener(sess Session, widget Widget) error {
 
 type ButtonWidgetListener func(sess Session, widget Widget) error
 
-func (w ButtonWidget) RenderTo(m MarkupBuilder, state JSMap) {
+func (w ButtonWidget) RenderTo(s Session, m MarkupBuilder) {
 	if !w.Visible() {
 		m.RenderInvisible(w)
 		return

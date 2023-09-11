@@ -21,7 +21,7 @@ func NewImageWidget(id string) ImageWidget {
 	return t
 }
 
-func (w ImageWidget) RenderTo(m MarkupBuilder, state JSMap) {
+func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	pr := PrIf(false)
 	pr("rendering:", w.Id())

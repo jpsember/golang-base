@@ -1,14 +1,10 @@
 package webserv
 
-import (
-	. "github.com/jpsember/golang-base/base"
-)
-
 type FileUploadWidgetListener func(sess Session, widget FileUpload, value []byte) error
 
 type FileUploadObj struct {
 	BaseWidgetObj
-	Label HtmlString
+	Label    HtmlString
 	listener FileUploadWidgetListener
 }
 
@@ -22,7 +18,7 @@ func NewFileUpload(id string, label HtmlString, listener FileUploadWidgetListene
 	return t
 }
 
-func (w FileUpload) RenderTo(m MarkupBuilder, state JSMap) {
+func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 	if !w.Visible() {
 		m.RenderInvisible(w)
 		return
@@ -56,7 +52,7 @@ func (w FileUpload) RenderTo(m MarkupBuilder, state JSMap) {
 		m.VoidTag(`input class="form-control" type="file" name="`, inputName, `" id="`, inputId, `" onchange='jsUpload("`, w.Id(), `")'`)
 
 		problemId := WidgetIdWithProblem(w.BaseId)
-		problemText := state.OptString(problemId, "")
+		problemText := s.WidgetStrValue(problemId)
 
 		hasProblem := problemText != ""
 
@@ -71,4 +67,3 @@ func (w FileUpload) RenderTo(m MarkupBuilder, state JSMap) {
 
 	m.CloseTag()
 }
-

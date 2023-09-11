@@ -35,7 +35,7 @@ func NewAlertWidget(id string, alertClass AlertClass) AlertWidget {
 
 var classNames = []string{`success`, `info`, `warning`, `danger`}
 
-func (w AlertWidget) RenderTo(m MarkupBuilder, state JSMap) {
+func (w AlertWidget) RenderTo(s Session, m MarkupBuilder) {
 	if !w.Visible() {
 		m.RenderInvisible(w)
 		return
@@ -43,7 +43,7 @@ func (w AlertWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	pr := PrIf(false)
 	desc := `AlertWidget ` + w.IdSummary()
 	pr("rendering AlertWidget, desc:", desc, "class:", w.Class)
-	alertMsg := state.OptString(w.BaseId, "No alert message found!")
+	alertMsg := s.WidgetStrValue(w.Id())
 	m.A(`<div class='alert alert-`, classNames[w.Class],
 		`' role='alert' id='`, w.BaseId, `'>`, html.EscapeString(alertMsg), `</div>`).Cr()
 }

@@ -82,7 +82,7 @@ func (w ContainerWidget) SetColumns(columns int) {
 	w.columns = columns
 }
 
-func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
+func (w ContainerWidget) RenderTo(s Session, m MarkupBuilder) {
 	CheckState(w.cells.Size() == w.children.Size())
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
@@ -100,13 +100,13 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 				prevPoint = IPointWith(0, cell.Location.Y)
 			}
 
-			s := `div class="col-sm-` + IntToString(cell.Width) + `"`
+			str := `div class="col-sm-` + IntToString(cell.Width) + `"`
 			if WidgetDebugRenderingFlag {
-				s += ` style="background-color:` + DebugColorForString(child.Id()) + `;`
-				s += `border-style:double;`
-				s += `"`
+				str += ` style="background-color:` + DebugColorForString(child.Id()) + `;`
+				str += `border-style:double;`
+				str += `"`
 			}
-			m.Comments(`child`).OpenTag(s)
+			m.Comments(`child`).OpenTag(str)
 			if false && WidgetDebugRenderingFlag {
 				// Render a div that contains some information
 				{
@@ -130,7 +130,7 @@ func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
 			}
 
 			verify := m.VerifyBegin()
-			child.RenderTo(m, state)
+			child.RenderTo(s, m)
 			m.VerifyEnd(verify, child)
 
 			m.CloseTag() // child

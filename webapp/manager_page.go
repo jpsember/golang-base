@@ -117,7 +117,7 @@ func (p ManagerPage) renderItem(widget ListWidget, elementId int, m MarkupBuilde
 	//<div class="card bg-light mb-3 animal-card">
 
 	m.OpenTag(`div class="col-sm-4"`)
-	RenderAnimalCard(anim, m, nil)
+	RenderAnimalCard(p.session, anim, m, nil)
 	m.CloseTag()
 }
 
