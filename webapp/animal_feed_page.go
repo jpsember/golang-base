@@ -28,6 +28,7 @@ func (p AnimalFeedPage) Generate() {
 		GenerateRandomAnimals()
 	}
 
+	Todo("Use animal_list here instead")
 	m.Col(4)
 	for i := 1; i < 12; i++ {
 		anim, err := ReadAnimal(i)
