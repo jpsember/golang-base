@@ -30,7 +30,7 @@ func (w AnimalCardWidget) RenderTo(s Session, m MarkupBuilder) {
 		m.RenderInvisible(w)
 		return
 	}
-	RenderAnimalCard(s, w.animal, m, w.buttonLabel, "amnimal_id_")
+	RenderAnimalCard(s, w.animal, m, w.buttonLabel, action_prefix_animal_card, action_prefix_animal_card)
 }
 
 func ReadImageIntoCache(blobId int) string {
@@ -45,12 +45,16 @@ func ReadImageIntoCache(blobId int) string {
 	return url
 }
 
-func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel string, actionPrefix string) {
+func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel string, buttonActionPrefix string, cardActionPrefix string) {
 
 	// Open a bootstrap card
 
 	m.Comments("AnimalCardWidget")
-	m.OpenTag(`div class="card bg-light mb-3 animal-card" style="width:14em"`)
+	clickArg := ""
+	if cardActionPrefix != "" {
+		clickArg = ` onclick="jsButton('` + cardActionPrefix + IntToString(animal.Id()) + `')"`
+	}
+	m.OpenTag(`div class="card bg-light mb-3 animal-card" style="width:14em"`, clickArg)
 	{
 		imgUrl := "unknown"
 		photoId := animal.PhotoThumbnail()
@@ -108,7 +112,7 @@ func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel str
 				{
 					m.OpenTag(`div class="d-grid justify-content-md-end"`)
 					{
-						buttonId := actionPrefix + IntToString(animal.Id())
+						buttonId := buttonActionPrefix + IntToString(animal.Id())
 						RenderButton(s, m, buttonId, buttonId, true, buttonLabel, SizeSmall, AlignRight, 0)
 					}
 					m.CloseTag()

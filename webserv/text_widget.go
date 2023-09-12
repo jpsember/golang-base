@@ -29,7 +29,6 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	if !wasStatic {
 		args.Add(`div id='` + w.BaseId + `'`)
-		m.OpenTag(`div id='` + w.BaseId + `'`)
 	}
 	if w.size != SizeDefault {
 		Todo("?A better way to do this, no doubt")

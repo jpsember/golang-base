@@ -84,7 +84,7 @@ func NewSession() Session {
 	}
 	Todo("!Restore user session from filesystem/database")
 	Todo("?ClientInfo (browser info) not sent soon enough")
-	Todo("The Session should have WidgetManager embedded within it, so we can call through to its methods")
+	Todo("?The Session should have WidgetManager embedded within it, so we can call through to its methods")
 	return &s
 }
 

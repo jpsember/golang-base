@@ -82,7 +82,7 @@ func getManagerAnimals(managerId int) []int {
 			}
 		}
 	}
-	if true && Alert("choosing a much larger random list") {
+	if false && Alert("choosing a much larger random list") {
 		iter := AnimalIterator(0)
 		for iter.HasNext() {
 			anim := iter.Next().(Animal)
@@ -108,7 +108,7 @@ func (p ManagerPage) renderItem(widget ListWidget, elementId int, m MarkupBuilde
 	//<div class="card bg-light mb-3 animal-card">
 
 	m.OpenTag(`div class="col-sm-3"`)
-	RenderAnimalCard(p.session, anim, m, "Edit", action_prefix_animal_card)
+	RenderAnimalCard(p.session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
 	m.CloseTag()
 }
 

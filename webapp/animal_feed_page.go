@@ -82,7 +82,7 @@ func (p AnimalFeedPage) renderItem(widget ListWidget, elementId int, m MarkupBui
 		return
 	}
 	m.OpenTag(`div class="col-sm-3"`)
-	RenderAnimalCard(p.session, anim, m, "Edit", action_prefix_animal_card)
+	RenderAnimalCard(p.session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
 	m.CloseTag()
 }
 
@@ -97,8 +97,7 @@ func (p AnimalFeedPage) clickListener(sess Session, message string) {
 			return
 		}
 		sess.SetClickListener(nil)
-		Todo("Open a 'ViewAnimal' page instead")
-		NewEditAnimalPage(sess, sess.PageWidget, anim.Id()).Generate()
+		NewViewAnimalPage(sess, sess.PageWidget, anim.Id()).Generate()
 		return
 	}
 

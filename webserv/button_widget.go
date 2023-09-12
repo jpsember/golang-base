@@ -38,7 +38,7 @@ type ButtonWidgetListener func(sess Session, widget Widget)
 func RenderButton(s Session, m MarkupBuilder, w_BaseId string, actionId string, enabled bool, w_Label any, w_size WidgetSize, w_align WidgetAlign, vertPadding int) {
 	vertPaddingExpr := `py-` + IntToString(vertPadding)
 
-	Todo("Can probably get rid of vertPadding if we explicitly add spacing rows somehow")
+	Todo("!Can probably get rid of vertPadding if we explicitly add spacing rows somehow")
 
 	if w_size == SizeTiny {
 		// For now, interpreting SizeTiny to mean a non-underlined, link-styled button that is very small:

@@ -19,7 +19,8 @@ const (
 
 type CreateAnimalPageStruct struct {
 	BasicPage
-	editId int
+	animalId int
+	editing  bool
 }
 
 type CreateAnimalPage = *CreateAnimalPageStruct
@@ -27,6 +28,7 @@ type CreateAnimalPage = *CreateAnimalPageStruct
 func NewCreateAnimalPage(sess Session, parentWidget Widget) AbstractPage {
 	t := &CreateAnimalPageStruct{
 		BasicPage: NewBasicPage(sess, parentWidget),
+		editing:   true,
 	}
 	t.devLabel = "create_animal_page"
 	return t
@@ -35,7 +37,18 @@ func NewCreateAnimalPage(sess Session, parentWidget Widget) AbstractPage {
 func NewEditAnimalPage(sess Session, parentWidget Widget, animalId int) AbstractPage {
 	t := &CreateAnimalPageStruct{
 		BasicPage: NewBasicPage(sess, parentWidget),
-		editId:    animalId,
+		animalId:  animalId,
+		editing:   true,
+	}
+	t.devLabel = "edit_animal_page"
+	return t
+}
+
+func NewViewAnimalPage(sess Session, parentWidget Widget, animalId int) AbstractPage {
+	t := &CreateAnimalPageStruct{
+		BasicPage: NewBasicPage(sess, parentWidget),
+		animalId:  animalId,
+		editing:   false,
 	}
 	t.devLabel = "edit_animal_page"
 	return t
@@ -43,9 +56,9 @@ func NewEditAnimalPage(sess Session, parentWidget Widget, animalId int) Abstract
 
 func (p CreateAnimalPage) readStateFromAnimal() {
 	a := DefaultAnimal
-	if p.editId != 0 {
+	if p.animalId != 0 {
 		var err error
-		a, err = ReadActualAnimal(p.editId)
+		a, err = ReadActualAnimal(p.animalId)
 		if ReportIfError(err, "CreateAnimalPage readStateFromAnimal") {
 			return
 		}
@@ -61,7 +74,7 @@ func (p CreateAnimalPage) Generate() {
 	//SetWidgetDebugRendering()
 	p.session.SetClickListener(nil)
 	p.session.DeleteStateFieldsWithPrefix(anim_state_prefix)
-	m := p.GenerateHeader()
+	p.GenerateHeader()
 
 	p.readStateFromAnimal()
 
@@ -69,6 +82,15 @@ func (p CreateAnimalPage) Generate() {
 
 	//m.Label("Create New Animal Record").Size(SizeLarge).AddHeading()
 
+	if p.editing {
+		p.generateForEditing()
+	} else {
+		p.generateForViewing()
+	}
+}
+
+func (p CreateAnimalPage) generateForEditing() {
+	m := p.session.WidgetManager()
 	m.Col(6).Open()
 	{
 		m.Col(12)
@@ -79,16 +101,55 @@ func (p CreateAnimalPage) Generate() {
 		m.Label("Details").Id(id_animal_details).AddInput(p.AnimalTextListener)
 		m.Size(SizeTiny).Label("Additional paragraphs to appear on the 'details' view.").AddText()
 
-		if p.editId != 0 {
+		m.Col(6)
+		if p.animalId != 0 {
 			m.Label("Done").AddButton(p.doneEditListener)
+			m.Label("Abort").AddButton(p.abortEditListener)
 		} else {
 			m.Label("Create").AddButton(p.createAnimalButtonListener)
+			m.Label("Abort").AddButton(p.abortEditListener)
 		}
 	}
 	m.Close()
 
 	m.Open()
 	m.Id(id_animal_uploadpic).Label("Photo").AddFileUpload(p.uploadPhotoListener)
+	imgWidget := m.Id(id_animal_display_pic).AddImage()
+	imgWidget.URLProvider = p.provideURL
+
+	// Scale the photos based on browser resolution
+	imgWidget.SetSize(AnimalPicSizeNormal, 0.6)
+
+	m.Close()
+}
+
+func (p CreateAnimalPage) generateForViewing() {
+	m := p.session.WidgetManager()
+	m.Col(6).Open()
+	{
+		Todo("!Flesh this out some")
+		Todo("!Rename the create_animal_page to animal_detail_page")
+		m.Col(12)
+		m.Id(id_animal_name).AddText()
+
+		//m.Label("Summary").Id(id_animal_summary).AddInput(p.AnimalTextListener)
+		//m.Size(SizeTiny).Label("A brief paragraph to appear in the 'card' view.").AddText()
+		//m.Label("Details").Id(id_animal_details).AddInput(p.AnimalTextListener)
+		//m.Size(SizeTiny).Label("Additional paragraphs to appear on the 'details' view.").AddText()
+		//
+		//m.Col(6)
+		//if p.animalId != 0 {
+		//	m.Label("Done").AddButton(p.doneEditListener)
+		//	m.Label("Abort").AddButton(p.abortEditListener)
+		//} else {
+		//	m.Label("Create").AddButton(p.createAnimalButtonListener)
+		//	m.Label("Abort").AddButton(p.abortEditListener)
+		//}
+	}
+	m.Close()
+
+	m.Open()
+	//m.Id(id_animal_uploadpic).Label("Photo").AddFileUpload(p.uploadPhotoListener)
 	imgWidget := m.Id(id_animal_display_pic).AddImage()
 	imgWidget.URLProvider = p.provideURL
 
@@ -211,7 +272,7 @@ func (p CreateAnimalPage) doneEditListener(s Session, widget Widget) {
 	//	return nil
 	//}
 
-	a, err := ReadActualAnimal(p.editId)
+	a, err := ReadActualAnimal(p.animalId)
 	if ReportIfError(err, "ReadAnimal after editing") {
 		return
 	}
@@ -223,6 +284,10 @@ func (p CreateAnimalPage) doneEditListener(s Session, widget Widget) {
 		return
 	}
 	pr("updated animal", b)
+	p.exit()
+}
+
+func (p CreateAnimalPage) abortEditListener(s Session, widget Widget) {
 	p.exit()
 }
 
