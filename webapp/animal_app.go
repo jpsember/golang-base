@@ -272,8 +272,9 @@ func (oper AnimalOper) prepareDatabase() {
 }
 
 const (
-	SessionKey_User    = "user"
-	SessionKey_MgrList = "mgr.list"
+	SessionKey_User     = "user"
+	SessionKey_FeedList = "feed.list"
+	SessionKey_MgrList  = "mgr.list"
 )
 
 func TryLoggingIn(s Session, user User) bool {

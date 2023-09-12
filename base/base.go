@@ -845,12 +845,6 @@ func ByteSlice(bytes []byte, start int, length int) []byte {
 	return ClampedSlice(bytes, start, start+length)
 }
 
-func ClampedSlice[K any](slice []K, start int, end int) []K {
-	start = Clamp(start, 0, len(slice))
-	end = Clamp(end, start, len(slice))
-	return slice[start:end]
-}
-
 func appendHex(sb *strings.Builder, value uint64, ndigits int) {
 	for ch := 0; ch < ndigits; ch++ {
 		shiftCount := (ndigits - 1 - ch) << 2
@@ -956,4 +950,25 @@ func TrimIfPrefix(text string, prefix string) (string, bool) {
 		return text[len(prefix):], true
 	}
 	return text, false
+}
+
+var IntegerOutOfRangeError = Error("integer is out of range")
+
+// Attempt to parse value as positive integer
+func ParseAsPositiveInt(text string) (int, error) {
+	value1, err := ParseInt(text)
+	value := int(value1)
+	if err == nil && value <= 0 {
+		err = IntegerOutOfRangeError
+	}
+	if err != nil {
+		value = 0
+	}
+	return value, err
+}
+
+func ClampedSlice[K any](slice []K, start int, end int) []K {
+	start = Clamp(start, 0, len(slice))
+	end = Clamp(end, start, len(slice))
+	return slice[start:end]
 }

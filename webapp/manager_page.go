@@ -46,10 +46,11 @@ func (p ManagerPage) Generate() {
 }
 
 func (p ManagerPage) animalList() AnimalList {
-	alist := p.session.OptSessionData(SessionKey_MgrList)
+	key := SessionKey_MgrList
+	alist := p.session.OptSessionData(key)
 	if alist == nil {
 		alist = p.constructAnimalList()
-		p.session.PutSessionData(SessionKey_MgrList, alist)
+		p.session.PutSessionData(key, alist)
 	}
 	return alist.(AnimalList)
 }
@@ -93,10 +94,8 @@ func getManagerAnimals(managerId int) []int {
 }
 
 func (p ManagerPage) renderItem(widget ListWidget, elementId int, m MarkupBuilder) {
-
-	anim, err := ReadAnimal(elementId)
-	if err != nil {
-		Alert("#50error rendering item, no animal found with id:", elementId)
+	anim, err := ReadActualAnimal(elementId)
+	if ReportIfError(err, "renderItem in manager page page:", elementId) {
 		return
 	}
 
@@ -118,37 +117,17 @@ const action_prefix_animal_card = "animal_id_"
 
 func (p ManagerPage) clickListener(sess Session, message string) {
 	if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
-		Todo("where are errors caught, e.g. parsing?")
-		id := ParseIntM(id_str)
-		anim, err := ReadAnimal(id)
+		id, err := ParseAsPositiveInt(id_str)
+		if ReportIfError(err) {
+			return
+		}
+		anim, err := ReadActualAnimal(id)
 		if err != nil || anim.Id() == 0 {
 			Alert("#50trouble reading animal for clickListener message", message)
 			return
 		}
 		sess.SetClickListener(nil)
-		Todo("Open an 'EditAnimal' page instead")
 		NewEditAnimalPage(sess, sess.PageWidget, anim.Id()).Generate()
 	}
 }
 
-type AnimalListStruct struct {
-	elements []int
-}
-
-type AnimalList = *AnimalListStruct
-
-func NewAnimalList() AnimalList {
-	t := &AnimalListStruct{}
-	return t
-}
-func (a AnimalList) ElementsPerPage() int {
-	return 12
-}
-
-func (a AnimalList) GetPageElements(pageNumber int) []int {
-	k := a.ElementsPerPage()
-	pgStart := pageNumber * k
-	pgEnd := pgStart + k
-
-	return ClampedSlice(a.elements, pgStart, pgEnd)
-}

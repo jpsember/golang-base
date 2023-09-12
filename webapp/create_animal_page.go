@@ -45,9 +45,9 @@ func (p CreateAnimalPage) readStateFromAnimal() {
 	a := DefaultAnimal
 	if p.editId != 0 {
 		var err error
-		a, err = ReadAnimal(p.editId)
-		if err != nil || a.Id() == 0 {
-			Alert("Trouble reading animal with id", p.editId, "; err:", err)
+		a, err = ReadActualAnimal(p.editId)
+		if ReportIfError(err, "CreateAnimalPage readStateFromAnimal") {
+			return
 		}
 	}
 	s := p.session.State
@@ -211,7 +211,7 @@ func (p CreateAnimalPage) doneEditListener(s Session, widget Widget) {
 	//	return nil
 	//}
 
-	a, err := ReadAnimal(p.editId)
+	a, err := ReadActualAnimal(p.editId)
 	if ReportIfError(err, "ReadAnimal after editing") {
 		return
 	}

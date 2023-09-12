@@ -54,3 +54,13 @@ func AssignBlobName(b BlobBuilder) {
 		b.SetName(string(GenerateBlobName()))
 	}
 }
+
+var NoSuchAnimalError = Error("No such animal found")
+
+func ReadActualAnimal(id int) (Animal, error) {
+	result, err := ReadAnimal(id)
+	if err == nil && result.Id() == 0 {
+		err = NoSuchAnimalError
+	}
+	return result, err
+}
