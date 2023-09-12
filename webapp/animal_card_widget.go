@@ -10,27 +10,16 @@ import (
 type AnimalCardWidgetObj struct {
 	BaseWidgetObj
 	animal         Animal
-	children       *Array[Widget]
 	buttonListener ButtonWidgetListener
 	buttonLabel    string
 }
 
 type AnimalCardWidget = *AnimalCardWidgetObj
 
-func OpenAnimalCardWidget(m WidgetManager, baseId string, animal Animal, viewButtonListener ButtonWidgetListener, buttonLabel string) {
-	widget := newAnimalCardWidget(baseId, animal, viewButtonListener, buttonLabel)
-	m.OpenContainer(widget)
-	Todo("what is the point of having a container if it has nothing?")
-	//// Create a button within this card
-	//m.Id(baseId + "_view").Label(`View`).Size(SizeSmall).AddButton(viewButtonListener)
-	m.Close()
-}
-
-func newAnimalCardWidget(widgetId string, animal Animal, viewButtonListener ButtonWidgetListener, buttonLabel string) AnimalCardWidget {
+func NewAnimalCardWidget(widgetId string, animal Animal, viewButtonListener ButtonWidgetListener, buttonLabel string) AnimalCardWidget {
 	w := AnimalCardWidgetObj{}
 	w.Base().BaseId = widgetId
 	w.animal = animal
-	w.children = NewArray[Widget]()
 	w.buttonListener = viewButtonListener
 	w.buttonLabel = buttonLabel
 	return &w
@@ -42,17 +31,6 @@ func (w AnimalCardWidget) RenderTo(s Session, m MarkupBuilder) {
 		return
 	}
 	RenderAnimalCard(s, w.animal, m, w.buttonLabel, "amnimal_id_")
-}
-
-func (w AnimalCardWidget) GetChildren() []Widget {
-	return w.children.Array()
-}
-
-const maxChildren = 1
-
-func (w AnimalCardWidget) AddChild(c Widget, manager WidgetManager) {
-	CheckState(w.children.Size() < maxChildren)
-	w.children.Add(c)
 }
 
 func ReadImageIntoCache(blobId int) string {
@@ -131,50 +109,8 @@ func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel str
 					m.OpenTag(`div class="d-grid justify-content-md-end"`)
 					{
 						buttonId := actionPrefix + IntToString(animal.Id())
-
-						Todo("Have common button rendering code")
-
-						// Adding py-3 here to put some vertical space between button and other widgets
-						m.A(`<div class='py-3' id='`, buttonId, `'>`)
-						//m.DoIndent()
-						{
-							m.A(`<button class='btn btn-primary `)
-
-							//if w.Align() == AlignRight {
-							m.A(`float-end `)
-							//}
-
-							Todo("add size support")
-							//if w.size != SizeDefault {
-							//	m.A(MapValue(btnTextSize, w.size))
-							//}
-							m.A(`'`)
-							//}
-							//
-							//if !w.Enabled() {
-							//	m.A(` disabled`)
-							//}
-
-							m.A(` onclick='jsButton("`, buttonId, `")'>`)
-							m.Escape(buttonLabel)
-							m.A(`</button>`)
-							m.Cr()
-						}
-						//m.DoOutdent()
-						m.A(`</div>`)
+						RenderButton(s, m, buttonId, buttonId, true, buttonLabel, SizeSmall, AlignRight, 0)
 					}
-					//
-					//
-					//if button != nil {
-					//	vb := button
-					//
-					//	// Add the single child widget (a view button)
-					//
-					//	Todo("!Add ability to add style = 'width:100%; font-size:75%;' to the child button")
-					//	Todo("!add:  <button class='btn btn-primary btn-sm'> to button")
-					//	Todo("assuming session doesn't need to be sent here")
-					//	RenderWidget(vb, s, m)
-					//}
 					m.CloseTag()
 				}
 				m.CloseTag()

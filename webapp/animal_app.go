@@ -133,7 +133,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 					break
 				}
 
-				if false {
+				if true {
 					NewAnimalFeedPage(sess, sess.PageWidget).Generate()
 					break
 				}
