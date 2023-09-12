@@ -56,9 +56,8 @@ func (p ManagerPage) animalList() AnimalList {
 }
 
 func (p ManagerPage) constructAnimalList() AnimalList {
-	animalList := NewAnimalList()
 	managerId := SessionUser(p.session).Id()
-	animalList.elements = getManagerAnimals(managerId)
+	animalList := NewAnimalList(getManagerAnimals(managerId))
 	return animalList
 }
 
@@ -130,4 +129,3 @@ func (p ManagerPage) clickListener(sess Session, message string) {
 		NewEditAnimalPage(sess, sess.PageWidget, anim.Id()).Generate()
 	}
 }
-

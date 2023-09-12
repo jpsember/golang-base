@@ -37,21 +37,25 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 		return
 	}
 
-	m.Comment("Rendering pagination, number of pages:", np)
+	//m.Comment("Rendering pagination, number of pages:", np)
 
 	windowSize := MinInt(np, 5)
-	windowStart := Clamp(w.list.CurrentPage()-windowSize/2, 0, np-windowSize+1)
+	windowStart := Clamp(w.list.CurrentPage()-windowSize/2, 0, np-windowSize)
+	windowStop := Clamp(windowStart+windowSize, 0, np-1)
 
 	m.OpenTag(`div class="row"`)
 	{
 		m.OpenTag(`nav aria-label="Page navigation"`)
 		{
-			m.OpenTag(`ul class="pagination"`)
+			m.OpenTag(`ul class="pagination d-flex justify-content-center"`)
 			{
 				w.renderPagePiece(m, `&lt;&lt;`, 0, true)
-				for i := windowStart; i < windowStart+windowSize; i++ {
+				w.renderPagePiece(m, `&lt;`, w.list.CurrentPage()-1, true)
+
+				for i := windowStart; i <= windowStop; i++ {
 					w.renderPagePiece(m, IntToString(i+1), i, false)
 				}
+				w.renderPagePiece(m, `&gt;`, w.list.CurrentPage()+1, true)
 				w.renderPagePiece(m, `&gt;&gt;`, np-1, true)
 			}
 			m.CloseTag()
@@ -59,11 +63,12 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 		m.CloseTag()
 	}
 	m.CloseTag()
-	m.Comment("done Rendering pagination")
+	//m.Comment("done Rendering pagination")
 }
 
 func (w ListWidget) renderPagePiece(m MarkupBuilder, label string, targetPage int, edges bool) {
 	m.A(`<li class="page-item"><a class="page-link`)
+	targetPage = Clamp(targetPage, 0, w.list.TotalPages())
 	if w.list.CurrentPage() == targetPage {
 		if edges {
 			m.A(` disabled`)
@@ -77,7 +82,7 @@ func (w ListWidget) renderPagePiece(m MarkupBuilder, label string, targetPage in
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf(true)
+	pr := PrIf(false)
 
 	m.Comment("ListWidget")
 
@@ -85,12 +90,10 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	w.renderPagination(s, m)
 
-	//if !Alert("skipping items")
 	{
 		m.OpenTag(`div class="row"`)
 		{
-			Todo("The GetPageElements() shouldn't need a page number, as it knows it")
-			elementIds := w.list.GetPageElements(w.list.CurrentPage())
+			elementIds := w.list.GetPageElements()
 			pr("rendering page num:", w.list.CurrentPage(), "element ids:", elementIds)
 			for _, id := range elementIds {
 				m.Comment("--------------------------- rendering id:", id)
@@ -124,7 +127,7 @@ func (w ListWidget) HandleClick(sess Session, message string) bool {
 			if targetPage == w.list.CurrentPage() {
 				break
 			}
-			w.list.SetPage(targetPage)
+			w.list.SetCurrentPage(targetPage)
 			sess.WidgetManager().Repaint(w)
 			break
 		}

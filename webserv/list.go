@@ -3,12 +3,58 @@
 
 package webserv
 
+import (
+	. "github.com/jpsember/golang-base/base"
+)
+
 type ListInterface interface {
-	ElementsPerPage() int
-	GetPageElements(pageNumber int) []int
+	GetPageElements() []int
 	CurrentPage() int
 	TotalPages() int
-	SetPage(pageNumber int)
+	SetCurrentPage(pageNumber int)
 }
 
 type ListItemRenderer func(widget ListWidget, elementId int, m MarkupBuilder)
+
+type BasicListStruct struct {
+	ElementsPerPage int
+	ElementIds      []int
+	currentPage     int
+}
+
+type BasicList = *BasicListStruct
+
+func NewBasicList() BasicList {
+	t := &BasicListStruct{}
+	return t
+}
+
+func (b BasicList) GetPageElements() []int {
+	k := b.ElementsPerPage
+	pgStart := b.CurrentPage() * k
+	pgEnd := pgStart + k
+	return ClampedSlice(b.ElementIds, pgStart, pgEnd)
+}
+
+func (b BasicList) CurrentPage() int {
+	return b.currentPage
+
+}
+
+func (b BasicList) SetCurrentPage(pageNumber int) {
+	j := Clamp(pageNumber, 0, b.TotalPages()-1)
+	if j != pageNumber {
+		BadArg("Attempt to set current page to", pageNumber, "; total is:", b.TotalPages())
+	}
+	b.currentPage = pageNumber
+}
+
+func (b BasicList) TotalPages() int {
+	numElements := len(b.ElementIds)
+	remainder := numElements % b.ElementsPerPage
+	completePages := numElements / b.ElementsPerPage
+	if numElements == 0 || remainder > 0 {
+		completePages++
+	}
+	return completePages
+}

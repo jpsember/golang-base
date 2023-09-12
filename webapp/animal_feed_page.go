@@ -51,8 +51,7 @@ func (p AnimalFeedPage) animalList() AnimalList {
 }
 
 func (p AnimalFeedPage) constructAnimalList() AnimalList {
-	animalList := NewAnimalList()
-	animalList.elements = getAnimals()
+	animalList := NewAnimalList(getAnimals())
 	return animalList
 }
 
