@@ -6,6 +6,7 @@ import (
 
 type AnimalListStruct struct {
 	elements []int
+	Page     int
 }
 
 type AnimalList = *AnimalListStruct
@@ -24,4 +25,18 @@ func (a AnimalList) GetPageElements(pageNumber int) []int {
 	pgEnd := pgStart + k
 
 	return ClampedSlice(a.elements, pgStart, pgEnd)
+}
+
+func (a AnimalList) CurrentPage() int {
+	return a.Page
+}
+func (a AnimalList) TotalPages() int {
+	numElements := len(a.elements)
+	remainder := numElements % a.ElementsPerPage()
+	completePages := numElements / a.ElementsPerPage()
+	totalPages := completePages
+	if remainder != 0 {
+		totalPages++
+	}
+	return MaxInt(1, totalPages)
 }

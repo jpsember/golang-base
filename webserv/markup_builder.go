@@ -21,6 +21,7 @@ type MarkupBuilderObj struct {
 	omitComments    bool
 	tagStack        *Array[tagEntry]
 	pendingComments []any
+	nested          bool
 }
 
 type MarkupBuilder = *MarkupBuilderObj
@@ -79,30 +80,51 @@ func (b MarkupBuilder) Escape(arg any) MarkupBuilder {
 
 // Append markup, generating a linefeed if one is pending.  No escaping is performed.
 func (b MarkupBuilder) A(args ...any) MarkupBuilder {
-	if b.crRequest != 0 {
-		if b.crRequest == 1 {
-			b.WriteString("\n")
-		} else {
-			b.WriteString("\n\n")
-		}
-		b.crRequest = 0
-		b.doIndent()
-	}
+
+	CheckState(!b.nested)
+	b.nested = true
+
 	for _, arg := range args {
-		s := ""
+
+		if b.crRequest != 0 {
+			if b.crRequest == 1 {
+				b.WriteString("\n")
+			} else {
+				b.WriteString("\n\n")
+			}
+			b.crRequest = 0
+			b.doIndent()
+		}
+
 		switch v := arg.(type) {
 		case string:
-			s = v
+			b.WriteString(v)
 		case int: // We aren't sure if it's 32 or 64, so choose 64
-			s = IntToString(v)
+			b.WriteString(IntToString(v))
+			break
 		case bool:
-			s = boolToHtmlString(v)
+			b.WriteString(boolToHtmlString(v))
+		case PrintEffect:
+			b.processPrintEffect(v)
 		default:
 			Die("<1Unsupported argument type:", Info(arg))
 		}
-		b.WriteString(s)
 	}
+	b.nested = false
 	return b
+}
+
+func (b MarkupBuilder) processPrintEffect(v PrintEffect) {
+	switch v {
+	case CR:
+		b.Cr()
+	case INDENT:
+		b.DoIndent()
+	case OUTDENT:
+		b.DoOutdent()
+	default:
+		BadArg("Unsupported PrintEffect:", v)
+	}
 }
 
 // Append an HTML comment.

@@ -6,6 +6,8 @@ package webserv
 type ListInterface interface {
 	ElementsPerPage() int
 	GetPageElements(pageNumber int) []int
+	CurrentPage() int
+	TotalPages() int
 }
 
 type ListItemRenderer func(widget ListWidget, elementId int, m MarkupBuilder)
