@@ -41,12 +41,8 @@ func (p ManagerPage) Generate() {
 	// Set click listener for the card list
 	p.session.SetClickListener(p.clickListener)
 
-	// Scrolling list of animals for this manager.
-	//m.Open()
-	//m.Col(4)
 	al := p.animalList()
 	m.Id(id_manager_list).AddList(al, p.renderItem, p.listListener)
-	//m.Close()
 }
 
 func (p ManagerPage) animalList() AnimalList {
@@ -125,22 +121,19 @@ func (p ManagerPage) renderItem(widget ListWidget, elementId int, m MarkupBuilde
 
 const action_prefix_animal_card = "animal_id_"
 
-func (p ManagerPage) clickListener(sess Session, message string) error {
-	Pr("received click, message:", message)
-
+func (p ManagerPage) clickListener(sess Session, message string) {
 	if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
 		Todo("where are errors caught, e.g. parsing?")
 		id := ParseIntM(id_str)
 		anim, err := ReadAnimal(id)
 		if err != nil || anim.Id() == 0 {
-			err = UpdateErrorWithString(err, "trouble reading animal for: "+message)
-			return err
+			Alert("#50trouble reading animal for clickListener message", message)
+			return
 		}
 		sess.SetClickListener(nil)
 		Todo("Open an 'EditAnimal' page instead")
 		NewCreateAnimalPage(sess, sess.PageWidget).Generate()
 	}
-	return nil
 }
 
 type AnimalListStruct struct {
