@@ -58,7 +58,6 @@ func (p ManagerPage) constructAnimalList() AnimalList {
 	animalList := NewAnimalList()
 	managerId := SessionUser(p.session).Id()
 	animalList.elements = getManagerAnimals(managerId)
-	Pr("animals for manager", managerId, ":", INDENT, animalList.elements)
 	return animalList
 }
 
@@ -74,15 +73,7 @@ func (p ManagerPage) listListener(sess Session, widget ListWidget) error {
 func getManagerAnimals(managerId int) []int {
 	Todo("?A compound index on managerId+animalId would help here, but probably not worth it for now")
 	var result []int
-
-	if Alert("choosing a much larger random list") {
-		iter := AnimalIterator(0)
-		for iter.HasNext() {
-			anim := iter.Next().(Animal)
-			result = append(result, anim.Id())
-		}
-		//result = result[0:1]
-	} else {
+	{
 		iter := AnimalIterator(0)
 		for iter.HasNext() {
 			anim := iter.Next().(Animal)
@@ -91,8 +82,13 @@ func getManagerAnimals(managerId int) []int {
 			}
 		}
 	}
-
-	Pr("returning:", result)
+	if true && Alert("choosing a much larger random list") {
+		iter := AnimalIterator(0)
+		for iter.HasNext() {
+			anim := iter.Next().(Animal)
+			result = append(result, anim.Id())
+		}
+	}
 	return result
 }
 
@@ -113,7 +109,7 @@ func (p ManagerPage) renderItem(widget ListWidget, elementId int, m MarkupBuilde
 
 	//<div class="card bg-light mb-3 animal-card">
 
-	m.OpenTag(`div class="col-sm-4"`)
+	m.OpenTag(`div class="col-sm-3"`)
 	RenderAnimalCard(p.session, anim, m, "Edit", action_prefix_animal_card)
 	m.CloseTag()
 }

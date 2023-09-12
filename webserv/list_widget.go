@@ -30,8 +30,9 @@ func NewListWidget(id string, list ListInterface, renderer ListItemRenderer, lis
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf(true)
+	pr := PrIf(false)
 
+	Todo("Add paging controls")
 	m.Comment("ListWidget")
 	m.OpenTag(`div id="`, w.BaseId, `"`)
 	m.OpenTag(`div class="row"`)

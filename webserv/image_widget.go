@@ -10,7 +10,7 @@ type ImageURLProvider func() string
 type ImageWidgetObj struct {
 	BaseWidgetObj
 	URLProvider ImageURLProvider
-	FixedSize   IPoint // If not (0,0), size to display image as
+	fixedSize   IPoint // If not (0,0), size to display image as
 }
 
 type ImageWidget = *ImageWidgetObj
@@ -19,6 +19,11 @@ func NewImageWidget(id string) ImageWidget {
 	t := &ImageWidgetObj{}
 	t.BaseId = id
 	return t
+}
+
+// Set the size that the image will occupy.  This size will be scaled by the user's screen resolution.
+func (w ImageWidget) SetSize(originalSize IPoint, scaleFactor float64) {
+	w.fixedSize = originalSize.ScaledBy(scaleFactor)
 }
 
 func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
@@ -45,8 +50,16 @@ func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 		}
 
 		m.A(`<img src="`, imageSource, `" alt="uploaded image"`)
-		if w.FixedSize.IsPositive() {
-			m.A(` width="`, w.FixedSize.X, `" height="`, w.FixedSize.Y, `" class="img-thumbnail"`)
+
+		PlotImageSizeMarkup(s, m, w.fixedSize)
+		if w.fixedSize.IsPositive() {
+			//
+			//Todo("?Investigate relationship between pixel ratio, screen size")
+			//screenWidth := s.BrowserInfo.ScreenSizeX()
+			//scaleFactor := float64(screenWidth) / 2000
+			//plotSize := w.fixedSize.ScaledBy(scaleFactor)
+
+			m.A(` class="img-thumbnail"`)
 		} else {
 			m.A(` class="img-thumbnail image-fluid"`)
 		}
@@ -55,4 +68,15 @@ func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 	}
 	m.CloseTag()
 	pr("done render")
+}
+
+func PlotImageSizeMarkup(s Session, m MarkupBuilder, normalizedTargetSize IPoint) {
+	sz := normalizedTargetSize
+	if sz.IsPositive() {
+		Todo("?Investigate relationship between pixel ratio, screen size")
+		screenWidth := s.BrowserInfo.ScreenSizeX()
+		scaleFactor := float64(screenWidth) / 2000
+		plotSize := sz.ScaledBy(scaleFactor)
+		m.A(` width="`, plotSize.X, `" height="`, plotSize.Y, `" `)
+	}
 }

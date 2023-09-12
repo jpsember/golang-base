@@ -72,7 +72,7 @@ func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel str
 	// Open a bootstrap card
 
 	m.Comments("AnimalCardWidget")
-	m.OpenTag(`div class="card bg-light mb-3 animal-card"`)
+	m.OpenTag(`div class="card bg-light mb-3 animal-card" style="width:14em"`)
 	{
 		imgUrl := "unknown"
 		photoId := animal.PhotoThumbnail()
@@ -84,8 +84,9 @@ func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel str
 
 		m.Comment("animal image")
 		m.A(`<img class="card-jimg-top" src="`, imgUrl, `"`)
-		// Changing the image size here doesn't seem to change the card size
-		//m.A(` width="250" height="375"`)
+
+		PlotImageSizeMarkup(s, m, IPointZero) //AnimalPicSizeNormal.ScaledBy(0.4))
+
 		m.A(`>`).Cr()
 
 		// Display title and brief summary
@@ -129,9 +130,9 @@ func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel str
 				{
 					m.OpenTag(`div class="d-grid justify-content-md-end"`)
 					{
-						Todo("Figure out how to create a button on-the-fly, at render time?")
-
 						buttonId := actionPrefix + IntToString(animal.Id())
+
+						Todo("Have common button rendering code")
 
 						// Adding py-3 here to put some vertical space between button and other widgets
 						m.A(`<div class='py-3' id='`, buttonId, `'>`)

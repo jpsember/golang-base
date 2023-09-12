@@ -84,7 +84,6 @@ func NewSession() Session {
 	}
 	Todo("!Restore user session from filesystem/database")
 	Todo("?ClientInfo (browser info) not sent soon enough")
-	Pr("Created a new session, UserData:", s.AppData)
 	return &s
 }
 
@@ -121,7 +120,7 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 	s.responseWriter = w
 	s.request = req
 	s.parseAjaxRequest(req)
-	if true && Alert("dumping") {
+	if false && Alert("dumping") {
 		Pr("Query:", INDENT, req.URL.Query())
 	}
 	s.processClientMessage()
@@ -500,14 +499,20 @@ func (s Session) WidgetStrValue(id string) string {
 	return s.State.OptString(id, "")
 }
 
+var logSessionData = false && Alert("logging session data")
+
 func (s Session) PutSessionData(key string, value any) {
-	Pr("Storing user data", key, "=>", TypeOf(value))
+	if logSessionData {
+		Pr("Storing session data", key, "=>", TypeOf(value))
+	}
 	s.AppData[key] = value
 }
 
 func (s Session) OptSessionData(key string) any {
 	value := s.AppData[key]
-	//Pr("Getting user data", key, "=>", TypeOf(value))
+	if logSessionData {
+		Pr("Getting session data", key, "=>", TypeOf(value))
+	}
 	return value
 }
 

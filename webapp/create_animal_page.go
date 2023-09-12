@@ -93,12 +93,8 @@ func (p CreateAnimalPage) Generate() {
 	imgWidget.URLProvider = p.provideURL
 
 	// Scale the photos based on browser resolution
-	{
-		Todo("?Investigate relationship between pixel ratio, screen size")
-		w := p.session.BrowserInfo.ScreenSizeX()
-		modifiedSize := AnimalPicSizeNormal.ScaledBy(float64(w) / 4500)
-		imgWidget.FixedSize = modifiedSize
-	}
+	imgWidget.SetSize(AnimalPicSizeNormal, 0.6)
+
 	m.Close()
 }
 
