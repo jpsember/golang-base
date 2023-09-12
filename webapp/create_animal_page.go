@@ -34,6 +34,7 @@ func NewCreateAnimalPage(sess Session, parentWidget Widget) AbstractPage {
 
 func (p CreateAnimalPage) Generate() {
 	//SetWidgetDebugRendering()
+	p.session.SetClickListener(nil)
 	p.session.DeleteStateFieldsWithPrefix(anim_state_prefix)
 	m := p.GenerateHeader()
 

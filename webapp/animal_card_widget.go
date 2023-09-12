@@ -41,11 +41,7 @@ func (w AnimalCardWidget) RenderTo(s Session, m MarkupBuilder) {
 		m.RenderInvisible(w)
 		return
 	}
-	//// Add the single child widget (a view button)
-	//ch := w.GetChildren()
-	//CheckState(len(ch) == 1, "expected single 'view' button widget")
-	//vb := ch[0]
-	RenderAnimalCard(s, w.animal, m, w.buttonLabel)
+	RenderAnimalCard(s, w.animal, m, w.buttonLabel, "amnimal_id_")
 }
 
 func (w AnimalCardWidget) GetChildren() []Widget {
@@ -71,7 +67,7 @@ func ReadImageIntoCache(blobId int) string {
 	return url
 }
 
-func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel string) {
+func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel string, actionPrefix string) {
 
 	// Open a bootstrap card
 
@@ -135,7 +131,7 @@ func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel str
 					{
 						Todo("Figure out how to create a button on-the-fly, at render time?")
 
-						buttonId := "animal_id_" + IntToString(animal.Id())
+						buttonId := actionPrefix + IntToString(animal.Id())
 
 						// Adding py-3 here to put some vertical space between button and other widgets
 						m.A(`<div class='py-3' id='`, buttonId, `'>`)

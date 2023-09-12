@@ -160,10 +160,10 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 			sess.HandleAjaxRequest(w, req)
 		} else if path == "/" {
 			oper.processFullPageRequest(sess, w, req)
-		} else if text, flag = extractPrefix(path, "/r/"); flag {
+		} else if text, flag = TrimIfPrefix(path, "/r/"); flag {
 			pr("handling blob request with:", text)
 			err = oper.handleBlobRequest(w, req, text)
-		} else if text, flag = extractPrefix(path, `/upload/`); flag {
+		} else if text, flag = TrimIfPrefix(path, `/upload/`); flag {
 			pr("handling upload request with:", text)
 			sess.HandleUploadRequest(w, req, text)
 		} else {
@@ -179,13 +179,6 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	if p := sess.GetRequestProblem(); p != nil {
 		Pr("...problem with request, URL:", req.RequestURI, INDENT, p)
 	}
-}
-
-func extractPrefix(text string, prefix string) (string, bool) {
-	if strings.HasPrefix(text, prefix) {
-		return text[len(prefix):], true
-	}
-	return text, false
 }
 
 func (oper AnimalOper) handleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) error {

@@ -119,13 +119,27 @@ func (p ManagerPage) renderItem(widget ListWidget, elementId int, m MarkupBuilde
 	//<div class="card bg-light mb-3 animal-card">
 
 	m.OpenTag(`div class="col-sm-4"`)
-	RenderAnimalCard(p.session, anim, m, "Edit")
+	RenderAnimalCard(p.session, anim, m, "Edit", action_prefix_animal_card)
 	m.CloseTag()
 }
 
-func (p ManagerPage) clickListener(sess Session, id string) error {
-	Pr("received click, id:", id)
-	Todo("Edit the corresponding animal")
+const action_prefix_animal_card = "animal_id_"
+
+func (p ManagerPage) clickListener(sess Session, message string) error {
+	Pr("received click, message:", message)
+
+	if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
+		Todo("where are errors caught, e.g. parsing?")
+		id := ParseIntM(id_str)
+		anim, err := ReadAnimal(id)
+		if err != nil || anim.Id() == 0 {
+			err = UpdateErrorWithString(err, "trouble reading animal for: "+message)
+			return err
+		}
+		sess.SetClickListener(nil)
+		Todo("Open an 'EditAnimal' page instead")
+		NewCreateAnimalPage(sess, sess.PageWidget).Generate()
+	}
 	return nil
 }
 

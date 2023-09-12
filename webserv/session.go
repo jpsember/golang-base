@@ -400,15 +400,16 @@ func (s Session) discardRequest() {
 	s.WidgetManager().clearRepaintSet()
 }
 
-func (s Session) SetRequestError(problem error) {
+func (s Session) SetRequestError(problem error) error {
 	if problem != nil && s.requestProblem == nil {
 		s.requestProblem = problem
 		Alert("#50<2 setting request problem:", s.requestProblem)
 	}
+	return s.requestProblem
 }
 
-func (s Session) SetRequestProblem(message ...any) {
-	s.SetRequestProblem("Problem with ajax request: " + ToString(message...))
+func (s Session) SetRequestProblem(message ...any) error {
+	return s.SetRequestError(Error("Problem with ajax request: " + ToString(message...)))
 }
 
 func (s Session) GetRequestProblem() error {

@@ -949,3 +949,11 @@ func UpdateErrorWithString(err error, message string) error {
 	}
 	return err
 }
+
+// If string has a prefix, return string with prefix removed and true; else, original string and false
+func TrimIfPrefix(text string, prefix string) (string, bool) {
+	if strings.HasPrefix(text, prefix) {
+		return text[len(prefix):], true
+	}
+	return text, false
+}
