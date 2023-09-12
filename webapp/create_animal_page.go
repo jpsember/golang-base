@@ -13,13 +13,13 @@ const (
 	id_animal_name        = anim_state_prefix + "name"
 	id_animal_summary     = anim_state_prefix + "summary"
 	id_animal_details     = anim_state_prefix + "details"
-	id_add                = anim_state_prefix + "add"
 	id_animal_uploadpic   = anim_state_prefix + "photo"
 	id_animal_display_pic = anim_state_prefix + "pic"
 )
 
 type CreateAnimalPageStruct struct {
 	BasicPage
+	editId int
 }
 
 type CreateAnimalPage = *CreateAnimalPageStruct
@@ -32,14 +32,43 @@ func NewCreateAnimalPage(sess Session, parentWidget Widget) AbstractPage {
 	return t
 }
 
+func NewEditAnimalPage(sess Session, parentWidget Widget, animalId int) AbstractPage {
+	t := &CreateAnimalPageStruct{
+		BasicPage: NewBasicPage(sess, parentWidget),
+		editId:    animalId,
+	}
+	t.devLabel = "edit_animal_page"
+	return t
+}
+
+func (p CreateAnimalPage) readStateFromAnimal() {
+	a := DefaultAnimal
+	if p.editId != 0 {
+		var err error
+		a, err = ReadAnimal(p.editId)
+		if err != nil || a.Id() == 0 {
+			Alert("Trouble reading animal with id", p.editId, "; err:", err)
+		}
+	}
+	s := p.session.State
+	s.Put(id_animal_name, a.Name())
+	s.Put(id_animal_summary, a.Summary())
+	s.Put(id_animal_details, a.Details())
+	s.Put(id_animal_display_pic, a.PhotoThumbnail())
+}
+
 func (p CreateAnimalPage) Generate() {
 	//SetWidgetDebugRendering()
 	p.session.SetClickListener(nil)
 	p.session.DeleteStateFieldsWithPrefix(anim_state_prefix)
 	m := p.GenerateHeader()
 
+	p.readStateFromAnimal()
+
 	Todo("!Have ajax listener that can show advice without an actual error, e.g., if user left some fields blank")
-	m.Label("Create New Animal Record").Size(SizeLarge).AddHeading()
+
+	//m.Label("Create New Animal Record").Size(SizeLarge).AddHeading()
+
 	m.Col(6).Open()
 	{
 		m.Col(12)
@@ -50,7 +79,11 @@ func (p CreateAnimalPage) Generate() {
 		m.Label("Details").Id(id_animal_details).AddInput(p.AnimalTextListener)
 		m.Size(SizeTiny).Label("Additional paragraphs to appear on the 'details' view.").AddText()
 
-		m.Id(id_add).Label("Create").AddButton(p.createAnimalButtonListener)
+		if p.editId != 0 {
+			m.Label("Done").AddButton(p.doneEditListener)
+		} else {
+			m.Label("Create").AddButton(p.createAnimalButtonListener)
+		}
 	}
 	m.Close()
 
@@ -81,8 +114,59 @@ func (p CreateAnimalPage) AnimalTextListener(sess Session, widget InputWidget, v
 	}
 }
 
-func (p CreateAnimalPage) createAnimalButtonListener(s Session, widget Widget) error {
+func (p CreateAnimalPage) createAnimalButtonListener(s Session, widget Widget) {
 	pr := PrIf(true)
+
+	if !p.validateAll() {
+		return
+	}
+	//{
+	//	text := s.WidgetStrValue(id_animal_name)
+	//	_, err := ValidateAnimalName(text, 0)
+	//	s.SetWidgetProblem(id_animal_name, err)
+	//}
+	//
+	//preCreateValidateText(s, id_animal_summary, 20, 200, 0)
+	//preCreateValidateText(s, id_animal_details, 200, 2000, 0)
+	//{
+	//	picId := s.WidgetIntValue(id_animal_display_pic)
+	//	if picId == 0 {
+	//		s.SetWidgetProblem(id_animal_uploadpic, "Please upload a photo")
+	//	}
+	//}
+	//
+	//errcount := WidgetErrorCount(p.parentPage, s.State)
+	//pr("error count:", errcount)
+	//if errcount != 0 {
+	//	return nil
+	//}
+
+	b := NewAnimal()
+	p.writeStateToAnimal(b)
+	//b.SetName(strings.TrimSpace(s.WidgetStrValue(id_animal_name)))
+	//b.SetSummary(strings.TrimSpace(s.WidgetStrValue(id_animal_summary)))
+	//b.SetDetails(strings.TrimSpace(s.WidgetStrValue(id_animal_details)))
+	//b.SetPhotoThumbnail(s.WidgetIntValue(id_animal_display_pic))
+	//b.SetManagerId(SessionUser(s).Id())
+	ub, err := CreateAnimal(b)
+	if ReportIfError(err, "CreateAnimal after editing") {
+		return
+	}
+
+	pr("created animal:", INDENT, ub)
+	p.exit()
+	//s.DeleteStateFieldsWithPrefix(anim_state_prefix)
+	//
+	//Todo("Discard any existing manager animal list, as its contents have now changed")
+	//s.DeleteSessionData(SessionKey_MgrList)
+	//
+	//Todo("Do a 'back' operation to go back to the previous page")
+	//NewManagerPage(s, p.parentPage).Generate()
+}
+
+func (p CreateAnimalPage) validateAll() bool {
+	pr := PrIf(true)
+	s := p.session
 
 	{
 		text := s.WidgetStrValue(id_animal_name)
@@ -101,20 +185,62 @@ func (p CreateAnimalPage) createAnimalButtonListener(s Session, widget Widget) e
 
 	errcount := WidgetErrorCount(p.parentPage, s.State)
 	pr("error count:", errcount)
-	if errcount != 0 {
-		return nil
-	}
+	return errcount == 0
+}
 
-	b := NewAnimal()
+func (p CreateAnimalPage) doneEditListener(s Session, widget Widget) {
+	pr := PrIf(true)
+
+	if !p.validateAll() {
+		return
+	}
+	//{
+	//	text := s.WidgetStrValue(id_animal_name)
+	//	_, err := ValidateAnimalName(text, 0)
+	//	s.SetWidgetProblem(id_animal_name, err)
+	//}
+	//
+	//preCreateValidateText(s, id_animal_summary, 20, 200, 0)
+	//preCreateValidateText(s, id_animal_details, 200, 2000, 0)
+	//{
+	//	picId := s.WidgetIntValue(id_animal_display_pic)
+	//	if picId == 0 {
+	//		s.SetWidgetProblem(id_animal_uploadpic, "Please upload a photo")
+	//	}
+	//}
+	//
+	//errcount := WidgetErrorCount(p.parentPage, s.State)
+	//pr("error count:", errcount)
+	//if errcount != 0 {
+	//	return nil
+	//}
+
+	a, err := ReadAnimal(p.editId)
+	if ReportIfError(err, "ReadAnimal after editing") {
+		return
+	}
+	b := a.ToBuilder()
+	p.writeStateToAnimal(b)
+
+	err = UpdateAnimal(b)
+	if ReportIfError(err, "UpdateAnimal after editing") {
+		return
+	}
+	pr("updated animal", b)
+	p.exit()
+}
+
+func (p CreateAnimalPage) writeStateToAnimal(b AnimalBuilder) {
+	s := p.session
 	b.SetName(strings.TrimSpace(s.WidgetStrValue(id_animal_name)))
 	b.SetSummary(strings.TrimSpace(s.WidgetStrValue(id_animal_summary)))
 	b.SetDetails(strings.TrimSpace(s.WidgetStrValue(id_animal_details)))
 	b.SetPhotoThumbnail(s.WidgetIntValue(id_animal_display_pic))
 	b.SetManagerId(SessionUser(s).Id())
-	ub, err := CreateAnimal(b)
-	CheckOk(err)
+}
 
-	pr("created animal:", INDENT, ub)
+func (p CreateAnimalPage) exit() {
+	s := p.session
 
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
 
@@ -123,7 +249,6 @@ func (p CreateAnimalPage) createAnimalButtonListener(s Session, widget Widget) e
 
 	Todo("Do a 'back' operation to go back to the previous page")
 	NewManagerPage(s, p.parentPage).Generate()
-	return nil
 }
 
 func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (string, error) {
@@ -262,4 +387,12 @@ func DiscardBlob(id int) {
 	if id != 0 {
 		Todo("#50Discard blob id", id)
 	}
+}
+
+func ReportIfError(err error, msg ...any) bool {
+	if err != nil {
+		Alert("#50<1Error occurred, ignoring!  Error:", err, INDENT, "Message:", ToString(msg...))
+		return true
+	}
+	return false
 }

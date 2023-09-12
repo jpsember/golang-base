@@ -25,16 +25,15 @@ func NewButtonWidget(listener ButtonWidgetListener) ButtonWidget {
 
 func buttonListenWrapper(sess Session, widget Widget, value string) (string, error) {
 	b := widget.(ButtonWidget)
-	err := b.listener(sess, widget)
-	return "", err
+	b.listener(sess, widget)
+	return "", nil
 }
 
-func doNothingButtonListener(sess Session, widget Widget) error {
+func doNothingButtonListener(sess Session, widget Widget) {
 	Alert("<1#50Button has no listener yet:", widget.Id())
-	return nil
 }
 
-type ButtonWidgetListener func(sess Session, widget Widget) error
+type ButtonWidgetListener func(sess Session, widget Widget)
 
 func (w ButtonWidget) RenderTo(s Session, m MarkupBuilder) {
 	//tx := TextAlignStr(w.Align())

@@ -105,7 +105,7 @@ func (p SignUpPage) auxValidateEmail(s Session, widget Widget, value string, fla
 	return ValidateEmailAddress(value, flag)
 }
 
-func (p SignUpPage) signUpListener(s Session, widget Widget) error {
+func (p SignUpPage) signUpListener(s Session, widget Widget) {
 	pr := PrIf(true)
 	pr("signUpListener, state:", INDENT, s.State)
 
@@ -122,38 +122,22 @@ func (p SignUpPage) signUpListener(s Session, widget Widget) error {
 	errcount := WidgetErrorCount(p.parentPage, s.State)
 	pr("error count:", errcount)
 	if errcount != 0 {
-		return nil
+		return
 	}
 
-	problem := ""
 	Todo("don't create the user until we are sure the other fields have no errors")
-	var err error
-	var ub User
 
-	for {
-
-		problem = "A user with that name already exists."
-		ub, err = CreateUserWithName(b)
-		if err != nil {
-			break
-		}
-		if ub.Id() == 0 {
-			break
-		}
-		break
+	ub, err := CreateUserWithName(b)
+	if ReportIfError(err, "CreateUserWithName", b) {
+		return
 	}
-
-	if err != nil {
-		return err
-	}
-	if problem != "" {
-		s.SetWidgetProblem(id_user_name, problem)
-		return nil
+	if ub.Id() == 0 {
+		s.SetWidgetProblem(id_user_name, "A user with this name already exists.")
+		return
 	}
 
 	Pr("created user:", INDENT, ub)
 
 	Todo("add support for WaitingActivation")
 	Todo("if everything worked out, change the displayed page / login state?")
-	return nil
 }

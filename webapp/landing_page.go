@@ -57,7 +57,7 @@ func (p LandingPage) validateUserPwd(s Session, widget InputWidget, content stri
 	return ValidateUserPassword(content, VALIDATE_ONLY_NONEMPTY)
 }
 
-func (p LandingPage) signInListener(sess Session, widget Widget) error {
+func (p LandingPage) signInListener(sess Session, widget Widget) {
 
 	s := sess.State
 	userName := s.OptString(id_user_name, "")
@@ -91,7 +91,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) error {
 
 		prob = "User is already logged in"
 		if IsUserLoggedIn(userId) {
-			return nil
+			return
 		}
 
 		prob = "User is unavaliable; sorry"
@@ -143,48 +143,39 @@ func (p LandingPage) signInListener(sess Session, widget Widget) error {
 			sp.Generate()
 		}
 	}
-	return nil
 }
 
-func (p LandingPage) signUpListener(s Session, widget Widget) error {
+func (p LandingPage) signUpListener(s Session, widget Widget) {
 	NewSignUpPage(s, p.parentPage).Generate()
-	return nil
 }
 
-func (p LandingPage) galleryListener(sess Session, widget Widget) error {
+func (p LandingPage) galleryListener(sess Session, widget Widget) {
 	NewGalleryPage(sess, p.parentPage).Generate()
-	return nil
 }
 
-func (p LandingPage) forgotPwdListener(sess Session, widget Widget) error {
+func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {
 
-	problem := ""
 	for {
 
-		s := sess.State
-		userName := s.OptString(id_user_name, "")
+		userEmail := sess.WidgetStrValue(id_user_email)
 
-		Todo("Change this to 'enter your email' instead")
-		problem = "Please enter your user name"
-		if userName == "" {
-			break
+		if userEmail == "" {
+			sess.SetWidgetProblem(id_user_email, "Please enter your email address.")
+			return
 		}
 
-		user, err := webapp_data.ReadUserWithName(userName)
-		userId := user.Id()
-
-		if err != nil {
-			Alert("Not revealing that 'no such user exists' in forgot password logic")
-		}
-		if userId != 0 {
-			Todo("Send email")
-		}
 		sess.SetWidgetProblem(id_user_name, "An email has been sent with a link to change your password.")
-		break
+
+		//user, err := webapp_data.ReadUserWithName(userName)
+		//userId := user.Id()
+		//
+		//if err != nil {
+		//	Alert("Not revealing that 'no such user exists' in forgot password logic")
+		//}
+		//if userId != 0 {
+		//	Todo("Send email")
+		//}
+		//break
 	}
 
-	if problem != "" {
-		return Error(problem)
-	}
-	return nil
 }

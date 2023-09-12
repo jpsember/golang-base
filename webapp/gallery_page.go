@@ -97,7 +97,7 @@ func zebraListener(s Session, widget InputWidget, newVal string) (string, error)
 	return newVal, nil
 }
 
-func buttonListener(s Session, widget Widget) error {
+func buttonListener(s Session, widget Widget) {
 	wid := widget.Id()
 	newVal := "Clicked: " + wid
 
@@ -108,7 +108,6 @@ func buttonListener(s Session, widget Widget) error {
 	s.State.Put(alertWidget.BaseId,
 		strings.TrimSpace(newVal))
 	s.WidgetManager().Repaint(alertWidget)
-	return nil
 }
 
 func (p GalleryPage) checkboxListener(s Session, widget CheckboxWidget, state bool) (bool, error) {

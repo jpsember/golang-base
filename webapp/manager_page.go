@@ -62,9 +62,8 @@ func (p ManagerPage) constructAnimalList() AnimalList {
 	return animalList
 }
 
-func (p ManagerPage) newAnimalListener(sess Session, widget Widget) error {
+func (p ManagerPage) newAnimalListener(sess Session, widget Widget) {
 	NewCreateAnimalPage(sess, p.parentPage).Generate()
-	return nil
 }
 
 func (p ManagerPage) listListener(sess Session, widget ListWidget) error {
@@ -132,7 +131,7 @@ func (p ManagerPage) clickListener(sess Session, message string) {
 		}
 		sess.SetClickListener(nil)
 		Todo("Open an 'EditAnimal' page instead")
-		NewCreateAnimalPage(sess, sess.PageWidget).Generate()
+		NewEditAnimalPage(sess, sess.PageWidget, anim.Id()).Generate()
 	}
 }
 
