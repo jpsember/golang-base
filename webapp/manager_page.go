@@ -84,7 +84,7 @@ func getManagerAnimals(managerId int) []int {
 			anim := iter.Next().(Animal)
 			result = append(result, anim.Id())
 		}
-
+		//result = result[0:1]
 	} else {
 		iter := AnimalIterator(0)
 		for iter.HasNext() {
@@ -117,7 +117,7 @@ func (p ManagerPage) renderItem(widget ListWidget, elementId int, m MarkupBuilde
 	//<div class="card bg-light mb-3 animal-card">
 
 	m.OpenTag(`div class="col-sm-4"`)
-	RenderAnimalCard(p.session, anim, m, nil)
+	RenderAnimalCard(p.session, anim, m, "Edit")
 	m.CloseTag()
 }
 

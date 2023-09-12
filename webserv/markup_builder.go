@@ -239,6 +239,9 @@ func (b MarkupBuilder) VerifyEnd(expectedStackSize int, widget Widget) {
 }
 
 func (b MarkupBuilder) CloseTag() MarkupBuilder {
+	if b.tagStack.IsEmpty() {
+		Die("tag stack is empty:", INDENT, b.String())
+	}
 	entry := b.tagStack.Pop()
 	if entry.openType == tagTypeOpen {
 		b.DoOutdent()

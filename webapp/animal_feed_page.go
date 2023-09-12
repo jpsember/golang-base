@@ -39,7 +39,7 @@ func (p AnimalFeedPage) Generate() {
 			continue
 		}
 		cardId := "animal_" + IntToString(int(anim.Id()))
-		OpenAnimalCardWidget(m, cardId, anim, buttonListener)
+		OpenAnimalCardWidget(m, cardId, anim, buttonListener, "View")
 	}
 
 }

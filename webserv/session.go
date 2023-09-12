@@ -118,7 +118,7 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 	s.responseWriter = w
 	s.request = req
 	s.parseAjaxRequest(req)
-	if false && Alert("dumping") {
+	if true && Alert("dumping") {
 		Pr("Query:", INDENT, req.URL.Query())
 	}
 	s.processClientMessage()
