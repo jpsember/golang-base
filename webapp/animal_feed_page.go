@@ -26,15 +26,15 @@ func NewAnimalFeedPage(sess Session, parentWidget Widget) AnimalFeedPage {
 }
 
 func (p AnimalFeedPage) Generate() {
+	// Set click listener for this page
+	p.session.SetClickListener(p.clickListener)
+
 	m := p.GenerateHeader()
 
 	// If no animals found, add some
 	if DevDatabase && !HasAnimals() {
 		GenerateRandomAnimals()
 	}
-
-	// Set click listener for the card list
-	p.session.SetClickListener(p.clickListener)
 
 	al := p.animalList()
 	m.Id(id_feed_list).AddList(al, p.renderItem, p.listListener)
@@ -100,5 +100,16 @@ func (p AnimalFeedPage) clickListener(sess Session, message string) {
 		sess.SetClickListener(nil)
 		Todo("Open a 'ViewAnimal' page instead")
 		NewEditAnimalPage(sess, sess.PageWidget, anim.Id()).Generate()
+		return
 	}
+
+	Todo("Pages, and perhaps Sessions, should have embeddings to simplify expressions like this one:")
+	listWidget := p.session.WidgetManager().Get(id_feed_list).(ListWidget)
+
+	if listWidget.HandleClick(sess, message) {
+
+		return
+	}
+	Alert("#50Ignoring click:", message)
+
 }

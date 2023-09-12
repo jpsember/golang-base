@@ -28,6 +28,7 @@ func (a AnimalList) GetPageElements(pageNumber int) []int {
 }
 
 func (a AnimalList) CurrentPage() int {
+	Todo("Can the SetPage/CurrentPage be handled by an underlying basic page?")
 	return a.Page
 }
 func (a AnimalList) TotalPages() int {
@@ -39,4 +40,8 @@ func (a AnimalList) TotalPages() int {
 		totalPages++
 	}
 	return MaxInt(1, totalPages)
+}
+
+func (a AnimalList) SetPage(page int) {
+	a.Page = page
 }

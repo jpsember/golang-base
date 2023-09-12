@@ -972,3 +972,11 @@ func ClampedSlice[K any](slice []K, start int, end int) []K {
 	end = Clamp(end, start, len(slice))
 	return slice[start:end]
 }
+
+func ReportIfError(err error, msg ...any) bool {
+	if err != nil {
+		Alert("#50<1Error occurred, ignoring!  Error:", err, INDENT, "Message:", ToString(msg...))
+		return true
+	}
+	return false
+}

@@ -96,7 +96,7 @@ var jumped bool
 
 // A handler such as this must be thread safe!
 func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("handler, request:", req.RequestURI)
 
 	if false && Alert("!If full page requested, discarding sessions") {

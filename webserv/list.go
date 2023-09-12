@@ -8,6 +8,7 @@ type ListInterface interface {
 	GetPageElements(pageNumber int) []int
 	CurrentPage() int
 	TotalPages() int
+	SetPage(pageNumber int)
 }
 
 type ListItemRenderer func(widget ListWidget, elementId int, m MarkupBuilder)

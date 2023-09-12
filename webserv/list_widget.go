@@ -7,9 +7,9 @@ import (
 // A Widget that displays editable text
 type ListWidgetStruct struct {
 	BaseWidgetObj
-	list              ListInterface
-	renderer          ListItemRenderer
-	currentPageNumber int
+	list       ListInterface
+	renderer   ListItemRenderer
+	pagePrefix string
 }
 
 type ListWidgetListener func(sess Session, widget ListWidget) error
@@ -26,6 +26,7 @@ func NewListWidget(id string, list ListInterface, renderer ListItemRenderer, lis
 		renderer: renderer,
 	}
 	w.BaseId = id
+	w.pagePrefix = id + ".page_"
 	return &w
 }
 
@@ -37,7 +38,6 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 	}
 
 	m.Comment("Rendering pagination, number of pages:", np)
-	pagePrefix := w.Id() + ".page_"
 
 	windowSize := MinInt(np, 5)
 	windowStart := Clamp(w.list.CurrentPage()-windowSize/2, 0, np-windowSize+1)
@@ -47,43 +47,12 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 		m.OpenTag(`nav aria-label="Page navigation"`)
 		{
 			m.OpenTag(`ul class="pagination"`)
-
 			{
-
-				// "Previous"
-				m.A(`<li class="page-item"><a class="page-link`)
-				if w.list.CurrentPage() == 0 {
-					m.A(` disabled`)
-				} else {
-					m.A(`" onclick="jsButton('`, pagePrefix, `0')"`)
+				w.renderPagePiece(m, `&lt;&lt;`, 0, true)
+				for i := windowStart; i < windowStart+windowSize; i++ {
+					w.renderPagePiece(m, IntToString(i+1), i, false)
 				}
-				m.A(`">&lt;&lt;</a></li>`, CR)
-
-				// Window elements
-				{
-					for i := windowStart; i < windowStart+windowSize; i++ {
-						m.A(`<li class="page-item"><a class="page-link`)
-						if w.list.CurrentPage() == i {
-							m.A(` active`)
-						}
-						m.A(`" onclick="jsButton('`, pagePrefix, i, `')"`)
-						m.A(`>`, 1+i, `</a></li>`).Cr()
-					}
-				}
-
-				// "Next"
-				//
-
-				{
-					m.A(`<li class="page-item"><a class="page-link`)
-					if w.list.CurrentPage() == np-1 {
-						m.A(` disabled`)
-					} else {
-						m.A(`" onclick="jsButton('`, pagePrefix, np-1, `')`)
-					}
-					m.A(`">&gt;&gt;</a></li>`, CR)
-				}
-
+				w.renderPagePiece(m, `&gt;&gt;`, np-1, true)
 			}
 			m.CloseTag()
 		}
@@ -93,8 +62,22 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 	m.Comment("done Rendering pagination")
 }
 
+func (w ListWidget) renderPagePiece(m MarkupBuilder, label string, targetPage int, edges bool) {
+	m.A(`<li class="page-item"><a class="page-link`)
+	if w.list.CurrentPage() == targetPage {
+		if edges {
+			m.A(` disabled`)
+		} else {
+			m.A(` active`)
+		}
+	} else {
+		m.A(`" onclick="jsButton('`, w.pagePrefix, targetPage, `')`)
+	}
+	m.A(`">`, label, `</a></li>`, CR)
+}
+
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf(false)
+	pr := PrIf(true)
 
 	m.Comment("ListWidget")
 
@@ -102,11 +85,13 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	w.renderPagination(s, m)
 
-	if !Alert("skipping items") {
+	//if !Alert("skipping items")
+	{
 		m.OpenTag(`div class="row"`)
 		{
-			elementIds := w.list.GetPageElements(w.currentPageNumber)
-			pr("rendering page num:", w.currentPageNumber, "element ids:", elementIds)
+			Todo("The GetPageElements() shouldn't need a page number, as it knows it")
+			elementIds := w.list.GetPageElements(w.list.CurrentPage())
+			pr("rendering page num:", w.list.CurrentPage(), "element ids:", elementIds)
 			for _, id := range elementIds {
 				m.Comment("--------------------------- rendering id:", id)
 				w.renderer(w, id, m)
@@ -115,7 +100,37 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 		m.CloseTag()
 	}
 
+	w.renderPagination(s, m)
+
 	m.CloseTag()
+}
+
+// Parse a click event, and if it is aimed at us, process it and return true.  This is used by the
+// pagination controls.  **Clicks on the list items are still handled by the client.**
+// This
+func (w ListWidget) HandleClick(sess Session, message string) bool {
+	if page_str, f := TrimIfPrefix(message, w.pagePrefix); f {
+		for {
+			i, err := ParseInt(page_str)
+			if ReportIfError(err, "handling click:", message) {
+				break
+			}
+			targetPage := int(i)
+			if targetPage < 0 || targetPage >= w.list.TotalPages() {
+				Alert("#50illegal page requested;", message)
+				break
+			}
+
+			if targetPage == w.list.CurrentPage() {
+				break
+			}
+			w.list.SetPage(targetPage)
+			sess.WidgetManager().Repaint(w)
+			break
+		}
+		return true
+	}
+	return false
 }
 
 func defaultRenderer(widget ListWidget, elementId int, m MarkupBuilder) {

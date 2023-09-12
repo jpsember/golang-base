@@ -384,11 +384,3 @@ func DiscardBlob(id int) {
 		Todo("#50Discard blob id", id)
 	}
 }
-
-func ReportIfError(err error, msg ...any) bool {
-	if err != nil {
-		Alert("#50<1Error occurred, ignoring!  Error:", err, INDENT, "Message:", ToString(msg...))
-		return true
-	}
-	return false
-}
