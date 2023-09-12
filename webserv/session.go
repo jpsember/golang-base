@@ -44,6 +44,8 @@ func DiscardAllSessions(sessionManager SessionManager) {
 	loggedInUsersSet.Clear()
 }
 
+type ClickListener func(sess *SessionStruct, id string) error
+
 type Session = *SessionStruct
 
 type SessionStruct struct {
@@ -61,13 +63,14 @@ type SessionStruct struct {
 
 	BrowserInfo   webserv_data.ClientInfo
 	widgetManager WidgetManager
+	clickListener ClickListener
 
 	// Current request variables
 	responseWriter   http.ResponseWriter
 	request          *http.Request
-	requestProblem   string // If nonempty, problem detected with current request
+	requestProblem   error  // If not nil, problem detected with current request
 	clientInfoString string // If nonempty information sent from client about screen size, etc
-	ajaxWidget       Widget // If not nil, the widget sending the ajax
+	ajaxWidgetId     string // Id of widget that ajax call is being sent to
 	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
 }
 
@@ -244,15 +247,13 @@ func (s Session) parseAjaxRequest(req *http.Request) {
 
 	t1 := v[clientKeyWidget]
 	t2 := v[clientKeyValue]
-	var wid string
 	// A value is optional, as buttons don't send them.
 	if len(t1) == 1 && len(t2) <= 1 {
-		wid = t1[0]
+		s.ajaxWidgetId = t1[0]
 		if len(t2) == 1 {
 			s.ajaxWidgetValue = t2[0]
 		}
 	}
-	s.ajaxWidget = s.WidgetManager().Opt(wid)
 	clientInfoArray := v[clientKeyInfo]
 	if clientInfoArray != nil && len(clientInfoArray) == 1 {
 		s.clientInfoString = clientInfoArray[0]
@@ -264,7 +265,7 @@ func (s Session) processClientMessage() {
 	if s.clientInfoString != "" {
 		s.processClientInfo(s.clientInfoString)
 		// If there isn't a widget message as well, do nothing else
-		if s.ajaxWidget == nil {
+		if s.ajaxWidgetId == "" {
 			return
 		}
 	}
@@ -272,7 +273,20 @@ func (s Session) processClientMessage() {
 	// At present, we will assume that the request consists of a single widget id, and perhaps a single value
 	// for that widget
 	//
-	widget := s.ajaxWidget
+
+	widgetId := s.ajaxWidgetId
+	if widgetId == "" {
+		s.SetRequestProblem("widget id was empty")
+		return
+	}
+
+	widget := s.widgetManager.Opt(widgetId)
+	// If there is no widget with this id, inform the default listener (clarify the terminology later)
+	if widget == nil {
+		s.processClickEvent(widgetId)
+		return
+	}
+
 	if widget == nil {
 		s.SetRequestProblem("no widget found", widget)
 		return
@@ -295,6 +309,18 @@ func (s Session) processClientMessage() {
 	}
 	// Always update the problem, in case we are clearing a previous error
 	s.SetWidgetProblem(widget.Id(), err)
+}
+
+func (s Session) processClickEvent(sourceId string) {
+	listener := s.clickListener
+	if listener == nil {
+		Alert("#50No ClickListener for id:" + sourceId)
+		return
+	}
+	result := listener(s, sourceId)
+	if result != nil {
+		s.SetRequestProblem(result)
+	}
 }
 
 func (s Session) processClientInfo(infoString string) {
@@ -361,33 +387,36 @@ func (s Session) sendAjaxResponse() {
 func (s Session) discardRequest() {
 	defer s.Mutex.Unlock()
 	problem := s.requestProblem
-	if problem != "" {
+	if problem != nil {
 		Pr("Problem processing client message:", INDENT, problem)
 	}
 	s.responseWriter = nil
 	s.request = nil
-	s.requestProblem = ""
-	s.ajaxWidget = nil
+	s.requestProblem = nil
+	s.ajaxWidgetId = ""
 	s.ajaxWidgetValue = ""
 	s.clientInfoString = ""
 
 	s.WidgetManager().clearRepaintSet()
 }
 
-func (s Session) SetRequestProblem(message ...any) Session {
-	if s.requestProblem == "" {
-		s.requestProblem = "Problem with ajax request: " + ToString(message...)
+func (s Session) SetRequestError(problem error) {
+	if problem != nil && s.requestProblem == nil {
+		s.requestProblem = problem
 		Alert("#50<2 setting request problem:", s.requestProblem)
 	}
-	return s
 }
 
-func (s Session) GetRequestProblem() string {
+func (s Session) SetRequestProblem(message ...any) {
+	s.SetRequestProblem("Problem with ajax request: " + ToString(message...))
+}
+
+func (s Session) GetRequestProblem() error {
 	return s.requestProblem
 }
 
 func (s Session) Ok() bool {
-	return s.requestProblem == ""
+	return s.requestProblem == nil
 }
 
 func (s Session) SetWidgetProblem(widgetId string, problem any) {
@@ -504,4 +533,8 @@ func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
 	} else {
 		return s.WidgetStrValue(widget.Id()), false
 	}
+}
+
+func (s Session) SetClickListener(listener ClickListener) {
+	s.clickListener = listener
 }

@@ -26,6 +26,7 @@ const (
 )
 
 func (p ManagerPage) Generate() {
+	Todo("?Think about ways of cleaning up the click listener which is not tied to a widget")
 	//SetWidgetDebugRendering()
 	m := p.GenerateHeader()
 
@@ -37,14 +38,15 @@ func (p ManagerPage) Generate() {
 	}
 	m.Close()
 
+	// Set click listener for the card list
+	p.session.SetClickListener(p.clickListener)
+
 	// Scrolling list of animals for this manager.
 	//m.Open()
 	//m.Col(4)
 	al := p.animalList()
 	m.Id(id_manager_list).AddList(al, p.renderItem, p.listListener)
-
 	//m.Close()
-
 }
 
 func (p ManagerPage) animalList() AnimalList {
@@ -119,6 +121,12 @@ func (p ManagerPage) renderItem(widget ListWidget, elementId int, m MarkupBuilde
 	m.OpenTag(`div class="col-sm-4"`)
 	RenderAnimalCard(p.session, anim, m, "Edit")
 	m.CloseTag()
+}
+
+func (p ManagerPage) clickListener(sess Session, id string) error {
+	Pr("received click, id:", id)
+	Todo("Edit the corresponding animal")
+	return nil
 }
 
 type AnimalListStruct struct {

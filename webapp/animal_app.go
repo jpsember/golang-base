@@ -176,7 +176,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 		sess.SetRequestProblem(err)
 	}
 
-	if p := sess.GetRequestProblem(); p != "" {
+	if p := sess.GetRequestProblem(); p != nil {
 		Pr("...problem with request, URL:", req.RequestURI, INDENT, p)
 	}
 }
