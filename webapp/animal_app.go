@@ -107,8 +107,9 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 
 	// Now that we have the session, lock it
 	Todo("But when we kill the session, i.e. logging out, do we still have the lock?")
-	sess.Mutex2.Lock()
-	defer sess.Mutex2.Unlock()
+	sess.Lock.Lock()
+	defer sess.ReleaseLockAndDiscardRequest()
+	Todo("We can (temporarily) store the ResponseWriter, Request in the session for simplicity")
 
 	optUser := sess.OptSessionData(SessionKey_User)
 	if optUser == nil {
