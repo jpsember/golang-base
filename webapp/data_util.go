@@ -125,6 +125,10 @@ func ValidateAnimalName(name string, flag ValidateFlag) (string, error) {
 	return validatedName, err
 }
 
+// If DevDatabase is active, and user with this name exists, their credentials are plugged in automatically
+// at the sign in page by default.
+const AutoSignInName = "manager1"
+
 func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 	userName = strings.TrimSpace(userName)
 	Todo("?Replace two or more spaces by a single space")

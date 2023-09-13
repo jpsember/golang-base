@@ -9,8 +9,6 @@ import (
 	"net/http"
 )
 
-var AutoActivateUser = Alert("?Automatically activating user")
-
 type AnimalOperStruct struct {
 	appRoot      Path
 	headerMarkup string
@@ -35,71 +33,59 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 
 var DevDatabase = Alert("!Using development database")
 
-// If DevDatabase is active, and user with this name exists, their credentials are plugged in automatically
-// at the sign in page by default.
-const AutoSignInName = "manager1"
-
 func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
 	ExitOnPanic()
 
-	s := NewJServer()
-	//oper.server = s
-	s.App = oper
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
-	s.Resources = oper.resources
-	s.SessionManager = BuildSessionMap()
-	s.BaseURL = "jeff.org"
-	s.KeyDir = oper.appRoot.JoinM("https_keys")
-
-	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
-
-	if false && DevDatabase && Alert("Deleting database:", dataSourcePath) {
-		DeleteDatabase(dataSourcePath)
-	}
-	CreateDatabase(dataSourcePath.String())
+	oper.headerMarkup = oper.resources.JoinM("header.html").ReadStringM()
 	oper.prepareDatabase()
 
-	if DevDatabase {
-		PopulateDatabase()
+	// Initialize and start the JServer
+	//
+	{
+		s := NewJServer()
+		s.App = oper
+		s.Resources = oper.resources
+		s.SessionManager = BuildSessionMap()
+		s.BaseURL = "jeff.org"
+		s.KeyDir = oper.appRoot.JoinM("https_keys")
+		s.StartServing()
 	}
-
-	oper.headerMarkup = s.Resources.JoinM("header.html").ReadStringM()
-
-	s.StartServing()
 }
 
+// JServer callback to perform initialization for a new session.  We assign a user,
+// and open the landing page. It might get replaced by another page immediately...?
 func (oper AnimalOper) PrepareSession(sess Session) {
-	user := AssignUserToSession(sess)
+	user := DefaultUser
+	sess.PutSessionData(SessionKey_User, user)
 	CheckState(user.Id() == 0)
-	oper.constructPageWidget(sess)
 	NewLandingPage(sess, sess.PageWidget).Generate()
 }
 
+// JServer callback to handle a request.  Returns true if it was handled.
 func (oper AnimalOper) HandleRequest(s Session, path string) bool {
 	pr := PrIf(true)
-
 	pr("HandleRequest:", path)
 
 	var text string
 	var flag bool
 	if text, flag = TrimIfPrefix(path, "/r/"); flag {
 		pr("handling blob request with:", text)
-		err := oper.handleBlobRequest(s, text)
-		ReportIfError(err, "handling blob request")
+		oper.handleBlobRequest(s, text)
 		return true
 	}
 
 	if path == "/" {
 		oper.debugAutoLogIn(s)
-		oper.processFullPageRequest(s)
+		oper.renderPage(s)
 		return true
 	}
 
 	if _, found := TrimIfPrefix(path, "/manager"); found {
 		NewManagerPage(s, s.PageWidget).Generate()
-		oper.processFullPageRequest(s)
+		oper.renderPage(s)
 		return true
 	}
 	Todo("Experiment: checking for editing a particular animal")
@@ -107,7 +93,7 @@ func (oper AnimalOper) HandleRequest(s Session, path string) bool {
 		if animalId, err := ParseAsPositiveInt(remainder); err == nil {
 			pr("generating page to edit animal #", animalId)
 			NewEditAnimalPage(s, s.PageWidget, animalId).Generate()
-			oper.processFullPageRequest(s)
+			oper.renderPage(s)
 			return true
 		}
 		return false
@@ -115,21 +101,20 @@ func (oper AnimalOper) HandleRequest(s Session, path string) bool {
 	return false
 }
 
-func (oper AnimalOper) handleBlobRequest(s Session, blobId string) error {
+func (oper AnimalOper) handleBlobRequest(s Session, blobId string) {
 	blob := SharedWebCache.GetBlobWithName(blobId)
 	if blob.Id() == 0 {
 		Alert("#50Can't find blob with name:", Quoted(blobId))
 	}
-
 	err := WriteResponse(s.ResponseWriter, InferContentTypeFromBlob(blob), blob.Data())
 	Todo("?Detect someone requesting huge numbers of items that don't exist?")
-	return err
+	ReportIfError(err, "Trouble writing blob response")
 }
 
-func (oper AnimalOper) processFullPageRequest(sess Session) {
+func (oper AnimalOper) renderPage(sess Session) {
+	CheckState(sess.PageWidget != nil, "no PageWidget!")
 	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
-	CheckState(sess.PageWidget != nil, "no PageWidget!")
 	RenderWidget(sess.PageWidget, sess, sb)
 	sess.RequestClientInfo(sb)
 	oper.writeFooter(sess.ResponseWriter, sb)
@@ -157,29 +142,14 @@ func (oper AnimalOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 	WriteResponse(w, "text/html", bp.Bytes())
 }
 
-var alertWidget AlertWidget
-var myRand = NewJSRand().SetSeed(1234)
-
-const WidgetIdPage = "main_page"
-
-// Assign a widget heirarchy to a session
-func (oper AnimalOper) constructPageWidget(sess Session) {
-	m := sess.WidgetManager()
-	Todo("?Clarify when we need to *remove* old widgets")
-	m.Id(WidgetIdPage)
-	widget := m.Open()
-	sess.PageWidget = widget
-	m.Close()
-}
-
-// A new session was created; assign an 'unknown' user to it
-func AssignUserToSession(sess Session) User {
-	user := DefaultUser
-	sess.PutSessionData(SessionKey_User, user)
-	return user
-}
-
 func (oper AnimalOper) prepareDatabase() {
+	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
+
+	if false && DevDatabase && Alert("Deleting database:", dataSourcePath) {
+		DeleteDatabase(dataSourcePath)
+	}
+	CreateDatabase(dataSourcePath.String())
+
 	if b, _ := ReadBlob(1); b.Id() == 0 {
 
 		// Generate default images as blobs
@@ -195,7 +165,15 @@ func (oper AnimalOper) prepareDatabase() {
 		CheckOk(err)
 		CheckState(created.Id() == 1, "unexpected id for placeholder:", created.Id())
 	}
+
+	if DevDatabase {
+		PopulateDatabase()
+	}
 }
+
+// ------------------------------------------------------------------------------------
+// Data stored with session
+// ------------------------------------------------------------------------------------
 
 const (
 	SessionKey_User     = "user"
@@ -203,15 +181,12 @@ const (
 	SessionKey_MgrList  = "mgr.list"
 )
 
-func TryLoggingIn(s Session, user User) bool {
-	success := false
-	if TryRegisteringUserAsLoggedIn(user.Id(), true) {
-		success = true
-		s.PutSessionData(SessionKey_User, user)
-	}
-	return success
+// Get session's User, or nil if there isn't one.
+func OptSessionUser(sess Session) User {
+	return sess.GetSessionData(SessionKey_User).(User)
 }
 
+// Get session's User.
 func SessionUser(sess Session) User {
 	user := OptSessionUser(sess)
 	if user.Id() == 0 {
@@ -220,8 +195,13 @@ func SessionUser(sess Session) User {
 	return user
 }
 
-func OptSessionUser(sess Session) User {
-	return sess.GetSessionData(SessionKey_User).(User)
+// Attempt to make the user logged in.  Return true if successful.
+func TryLoggingIn(s Session, user User) bool {
+	success := TryRegisteringUserAsLoggedIn(user.Id(), true)
+	if success {
+		s.PutSessionData(SessionKey_User, user)
+	}
+	return success
 }
 
 // Perform a once-only attempt to log in the user automatically and set a particular page.

@@ -22,6 +22,8 @@ type Widget interface {
 	fmt.Stringer
 }
 
+const WidgetIdPage = "page"
+
 // This general type of listener can serve as a validator as well
 // type WidgetListener func(sess Session, widget Widget)
 type LowLevelWidgetListener func(sess Session, widget Widget, value string) (string, error)

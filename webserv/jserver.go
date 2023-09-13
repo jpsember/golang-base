@@ -76,6 +76,14 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 
 	if !sess.prepared {
 		sess.prepared = true
+		{
+			// Assign a widget heirarchy to the session
+			m := sess.WidgetManager()
+			m.Id(WidgetIdPage)
+			widget := m.Open()
+			sess.PageWidget = widget
+			m.Close()
+		}
 		s.App.PrepareSession(sess)
 	}
 

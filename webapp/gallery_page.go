@@ -24,6 +24,9 @@ func NewGalleryPage(sess Session, parentWidget Widget) GalleryPage {
 
 const sampleImageId = "sample_image"
 
+var alertWidget AlertWidget
+var myRand = NewJSRand().SetSeed(1234)
+
 func (p GalleryPage) Generate() {
 	m := p.GenerateHeader()
 

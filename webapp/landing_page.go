@@ -57,6 +57,8 @@ func (p LandingPage) validateUserPwd(s Session, widget InputWidget, content stri
 	return ValidateUserPassword(content, VALIDATE_ONLY_NONEMPTY)
 }
 
+var AutoActivateUser = DevDatabase && Alert("?Automatically activating user")
+
 func (p LandingPage) signInListener(sess Session, widget Widget) {
 
 	s := sess.State
