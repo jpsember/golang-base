@@ -60,13 +60,17 @@ function where(skip) {
     return x
 }
 
+const response_key_widget_refresh = 'w'
+const response_key_url_expr = 'u'
+
+
 function processServerResponse(text) {
     if (text.length == 0) {
         return
     }
-    pr("processServerResponse, text:",text)
+    //pr("processServerResponse, text:",text)
     const obj = JSON.parse(text)
-    if ('w' in obj) {
+    if (response_key_widget_refresh in obj) {
         const widgetMap = obj.w
         for (const [id, markup] of Object.entries(widgetMap)) {
             const elem = document.getElementById(id);
@@ -76,6 +80,12 @@ function processServerResponse(text) {
             }
             elem.outerHTML = markup;
         }
+    }
+
+    if (response_key_url_expr in obj) {
+        const urlExpr = obj.u
+        pr("update_url_expr:",urlExpr)
+        history.pushState(null, null, urlExpr);
     }
 }
 
@@ -153,6 +163,7 @@ function jsButton(id) {
     db("jsButton",id)
     makeAjaxCall(request_key_widget, id)
 }
+
 // An click event has occurred within a checkbox
 function jsCheckboxClicked(id) {
     db("jsCheckboxClicked", id)
@@ -168,5 +179,10 @@ function jsGetDisplayProperties() {
     }
     makeAjaxCall(request_key_info, JSON.stringify(info))
 }
+
+function jsPopStateEventHandler(e) {
+    pr("jsPopStateEventHandler, e:",e)
+}
+window.addEventListener('popstate', jsPopStateEventHandler);
 
 pr("...base.js has loaded")

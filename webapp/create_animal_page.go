@@ -125,6 +125,10 @@ func (p CreateAnimalPage) generateForEditing() {
 
 func (p CreateAnimalPage) generateForViewing() {
 	m := p.session.WidgetManager()
+
+	// Experiment: try modifying the url
+	p.session.SetURLPage(`edit/`, p.animalId)
+
 	m.Col(6).Open()
 	{
 		Todo("!Flesh this out some")

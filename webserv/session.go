@@ -72,6 +72,7 @@ type SessionStruct struct {
 	clientInfoString string // If nonempty information sent from client about screen size, etc
 	ajaxWidgetId     string // Id of widget that ajax call is being sent to
 	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
+	pendingURLExpr   string // If not nil, client browser should push this onto the history
 }
 
 var ourDefaultBrowserInfo = webserv_data.NewClientInfo().SetDevicePixelRatio(1.25).SetScreenSizeX(2560).SetScreenSizeY(1440).Build()
@@ -357,6 +358,7 @@ func (s Session) processRepaintFlags(repaintSet StringSet, debugDepth int, w Wid
 }
 
 const respKeyWidgetsToRefresh = "w"
+const respKeyURLExpr = "u"
 
 var debRepaint = false && Alert("debRepaint")
 
@@ -375,6 +377,10 @@ func (s Session) sendAjaxResponse() {
 	s.processRepaintFlags(s.WidgetManager().repaintSet, 0, s.PageWidget, refmap, false)
 
 	jsmap.Put(respKeyWidgetsToRefresh, refmap)
+	if s.pendingURLExpr != "" {
+		jsmap.Put(respKeyURLExpr, s.pendingURLExpr)
+		Pr("sending url expression:", s.pendingURLExpr)
+	}
 	pr("sending back to Ajax caller:", INDENT, jsmap)
 	content := jsmap.CompactString()
 	WriteResponse(s.responseWriter, "application/json", []byte(content))
@@ -393,7 +399,9 @@ func (s Session) discardRequest() {
 	s.ajaxWidgetId = ""
 	s.ajaxWidgetValue = ""
 	s.clientInfoString = ""
+	s.pendingURLExpr = ""
 
+	Todo("!Consider moving the repaint set from the widget manager to the session, and perhaps other things")
 	s.WidgetManager().clearRepaintSet()
 }
 
@@ -541,4 +549,18 @@ func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
 
 func (s Session) SetClickListener(listener ClickListener) {
 	s.clickListener = listener
+}
+
+// Cause a new URL to be pushed onto the browser history.  This gets sent when the AJAX response is sent.
+func (s Session) SetURLPage(args ...any) {
+	sb := strings.Builder{}
+
+	for _, arg := range args {
+		s := strings.TrimSpace(ToString(arg))
+		if sb.Len() != 0 {
+			sb.WriteByte('/')
+		}
+		sb.WriteString(s)
+	}
+	s.pendingURLExpr = sb.String()
 }

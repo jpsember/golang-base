@@ -14,14 +14,13 @@ type WidgetManagerObj struct {
 	mPendingFloatingPointFlag   bool
 	mPendingDefaultFloatValue   float64
 	mPendingDefaultIntValue     int
-	//pendingListener             WidgetListener
-	parentStack        *Array[Widget]
-	pendingSize        WidgetSize
-	pendingAlign       WidgetAlign
-	pendingId          string
-	pendingLabel       string
-	anonymousIdCounter int
-	repaintSet         StringSet
+	parentStack                 *Array[Widget]
+	pendingSize                 WidgetSize
+	pendingAlign                WidgetAlign
+	pendingId                   string
+	pendingLabel                string
+	anonymousIdCounter          int
+	repaintSet                  StringSet
 }
 
 func NewWidgetManager(session Session) WidgetManager {
