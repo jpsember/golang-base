@@ -96,20 +96,18 @@ var jumped bool
 
 // A handler such as this must be thread safe!
 func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(false)
+	pr := PrIf(true)
 	pr("handler, request:", req.RequestURI)
 
-	if false && Alert("!If full page requested, discarding sessions") {
-		url, err := url.Parse(req.RequestURI)
-		if err == nil && url.Path == "/" {
-			sess := DetermineSession(oper.sessionManager, w, req, false)
-			if sess != nil {
-				DiscardAllSessions(oper.sessionManager)
-			}
-		}
+	sess := DetermineSession(oper.sessionManager, w, req, true)
+	// If it's a new session, it won't have a URL request handler
+	if sess.URLRequestHandler == nil {
+		Alert("#50New session; storing request handler...")
+		sess.URLRequestHandler = oper.animalURLRequestHandler
 	}
 
-	sess := DetermineSession(oper.sessionManager, w, req, true)
+	Todo("This shouldn't be done until we have a lock on the session; maybe lock the session throughout the handler?  Or do we already have it?")
+
 	optUser := sess.OptSessionData(SessionKey_User)
 	if optUser == nil {
 		user := AssignUserToSession(sess)
@@ -158,8 +156,6 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 		pr("url path:", path)
 		if path == "/ajax" {
 			sess.HandleAjaxRequest(w, req)
-		} else if path == "/" {
-			oper.processFullPageRequest(sess, w, req)
 		} else if text, flag = TrimIfPrefix(path, "/r/"); flag {
 			pr("handling blob request with:", text)
 			err = oper.handleBlobRequest(w, req, text)
@@ -167,8 +163,18 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 			pr("handling upload request with:", text)
 			sess.HandleUploadRequest(w, req, text)
 		} else {
-			pr("handling resource request for:", path)
-			err = sess.HandleResourceRequest(w, req, oper.resources)
+			result := oper.animalURLRequestHandler(sess, path)
+			if !result {
+				// If we fail to parse any requests, assume it's a resource, like that stupid favicon
+				pr("handling resource request for:", path)
+				err = sess.HandleResourceRequest(w, req, oper.resources)
+			}
+			//if !result {
+			//		// If we fail to parse any requests, assume it's a resource, like that stupid favicon
+			//		pr("handling resource request for:", path)
+			//		err := sess.HandleResourceRequest(w, req, oper.resources)
+			//
+			//}
 		}
 	}
 
@@ -176,6 +182,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 		sess.SetRequestProblem(err)
 	}
 
+	Todo("This code should be done while the lock is still held")
 	if p := sess.GetRequestProblem(); p != nil {
 		Pr("...problem with request, URL:", req.RequestURI, INDENT, p)
 	}
@@ -271,6 +278,10 @@ func (oper AnimalOper) prepareDatabase() {
 	}
 }
 
+func (oper AnimalOper) AcquireLockAndCallURLRequestHandler(sess Session, path string) {
+
+}
+
 const (
 	SessionKey_User     = "user"
 	SessionKey_FeedList = "feed.list"
@@ -296,4 +307,16 @@ func SessionUser(sess Session) User {
 
 func OptSessionUser(sess Session) User {
 	return sess.GetSessionData(SessionKey_User).(User)
+}
+
+// This is our handler for serving up entire pages, either in response to an AJAX call, or the user
+// entering something in the browser address bar. (How can we distinguish between these?)
+func (oper AnimalOper) animalURLRequestHandler(s Session, expr string) bool {
+	pr := PrIf(true)
+	pr("animalURLRequestHandler:", expr)
+
+	if expr == "/" {
+		oper.processFullPageRequest(sess, w, req)
+	}
+	return false
 }

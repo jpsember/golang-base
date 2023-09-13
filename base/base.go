@@ -522,11 +522,16 @@ func processAlertForMultipleSessions(info alertInfo) bool {
 			}
 		}
 		priorityAlertPersistPath = d.JoinM(".go_flags.json")
+		priorityAlertMap = NewJSMap()
 		if clearPriorityAlertMapFlag {
-			priorityAlertMap = NewJSMap()
-			clearPriorityAlertMapFlag = false
 		} else {
-			priorityAlertMap = JSMapFromFileIfExistsM(priorityAlertPersistPath)
+			restored, err := JSMapFromFileIfExists(priorityAlertPersistPath)
+			if err != nil {
+				Pr("Problem parsing:", priorityAlertPersistPath, ", error:", err)
+				priorityAlertMap = NewJSMap()
+			} else {
+				priorityAlertMap = restored
+			}
 		}
 		const expectedVersion = 2
 		if priorityAlertMap.OptInt("version", 0) != expectedVersion {

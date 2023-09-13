@@ -71,3 +71,4 @@ func WidgetStringValue(state JSMap, id string) string {
 const clientKeyWidget = "w"
 const clientKeyValue = "v"
 const clientKeyInfo = "i"
+const clientKeyURL = "u"
