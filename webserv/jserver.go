@@ -10,7 +10,7 @@ import (
 
 type ServerApp interface {
 	PrepareSession(s Session)
-	HandleRequest(w http.ResponseWriter, req *http.Request, s Session, expr string) bool
+	HandleRequest(path string, w http.ResponseWriter, req *http.Request, s Session, expr string) bool
 }
 
 type JServerStruct struct {
@@ -23,7 +23,7 @@ type JServerStruct struct {
 
 type JServer = *JServerStruct
 
-func NewServer() JServer {
+func NewJServer() JServer {
 	t := &JServerStruct{}
 	return t
 }
@@ -73,17 +73,8 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 	Todo("We can (temporarily) store the ResponseWriter, Request in the session for simplicity")
 
 	if !sess.prepared {
+		sess.prepared = true
 		s.App.PrepareSession(sess)
-
-		// e.g.
-		//	optUser := sess.OptSessionData(SessionKey_User)
-		//if optUser == nil {
-		//	user := AssignUserToSession(sess)
-		//	CheckState(user.Id() == 0)
-		//	oper.constructPageWidget(sess)
-		//
-		//	NewLandingPage(sess, sess.PageWidget).Generate()
-		//}
 	}
 
 	url, err := url.Parse(req.RequestURI)
@@ -105,7 +96,7 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 			pr("handling upload request with:", text)
 			sess.HandleUploadRequest(w, req, text)
 		} else {
-			result := s.App.HandleRequest(w, req, sess, path)
+			result := s.App.HandleRequest(path, w, req, sess, path)
 			//result := oper.animalURLRequestHandler(w, req, sess, path)
 			if !result {
 				// If we fail to parse any requests, assume it's a resource, like that stupid favicon

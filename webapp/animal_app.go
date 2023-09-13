@@ -6,21 +6,19 @@ import (
 	"github.com/jpsember/golang-base/jimg"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
-	"log"
 	"net/http"
-	"net/url"
 	"strings"
 )
 
 var AutoActivateUser = Alert("?Automatically activating user")
 
 type AnimalOperStruct struct {
-	sessionManager SessionManager
-	appRoot        Path
-	resources      Path
-	headerMarkup   string
-	FullWidth      bool // If true, page occupies full width of screen
-	TopPadding     int  // If nonzero, adds padding to top of page
+	appRoot Path
+	headerMarkup string
+	FullWidth    bool // If true, page occupies full width of screen
+	TopPadding   int  // If nonzero, adds padding to top of page
+	server       JServer
+	autoLoggedIn bool
 }
 
 type AnimalOper = *AnimalOperStruct
@@ -46,9 +44,14 @@ func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
 	ExitOnPanic()
 
-	oper.sessionManager = BuildSessionMap()
+	s := NewJServer()
+	oper.server = s
+	s.App = oper
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
-	oper.resources = oper.appRoot.JoinM("resources")
+	s.Resources = oper.appRoot.JoinM("resources")
+	s.SessionManager = BuildSessionMap()
+	s.BaseURL = "jeff.org"
+	s.KeyDir = oper.appRoot.JoinM("https_keys")
 
 	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 
@@ -63,128 +66,37 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 
 	{
-		s := strings.Builder{}
-		s.WriteString(oper.resources.JoinM("header.html").ReadStringM())
-		oper.headerMarkup = s.String()
+		sb := strings.Builder{}
+		sb.WriteString(s.Resources.JoinM("header.html").ReadStringM())
+		oper.headerMarkup = sb.String()
 	}
 
-	var ourUrl = "jeff.org"
-
-	var keyDir = oper.appRoot.JoinM("https_keys")
-	var certPath = keyDir.JoinM(ourUrl + ".crt")
-	var keyPath = keyDir.JoinM(ourUrl + ".key")
-	Pr("URL:", INDENT, `https://`+ourUrl)
-
-	http.HandleFunc("/",
-		func(w http.ResponseWriter, req *http.Request) {
-			defer func() {
-				if r := recover(); r != nil {
-					BadState("<1Panic during http.HandleFunc:", r)
-				}
-			}()
-			Todo("!This should be moved to the webserv package, maybe if an initialization parameter was specified")
-			oper.handle(w, req)
-		})
-
-	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
-
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
+	s.StartServing()
 }
 
-var jumped bool
+func (oper AnimalOper) PrepareSession(sess Session) {
+	user := AssignUserToSession(sess)
+	CheckState(user.Id() == 0)
+	oper.constructPageWidget(sess)
+	NewLandingPage(sess, sess.PageWidget).Generate()
+}
 
-// A handler such as this must be thread safe!
-func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
+func (oper AnimalOper) HandleRequest(path string, w http.ResponseWriter, req *http.Request, s Session, expr string) bool {
+
 	pr := PrIf(true)
-	pr("handler, request:", req.RequestURI)
 
-	// We don't know what the session is yet, so we don't have a lock on it...
-	sess := DetermineSession(oper.sessionManager, w, req, true)
-
-	Todo("This shouldn't be done until we have a lock on the session; maybe lock the session throughout the handler?  Or do we already have it?")
-
-	// Now that we have the session, lock it
-	Todo("But when we kill the session, i.e. logging out, do we still have the lock?")
-	sess.Lock.Lock()
-	defer sess.ReleaseLockAndDiscardRequest()
-	Todo("We can (temporarily) store the ResponseWriter, Request in the session for simplicity")
-
-	optUser := sess.OptSessionData(SessionKey_User)
-	if optUser == nil {
-		user := AssignUserToSession(sess)
-		CheckState(user.Id() == 0)
-		oper.constructPageWidget(sess)
-
-		NewLandingPage(sess, sess.PageWidget).Generate()
-
-		if !jumped && true && Alert("Jumping to different page") {
-			jumped = true
-			for {
-				if false {
-					NewGalleryPage(sess, sess.PageWidget).Generate()
-					break
-				}
-				user2, _ := ReadUserWithName("manager1")
-				if user2.Id() == 0 {
-					break
-				}
-				if !TryLoggingIn(sess, user2) {
-					break
-				}
-
-				if true {
-					NewAnimalFeedPage(sess, sess.PageWidget).Generate()
-					break
-				}
-				if false {
-					NewCreateAnimalPage(sess, sess.PageWidget).Generate()
-					break
-				}
-
-				NewManagerPage(sess, sess.PageWidget).Generate()
-				break
-			}
-		}
+	var text string
+	var flag bool
+	if text, flag = TrimIfPrefix(path, "/r/"); flag {
+		pr("handling blob request with:", text)
+		err := oper.handleBlobRequest(w, req, text)
+		ReportIfError(err, "handling blob request")
+		return true
 	}
 
-	url, err := url.Parse(req.RequestURI)
-	if err == nil {
+  Todo("merge the following func with this one")
 
-		Todo("!Move as much of this as possible to the webserv package")
-		path := url.Path
-		var text string
-		var flag bool
-
-		pr("url path:", path)
-		if path == "/ajax" {
-			Todo("!Use TrimIfPrefix here as well")
-			sess.HandleAjaxRequest(w, req)
-		} else if text, flag = TrimIfPrefix(path, "/r/"); flag {
-			pr("handling blob request with:", text)
-			err = oper.handleBlobRequest(w, req, text)
-		} else if text, flag = TrimIfPrefix(path, `/upload/`); flag {
-			pr("handling upload request with:", text)
-			sess.HandleUploadRequest(w, req, text)
-		} else {
-			result := oper.animalURLRequestHandler(w, req, sess, path)
-			if !result {
-				// If we fail to parse any requests, assume it's a resource, like that stupid favicon
-				pr("handling resource request for:", path)
-				err = sess.HandleResourceRequest(w, req, oper.resources)
-			}
-		}
-	}
-
-	if err != nil {
-		sess.SetRequestProblem(err)
-	}
-
-	Todo("This code should be done while the lock is still held")
-	if p := sess.GetRequestProblem(); p != nil {
-		Pr("...problem with request, URL:", req.RequestURI, INDENT, p)
-	}
+	return oper.animalURLRequestHandler(w, req, s, expr)
 }
 
 func (oper AnimalOper) handleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) error {
@@ -229,10 +141,10 @@ func (oper AnimalOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
 	WriteResponse(w, "text/html", bp.Bytes())
 }
 
-const WidgetIdPage = "main_page"
-
 var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
+
+const WidgetIdPage = "main_page"
 
 // Assign a widget heirarchy to a session
 func (oper AnimalOper) constructPageWidget(sess Session) {
@@ -255,10 +167,9 @@ func AssignUserToSession(sess Session) User {
 
 func (oper AnimalOper) prepareDatabase() {
 	if b, _ := ReadBlob(1); b.Id() == 0 {
-		// Generate default images as blobs
-		oper.resources = oper.appRoot.JoinM("resources")
 
-		animalPicPlaceholderPath := oper.resources.JoinM("placeholder.jpg")
+    // Generate default images as blobs
+		animalPicPlaceholderPath := oper.server.Resources.JoinM("placeholder.jpg")
 		img := CheckOkWith(jimg.DecodeImage(animalPicPlaceholderPath.ReadBytesM()))
 		img = img.ScaleToSize(AnimalPicSizeNormal)
 		jpeg := CheckOkWith(img.ToJPEG())
@@ -309,6 +220,7 @@ func (oper AnimalOper) animalURLRequestHandler(w http.ResponseWriter, req *http.
 	pr("animalURLRequestHandler:", expr)
 
 	if expr == "/" {
+		oper.debugAutoLogIn(s)
 		oper.processFullPageRequest(s, w, req)
 		return true
 	}
@@ -324,11 +236,42 @@ func (oper AnimalOper) animalURLRequestHandler(w http.ResponseWriter, req *http.
 			pr("generating page to edit animal #", animalId)
 			NewEditAnimalPage(s, s.PageWidget, animalId).Generate()
 			oper.processFullPageRequest(s, w, req)
-
-			//	oper.ExperimentSendPageToClient(s, w)
 			return true
 		}
 		return false
 	}
 	return false
+}
+
+// Perform a once-only attempt to log in the user automatically and set a particular page.
+// For development only.
+func (oper AnimalOper) debugAutoLogIn(sess Session) {
+	if oper.autoLoggedIn {
+		return
+	}
+	oper.autoLoggedIn = true
+	Alert("Auto logging in")
+
+	if false {
+		NewGalleryPage(sess, sess.PageWidget).Generate()
+		return
+	}
+	user2, _ := ReadUserWithName("manager1")
+	if user2.Id() == 0 {
+		return
+	}
+	if !TryLoggingIn(sess, user2) {
+		return
+	}
+
+	if true {
+		NewAnimalFeedPage(sess, sess.PageWidget).Generate()
+		return
+	}
+	if false {
+		NewCreateAnimalPage(sess, sess.PageWidget).Generate()
+		return
+	}
+
+	NewManagerPage(sess, sess.PageWidget).Generate()
 }
