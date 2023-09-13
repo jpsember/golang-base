@@ -5,6 +5,10 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
+type Page interface {
+	GetBasicPage() BasicPage
+}
+
 type PageGenerateFunc func()
 type BasicPageStruct struct {
 	Session  Session
