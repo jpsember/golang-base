@@ -63,7 +63,10 @@ type SessionStruct struct {
 	// JSMap containing widget values, other user session state
 	State JSMap
 
-	BrowserInfo   webserv_data.ClientInfo
+	BrowserInfo webserv_data.ClientInfo
+
+	prepared bool // True once application has been able to initialize the session
+
 	widgetManager WidgetManager
 	clickListener ClickListener
 	//URLRequestHandler URLRequestHandler
