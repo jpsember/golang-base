@@ -100,11 +100,6 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	pr("handler, request:", req.RequestURI)
 
 	sess := DetermineSession(oper.sessionManager, w, req, true)
-	//// If it's a new session, it won't have a URL request handler
-	//if sess.URLRequestHandler == nil {
-	//	Alert("#50New session; storing request handler...")
-	//	sess.URLRequestHandler = oper.animalURLRequestHandler
-	//}
 
 	Todo("This shouldn't be done until we have a lock on the session; maybe lock the session throughout the handler?  Or do we already have it?")
 
@@ -149,12 +144,14 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	url, err := url.Parse(req.RequestURI)
 	if err == nil {
 
+		Todo("!Move as much of this as possible to the webserv package")
 		path := url.Path
 		var text string
 		var flag bool
 
 		pr("url path:", path)
 		if path == "/ajax" {
+			Todo("!Use TrimIfPrefix here as well")
 			sess.HandleAjaxRequest(w, req)
 		} else if text, flag = TrimIfPrefix(path, "/r/"); flag {
 			pr("handling blob request with:", text)
@@ -169,12 +166,6 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 				pr("handling resource request for:", path)
 				err = sess.HandleResourceRequest(w, req, oper.resources)
 			}
-			//if !result {
-			//		// If we fail to parse any requests, assume it's a resource, like that stupid favicon
-			//		pr("handling resource request for:", path)
-			//		err := sess.HandleResourceRequest(w, req, oper.resources)
-			//
-			//}
 		}
 	}
 
@@ -309,14 +300,32 @@ func OptSessionUser(sess Session) User {
 	return sess.GetSessionData(SessionKey_User).(User)
 }
 
-// This is our handler for serving up entire pages, either in response to an AJAX call, or the user
-// entering something in the browser address bar. (How can we distinguish between these?)
+// This is our handler for serving up entire pages, as opposed to AJAX requests.
 func (oper AnimalOper) animalURLRequestHandler(w http.ResponseWriter, req *http.Request, s Session, expr string) bool {
 	pr := PrIf(true)
 	pr("animalURLRequestHandler:", expr)
 
 	if expr == "/" {
 		oper.processFullPageRequest(s, w, req)
+		return true
+	}
+
+	if _, found := TrimIfPrefix(expr, "/manager"); found {
+		NewManagerPage(s, s.PageWidget).Generate()
+		oper.processFullPageRequest(s, w, req)
+		return true
+	}
+	Todo("Experiment: checking for editing a particular animal")
+	if remainder, found := TrimIfPrefix(expr, "/edit/"); found {
+		if animalId, err := ParseAsPositiveInt(remainder); err == nil {
+			pr("generating page to edit animal #", animalId)
+			NewEditAnimalPage(s, s.PageWidget, animalId).Generate()
+			oper.processFullPageRequest(s, w, req)
+
+			//	oper.ExperimentSendPageToClient(s, w)
+			return true
+		}
+		return false
 	}
 	return false
 }

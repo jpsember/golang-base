@@ -29,6 +29,8 @@ func (p AnimalFeedPage) Generate() {
 	// Set click listener for this page
 	p.session.SetClickListener(p.clickListener)
 
+	Todo("How do we modify the client's URL to e.g. set `/manager`?")
+
 	m := p.GenerateHeader()
 
 	// If no animals found, add some

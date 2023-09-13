@@ -161,23 +161,9 @@ function jsGetDisplayProperties() {
 
 function jsPopStateEventHandler(e) {
     pr("jsPopStateEventHandler, e:",e)
-    todo("Make an ajax call with the restored url to refresh things")
     var rel_path = window.location.pathname;
-    // But wait a minute!  We probably DON'T want to make an ajax call, since we
-    // will be getting a full web page... or, to be more accurate, we
-    // will be parsing such urls in both the case where user is wanting to load
-    // an entire page, as well as one triggered by our detection of a 'back' button
-    // event.
-
-
-
-    pr("making ajax call to restore url:",rel_path)
-
+    pr("redirecting user to page:",rel_path)
     window.location.href = window.origin + rel_path
-
-
-   // makeAjaxCall(request_key_url,rel_path)
-
 }
 window.addEventListener('popstate', jsPopStateEventHandler);
 
