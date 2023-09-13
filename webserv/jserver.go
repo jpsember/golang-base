@@ -58,19 +58,15 @@ func (s JServer) StartServing() {
 
 // A handler such as this must be thread safe!
 func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("handler, request:", req.RequestURI)
 
 	// We don't know what the session is yet, so we don't have a lock on it...
 	sess := DetermineSession(s.SessionManager, w, req, true)
 
-	Todo("This shouldn't be done until we have a lock on the session; maybe lock the session throughout the handler?  Or do we already have it?")
-
 	// Now that we have the session, lock it
-	Todo("But when we kill the session, i.e. logging out, do we still have the lock?")
 	sess.Lock.Lock()
 	defer sess.ReleaseLockAndDiscardRequest()
-	Todo("We can (temporarily) store the ResponseWriter, Request in the session for simplicity")
 	sess.ResponseWriter = w
 	sess.Request = req
 
@@ -90,7 +86,6 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 	url, err := url.Parse(req.RequestURI)
 	if err == nil {
 
-		Todo("!Move as much of this as possible to the webserv package")
 		path := url.Path
 		var text string
 		var flag bool
@@ -107,11 +102,14 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 			sess.HandleUploadRequest(text)
 		} else {
 			result := s.App.HandleRequest(sess, path)
-			//result := oper.animalURLRequestHandler(w, req, sess, path)
 			if !result {
 				// If we fail to parse any requests, assume it's a resource, like that stupid favicon
 				pr("handling resource request for:", path)
 				err = sess.HandleResourceRequest(s.Resources)
+				if err != nil {
+					Todo("Issue a 404")
+					Alert("<1#50Cannot handle request:", Quoted(path))
+				}
 			}
 		}
 	}
@@ -120,7 +118,6 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 		sess.SetRequestProblem(err)
 	}
 
-	Todo("This code should be done while the lock is still held")
 	if p := sess.GetRequestProblem(); p != nil {
 		Pr("...problem with request, URL:", req.RequestURI, INDENT, p)
 	}

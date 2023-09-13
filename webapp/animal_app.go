@@ -6,7 +6,6 @@ import (
 	"github.com/jpsember/golang-base/jimg"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
-	"net/http"
 )
 
 type AnimalOperStruct struct {
@@ -67,38 +66,18 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 // JServer callback to handle a request.  Returns true if it was handled.
 func (oper AnimalOper) HandleRequest(s Session, path string) bool {
 	pr := PrIf(true)
-	pr("HandleRequest:", path)
 
 	var text string
 	var flag bool
 	if text, flag = TrimIfPrefix(path, "/r/"); flag {
-		pr("handling blob request with:", text)
+		//pr("handling blob request with:", text)
 		oper.handleBlobRequest(s, text)
 		return true
 	}
+	pr("AnimalOper, HandleRequest:", path)
 
-	if path == "/" {
-		oper.debugAutoLogIn(s)
-		oper.renderPage(s)
-		return true
-	}
+	return oper.processPageRequest(s, path)
 
-	if _, found := TrimIfPrefix(path, "/manager"); found {
-		NewManagerPage(s, s.PageWidget).Generate()
-		oper.renderPage(s)
-		return true
-	}
-	Todo("Experiment: checking for editing a particular animal")
-	if remainder, found := TrimIfPrefix(path, "/edit/"); found {
-		if animalId, err := ParseAsPositiveInt(remainder); err == nil {
-			pr("generating page to edit animal #", animalId)
-			NewEditAnimalPage(s, s.PageWidget, animalId).Generate()
-			oper.renderPage(s)
-			return true
-		}
-		return false
-	}
-	return false
 }
 
 func (oper AnimalOper) handleBlobRequest(s Session, blobId string) {
@@ -117,7 +96,8 @@ func (oper AnimalOper) renderPage(sess Session) {
 	oper.writeHeader(sb)
 	RenderWidget(sess.PageWidget, sess, sb)
 	sess.RequestClientInfo(sb)
-	oper.writeFooter(sess.ResponseWriter, sb)
+	oper.writeFooter(sess, sb)
+	WriteResponse(sess.ResponseWriter, "text/html", sb.Bytes())
 }
 
 // Generate the biolerplate header and scripts markup
@@ -135,11 +115,27 @@ func (oper AnimalOper) writeHeader(bp MarkupBuilder) {
 }
 
 // Generate the boilerplate footer markup, then write the page to the response
-func (oper AnimalOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
+func (oper AnimalOper) writeFooter(s Session, bp MarkupBuilder) {
 	bp.CloseTag() // page container
+
+	// Add a bit of javascript that will change the url to what we want
+	if s.PendingURLExpr != "" {
+		Pr("appending URL expr:", s.PendingURLExpr)
+		code := `
+<script type="text/javascript">
+pr('location.origin:',location.origin,'pending url expr:','` + s.PendingURLExpr + `')
+history.pushState(null, null, location.origin+'` + s.PendingURLExpr + `')
+</script>
+`
+  	Pr("Appending code to end of <body>:", VERT_SP, code, VERT_SP)
+
+		bp.WriteString(code)
+	}
+	//history.pushState("object or string representing the state of the page", "new title", "newURL")
 	bp.CloseTag() // body
+
 	bp.A(`</html>`).Cr()
-	WriteResponse(w, "text/html", bp.Bytes())
+
 }
 
 func (oper AnimalOper) prepareDatabase() {
@@ -235,4 +231,38 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 	}
 
 	NewManagerPage(sess, sess.PageWidget).Generate()
+}
+
+// ------------------------------------------------------------------------------------
+// User state and current page
+// ------------------------------------------------------------------------------------
+
+// Parse URL requested by client, and serve up an appropriate page.
+func (oper AnimalOper) processPageRequest(s Session, path string) bool {
+	pr := PrIf(true)
+
+	if path == "/" {
+		oper.debugAutoLogIn(s)
+		oper.renderPage(s)
+		s.SetURLExpression("what", "the", "heck")
+		return true
+	}
+
+	if _, found := TrimIfPrefix(path, "/manager"); found {
+		NewManagerPage(s, s.PageWidget).Generate()
+		oper.renderPage(s)
+		pr("rendered manager page")
+		return true
+	}
+	Todo("Experiment: checking for editing a particular animal")
+	if remainder, found := TrimIfPrefix(path, "/edit/"); found {
+		if animalId, err := ParseAsPositiveInt(remainder); err == nil {
+			pr("generating page to edit animal #", animalId)
+			NewEditAnimalPage(s, s.PageWidget, animalId).Generate()
+			oper.renderPage(s)
+			return true
+		}
+		return false
+	}
+	return false
 }

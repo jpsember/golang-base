@@ -78,7 +78,7 @@ type SessionStruct struct {
 	clientInfoString string // If nonempty information sent from client about screen size, etc
 	ajaxWidgetId     string // Id of widget that ajax call is being sent to
 	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
-	pendingURLExpr   string // If not nil, client browser should push this onto the history
+	PendingURLExpr   string // If not nil, client browser should push this onto the history
 }
 
 var ourDefaultBrowserInfo = webserv_data.NewClientInfo().SetDevicePixelRatio(1.25).SetScreenSizeX(2560).SetScreenSizeY(1440).Build()
@@ -379,9 +379,9 @@ func (s Session) sendAjaxResponse() {
 	s.processRepaintFlags(s.WidgetManager().repaintSet, 0, s.PageWidget, refmap, false)
 
 	jsmap.Put(respKeyWidgetsToRefresh, refmap)
-	if s.pendingURLExpr != "" {
-		jsmap.Put(respKeyURLExpr, s.pendingURLExpr)
-		Pr("sending url expression:", s.pendingURLExpr)
+	if s.PendingURLExpr != "" {
+		jsmap.Put(respKeyURLExpr, s.PendingURLExpr)
+		Pr(VERT_SP, "sending url expression, and clearing:", s.PendingURLExpr, VERT_SP)
 	}
 	pr("sending back to Ajax caller:", INDENT, jsmap)
 	content := jsmap.CompactString()
@@ -401,7 +401,7 @@ func (s Session) ReleaseLockAndDiscardRequest() {
 	s.ajaxWidgetId = ""
 	s.ajaxWidgetValue = ""
 	s.clientInfoString = ""
-	s.pendingURLExpr = ""
+	s.PendingURLExpr = ""
 
 	Todo("!Consider moving the repaint set from the widget manager to the session, and perhaps other things")
 	s.WidgetManager().clearRepaintSet()
@@ -560,24 +560,20 @@ func (s Session) SetClickListener(listener ClickListener) {
 // Working from blog:  https://css-tricks.com/using-the-html5-history-api/
 func (s Session) SetURLExpression(args ...any) {
 	pr := PrIf(true)
-	pr("SetURLExpression")
 
 	sb := strings.Builder{}
 
 	for _, arg := range args {
 		s := strings.TrimSpace(ToString(arg))
 		pr("... ", sb, " + ", Quoted(s))
-		if sb.Len() != 0 {
-			sb.WriteByte('/')
-		}
+		sb.WriteByte('/')
 		sb.WriteString(s)
 	}
-	s.pendingURLExpr = sb.String()
-	pr("pendingURLExpr:", s.pendingURLExpr)
+	s.PendingURLExpr = sb.String()
+	pr(VERT_SP, "SetURLExpression:", s.PendingURLExpr, VERT_SP)
 
 	// Ok, when clicking a button it is not appending the button url to the program 'root' url, rather the current one
 	// Solved by using location.origin
 
 	Todo("!What about: 'Make sure to return true from Javascript click handlers when people middle or command click so that we don’t override them accidentally.'")
-
 }

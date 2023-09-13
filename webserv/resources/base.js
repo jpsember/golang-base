@@ -86,7 +86,8 @@ function processServerResponse(text) {
     if (response_key_url_expr in obj) {
         const urlExpr = obj.u
         pr("update_url_expr:",urlExpr)
-        history.pushState(null, null, urlExpr);
+        pr("origin:",window.origin)
+        history.pushState(null, null, window.origin + urlExpr);
     }
 }
 
