@@ -45,7 +45,8 @@ func DiscardAllSessions(sessionManager SessionManager) {
 }
 
 type ClickListener func(sess *SessionStruct, id string)
-type URLRequestHandler func(sess *SessionStruct, expr string) bool
+
+//type URLRequestHandler func(sess *SessionStruct, expr string) bool
 
 type Session = *SessionStruct
 
@@ -62,10 +63,10 @@ type SessionStruct struct {
 	// JSMap containing widget values, other user session state
 	State JSMap
 
-	BrowserInfo       webserv_data.ClientInfo
-	widgetManager     WidgetManager
-	clickListener     ClickListener
-	URLRequestHandler URLRequestHandler
+	BrowserInfo   webserv_data.ClientInfo
+	widgetManager WidgetManager
+	clickListener ClickListener
+	//URLRequestHandler URLRequestHandler
 
 	// Current request variables
 	responseWriter   http.ResponseWriter
@@ -75,7 +76,6 @@ type SessionStruct struct {
 	ajaxWidgetId     string // Id of widget that ajax call is being sent to
 	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
 	pendingURLExpr   string // If not nil, client browser should push this onto the history
-	requestedURL     string // If not nil, the page to restore, relative to the origin; e.g., '/', '/edit/42'
 }
 
 var ourDefaultBrowserInfo = webserv_data.NewClientInfo().SetDevicePixelRatio(1.25).SetScreenSizeX(2560).SetScreenSizeY(1440).Build()
@@ -264,11 +264,6 @@ func (s Session) parseAjaxRequest(req *http.Request) {
 		s.clientInfoString = clientInfoArray[0]
 	}
 
-	u1 := v[clientKeyURL]
-	if len(u1) == 1 {
-		s.requestedURL = u1[0]
-	}
-
 }
 
 func (s Session) processClientMessage() {
@@ -279,19 +274,6 @@ func (s Session) processClientMessage() {
 	if s.clientInfoString != "" {
 		s.processClientInfo(s.clientInfoString)
 		didSomething = true
-	}
-
-	// If client requested a whole url, parse and handle it
-	//
-	if s.requestedURL != "" {
-		// I think we will deprecate this code... we won't be doing full page refreshes via ajax.
-		if s.URLRequestHandler == nil {
-			Alert("No URLRequestHandler for session!")
-		} else {
-			s.URLRequestHandler(s, s.requestedURL)
-		}
-		didSomething = true
-		return
 	}
 
 	// We can now assume that the request consists of a single widget id, and perhaps a single value
@@ -425,7 +407,6 @@ func (s Session) discardRequest() {
 	s.ajaxWidgetValue = ""
 	s.clientInfoString = ""
 	s.pendingURLExpr = ""
-	s.requestedURL = ""
 
 	Todo("!Consider moving the repaint set from the widget manager to the session, and perhaps other things")
 	s.WidgetManager().clearRepaintSet()

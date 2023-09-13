@@ -100,11 +100,11 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	pr("handler, request:", req.RequestURI)
 
 	sess := DetermineSession(oper.sessionManager, w, req, true)
-	// If it's a new session, it won't have a URL request handler
-	if sess.URLRequestHandler == nil {
-		Alert("#50New session; storing request handler...")
-		sess.URLRequestHandler = oper.animalURLRequestHandler
-	}
+	//// If it's a new session, it won't have a URL request handler
+	//if sess.URLRequestHandler == nil {
+	//	Alert("#50New session; storing request handler...")
+	//	sess.URLRequestHandler = oper.animalURLRequestHandler
+	//}
 
 	Todo("This shouldn't be done until we have a lock on the session; maybe lock the session throughout the handler?  Or do we already have it?")
 
@@ -163,7 +163,7 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 			pr("handling upload request with:", text)
 			sess.HandleUploadRequest(w, req, text)
 		} else {
-			result := oper.animalURLRequestHandler(sess, path)
+			result := oper.animalURLRequestHandler(w, req, sess, path)
 			if !result {
 				// If we fail to parse any requests, assume it's a resource, like that stupid favicon
 				pr("handling resource request for:", path)
@@ -311,12 +311,12 @@ func OptSessionUser(sess Session) User {
 
 // This is our handler for serving up entire pages, either in response to an AJAX call, or the user
 // entering something in the browser address bar. (How can we distinguish between these?)
-func (oper AnimalOper) animalURLRequestHandler(s Session, expr string) bool {
+func (oper AnimalOper) animalURLRequestHandler(w http.ResponseWriter, req *http.Request, s Session, expr string) bool {
 	pr := PrIf(true)
 	pr("animalURLRequestHandler:", expr)
 
 	if expr == "/" {
-		oper.processFullPageRequest(sess, w, req)
+		oper.processFullPageRequest(s, w, req)
 	}
 	return false
 }
