@@ -9,16 +9,14 @@ import (
 )
 
 type GalleryPageStruct struct {
-	BasicPage
+	BasicPageStruct
 }
 
 type GalleryPage = *GalleryPageStruct
 
-func NewGalleryPage(sess Session, parentWidget Widget) GalleryPage {
-	t := &GalleryPageStruct{
-		NewBasicPage(sess, parentWidget),
-	}
-	t.devLabel = "gallery_page"
+func NewGalleryPage(sess Session) GalleryPage {
+	t := &GalleryPageStruct{}
+	InitPage(&t.BasicPageStruct, "gallery", sess, t.generate)
 	return t
 }
 
@@ -27,7 +25,7 @@ const sampleImageId = "sample_image"
 var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
 
-func (p GalleryPage) Generate() {
+func (p GalleryPage) generate() {
 	m := p.GenerateHeader()
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
@@ -192,7 +190,7 @@ func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, valu
 func (p GalleryPage) provideURL() string {
 	pr := PrIf(true)
 	url := ""
-	s := p.session
+	s := p.Session
 	imageId := s.State.OptInt(sampleImageId, 0)
 
 	pr("provideURL, image id read from state:", imageId)

@@ -15,22 +15,19 @@ const (
 )
 
 type SignUpPageStruct struct {
-	BasicPage
+	BasicPageStruct
 }
 
 type SignUpPage = *SignUpPageStruct
 
-func NewSignUpPage(session Session, parentPage Widget) SignUpPage {
-	t := &SignUpPageStruct{
-		NewBasicPage(session, parentPage),
-	}
-	t.devLabel = "signup_page"
+func NewSignUpPage(session Session) SignUpPage {
+	t := &SignUpPageStruct{}
+	InitPage(&t.BasicPageStruct, "signup", session, t.generate)
 	return t
 }
 
-func (p SignUpPage) Generate() {
-
-	p.session.DeleteStateErrors()
+func (p SignUpPage) generate() {
+	p.Session.DeleteStateErrors()
 	m := p.GenerateHeader()
 
 	m.Label("Sign Up Page").Size(SizeLarge).AddHeading()
@@ -119,7 +116,7 @@ func (p SignUpPage) signUpListener(s Session, widget Widget) {
 	b.SetPassword(s.State.OptString(id_user_pwd, ""))
 	b.SetEmail(s.State.OptString(id_user_email, ""))
 
-	errcount := WidgetErrorCount(p.parentPage, s.State)
+	errcount := WidgetErrorCount(s.PageWidget, s.State)
 	pr("error count:", errcount)
 	if errcount != 0 {
 		return

@@ -18,39 +18,36 @@ const (
 )
 
 type CreateAnimalPageStruct struct {
-	BasicPage
+	BasicPageStruct
 	animalId int
 	editing  bool
 }
 
 type CreateAnimalPage = *CreateAnimalPageStruct
 
-func NewCreateAnimalPage(sess Session, parentWidget Widget) AbstractPage {
+func NewCreateAnimalPage(sess Session) CreateAnimalPage {
 	t := &CreateAnimalPageStruct{
-		BasicPage: NewBasicPage(sess, parentWidget),
-		editing:   true,
+		editing: true,
 	}
-	t.devLabel = "create_animal_page"
+	InitPage(&t.BasicPageStruct, "new", sess, t.generate)
 	return t
 }
 
-func NewEditAnimalPage(sess Session, parentWidget Widget, animalId int) AbstractPage {
+func NewEditAnimalPage(sess Session, animalId int) CreateAnimalPage {
 	t := &CreateAnimalPageStruct{
-		BasicPage: NewBasicPage(sess, parentWidget),
-		animalId:  animalId,
-		editing:   true,
+		animalId: animalId,
+		editing:  true,
 	}
-	t.devLabel = "edit_animal_page"
+	InitPage(&t.BasicPageStruct, "edit", sess, t.generate)
 	return t
 }
 
-func NewViewAnimalPage(sess Session, parentWidget Widget, animalId int) AbstractPage {
+func NewViewAnimalPage(sess Session, parentWidget Widget, animalId int) CreateAnimalPage {
 	t := &CreateAnimalPageStruct{
-		BasicPage: NewBasicPage(sess, parentWidget),
-		animalId:  animalId,
-		editing:   false,
+		animalId: animalId,
+		editing:  false,
 	}
-	t.devLabel = "edit_animal_page"
+	InitPage(&t.BasicPageStruct, "view", sess, t.generate)
 	return t
 }
 
@@ -63,17 +60,18 @@ func (p CreateAnimalPage) readStateFromAnimal() {
 			return
 		}
 	}
-	s := p.session.State
+	s := p.Session.State
 	s.Put(id_animal_name, a.Name())
 	s.Put(id_animal_summary, a.Summary())
 	s.Put(id_animal_details, a.Details())
 	s.Put(id_animal_display_pic, a.PhotoThumbnail())
 }
 
-func (p CreateAnimalPage) Generate() {
+func (p CreateAnimalPage) generate() {
+	s := p.Session
 	//SetWidgetDebugRendering()
-	p.session.SetClickListener(nil)
-	p.session.DeleteStateFieldsWithPrefix(anim_state_prefix)
+	s.SetClickListener(nil)
+	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
 	p.GenerateHeader()
 
 	p.readStateFromAnimal()
@@ -90,7 +88,7 @@ func (p CreateAnimalPage) Generate() {
 }
 
 func (p CreateAnimalPage) generateForEditing() {
-	m := p.session.WidgetManager()
+	m := p.Session.WidgetManager()
 	m.Col(6).Open()
 	{
 		m.Col(12)
@@ -124,10 +122,10 @@ func (p CreateAnimalPage) generateForEditing() {
 }
 
 func (p CreateAnimalPage) generateForViewing() {
-	m := p.session.WidgetManager()
+	m := p.Session.WidgetManager()
 
 	// Experiment: try modifying the url
-	p.session.SetURLExpression(`edit`, p.animalId)
+	p.Session.SetURLExpression(`edit`, p.animalId)
 
 	m.Col(6).Open()
 	{
@@ -222,7 +220,7 @@ func (p CreateAnimalPage) createAnimalButtonListener(s Session, widget Widget) {
 
 func (p CreateAnimalPage) validateAll() bool {
 	pr := PrIf(true)
-	s := p.session
+	s := p.Session
 
 	{
 		text := s.WidgetStrValue(id_animal_name)
@@ -239,7 +237,7 @@ func (p CreateAnimalPage) validateAll() bool {
 		}
 	}
 
-	errcount := WidgetErrorCount(p.parentPage, s.State)
+	errcount := WidgetErrorCount(s.PageWidget, s.State)
 	pr("error count:", errcount)
 	return errcount == 0
 }
@@ -295,7 +293,7 @@ func (p CreateAnimalPage) abortEditListener(s Session, widget Widget) {
 }
 
 func (p CreateAnimalPage) writeStateToAnimal(b AnimalBuilder) {
-	s := p.session
+	s := p.Session
 	b.SetName(strings.TrimSpace(s.WidgetStrValue(id_animal_name)))
 	b.SetSummary(strings.TrimSpace(s.WidgetStrValue(id_animal_summary)))
 	b.SetDetails(strings.TrimSpace(s.WidgetStrValue(id_animal_details)))
@@ -304,7 +302,7 @@ func (p CreateAnimalPage) writeStateToAnimal(b AnimalBuilder) {
 }
 
 func (p CreateAnimalPage) exit() {
-	s := p.session
+	s := p.Session
 
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
 
@@ -312,7 +310,7 @@ func (p CreateAnimalPage) exit() {
 	s.DeleteSessionData(SessionKey_MgrList)
 
 	Todo("Do a 'back' operation to go back to the previous page")
-	NewManagerPage(s, p.parentPage).Generate()
+	NewManagerPage(s).Generate()
 }
 
 func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (string, error) {
@@ -432,7 +430,7 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget FileUpload, by [
 func (p CreateAnimalPage) provideURL() string {
 	pr := PrIf(false)
 	url := ""
-	s := p.session
+	s := p.Session
 	imageId := s.WidgetIntValue(id_animal_display_pic)
 
 	if imageId == 0 {

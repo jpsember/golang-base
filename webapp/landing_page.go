@@ -7,21 +7,23 @@ import (
 )
 
 type LandingPageStruct struct {
-	BasicPage
+	BasicPageStruct
+	animalId int
+	editing  bool
 }
 
 type LandingPage = *LandingPageStruct
 
-func NewLandingPage(sess Session, parentWidget Widget) LandingPage {
+func NewLandingPage(sess Session) LandingPage {
 	t := &LandingPageStruct{
-		NewBasicPage(sess, parentWidget),
+		editing: true,
 	}
-	t.devLabel = "landing_page"
+	InitPage(&t.BasicPageStruct, "hello", sess, t.generate)
 	return t
 }
 
-func (p LandingPage) Generate() {
-	s := p.session.State
+func (p LandingPage) generate() {
+	s := p.Session.State
 	s.DeleteEach(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
 
 	m := p.GenerateHeader()
@@ -76,7 +78,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 	var user webapp_data.User
 	prob := ""
 	for {
-		errcount := WidgetErrorCount(p.parentPage, sess.State)
+		errcount := WidgetErrorCount(sess.PageWidget, sess.State)
 		if errcount != 0 {
 			break
 		}
@@ -136,23 +138,21 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 	} else {
 		switch user.UserClass() {
 		case webapp_data.UserClassDonor:
-			sp := NewAnimalFeedPage(sess, p.parentPage)
-			sp.Generate()
+			NewFeedPage(sess).Generate()
 			break
 		case webapp_data.UserClassManager:
 			Todo("?Maybe make AnimalFeed, Manager pages implement a common interface")
-			sp := NewManagerPage(sess, p.parentPage)
-			sp.Generate()
+		NewManagerPage(sess).Generate()
 		}
 	}
 }
 
 func (p LandingPage) signUpListener(s Session, widget Widget) {
-	NewSignUpPage(s, p.parentPage).Generate()
+	NewSignUpPage(s).Generate()
 }
 
 func (p LandingPage) galleryListener(sess Session, widget Widget) {
-	NewGalleryPage(sess, p.parentPage).Generate()
+	NewGalleryPage(sess).Generate()
 }
 
 func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {

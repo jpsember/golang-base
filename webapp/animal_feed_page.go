@@ -6,28 +6,27 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-type AnimalFeedPageStruct struct {
-	BasicPage
+type FeedPageStruct struct {
+	BasicPageStruct
 }
 
-type AnimalFeedPage = *AnimalFeedPageStruct
+type FeedPage = *FeedPageStruct
+
+func NewFeedPage(s Session) FeedPage {
+	t := &FeedPageStruct{}
+	InitPage(&t.BasicPageStruct, "feed", s, t.generate)
+	return t
+}
 
 const feed_id_prefix = "feed."
 const (
 	id_feed_list = feed_id_prefix + "list"
 )
 
-func NewAnimalFeedPage(sess Session, parentWidget Widget) AnimalFeedPage {
-	t := &AnimalFeedPageStruct{
-		NewBasicPage(sess, parentWidget),
-	}
-	t.devLabel = "animal_feed_page"
-	return t
-}
-
-func (p AnimalFeedPage) Generate() {
+func (p FeedPage) generate() {
+	s := p.Session
 	// Set click listener for this page
-	p.session.SetClickListener(p.clickListener)
+	s.SetClickListener(p.clickListener)
 
 	Todo("How do we modify the client's URL to e.g. set `/manager`?")
 
@@ -42,26 +41,27 @@ func (p AnimalFeedPage) Generate() {
 	m.Id(id_feed_list).AddList(al, p.renderItem, p.listListener)
 }
 
-func (p AnimalFeedPage) animalList() AnimalList {
+func (p FeedPage) animalList() AnimalList {
 	key := SessionKey_FeedList
-	alist := p.session.OptSessionData(key)
+	s := p.Session
+	alist := s.OptSessionData(key)
 	if alist == nil {
 		alist = p.constructAnimalList()
-		p.session.PutSessionData(key, alist)
+		s.PutSessionData(key, alist)
 	}
 	return alist.(AnimalList)
 }
 
-func (p AnimalFeedPage) constructAnimalList() AnimalList {
+func (p FeedPage) constructAnimalList() AnimalList {
 	animalList := NewAnimalList(getAnimals())
 	return animalList
 }
 
-func (p AnimalFeedPage) newAnimalListener(sess Session, widget Widget) {
-	NewCreateAnimalPage(sess, p.parentPage).Generate()
+func (p FeedPage) newAnimalListener(sess Session, widget Widget) {
+	NewCreateAnimalPage(sess).Generate()
 }
 
-func (p AnimalFeedPage) listListener(sess Session, widget ListWidget) error {
+func (p FeedPage) listListener(sess Session, widget ListWidget) error {
 	Pr("listener event:", widget.Id())
 	return nil
 }
@@ -78,17 +78,17 @@ func getAnimals() []int {
 	return result
 }
 
-func (p AnimalFeedPage) renderItem(widget ListWidget, elementId int, m MarkupBuilder) {
+func (p FeedPage) renderItem(widget ListWidget, elementId int, m MarkupBuilder) {
 	anim, err := ReadActualAnimal(elementId)
 	if ReportIfError(err, "renderItem in animal feed page:", elementId) {
 		return
 	}
 	m.OpenTag(`div class="col-sm-3"`)
-	RenderAnimalCard(p.session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
+	RenderAnimalCard(p.Session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
 	m.CloseTag()
 }
 
-func (p AnimalFeedPage) clickListener(sess Session, message string) {
+func (p FeedPage) clickListener(sess Session, message string) {
 	if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
 		id, err1 := ParseAsPositiveInt(id_str)
 		if ReportIfError(err1, "AnimalFeedPage parsing", message) {
@@ -104,7 +104,7 @@ func (p AnimalFeedPage) clickListener(sess Session, message string) {
 	}
 
 	Todo("Pages, and perhaps Sessions, should have embeddings to simplify expressions like this one:")
-	listWidget := p.session.WidgetManager().Get(id_feed_list).(ListWidget)
+	listWidget := p.Session.WidgetManager().Get(id_feed_list).(ListWidget)
 
 	if listWidget.HandleClick(sess, message) {
 

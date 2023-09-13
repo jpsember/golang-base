@@ -7,16 +7,14 @@ import (
 )
 
 type ManagerPageStruct struct {
-	BasicPage
+	BasicPageStruct
 }
 
 type ManagerPage = *ManagerPageStruct
 
-func NewManagerPage(sess Session, parentWidget Widget) ManagerPage {
-	t := &ManagerPageStruct{
-		NewBasicPage(sess, parentWidget),
-	}
-	t.devLabel = "manager_page"
+func NewManagerPage(session Session) ManagerPage {
+	t := &ManagerPageStruct{}
+	InitPage(&t.BasicPageStruct, "manager", session, t.generate)
 	return t
 }
 
@@ -25,7 +23,7 @@ const (
 	id_manager_list = manager_id_prefix + "list"
 )
 
-func (p ManagerPage) Generate() {
+func (p ManagerPage) generate() {
 	Todo("?Think about ways of cleaning up the click listener which is not tied to a widget")
 	//SetWidgetDebugRendering()
 	m := p.GenerateHeader()
@@ -39,7 +37,7 @@ func (p ManagerPage) Generate() {
 	m.Close()
 
 	// Set click listener for the card list
-	p.session.SetClickListener(p.clickListener)
+	p.Session.SetClickListener(p.clickListener)
 
 	al := p.animalList()
 	m.Id(id_manager_list).AddList(al, p.renderItem, p.listListener)
@@ -47,22 +45,22 @@ func (p ManagerPage) Generate() {
 
 func (p ManagerPage) animalList() AnimalList {
 	key := SessionKey_MgrList
-	alist := p.session.OptSessionData(key)
+	alist := p.Session.OptSessionData(key)
 	if alist == nil {
 		alist = p.constructAnimalList()
-		p.session.PutSessionData(key, alist)
+		p.Session.PutSessionData(key, alist)
 	}
 	return alist.(AnimalList)
 }
 
 func (p ManagerPage) constructAnimalList() AnimalList {
-	managerId := SessionUser(p.session).Id()
+	managerId := SessionUser(p.Session).Id()
 	animalList := NewAnimalList(getManagerAnimals(managerId))
 	return animalList
 }
 
 func (p ManagerPage) newAnimalListener(sess Session, widget Widget) {
-	NewCreateAnimalPage(sess, p.parentPage).Generate()
+	NewCreateAnimalPage(sess).Generate()
 }
 
 func (p ManagerPage) listListener(sess Session, widget ListWidget) error {
@@ -108,7 +106,7 @@ func (p ManagerPage) renderItem(widget ListWidget, elementId int, m MarkupBuilde
 	//<div class="card bg-light mb-3 animal-card">
 
 	m.OpenTag(`div class="col-sm-3"`)
-	RenderAnimalCard(p.session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
+	RenderAnimalCard(p.Session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
 	m.CloseTag()
 }
 
@@ -126,6 +124,7 @@ func (p ManagerPage) clickListener(sess Session, message string) {
 			return
 		}
 		sess.SetClickListener(nil)
-		NewEditAnimalPage(sess, sess.PageWidget, anim.Id()).Generate()
+
+		NewEditAnimalPage(sess, anim.Id()).Generate()
 	}
 }

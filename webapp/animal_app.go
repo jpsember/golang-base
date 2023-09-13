@@ -9,12 +9,13 @@ import (
 )
 
 type AnimalOperStruct struct {
-	appRoot      Path
-	headerMarkup string
-	FullWidth    bool // If true, page occupies full width of screen
-	TopPadding   int  // If nonzero, adds padding to top of page
-	autoLoggedIn bool
-	resources    Path
+	appRoot       Path
+	headerMarkup  string
+	FullWidth     bool // If true, page occupies full width of screen
+	TopPadding    int  // If nonzero, adds padding to top of page
+	autoLoggedIn  bool
+	resources     Path
+	pageRequester PageRequester
 }
 
 type AnimalOper = *AnimalOperStruct
@@ -41,6 +42,8 @@ func (oper AnimalOper) Perform(app *App) {
 	oper.headerMarkup = oper.resources.JoinM("header.html").ReadStringM()
 	oper.prepareDatabase()
 
+	oper.pageRequester = NewPageRequester()
+
 	// Initialize and start the JServer
 	//
 	{
@@ -60,7 +63,7 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 	user := DefaultUser
 	sess.PutSessionData(SessionKey_User, user)
 	CheckState(user.Id() == 0)
-	NewLandingPage(sess, sess.PageWidget).Generate()
+	NewLandingPage(sess).Generate()
 }
 
 // JServer callback to handle a request.  Returns true if it was handled.
@@ -127,7 +130,7 @@ pr('location.origin:',location.origin,'pending url expr:','` + s.PendingURLExpr 
 history.pushState(null, null, location.origin+'` + s.PendingURLExpr + `')
 </script>
 `
-  	Pr("Appending code to end of <body>:", VERT_SP, code, VERT_SP)
+		Pr("Appending code to end of <body>:", VERT_SP, code, VERT_SP)
 
 		bp.WriteString(code)
 	}
@@ -209,28 +212,29 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 	oper.autoLoggedIn = true
 	Alert("Auto logging in")
 
-	if false {
-		NewGalleryPage(sess, sess.PageWidget).Generate()
-		return
-	}
+	//if false {
+	//	NewGalleryPage(sess, sess.PageWidget).Generate()
+	//	return
+	//}
 	user2, _ := ReadUserWithName("manager1")
+	Pr("read user:", user2)
 	if user2.Id() == 0 {
 		return
 	}
 	if !TryLoggingIn(sess, user2) {
 		return
 	}
-
+	//
 	if true {
-		NewAnimalFeedPage(sess, sess.PageWidget).Generate()
+		NewFeedPage(sess).Generate()
 		return
 	}
-	if false {
-		NewCreateAnimalPage(sess, sess.PageWidget).Generate()
-		return
-	}
-
-	NewManagerPage(sess, sess.PageWidget).Generate()
+	////if false {
+	////	NewCreateAnimalPage(sess, sess.PageWidget).Generate()
+	////	return
+	////}
+	//
+	//NewManagerPage(sess, sess.PageWidget).Generate()
 }
 
 // ------------------------------------------------------------------------------------
@@ -241,6 +245,10 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 	pr := PrIf(true)
 
+	if false {
+		return oper.pageRequester.Process(s, SessionUser(s), path)
+	}
+
 	if path == "/" {
 		oper.debugAutoLogIn(s)
 		oper.renderPage(s)
@@ -249,7 +257,7 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 	}
 
 	if _, found := TrimIfPrefix(path, "/manager"); found {
-		NewManagerPage(s, s.PageWidget).Generate()
+		NewManagerPage(s).Generate()
 		oper.renderPage(s)
 		pr("rendered manager page")
 		return true
@@ -258,7 +266,8 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 	if remainder, found := TrimIfPrefix(path, "/edit/"); found {
 		if animalId, err := ParseAsPositiveInt(remainder); err == nil {
 			pr("generating page to edit animal #", animalId)
-			NewEditAnimalPage(s, s.PageWidget, animalId).Generate()
+			page := NewEditAnimalPage(s, animalId)
+			page.Generate()
 			oper.renderPage(s)
 			return true
 		}
