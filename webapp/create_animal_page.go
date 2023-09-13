@@ -127,7 +127,7 @@ func (p CreateAnimalPage) generateForViewing() {
 	m := p.session.WidgetManager()
 
 	// Experiment: try modifying the url
-	p.session.SetURLPage(`edit/`, p.animalId)
+	p.session.SetURLExpression(`edit`, p.animalId)
 
 	m.Col(6).Open()
 	{
@@ -141,14 +141,9 @@ func (p CreateAnimalPage) generateForViewing() {
 		//m.Label("Details").Id(id_animal_details).AddInput(p.AnimalTextListener)
 		//m.Size(SizeTiny).Label("Additional paragraphs to appear on the 'details' view.").AddText()
 		//
-		//m.Col(6)
-		//if p.animalId != 0 {
-		//	m.Label("Done").AddButton(p.doneEditListener)
-		//	m.Label("Abort").AddButton(p.abortEditListener)
-		//} else {
-		//	m.Label("Create").AddButton(p.createAnimalButtonListener)
-		//	m.Label("Abort").AddButton(p.abortEditListener)
-		//}
+		m.Col(6)
+		m.Label("Done").AddButton(p.doneViewListener)
+
 	}
 	m.Close()
 
@@ -288,6 +283,10 @@ func (p CreateAnimalPage) doneEditListener(s Session, widget Widget) {
 		return
 	}
 	pr("updated animal", b)
+	p.exit()
+}
+
+func (p CreateAnimalPage) doneViewListener(s Session, widget Widget) {
 	p.exit()
 }
 

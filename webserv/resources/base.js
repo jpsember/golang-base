@@ -90,8 +90,8 @@ function processServerResponse(text) {
 }
 
 function makeAjaxCall(...args) {
-    const addr = window.location.href.split('?')[0];
-    const url = new URL(addr + 'ajax');
+    const addr = location.origin
+    const url = new URL(addr + '/ajax');
     for (let i = 0; i < args.length; i+=2) {
         url.searchParams.set(args[i],args[i+1])
     }
@@ -121,18 +121,8 @@ function jsVal(id) {
 // An onchange event has occurred within a file upload
 function jsUpload(id) {
     db("jsUpload",id)
-
-
-//     function uploadFiles() {
- //const url = 'https://httpbin.org/post';
-
-
-     const addr = window.location.href.split('?')[0];
+    const addr = window.location.href.split('?')[0];
     const url = new URL(addr + 'upload/' + id);
-    // url.searchParams.
-    // for (let i = 0; i < args.length; i+=2) {
-    //     url.searchParams.set(args[i],args[i+1])
-    // }
     const xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
@@ -141,20 +131,8 @@ function jsUpload(id) {
     };
     xhttp.open('POST', url);
     formElem = document.getElementById(id+'.form')
-     const data = new FormData(formElem);
+    const data = new FormData(formElem);
     xhttp.send(data);
-//   const method = 'post';
-//
-//   const xhr = new XMLHttpRequest();
-//
-
-//
-//   xhr.open(method, url);
-//   xhr.send(data);
-// }
-//
-
-  //  makeAjaxCall(request_key_widget, id)
 }
 
 

@@ -552,15 +552,28 @@ func (s Session) SetClickListener(listener ClickListener) {
 }
 
 // Cause a new URL to be pushed onto the browser history.  This gets sent when the AJAX response is sent.
-func (s Session) SetURLPage(args ...any) {
+//
+// Working from blog:  https://css-tricks.com/using-the-html5-history-api/
+func (s Session) SetURLExpression(args ...any) {
+	pr := PrIf(true)
+	pr("SetURLExpression")
+
 	sb := strings.Builder{}
 
 	for _, arg := range args {
 		s := strings.TrimSpace(ToString(arg))
+		pr("... ", sb, " + ", Quoted(s))
 		if sb.Len() != 0 {
 			sb.WriteByte('/')
 		}
 		sb.WriteString(s)
 	}
 	s.pendingURLExpr = sb.String()
+	pr("pendingURLExpr:", s.pendingURLExpr)
+
+	// Ok, when clicking a button it is not appending the button url to the program 'root' url, rather the current one
+	// Solved by using location.origin
+
+	Todo("!What about: 'Make sure to return true from Javascript click handlers when people middle or command click so that we don’t override them accidentally.'")
+
 }
