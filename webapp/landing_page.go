@@ -6,6 +6,10 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
+const LandingPageName = "signin"
+
+var LandingPageTemplate = NewLandingPage(nil)
+
 type LandingPageStruct struct {
 	BasicPageStruct
 	animalId int
@@ -18,7 +22,7 @@ func NewLandingPage(sess Session) LandingPage {
 	t := &LandingPageStruct{
 		editing: true,
 	}
-	InitPage(&t.BasicPageStruct, "hello", sess, t.generate)
+	InitPage(&t.BasicPageStruct, LandingPageName, sess, t.generate)
 	return t
 }
 
@@ -142,7 +146,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 			break
 		case webapp_data.UserClassManager:
 			Todo("?Maybe make AnimalFeed, Manager pages implement a common interface")
-		NewManagerPage(sess).Generate()
+			NewManagerPage(sess).Generate()
 		}
 	}
 }

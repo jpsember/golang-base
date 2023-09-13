@@ -43,6 +43,7 @@ func (oper AnimalOper) Perform(app *App) {
 	oper.prepareDatabase()
 
 	oper.pageRequester = NewPageRequester()
+	oper.registerPages(oper.pageRequester)
 
 	// Initialize and start the JServer
 	//
@@ -245,8 +246,8 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 	pr := PrIf(true)
 
-	if false {
-		return oper.pageRequester.Process(s, SessionUser(s), path)
+	if true {
+		return oper.pageRequester.Process(s, path)
 	}
 
 	if path == "/" {
@@ -274,4 +275,27 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 		return false
 	}
 	return false
+}
+
+func (oper AnimalOper) registerPages(r PageRequester) {
+
+	r.RegisterPage(LandingPageName, LandingPageTemplate)
+	r.RegisterPage(FeedPageName, FeedPageTemplate)
+
+	//
+	//
+	//
+	//Pr("landing page:",x.PageName,x.animalId)
+	//y = &x.BasicPageStruct
+	//Pr("pointer to basic page struct:",y)
+	//
+	//
+	//q := &x.BasicPageStruct
+	//r := q.(LandingPage)
+	//
+	////z = (y.(*LandingPageStruct))
+	//z = &(y.(LandingPage))
+	//Pr("
+	//
+	//r.Register(NewLandingPage(nil))
 }

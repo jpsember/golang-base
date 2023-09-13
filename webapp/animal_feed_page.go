@@ -12,13 +12,17 @@ type FeedPageStruct struct {
 
 type FeedPage = *FeedPageStruct
 
+var FeedPageTemplate = NewFeedPage(nil)
+
+const FeedPageName = "feed"
+
 func NewFeedPage(s Session) FeedPage {
 	t := &FeedPageStruct{}
-	InitPage(&t.BasicPageStruct, "feed", s, t.generate)
+	InitPage(&t.BasicPageStruct, FeedPageName, s, t.generate)
 	return t
 }
 
-const feed_id_prefix = "feed."
+const feed_id_prefix = FeedPageName + "."
 const (
 	id_feed_list = feed_id_prefix + "list"
 )

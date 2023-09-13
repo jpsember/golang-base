@@ -16,7 +16,7 @@ type BasicPage = *BasicPageStruct
 
 func InitPage(pg BasicPage, name string, sess Session, gen PageGenerateFunc) {
 	Todo("!Move BasicPage to webserv package")
-	CheckArg(sess != nil)
+	//CheckArg(sess != nil)
 	CheckArg(name != "")
 	CheckArg(gen != nil)
 	pg.PageName = name

@@ -18,7 +18,11 @@ func NewManagerPage(session Session) ManagerPage {
 	return t
 }
 
-const manager_id_prefix = "manager."
+var ManagerPageTemplate = NewManagerPage(nil)
+
+const ManagerPageName = "manager"
+
+const manager_id_prefix = ManagerPageName + "."
 const (
 	id_manager_list = manager_id_prefix + "list"
 )
