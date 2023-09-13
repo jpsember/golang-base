@@ -82,6 +82,7 @@ func (oper AnimalOper) Perform(app *App) {
 					BadState("<1Panic during http.HandleFunc:", r)
 				}
 			}()
+			Todo("!This should be moved to the webserv package, maybe if an initialization parameter was specified")
 			oper.handle(w, req)
 		})
 
@@ -99,9 +100,15 @@ func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
 	pr := PrIf(true)
 	pr("handler, request:", req.RequestURI)
 
+	// We don't know what the session is yet, so we don't have a lock on it...
 	sess := DetermineSession(oper.sessionManager, w, req, true)
 
 	Todo("This shouldn't be done until we have a lock on the session; maybe lock the session throughout the handler?  Or do we already have it?")
+
+	// Now that we have the session, lock it
+	Todo("But when we kill the session, i.e. logging out, do we still have the lock?")
+	sess.Mutex2.Lock()
+	defer sess.Mutex2.Unlock()
 
 	optUser := sess.OptSessionData(SessionKey_User)
 	if optUser == nil {
@@ -191,11 +198,6 @@ func (oper AnimalOper) handleBlobRequest(w http.ResponseWriter, req *http.Reques
 }
 
 func (oper AnimalOper) processFullPageRequest(sess Session, w http.ResponseWriter, req *http.Request) {
-	// Construct a session if none found, and a widget for a full webpage
-	//sess := DetermineSession(oper.sessionManager, w, req, true)
-	sess.Mutex.Lock()
-	defer sess.Mutex.Unlock()
-
 	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
 	CheckState(sess.PageWidget != nil, "no PageWidget!")

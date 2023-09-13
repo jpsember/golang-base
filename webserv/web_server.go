@@ -6,6 +6,7 @@ import (
 	"strings"
 )
 
+// This function must be threadsafe!
 func DetermineSession(manager SessionManager, w http.ResponseWriter, req *http.Request, createIfNone bool) Session {
 
 	const sessionCookieName = "session_cookie"

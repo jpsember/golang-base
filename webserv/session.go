@@ -59,7 +59,7 @@ type SessionStruct struct {
 	// widget representing the entire page; nil if not constructed yet
 	PageWidget Widget
 	// Lock for making request handling thread safe; we synchronize a particular session's requests
-	Mutex sync.RWMutex
+	Mutex2 sync.RWMutex
 	// JSMap containing widget values, other user session state
 	State JSMap
 
@@ -121,7 +121,6 @@ func ParseSession(source JSEntity) Session {
 // Prepare for serving a client request from this session's user. Acquire a lock on this session.
 func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 	defer s.discardRequest()
-	s.Mutex.Lock()
 	s.responseWriter = w
 	s.request = req
 	s.parseAjaxRequest(req)
@@ -133,7 +132,6 @@ func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
 }
 
 func (s Session) HandleUploadRequest(w http.ResponseWriter, req *http.Request, widgetId string) {
-	s.Mutex.Lock()
 	defer s.discardRequest()
 	s.responseWriter = w
 	s.request = req
@@ -215,7 +213,6 @@ func (s Session) processUpload(w http.ResponseWriter, req *http.Request, uploadW
 
 // Serve a request for a resource
 func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request, resourcePath Path) error {
-	s.Mutex.Lock()
 	defer s.discardRequest()
 	s.responseWriter = w
 
@@ -393,9 +390,9 @@ func (s Session) sendAjaxResponse() {
 	WriteResponse(s.responseWriter, "application/json", []byte(content))
 }
 
-// Discard state added to session to serve a request; release session lock.
+// Discard state added to session to serve a request.
 func (s Session) discardRequest() {
-	defer s.Mutex.Unlock()
+	Todo("This can be done for *all* requests to simplify things")
 	problem := s.requestProblem
 	if problem != nil {
 		Pr("Problem processing client message:", INDENT, problem)
