@@ -7,7 +7,6 @@ import (
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
 	"net/http"
-	"strings"
 )
 
 var AutoActivateUser = Alert("?Automatically activating user")
@@ -17,8 +16,9 @@ type AnimalOperStruct struct {
 	headerMarkup string
 	FullWidth    bool // If true, page occupies full width of screen
 	TopPadding   int  // If nonzero, adds padding to top of page
-	server       JServer
+	//server       JServer
 	autoLoggedIn bool
+	resources    Path
 }
 
 type AnimalOper = *AnimalOperStruct
@@ -45,10 +45,11 @@ func (oper AnimalOper) Perform(app *App) {
 	ExitOnPanic()
 
 	s := NewJServer()
-	oper.server = s
+	//oper.server = s
 	s.App = oper
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
-	s.Resources = oper.appRoot.JoinM("resources")
+	oper.resources = oper.appRoot.JoinM("resources")
+	s.Resources = oper.resources
 	s.SessionManager = BuildSessionMap()
 	s.BaseURL = "jeff.org"
 	s.KeyDir = oper.appRoot.JoinM("https_keys")
@@ -65,11 +66,7 @@ func (oper AnimalOper) Perform(app *App) {
 		PopulateDatabase()
 	}
 
-	{
-		sb := strings.Builder{}
-		sb.WriteString(s.Resources.JoinM("header.html").ReadStringM())
-		oper.headerMarkup = sb.String()
-	}
+	oper.headerMarkup = s.Resources.JoinM("header.html").ReadStringM()
 
 	s.StartServing()
 }
@@ -81,37 +78,37 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 	NewLandingPage(sess, sess.PageWidget).Generate()
 }
 
-func (oper AnimalOper) HandleRequest(path string, w http.ResponseWriter, req *http.Request, s Session, expr string) bool {
+func (oper AnimalOper) HandleRequest(w http.ResponseWriter, s Session, path string) bool {
 	pr := PrIf(true)
 
-	pr("HandleRequest:", expr)
+	pr("HandleRequest:", path)
 
 	var text string
 	var flag bool
 	if text, flag = TrimIfPrefix(path, "/r/"); flag {
 		pr("handling blob request with:", text)
-		err := oper.handleBlobRequest(w, req, text)
+		err := oper.handleBlobRequest(w, text)
 		ReportIfError(err, "handling blob request")
 		return true
 	}
 
-	if expr == "/" {
+	if path == "/" {
 		oper.debugAutoLogIn(s)
-		oper.processFullPageRequest(s, w, req)
+		oper.processFullPageRequest(s, w)
 		return true
 	}
 
-	if _, found := TrimIfPrefix(expr, "/manager"); found {
+	if _, found := TrimIfPrefix(path, "/manager"); found {
 		NewManagerPage(s, s.PageWidget).Generate()
-		oper.processFullPageRequest(s, w, req)
+		oper.processFullPageRequest(s, w)
 		return true
 	}
 	Todo("Experiment: checking for editing a particular animal")
-	if remainder, found := TrimIfPrefix(expr, "/edit/"); found {
+	if remainder, found := TrimIfPrefix(path, "/edit/"); found {
 		if animalId, err := ParseAsPositiveInt(remainder); err == nil {
 			pr("generating page to edit animal #", animalId)
 			NewEditAnimalPage(s, s.PageWidget, animalId).Generate()
-			oper.processFullPageRequest(s, w, req)
+			oper.processFullPageRequest(s, w)
 			return true
 		}
 		return false
@@ -119,7 +116,7 @@ func (oper AnimalOper) HandleRequest(path string, w http.ResponseWriter, req *ht
 	return false
 }
 
-func (oper AnimalOper) handleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) error {
+func (oper AnimalOper) handleBlobRequest(w http.ResponseWriter, blobId string) error {
 	blob := SharedWebCache.GetBlobWithName(blobId)
 	if blob.Id() == 0 {
 		Alert("#50Can't find blob with name:", Quoted(blobId))
@@ -130,7 +127,7 @@ func (oper AnimalOper) handleBlobRequest(w http.ResponseWriter, req *http.Reques
 	return err
 }
 
-func (oper AnimalOper) processFullPageRequest(sess Session, w http.ResponseWriter, req *http.Request) {
+func (oper AnimalOper) processFullPageRequest(sess Session, w http.ResponseWriter) {
 	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
@@ -187,7 +184,7 @@ func (oper AnimalOper) prepareDatabase() {
 	if b, _ := ReadBlob(1); b.Id() == 0 {
 
 		// Generate default images as blobs
-		animalPicPlaceholderPath := oper.server.Resources.JoinM("placeholder.jpg")
+		animalPicPlaceholderPath := oper.resources.JoinM("placeholder.jpg")
 		img := CheckOkWith(jimg.DecodeImage(animalPicPlaceholderPath.ReadBytesM()))
 		img = img.ScaleToSize(AnimalPicSizeNormal)
 		jpeg := CheckOkWith(img.ToJPEG())

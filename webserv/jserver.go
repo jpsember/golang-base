@@ -10,7 +10,7 @@ import (
 
 type ServerApp interface {
 	PrepareSession(s Session)
-	HandleRequest(path string, w http.ResponseWriter, req *http.Request, s Session, expr string) bool
+	HandleRequest(w http.ResponseWriter, s Session, path string) bool
 }
 
 type JServerStruct struct {
@@ -96,7 +96,7 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 			pr("handling upload request with:", text)
 			sess.HandleUploadRequest(w, req, text)
 		} else {
-			result := s.App.HandleRequest(path, w, req, sess, path)
+			result := s.App.HandleRequest(w, sess, path)
 			//result := oper.animalURLRequestHandler(w, req, sess, path)
 			if !result {
 				// If we fail to parse any requests, assume it's a resource, like that stupid favicon
