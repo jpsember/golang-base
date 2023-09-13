@@ -13,7 +13,7 @@ import (
 var AutoActivateUser = Alert("?Automatically activating user")
 
 type AnimalOperStruct struct {
-	appRoot Path
+	appRoot      Path
 	headerMarkup string
 	FullWidth    bool // If true, page occupies full width of screen
 	TopPadding   int  // If nonzero, adds padding to top of page
@@ -82,8 +82,9 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 }
 
 func (oper AnimalOper) HandleRequest(path string, w http.ResponseWriter, req *http.Request, s Session, expr string) bool {
-
 	pr := PrIf(true)
+
+	pr("HandleRequest:", expr)
 
 	var text string
 	var flag bool
@@ -94,9 +95,28 @@ func (oper AnimalOper) HandleRequest(path string, w http.ResponseWriter, req *ht
 		return true
 	}
 
-  Todo("merge the following func with this one")
+	if expr == "/" {
+		oper.debugAutoLogIn(s)
+		oper.processFullPageRequest(s, w, req)
+		return true
+	}
 
-	return oper.animalURLRequestHandler(w, req, s, expr)
+	if _, found := TrimIfPrefix(expr, "/manager"); found {
+		NewManagerPage(s, s.PageWidget).Generate()
+		oper.processFullPageRequest(s, w, req)
+		return true
+	}
+	Todo("Experiment: checking for editing a particular animal")
+	if remainder, found := TrimIfPrefix(expr, "/edit/"); found {
+		if animalId, err := ParseAsPositiveInt(remainder); err == nil {
+			pr("generating page to edit animal #", animalId)
+			NewEditAnimalPage(s, s.PageWidget, animalId).Generate()
+			oper.processFullPageRequest(s, w, req)
+			return true
+		}
+		return false
+	}
+	return false
 }
 
 func (oper AnimalOper) handleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) error {
@@ -149,8 +169,6 @@ const WidgetIdPage = "main_page"
 // Assign a widget heirarchy to a session
 func (oper AnimalOper) constructPageWidget(sess Session) {
 	m := sess.WidgetManager()
-	//m.AlertVerbose()
-
 	Todo("?Clarify when we need to *remove* old widgets")
 	m.Id(WidgetIdPage)
 	widget := m.Open()
@@ -168,7 +186,7 @@ func AssignUserToSession(sess Session) User {
 func (oper AnimalOper) prepareDatabase() {
 	if b, _ := ReadBlob(1); b.Id() == 0 {
 
-    // Generate default images as blobs
+		// Generate default images as blobs
 		animalPicPlaceholderPath := oper.server.Resources.JoinM("placeholder.jpg")
 		img := CheckOkWith(jimg.DecodeImage(animalPicPlaceholderPath.ReadBytesM()))
 		img = img.ScaleToSize(AnimalPicSizeNormal)
@@ -181,10 +199,6 @@ func (oper AnimalOper) prepareDatabase() {
 		CheckOk(err)
 		CheckState(created.Id() == 1, "unexpected id for placeholder:", created.Id())
 	}
-}
-
-func (oper AnimalOper) AcquireLockAndCallURLRequestHandler(sess Session, path string) {
-
 }
 
 const (
@@ -212,35 +226,6 @@ func SessionUser(sess Session) User {
 
 func OptSessionUser(sess Session) User {
 	return sess.GetSessionData(SessionKey_User).(User)
-}
-
-// This is our handler for serving up entire pages, as opposed to AJAX requests.
-func (oper AnimalOper) animalURLRequestHandler(w http.ResponseWriter, req *http.Request, s Session, expr string) bool {
-	pr := PrIf(true)
-	pr("animalURLRequestHandler:", expr)
-
-	if expr == "/" {
-		oper.debugAutoLogIn(s)
-		oper.processFullPageRequest(s, w, req)
-		return true
-	}
-
-	if _, found := TrimIfPrefix(expr, "/manager"); found {
-		NewManagerPage(s, s.PageWidget).Generate()
-		oper.processFullPageRequest(s, w, req)
-		return true
-	}
-	Todo("Experiment: checking for editing a particular animal")
-	if remainder, found := TrimIfPrefix(expr, "/edit/"); found {
-		if animalId, err := ParseAsPositiveInt(remainder); err == nil {
-			pr("generating page to edit animal #", animalId)
-			NewEditAnimalPage(s, s.PageWidget, animalId).Generate()
-			oper.processFullPageRequest(s, w, req)
-			return true
-		}
-		return false
-	}
-	return false
 }
 
 // Perform a once-only attempt to log in the user automatically and set a particular page.
