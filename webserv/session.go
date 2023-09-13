@@ -72,8 +72,8 @@ type SessionStruct struct {
 	//URLRequestHandler URLRequestHandler
 
 	// Current request variables
-	responseWriter   http.ResponseWriter
-	request          *http.Request
+	ResponseWriter   http.ResponseWriter
+	Request          *http.Request
 	requestProblem   error  // If not nil, problem detected with current request
 	clientInfoString string // If nonempty information sent from client about screen size, etc
 	ajaxWidgetId     string // Id of widget that ajax call is being sent to
@@ -122,26 +122,24 @@ func ParseSession(source JSEntity) Session {
 }
 
 // Prepare for serving a client request from this session's user. Acquire a lock on this session.
-func (s Session) HandleAjaxRequest(w http.ResponseWriter, req *http.Request) {
-	s.responseWriter = w
-	s.request = req
-	s.parseAjaxRequest(req)
+func (s Session) HandleAjaxRequest() {
+	Todo("pass the session, which contains the writer and request")
+
+	s.parseAjaxRequest()
 	if false && Alert("dumping") {
-		Pr("Query:", INDENT, req.URL.Query())
+		Pr("Query:", INDENT, s.Request.URL.Query())
 	}
 	s.processClientMessage()
 	s.sendAjaxResponse()
 }
 
-func (s Session) HandleUploadRequest(w http.ResponseWriter, req *http.Request, widgetId string) {
-	s.responseWriter = w
-	s.request = req
-	s.processUpload(w, req, widgetId)
+func (s Session) HandleUploadRequest(widgetId string) {
+	s.processUpload(widgetId)
 	// Send the usual ajax response
 	s.sendAjaxResponse()
 }
 
-func (s Session) processUpload(w http.ResponseWriter, req *http.Request, uploadWidgetId string) {
+func (s Session) processUpload(uploadWidgetId string) {
 
 	var fileUploadWidget FileUpload
 
@@ -160,6 +158,7 @@ func (s Session) processUpload(w http.ResponseWriter, req *http.Request, uploadW
 	var result []byte
 
 	for {
+		req := s.Request
 
 		problem = "upload request was not POST"
 		if req.Method != "POST" {
@@ -171,7 +170,7 @@ func (s Session) processUpload(w http.ResponseWriter, req *http.Request, uploadW
 		problem = "The uploaded file is too big. Please choose an file that's less than 10MB in size"
 		{
 			const MAX_UPLOAD_SIZE = 10_000_000
-			req.Body = http.MaxBytesReader(w, req.Body, MAX_UPLOAD_SIZE)
+			req.Body = http.MaxBytesReader(s.ResponseWriter, req.Body, MAX_UPLOAD_SIZE)
 			if err := req.ParseMultipartForm(MAX_UPLOAD_SIZE); err != nil {
 				Todo("this should be returned to the user as a widget error msg")
 				break
@@ -213,11 +212,10 @@ func (s Session) processUpload(w http.ResponseWriter, req *http.Request, uploadW
 }
 
 // Serve a request for a resource
-func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request, resourcePath Path) error {
-	s.responseWriter = w
+func (s Session) HandleResourceRequest(resourcePath Path) error {
 
 	var err error
-	resource := req.URL.Path
+	resource := s.Request.URL.Path
 	var resPath Path
 	resPath, err = resourcePath.Join(resource)
 	if err != nil {
@@ -230,18 +228,18 @@ func (s Session) HandleResourceRequest(w http.ResponseWriter, req *http.Request,
 		return err
 	}
 
-	WriteResponse(s.responseWriter, InferContentTypeM(resource), content)
+	WriteResponse(s.ResponseWriter, InferContentTypeM(resource), content)
 	return err
 }
 
-func (s Session) parseAjaxRequest(req *http.Request) {
+func (s Session) parseAjaxRequest() {
 	// At present, the ajax request parameters are of the form
 	//  /ajax? [expr [& expr]*]
 	// where expr is:
 	//  w=<widget id>
 	//  v=<widget value>
 	//  i=<client information as json map, encoded as string>
-	v := req.URL.Query()
+	v := s.Request.URL.Query()
 
 	// A url can contain multiple values for a parameter, though we
 	// will expected just one.
@@ -387,7 +385,7 @@ func (s Session) sendAjaxResponse() {
 	}
 	pr("sending back to Ajax caller:", INDENT, jsmap)
 	content := jsmap.CompactString()
-	WriteResponse(s.responseWriter, "application/json", []byte(content))
+	WriteResponse(s.ResponseWriter, "application/json", []byte(content))
 }
 
 // Discard state added to session to serve a request.
@@ -397,8 +395,8 @@ func (s Session) ReleaseLockAndDiscardRequest() {
 	if problem != nil {
 		Pr("Problem processing client message:", INDENT, problem)
 	}
-	s.responseWriter = nil
-	s.request = nil
+	s.ResponseWriter = nil
+	s.Request = nil
 	s.requestProblem = nil
 	s.ajaxWidgetId = ""
 	s.ajaxWidgetValue = ""

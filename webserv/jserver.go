@@ -10,7 +10,7 @@ import (
 
 type ServerApp interface {
 	PrepareSession(s Session)
-	HandleRequest(w http.ResponseWriter, s Session, path string) bool
+	HandleRequest(s Session, path string) bool
 }
 
 type JServerStruct struct {
@@ -71,6 +71,8 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 	sess.Lock.Lock()
 	defer sess.ReleaseLockAndDiscardRequest()
 	Todo("We can (temporarily) store the ResponseWriter, Request in the session for simplicity")
+	sess.ResponseWriter = w
+	sess.Request = req
 
 	if !sess.prepared {
 		sess.prepared = true
@@ -88,20 +90,20 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 		pr("url path:", path)
 		if path == "/ajax" {
 			Todo("!Use TrimIfPrefix here as well")
-			sess.HandleAjaxRequest(w, req)
+			sess.HandleAjaxRequest()
 			//} else if text, flag = TrimIfPrefix(path, "/r/"); flag {
 			//	pr("handling blob request with:", text)
 			//	err = oper.handleBlobRequest(w, req, text)
 		} else if text, flag = TrimIfPrefix(path, `/upload/`); flag {
 			pr("handling upload request with:", text)
-			sess.HandleUploadRequest(w, req, text)
+			sess.HandleUploadRequest(text)
 		} else {
-			result := s.App.HandleRequest(w, sess, path)
+			result := s.App.HandleRequest(sess, path)
 			//result := oper.animalURLRequestHandler(w, req, sess, path)
 			if !result {
 				// If we fail to parse any requests, assume it's a resource, like that stupid favicon
 				pr("handling resource request for:", path)
-				err = sess.HandleResourceRequest(w, req, s.Resources)
+				err = sess.HandleResourceRequest(s.Resources)
 			}
 		}
 	}

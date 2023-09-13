@@ -16,7 +16,6 @@ type AnimalOperStruct struct {
 	headerMarkup string
 	FullWidth    bool // If true, page occupies full width of screen
 	TopPadding   int  // If nonzero, adds padding to top of page
-	//server       JServer
 	autoLoggedIn bool
 	resources    Path
 }
@@ -78,7 +77,7 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 	NewLandingPage(sess, sess.PageWidget).Generate()
 }
 
-func (oper AnimalOper) HandleRequest(w http.ResponseWriter, s Session, path string) bool {
+func (oper AnimalOper) HandleRequest(s Session, path string) bool {
 	pr := PrIf(true)
 
 	pr("HandleRequest:", path)
@@ -87,20 +86,20 @@ func (oper AnimalOper) HandleRequest(w http.ResponseWriter, s Session, path stri
 	var flag bool
 	if text, flag = TrimIfPrefix(path, "/r/"); flag {
 		pr("handling blob request with:", text)
-		err := oper.handleBlobRequest(w, text)
+		err := oper.handleBlobRequest(s, text)
 		ReportIfError(err, "handling blob request")
 		return true
 	}
 
 	if path == "/" {
 		oper.debugAutoLogIn(s)
-		oper.processFullPageRequest(s, w)
+		oper.processFullPageRequest(s)
 		return true
 	}
 
 	if _, found := TrimIfPrefix(path, "/manager"); found {
 		NewManagerPage(s, s.PageWidget).Generate()
-		oper.processFullPageRequest(s, w)
+		oper.processFullPageRequest(s)
 		return true
 	}
 	Todo("Experiment: checking for editing a particular animal")
@@ -108,7 +107,7 @@ func (oper AnimalOper) HandleRequest(w http.ResponseWriter, s Session, path stri
 		if animalId, err := ParseAsPositiveInt(remainder); err == nil {
 			pr("generating page to edit animal #", animalId)
 			NewEditAnimalPage(s, s.PageWidget, animalId).Generate()
-			oper.processFullPageRequest(s, w)
+			oper.processFullPageRequest(s)
 			return true
 		}
 		return false
@@ -116,24 +115,24 @@ func (oper AnimalOper) HandleRequest(w http.ResponseWriter, s Session, path stri
 	return false
 }
 
-func (oper AnimalOper) handleBlobRequest(w http.ResponseWriter, blobId string) error {
+func (oper AnimalOper) handleBlobRequest(s Session, blobId string) error {
 	blob := SharedWebCache.GetBlobWithName(blobId)
 	if blob.Id() == 0 {
 		Alert("#50Can't find blob with name:", Quoted(blobId))
 	}
 
-	err := WriteResponse(w, InferContentTypeFromBlob(blob), blob.Data())
+	err := WriteResponse(s.ResponseWriter, InferContentTypeFromBlob(blob), blob.Data())
 	Todo("?Detect someone requesting huge numbers of items that don't exist?")
 	return err
 }
 
-func (oper AnimalOper) processFullPageRequest(sess Session, w http.ResponseWriter) {
+func (oper AnimalOper) processFullPageRequest(sess Session) {
 	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
 	RenderWidget(sess.PageWidget, sess, sb)
 	sess.RequestClientInfo(sb)
-	oper.writeFooter(w, sb)
+	oper.writeFooter(sess.ResponseWriter, sb)
 }
 
 // Generate the biolerplate header and scripts markup
