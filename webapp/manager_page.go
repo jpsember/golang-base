@@ -91,7 +91,7 @@ func (p ManagerPage) listListener(sess Session, widget ListWidget) error {
 
 func getManagerAnimals(managerId int) []int {
 	Todo("?A compound index on managerId+animalId would help here, but probably not worth it for now")
-	var result []int
+	result := []int{}
 	{
 		iter := AnimalIterator(0)
 		for iter.HasNext() {

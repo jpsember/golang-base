@@ -5,7 +5,8 @@ import (
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 )
 
-func RandomAnimal(r JSRand) AnimalBuilder {
+func RandomAnimal(r JSRand, managers []User) AnimalBuilder {
+	CheckArg(len(managers) != 0)
 	r = NullToRand(r)
 	a := NewAnimal()
 	a.SetName(RandomText(r, 20, false))
@@ -13,7 +14,7 @@ func RandomAnimal(r JSRand) AnimalBuilder {
 	a.SetDetails(RandomText(r, Ternary(false, 2000, 20), true))
 	a.SetCampaignTarget((r.Intn(10) + 2) * 50 * DollarsToCurrency)
 	a.SetCampaignBalance(r.Intn(a.CampaignTarget()))
-
+	a.SetManagerId(managers[r.Intn(len(managers))].Id())
 	{
 		// Copy one of our sample photos to use as this animal's photo
 		d := SharedDemoPhotos
@@ -36,16 +37,6 @@ func RandomAnimal(r JSRand) AnimalBuilder {
 
 func HasAnimals() bool {
 	return CheckOkWith(ReadAnimal(1)) != DefaultAnimal
-}
-
-func GenerateRandomAnimals() {
-	Alert("Generating some random animals")
-	rnd := NewJSRand()
-	for i := 0; i < 30; i++ {
-		anim := RandomAnimal(rnd)
-		CreateAnimal(anim)
-		Pr("added animal:", INDENT, anim)
-	}
 }
 
 func AssignBlobName(b BlobBuilder) {
@@ -72,6 +63,15 @@ func ReadAnimalIgnoreError(id int) Animal {
 		anim = anim2
 	}
 	return anim
+}
+
+func ReadUserIgnoreError(id int) User {
+	user := DefaultUser
+	user2, err := ReadUser(id)
+	if !ReportIfError(err, "failed to read user") {
+		user = user2
+	}
+	return user
 }
 
 func AnimalExistsAndIsActive(id int) bool {

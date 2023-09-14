@@ -42,11 +42,28 @@ func createUserIfMissing(name string, class UserClass) {
 	CheckOkWith(CreateUser(u))
 }
 
+func ReadManagers() []User {
+	result := []User{}
+	iter := UserIterator(0)
+	for iter.HasNext() {
+		user := iter.Next().(User)
+		if user.UserClass() == UserClassManager {
+			result = append(result, user)
+		}
+	}
+	return result
+}
+
 func createAnimalsUpTo(rnd JSRand, id int) {
+
+	mgrs := ReadManagers()
+	CheckState(len(mgrs) != 0)
+
 	rnd = NullToRand(rnd)
 	for CheckOkWith(ReadAnimal(id)).Id() == 0 {
-		anim := RandomAnimal(rnd)
+		anim := RandomAnimal(rnd, mgrs)
 		CreateAnimal(anim)
+		Pr("created:", anim.Id(), anim.ManagerId(), anim.Name())
 	}
 }
 
@@ -65,7 +82,7 @@ func PopulateDatabase() {
 		createUserIfMissing("manager"+IntToString(i+1), UserClassManager)
 	}
 
-	for i := 0; i < 30; i++ {
+	for i := 0; i < 100; i++ {
 		createAnimalsUpTo(rnd, i+1)
 	}
 }

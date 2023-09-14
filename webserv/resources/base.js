@@ -123,8 +123,8 @@ function jsVal(id) {
 // An onchange event has occurred within a file upload
 function jsUpload(id) {
     db("jsUpload",id)
-    const addr = window.location.href.split('?')[0];
-    const url = new URL(addr + 'upload/' + id);
+    const addr = window.origin;
+    const url = new URL(addr + '/upload/' + id);
     const xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {

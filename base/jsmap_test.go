@@ -143,6 +143,21 @@ func TestGenerateDir(t *testing.T) {
 	j.AssertGenerated()
 }
 
+func TestParseUnicode(t *testing.T) {
+	if true {
+		return
+	}
+	j := jt.Newz(t)
+
+	str := "a’b"
+	m := NewJSMap()
+	m.Put("", str)
+
+	s := m.String()
+	m2 := JSMapFromStringM(s)
+	j.AssertMessage(m2)
+}
+
 func TestEncodeBase64(t *testing.T) {
 	js := jt.New(t)
 

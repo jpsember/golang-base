@@ -2,7 +2,7 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
 )
 
@@ -92,8 +92,9 @@ func (p LandingPage) validateUserPwd(s Session, widget InputWidget, content stri
 var AutoActivateUser = DevDatabase && Alert("?Automatically activating user")
 
 func (p LandingPage) signInListener(sess Session, widget Widget) {
-
+	pr := PrIf(true)
 	s := sess.State
+	pr("signInListener; state:", INDENT, s)
 	userName := s.OptString(id_user_name, "")
 	pwd := s.OptString(id_user_pwd, "")
 
@@ -102,21 +103,24 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 	var err2 error
 	pwd, err2 = ValidateEmailAddress(pwd, VALIDATE_ONLY_NONEMPTY)
 
+	pr("id_user_name problem:", err1)
+	pr("id_user_pwd  problem:", err2)
 	sess.SetWidgetProblem(id_user_name, err1)
 	sess.SetWidgetProblem(id_user_pwd, err2)
 
-	var user webapp_data.User
+	var user = DefaultUser
 	prob := ""
 	for {
 		errcount := WidgetErrorCount(sess.PageWidget, sess.State)
+		pr("errcount:", errcount)
 		if errcount != 0 {
 			break
 		}
 
 		var err error
-		user, err = webapp_data.ReadUserWithName(userName)
+		user, err = ReadUserWithName(userName)
+		ReportIfError(err)
 		userId := user.Id()
-		CheckOk(err)
 
 		prob = "No such user, or incorrect password"
 		if userId == 0 {
@@ -129,24 +133,24 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		}
 
 		prob = "User is unavaliable; sorry"
-		userData, _ := webapp_data.ReadUser(userId)
+		userData := ReadUserIgnoreError(userId)
 		if userData.Id() == 0 {
 			break
 		}
 
 		if AutoActivateUser {
-			if userData.State() == webapp_data.UserStateWaitingActivation {
+			if userData.State() == UserStateWaitingActivation {
 				Alert("Activating user automatically (without email verification)")
-				userData = userData.ToBuilder().SetState(webapp_data.UserStateActive).Build()
-				webapp_data.UpdateUser(userData)
+				userData = userData.ToBuilder().SetState(UserStateActive).Build()
+				UpdateUser(userData)
 			}
 		}
 
 		prob = ""
 		switch userData.State() {
-		case webapp_data.UserStateActive:
+		case UserStateActive:
 			// This is ok.
-		case webapp_data.UserStateWaitingActivation:
+		case UserStateWaitingActivation:
 			prob = "This user has not been activated yet"
 		default:
 			prob = "This user is in an unsupported state"
@@ -163,15 +167,15 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 		prob = ""
 		break
 	}
+	pr("problem is:", prob)
 	if prob != "" {
 		sess.SetWidgetProblem(id_user_name, prob)
 	} else {
 		switch user.UserClass() {
-		case webapp_data.UserClassDonor:
+		case UserClassDonor:
 			NewFeedPage(sess).Generate()
 			break
-		case webapp_data.UserClassManager:
-			Todo("?Maybe make AnimalFeed, Manager pages implement a common interface")
+		case UserClassManager:
 			NewManagerPage(sess).Generate()
 		}
 	}

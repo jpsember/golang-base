@@ -107,6 +107,12 @@ func (r PageRequester) Process(s Session, path string) Page {
 	return page
 }
 
+func (r PageRequester) RegisterPages(template ...Page) {
+	for _, t := range template {
+		r.RegisterPage(t)
+	}
+}
+
 func (r PageRequester) RegisterPage(template Page) {
 	key := template.Name()
 	if HasKey(r.registry, key) {
@@ -165,13 +171,6 @@ func (p PathParse) PeekInt() int {
 	}
 	return -1
 }
-
-//func (p PathParse) ReadIf() (string, bool) {
-//	if p.HasNext() {
-//		return p.Read(), true
-//	}
-//	return "", false
-//}
 
 func (p PathParse) ReadInt() int {
 	x := p.PeekInt()

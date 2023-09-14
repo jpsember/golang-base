@@ -391,7 +391,6 @@ func (s Session) sendAjaxResponse() {
 
 // Discard state added to session to serve a request.
 func (s Session) ReleaseLockAndDiscardRequest() {
-	Todo("This can be done for *all* requests to simplify things")
 	problem := s.requestProblem
 	if problem != nil {
 		Pr("Problem processing client message:", INDENT, problem)
@@ -561,24 +560,23 @@ func (s Session) SetClickListener(listener ClickListener) {
 // Working from blog:  https://css-tricks.com/using-the-html5-history-api/
 func (s Session) SetURLExpression(args ...any) {
 	pr := PrIf(true)
-
+	pr("SetURLExpression:", args)
 	sb := strings.Builder{}
 
 	for _, arg := range args {
 		s := strings.TrimSpace(ToString(arg))
-		pr("... ", sb, " + ", Quoted(s))
 		sb.WriteByte('/')
 		sb.WriteString(s)
 	}
 	s.ClearPendingURL()
 	s.PendingURLExpr = sb.String()
 
-	pr("SetURLExpression:", s.PendingURLExpr)
+	pr("...pendingURLExpr set to:", s.PendingURLExpr)
 
 	// Ok, when clicking a button it is not appending the button url to the program 'root' url, rather the current one
 	// Solved by using location.origin
 
-	Todo("!What about: 'Make sure to return true from Javascript click handlers when people middle or command click so that we don’t override them accidentally.'")
+	Todo("!What about : 'Make sure to return true from Javascript click handlers when people middle or command click so that we don't override them accidentally.'")
 }
 
 func (s Session) AddArg(arg any) {

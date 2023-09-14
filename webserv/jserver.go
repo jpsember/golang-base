@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 type ServerApp interface {
@@ -57,7 +58,7 @@ func (s JServer) StartServing() {
 
 // A handler such as this must be thread safe!
 func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("JServer handler, request:", req.RequestURI)
 
 	// We don't know what the session is yet, so we don't have a lock on it...
@@ -66,6 +67,7 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 	// Now that we have the session, lock it
 	sess.Lock.Lock()
 	defer sess.ReleaseLockAndDiscardRequest()
+
 	sess.ResponseWriter = w
 	sess.Request = req
 
@@ -86,17 +88,18 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 	if err == nil {
 
 		path := url.Path
+		if !strings.HasPrefix(path, "/") {
+			Alert("#50path didn't have expected prefix:", VERT_SP, Quoted(path), VERT_SP)
+		} else {
+			path = strings.TrimPrefix(path, "/")
+		}
 		var text string
 		var flag bool
 
 		pr("JServer, url path:", path)
-		if path == "/ajax" {
-			Todo("!Use TrimIfPrefix here as well")
+		if path == "ajax" {
 			sess.HandleAjaxRequest()
-			//} else if text, flag = TrimIfPrefix(path, "/r/"); flag {
-			//	pr("handling blob request with:", text)
-			//	err = oper.handleBlobRequest(w, req, text)
-		} else if text, flag = TrimIfPrefix(path, `/upload/`); flag {
+		} else if text, flag = TrimIfPrefix(path, `upload/`); flag {
 			pr("handling upload request with:", text)
 			sess.HandleUploadRequest(text)
 		} else {

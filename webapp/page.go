@@ -1,6 +1,7 @@
 package webapp
 
 import (
+	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webserv"
 )
 
@@ -16,11 +17,13 @@ type Page interface {
 // Some common boilerplate that is typically some of the first code that
 // Generate() would otherwise execute.
 func GenerateHeader(page Page) WidgetManager {
+	var _ = Pr
 	//SetWidgetDebugRendering()
 	s := page.Session()
 	m := s.WidgetManager()
 	m.With(s.PageWidget)
 	AddDevPageLabel(s, page.Name())
+	Todo("We must also include the arguments, if any... but how?")
 	s.SetURLExpression(page.Name())
 	return m
 }

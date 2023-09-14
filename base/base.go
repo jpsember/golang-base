@@ -529,6 +529,8 @@ func processAlertForMultipleSessions(info alertInfo) bool {
 			if err != nil {
 				Pr("Problem parsing:", priorityAlertPersistPath, ", error:", err)
 				priorityAlertMap = NewJSMap()
+				// Discard old file
+				priorityAlertPersistPath.DeleteFile()
 			} else {
 				priorityAlertMap = restored
 			}

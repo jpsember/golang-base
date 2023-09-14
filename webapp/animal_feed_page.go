@@ -54,12 +54,6 @@ func (p FeedPage) Generate() {
 	Todo("How do we modify the client's URL to e.g. set `/manager`?")
 
 	m := GenerateHeader(p)
-
-	// If no animals found, add some
-	if DevDatabase && !HasAnimals() {
-		GenerateRandomAnimals()
-	}
-
 	al := p.animalList()
 	m.Id(id_feed_list).AddList(al, p.renderItem, p.listListener)
 }

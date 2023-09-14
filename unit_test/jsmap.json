@@ -4,5 +4,6 @@
              "Escapes" : 2266,
          "GenerateDir" : 7989,
     "JSMapPrettyPrint" : 1227,
+        "ParseUnicode" : 2883,
   "PrintJSMapToString" : 1227
 }

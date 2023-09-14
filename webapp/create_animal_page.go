@@ -21,6 +21,7 @@ type CreateAnimalPageStruct struct {
 	session  Session
 	animalId int
 	editing  bool
+	name     string
 }
 
 type CreateAnimalPage = *CreateAnimalPageStruct
@@ -33,6 +34,7 @@ func NewCreateAnimalPage(sess Session, args ...any) Page {
 	t := &CreateAnimalPageStruct{
 		session: sess,
 		editing: true,
+		name:    "new",
 	}
 	return t
 }
@@ -42,8 +44,8 @@ func NewEditAnimalPage(sess Session, animalId int) Page {
 		session:  sess,
 		animalId: animalId,
 		editing:  true,
+		name:     "edit",
 	}
-
 	return t
 }
 
@@ -52,6 +54,7 @@ func NewViewAnimalPage(sess Session, animalId int) Page {
 		session:  sess,
 		animalId: animalId,
 		editing:  false,
+		name:     "view",
 	}
 	return t
 }
@@ -70,15 +73,7 @@ func (p CreateAnimalPage) Construct(s Session, args ...any) Page {
 }
 
 func (p CreateAnimalPage) Name() string {
-	if p.editing {
-		if p.animalId == 0 {
-			return "new"
-		}
-		return "edit"
-	} else {
-		return "view"
-	}
-	return FeedPageName
+	return p.name
 }
 
 func (p CreateAnimalPage) Request(s Session, parser PathParse) Page {
@@ -189,9 +184,6 @@ func (p CreateAnimalPage) generateForEditing() {
 
 func (p CreateAnimalPage) generateForViewing() {
 	m := p.Session().WidgetManager()
-
-	// Experiment: try modifying the url
-	p.Session().SetURLExpression(`edit`, p.animalId)
 
 	m.Col(6).Open()
 	{

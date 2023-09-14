@@ -6,6 +6,8 @@ import (
 	"github.com/jpsember/golang-base/jimg"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
+	"regexp"
+	"strings"
 )
 
 type AnimalOperStruct struct {
@@ -65,17 +67,19 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 	user := DefaultUser
 	sess.PutSessionData(SessionKey_User, user)
 	CheckState(user.Id() == 0)
-	NewLandingPage(sess)
+
+	if Alert("Doing auto login") {
+		oper.debugAutoLogIn(sess)
+	}
 }
 
 // JServer callback to handle a request.  Returns true if it was handled.
 func (oper AnimalOper) HandleRequest(s Session, path string) bool {
-	pr := PrIf(true)
+	pr := PrIf(false)
 
 	var text string
 	var flag bool
-	if text, flag = TrimIfPrefix(path, "/r/"); flag {
-		//pr("handling blob request with:", text)
+	if text, flag = TrimIfPrefix(path, BlobURLPrefix); flag {
 		oper.handleBlobRequest(s, text)
 		return true
 	}
@@ -125,21 +129,17 @@ func (oper AnimalOper) writeFooter(s Session, bp MarkupBuilder) {
 
 	// Add a bit of javascript that will change the url to what we want
 	if s.PendingURLExpr != "" {
-		Pr("appending URL expr:", s.PendingURLExpr)
 		code := `
 <script type="text/javascript">
 history.pushState(null, null, location.origin+'` + s.PendingURLExpr + `')
 </script>
 `
-		Pr("Appending code to end of <body>:", INDENT, code)
-
+		//	Pr("Appending code to end of <body>:", INDENT, code)
 		bp.WriteString(code)
 	}
-	//history.pushState("object or string representing the state of the page", "new title", "newURL")
 	bp.CloseTag() // body
 
 	bp.A(`</html>`).Cr()
-
 }
 
 func (oper AnimalOper) prepareDatabase() {
@@ -250,8 +250,28 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 // User state and current page
 // ------------------------------------------------------------------------------------
 
+// Strings that start with {zero or more lowercase letters}/
+var looksLikePageRexEx = CheckOkWith(regexp.Compile(`^[a-z]*\/`))
+
 // Parse URL requested by client, and serve up an appropriate page.
 func (oper AnimalOper) processPageRequest(s Session, path string) bool {
+
+	// If path is NOT one of "", "pagename", or "pagename[non-alpha]..., exit with false immediately
+	{
+		// Add a trailing / to make this logic simpler
+		modifiedPath := path + `/`
+		if !looksLikePageRexEx.MatchString(modifiedPath) {
+			return false
+		}
+		// Extract page name
+		i := strings.IndexByte(modifiedPath, '/')
+		pageName := modifiedPath[0:i]
+
+		// If what remains is a nonempty string that isn't the name of a page, exit
+		if pageName != "" && SharedPageRequester.PageWithName(pageName) == nil {
+			return false
+		}
+	}
 
 	page := SharedPageRequester.Process(s, path)
 	if page != nil {
@@ -265,7 +285,6 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 }
 
 func (oper AnimalOper) registerPages(r PageRequester) {
-	r.RegisterPage(LandingPageTemplate)
-	r.RegisterPage(FeedPageTemplate)
-	r.RegisterPage(GalleryPageTemplate)
+	r.RegisterPages(LandingPageTemplate, GalleryPageTemplate, SignUpPageTemplate, FeedPageTemplate, ManagerPageTemplate,
+		ViewAnimalPageTemplate, CreateAnimalPageTemplate, EditAnimalPageTemplate)
 }
