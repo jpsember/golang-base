@@ -241,9 +241,7 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 
 	if true {
 		page := oper.pageRequester.Process(s, path)
-		bp := page.GetBasicPage()
-		s.SetURLExpression(bp.PageName)
-		Todo("Maybe the Generate function should be in the abstract Page type?")
+		s.SetURLExpression(page.Name())
 		page.Generate(s)
 		oper.renderPage(s)
 		return true
@@ -267,7 +265,7 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 		if animalId, err := ParseAsPositiveInt(remainder); err == nil {
 			pr("generating page to edit animal #", animalId)
 			page := NewEditAnimalPage(s, animalId)
-			page.Generate()
+			page.Generate(s)
 			oper.renderPage(s)
 			return true
 		}

@@ -18,8 +18,8 @@ func (p FeedPage) GetBasicPage() BasicPage {
 	return &p.BasicPageStruct
 }
 
-func (p FeedPage) Constructor() PageConstructFunc {
-	return NewLandingPage
+func (p FeedPage) Construct(s Session) Page {
+	return NewLandingPage(s)
 }
 
 // ------------------------------------------------------------------------------------
@@ -32,7 +32,7 @@ type FeedPage = *FeedPageStruct
 
 func NewFeedPage(s Session) FeedPage {
 	t := &FeedPageStruct{}
-	InitPage(&t.BasicPageStruct, FeedPageName, s)
+	InitPage(&t.BasicPageStruct, s)
 	return t
 }
 
@@ -41,13 +41,15 @@ const (
 	id_feed_list = feed_id_prefix + "list"
 )
 
+func (p FeedPage) Name() string { return FeedPageName }
+
 func (p FeedPage) Generate(s Session) {
 	// Set click listener for this page
 	s.SetClickListener(p.clickListener)
 
 	Todo("How do we modify the client's URL to e.g. set `/manager`?")
 
-	m := p.GenerateHeader()
+	m := GenerateHeader(p)
 
 	// If no animals found, add some
 	if DevDatabase && !HasAnimals() {
@@ -75,7 +77,7 @@ func (p FeedPage) constructAnimalList() AnimalList {
 }
 
 func (p FeedPage) newAnimalListener(sess Session, widget Widget) {
-	NewCreateAnimalPage(sess).Generate()
+	NewCreateAnimalPage(sess).Generate(sess)
 }
 
 func (p FeedPage) listListener(sess Session, widget ListWidget) error {
@@ -116,7 +118,7 @@ func (p FeedPage) clickListener(sess Session, message string) {
 			return
 		}
 		sess.SetClickListener(nil)
-		NewViewAnimalPage(sess, sess.PageWidget, anim.Id()).Generate()
+		NewViewAnimalPage(sess, anim.Id()).Generate(sess)
 		return
 	}
 

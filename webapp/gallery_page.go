@@ -20,8 +20,12 @@ func (p GalleryPage) GetBasicPage() BasicPage {
 	return &p.BasicPageStruct
 }
 
-func (p GalleryPage) Constructor() PageConstructFunc {
-	return NewGalleryPage
+func (p GalleryPage) Construct(s Session) Page {
+	return NewGalleryPage(s)
+}
+
+func (p GalleryPage) Name() string {
+	return GalleryPageName
 }
 
 // ------------------------------------------------------------------------------------
@@ -34,7 +38,7 @@ type GalleryPageStruct struct {
 
 func NewGalleryPage(sess Session) Page {
 	t := &GalleryPageStruct{}
-	InitPage(&t.BasicPageStruct, GalleryPageName, sess)
+	InitPage(&t.BasicPageStruct, sess)
 	return t
 }
 
@@ -44,7 +48,7 @@ var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
 
 func (p GalleryPage) Generate(s Session) {
-	m := p.GenerateHeader()
+	m := GenerateHeader(p)
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)

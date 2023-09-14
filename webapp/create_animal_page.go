@@ -25,30 +25,56 @@ type CreateAnimalPageStruct struct {
 
 type CreateAnimalPage = *CreateAnimalPageStruct
 
-func NewCreateAnimalPage(sess Session) CreateAnimalPage {
+func NewCreateAnimalPage(sess Session) Page {
 	t := &CreateAnimalPageStruct{
 		editing: true,
 	}
-	InitPage(&t.BasicPageStruct, "new", sess)
+	InitPage(&t.BasicPageStruct, sess)
 	return t
 }
 
-func NewEditAnimalPage(sess Session, animalId int) CreateAnimalPage {
+func NewEditAnimalPage(sess Session, animalId int) Page {
 	t := &CreateAnimalPageStruct{
 		animalId: animalId,
 		editing:  true,
 	}
-	InitPage(&t.BasicPageStruct, "edit", sess)
+	InitPage(&t.BasicPageStruct, sess)
 	return t
 }
 
-func NewViewAnimalPage(sess Session, parentWidget Widget, animalId int) CreateAnimalPage {
+func NewViewAnimalPage(sess Session, animalId int) Page {
 	t := &CreateAnimalPageStruct{
 		animalId: animalId,
 		editing:  false,
 	}
-	InitPage(&t.BasicPageStruct, "view", sess)
+	InitPage(&t.BasicPageStruct, sess)
 	return t
+}
+func (p CreateAnimalPage) Construct(s Session) Page {
+	if !p.editing {
+		return NewViewAnimalPage(s, 0)
+	}
+	if p.animalId != 0 {
+		return NewEditAnimalPage(s, 0)
+	} else {
+		return NewCreateAnimalPage(s)
+	}
+}
+
+func (p CreateAnimalPage) Name() string {
+	if p.editing {
+		if p.animalId == 0 {
+			return "new"
+		}
+		return "edit"
+	} else {
+		return "view"
+	}
+	return FeedPageName
+}
+
+func (p CreateAnimalPage) GetBasicPage() BasicPage {
+	return &p.BasicPageStruct
 }
 
 func (p CreateAnimalPage) readStateFromAnimal() {
@@ -67,12 +93,11 @@ func (p CreateAnimalPage) readStateFromAnimal() {
 	s.Put(id_animal_display_pic, a.PhotoThumbnail())
 }
 
-func (p CreateAnimalPage) Generate() {
-	s := p.Session
+func (p CreateAnimalPage) Generate(s Session) {
 	//SetWidgetDebugRendering()
 	s.SetClickListener(nil)
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
-	p.GenerateHeader()
+	GenerateHeader(p)
 
 	p.readStateFromAnimal()
 

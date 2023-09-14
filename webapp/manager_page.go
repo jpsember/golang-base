@@ -14,11 +14,21 @@ type ManagerPage = *ManagerPageStruct
 
 func NewManagerPage(session Session) ManagerPage {
 	t := &ManagerPageStruct{}
-	InitPage(&t.BasicPageStruct, "manager", session)
+	InitPage(&t.BasicPageStruct, session)
 	return t
 }
 
 var ManagerPageTemplate = NewManagerPage(nil)
+
+func (p ManagerPage) Name() string {
+	return ManagerPageName
+}
+func (p ManagerPage) GetBasicPage() BasicPage {
+	return &p.BasicPageStruct
+}
+func (p ManagerPage) Construct(s Session) Page {
+	return NewManagerPage(s)
+}
 
 const ManagerPageName = "manager"
 
@@ -30,7 +40,7 @@ const (
 func (p ManagerPage) Generate(sess Session) {
 	Todo("?Think about ways of cleaning up the click listener which is not tied to a widget")
 	//SetWidgetDebugRendering()
-	m := p.GenerateHeader()
+	m := GenerateHeader(p)
 
 	Todo("?If we are generating a new page, we shouldn't try to store the error in the old one")
 	// Row of buttons at top.
@@ -64,7 +74,7 @@ func (p ManagerPage) constructAnimalList() AnimalList {
 }
 
 func (p ManagerPage) newAnimalListener(sess Session, widget Widget) {
-	NewCreateAnimalPage(sess).Generate()
+	NewCreateAnimalPage(sess).Generate(sess)
 }
 
 func (p ManagerPage) listListener(sess Session, widget ListWidget) error {
@@ -129,6 +139,6 @@ func (p ManagerPage) clickListener(sess Session, message string) {
 		}
 		sess.SetClickListener(nil)
 
-		NewEditAnimalPage(sess, anim.Id()).Generate()
+		NewEditAnimalPage(sess, anim.Id()).Generate(sess)
 	}
 }

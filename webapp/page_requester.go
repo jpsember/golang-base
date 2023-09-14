@@ -63,7 +63,7 @@ func (r PageRequester) Process(s Session, path string) Page {
 	pr("getting template from registry for:", requestedPageName)
 
 	templatePage := r.registry[requestedPageName]
-	page := templatePage.Constructor()(s)
+	page := templatePage.Construct(s)
 	pr("constructed page:", page)
 	return page
 	//s.SetURLExpression(requestedPageName)
@@ -86,7 +86,7 @@ func (r PageRequester) Process(s Session, path string) Page {
 }
 
 func (r PageRequester) RegisterPage(template Page) {
-	key := template.GetBasicPage().PageName
+	key := template.Name()
 	if HasKey(r.registry, key) {
 		BadState("duplicate page in registry:", key)
 	}

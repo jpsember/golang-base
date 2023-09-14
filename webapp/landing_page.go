@@ -18,10 +18,6 @@ func (p LandingPage) GetBasicPage() BasicPage {
 	return &p.BasicPageStruct
 }
 
-func (p LandingPage) Constructor() PageConstructFunc {
-	return NewLandingPage
-}
-
 // ------------------------------------------------------------------------------------
 
 type LandingPageStruct struct {
@@ -36,15 +32,23 @@ func NewLandingPage(sess Session) Page {
 	t := &LandingPageStruct{
 		editing: true,
 	}
-	InitPage(&t.BasicPageStruct, LandingPageName, sess)
+	InitPage(&t.BasicPageStruct, sess)
 	return t
+}
+
+func (p LandingPage) Name() string {
+	return LandingPageName
+}
+
+func (p LandingPage) Construct(s Session) Page {
+	return NewLandingPage(s)
 }
 
 func (p LandingPage) Generate(sess Session) {
 	s := sess.State
 	s.DeleteEach(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
 
-	m := p.GenerateHeader()
+	m := GenerateHeader(p)
 
 	m.Label("gallery").Align(AlignRight).Size(SizeTiny).AddButton(p.galleryListener)
 	m.Col(6)

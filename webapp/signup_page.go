@@ -22,13 +22,26 @@ type SignUpPage = *SignUpPageStruct
 
 func NewSignUpPage(session Session) SignUpPage {
 	t := &SignUpPageStruct{}
-	InitPage(&t.BasicPageStruct, "signup", session)
+	InitPage(&t.BasicPageStruct, session)
 	return t
 }
 
+const SignUpPageName = "signup"
+
+func (p SignUpPage) Name() string {
+	return SignUpPageName
+}
+
+func (p SignUpPage) GetBasicPage() BasicPage {
+	return &p.BasicPageStruct
+}
+
+func (p SignUpPage) Construct(s Session) Page {
+	return NewSignUpPage(s)
+}
 func (p SignUpPage) Generate(s Session) {
 	s.DeleteStateErrors()
-	m := p.GenerateHeader()
+	m := GenerateHeader(p)
 
 	m.Label("Sign Up Page").Size(SizeLarge).AddHeading()
 	m.Col(6).Open()
