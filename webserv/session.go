@@ -381,8 +381,9 @@ func (s Session) sendAjaxResponse() {
 
 	jsmap.Put(respKeyWidgetsToRefresh, refmap)
 	if s.PendingURLExpr != "" {
-		jsmap.Put(respKeyURLExpr, s.PendingURLExpr)
-		Pr("sending url expression, and clearing:", s.PendingURLExpr)
+		path := s.ConstructPathFromPendingURL()
+		jsmap.Put(respKeyURLExpr, path)
+		Pr("sending url expression:", path)
 	}
 	pr("sending back to Ajax caller:", INDENT, jsmap)
 	content := jsmap.CompactString()
@@ -579,12 +580,43 @@ func (s Session) SetURLExpression(args ...any) {
 	Todo("!What about : 'Make sure to return true from Javascript click handlers when people middle or command click so that we don't override them accidentally.'")
 }
 
-func (s Session) AddArg(arg any) {
+// Add an argument to the pending URL expression.  If there are no arguments, the first such argument
+// is assumed to be a page name
+func (s Session) AddArg(arg any) Session {
+	pr := PrIf(true)
+	pr("AddArg:", arg)
 	CheckArg(arg != nil)
-	s.PendingURLArgs2 = append(s.PendingURLArgs2, arg)
+	if s.PendingURLExpr == "" {
+		s.PendingURLExpr = arg.(string)
+	} else {
+		s.PendingURLArgs2 = append(s.PendingURLArgs2, arg)
+	}
+	pr("...pending URL is --->", s.PendingURLExpr, s.PendingURLArgs2)
+	return s
 }
 
 func (s Session) ClearPendingURL() {
 	s.PendingURLExpr = ""
 	s.PendingURLArgs2 = []any{}
+}
+
+func (s Session) ConstructPathFromPendingURL() string {
+	CheckState(s.PendingURLExpr != "")
+
+	var a []string
+	a = append(a, s.PendingURLExpr)
+	for _, k := range s.PendingURLArgs2 {
+		var argStr string
+		switch z := k.(type) {
+		case string:
+			argStr = z
+		case int:
+			argStr = IntToString(z)
+		default:
+			Alert("#50 unknown type in arg:", Info(k))
+			argStr = "X"
+		}
+		a = append(a, argStr)
+	}
+	return "/" + strings.Join(a, "/")
 }

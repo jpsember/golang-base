@@ -8,12 +8,16 @@ import (
 
 type ManagerPageStruct struct {
 	session Session
+	manager User
 }
 
 type ManagerPage = *ManagerPageStruct
 
 func NewManagerPage(session Session, args ...any) ManagerPage {
 	t := &ManagerPageStruct{session: session}
+	if session != nil {
+		t.manager = SessionUser(session)
+	}
 	return t
 }
 func (p ManagerPage) Session() Session { return p.session }
@@ -139,13 +143,33 @@ func (p ManagerPage) clickListener(sess Session, message string) {
 		if ReportIfError(err) {
 			return
 		}
-		anim, err := ReadActualAnimal(id)
-		if err != nil || anim.Id() == 0 {
+		animal, err := ReadActualAnimal(id)
+		if err != nil || animal.Id() == 0 {
 			Alert("#50trouble reading animal for clickListener message", message)
 			return
 		}
+		if animal.ManagerId() != p.manager.Id() {
+			Alert("#50wrong manager for animal", message, animal)
+			return
+		}
 		sess.SetClickListener(nil)
+		Pr("requesting url for:", animal)
 
-		NewEditAnimalPage(sess, anim.Id()).Generate()
+		// We are still processing an AJAX event, so we have to somehow cause a new page to load...
+		//
+		// construct a path, e.g. edit/42
+		// have the page_requester process this path
+		
+		RequestPage(sess, EditAnimalPageTemplate, animal.Id())
+		//NewEditAnimalPage(sess, animal.Id()).Generate()
 	}
+}
+
+func RequestPage(sess Session, page Page, args ...any) Session {
+	CheckState(sess.PendingURLExpr == "")
+	sess.AddArg(page.Name())
+	for _, arg := range args {
+		sess.AddArg(arg)
+	}
+	return sess
 }
