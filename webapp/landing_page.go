@@ -14,14 +14,10 @@ const LandingPageName = "signin"
 
 var LandingPageTemplate = NewLandingPage(nil)
 
-func (p LandingPage) GetBasicPage() BasicPage {
-	return &p.BasicPageStruct
-}
-
 // ------------------------------------------------------------------------------------
 
 type LandingPageStruct struct {
-	BasicPageStruct
+	session  Session
 	animalId int
 	editing  bool
 }
@@ -30,11 +26,12 @@ type LandingPage = *LandingPageStruct
 
 func NewLandingPage(sess Session) Page {
 	t := &LandingPageStruct{
+		session: sess,
 		editing: true,
 	}
-	InitPage(&t.BasicPageStruct, sess)
 	return t
 }
+func (p LandingPage) Session() Session { return p.session }
 
 func (p LandingPage) Name() string {
 	return LandingPageName

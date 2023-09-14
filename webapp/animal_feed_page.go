@@ -14,8 +14,8 @@ const FeedPageName = "feed"
 
 var FeedPageTemplate = NewFeedPage(nil)
 
-func (p FeedPage) GetBasicPage() BasicPage {
-	return &p.BasicPageStruct
+func (p FeedPage) Session() Session {
+	return p.session
 }
 
 func (p FeedPage) Construct(s Session) Page {
@@ -25,14 +25,15 @@ func (p FeedPage) Construct(s Session) Page {
 // ------------------------------------------------------------------------------------
 
 type FeedPageStruct struct {
-	BasicPageStruct
+	session Session
 }
 
 type FeedPage = *FeedPageStruct
 
 func NewFeedPage(s Session) FeedPage {
-	t := &FeedPageStruct{}
-	InitPage(&t.BasicPageStruct, s)
+	t := &FeedPageStruct{
+		session: s,
+	}
 	return t
 }
 
@@ -62,7 +63,7 @@ func (p FeedPage) Generate(s Session) {
 
 func (p FeedPage) animalList() AnimalList {
 	key := SessionKey_FeedList
-	s := p.Session
+	s := p.Session()
 	alist := s.OptSessionData(key)
 	if alist == nil {
 		alist = p.constructAnimalList()
@@ -103,7 +104,7 @@ func (p FeedPage) renderItem(widget ListWidget, elementId int, m MarkupBuilder) 
 		return
 	}
 	m.OpenTag(`div class="col-sm-3"`)
-	RenderAnimalCard(p.Session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
+	RenderAnimalCard(p.Session(), anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
 	m.CloseTag()
 }
 
@@ -123,7 +124,7 @@ func (p FeedPage) clickListener(sess Session, message string) {
 	}
 
 	Todo("Pages, and perhaps Sessions, should have embeddings to simplify expressions like this one:")
-	listWidget := p.Session.WidgetManager().Get(id_feed_list).(ListWidget)
+	listWidget := p.Session().WidgetManager().Get(id_feed_list).(ListWidget)
 
 	if listWidget.HandleClick(sess, message) {
 

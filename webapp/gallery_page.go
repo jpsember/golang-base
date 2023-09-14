@@ -16,10 +16,6 @@ const GalleryPageName = "gallery"
 
 var GalleryPageTemplate = NewGalleryPage(nil)
 
-func (p GalleryPage) GetBasicPage() BasicPage {
-	return &p.BasicPageStruct
-}
-
 func (p GalleryPage) Construct(s Session) Page {
 	return NewGalleryPage(s)
 }
@@ -27,18 +23,20 @@ func (p GalleryPage) Construct(s Session) Page {
 func (p GalleryPage) Name() string {
 	return GalleryPageName
 }
+func (p GalleryPage) Session() Session { return p.session }
 
 // ------------------------------------------------------------------------------------
 
 type GalleryPage = *GalleryPageStruct
 
 type GalleryPageStruct struct {
-	BasicPageStruct
+	session Session
 }
 
 func NewGalleryPage(sess Session) Page {
-	t := &GalleryPageStruct{}
-	InitPage(&t.BasicPageStruct, sess)
+	t := &GalleryPageStruct{
+		session: sess,
+	}
 	return t
 }
 
@@ -212,7 +210,7 @@ func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, valu
 func (p GalleryPage) provideURL() string {
 	pr := PrIf(true)
 	url := ""
-	s := p.Session
+	s := p.Session()
 	imageId := s.State.OptInt(sampleImageId, 0)
 
 	pr("provideURL, image id read from state:", imageId)

@@ -15,25 +15,23 @@ const (
 )
 
 type SignUpPageStruct struct {
-	BasicPageStruct
+	session Session
 }
 
 type SignUpPage = *SignUpPageStruct
 
 func NewSignUpPage(session Session) SignUpPage {
-	t := &SignUpPageStruct{}
-	InitPage(&t.BasicPageStruct, session)
+	t := &SignUpPageStruct{
+		session: session,
+	}
 	return t
 }
+func (p SignUpPage) Session() Session { return p.session }
 
 const SignUpPageName = "signup"
 
 func (p SignUpPage) Name() string {
 	return SignUpPageName
-}
-
-func (p SignUpPage) GetBasicPage() BasicPage {
-	return &p.BasicPageStruct
 }
 
 func (p SignUpPage) Construct(s Session) Page {

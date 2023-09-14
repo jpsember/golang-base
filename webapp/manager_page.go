@@ -7,25 +7,23 @@ import (
 )
 
 type ManagerPageStruct struct {
-	BasicPageStruct
+	session Session
 }
 
 type ManagerPage = *ManagerPageStruct
 
 func NewManagerPage(session Session) ManagerPage {
-	t := &ManagerPageStruct{}
-	InitPage(&t.BasicPageStruct, session)
+	t := &ManagerPageStruct{session: session}
 	return t
 }
+func (p ManagerPage) Session() Session { return p.session }
 
 var ManagerPageTemplate = NewManagerPage(nil)
 
 func (p ManagerPage) Name() string {
 	return ManagerPageName
 }
-func (p ManagerPage) GetBasicPage() BasicPage {
-	return &p.BasicPageStruct
-}
+
 func (p ManagerPage) Construct(s Session) Page {
 	return NewManagerPage(s)
 }
@@ -59,16 +57,16 @@ func (p ManagerPage) Generate(sess Session) {
 
 func (p ManagerPage) animalList() AnimalList {
 	key := SessionKey_MgrList
-	alist := p.Session.OptSessionData(key)
+	alist := p.Session().OptSessionData(key)
 	if alist == nil {
 		alist = p.constructAnimalList()
-		p.Session.PutSessionData(key, alist)
+		p.Session().PutSessionData(key, alist)
 	}
 	return alist.(AnimalList)
 }
 
 func (p ManagerPage) constructAnimalList() AnimalList {
-	managerId := SessionUser(p.Session).Id()
+	managerId := SessionUser(p.Session()).Id()
 	animalList := NewAnimalList(getManagerAnimals(managerId))
 	return animalList
 }
@@ -120,7 +118,7 @@ func (p ManagerPage) renderItem(widget ListWidget, elementId int, m MarkupBuilde
 	//<div class="card bg-light mb-3 animal-card">
 
 	m.OpenTag(`div class="col-sm-3"`)
-	RenderAnimalCard(p.Session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
+	RenderAnimalCard(p.Session(), anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
 	m.CloseTag()
 }
 

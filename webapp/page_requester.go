@@ -93,10 +93,6 @@ func (r PageRequester) RegisterPage(template Page) {
 	r.registry[key] = template
 }
 
-func (r PageRequester) Register(page BasicPage) {
-
-}
-
 type PathParseStruct struct {
 	text   string
 	parts  []string
