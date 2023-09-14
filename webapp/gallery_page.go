@@ -8,15 +8,33 @@ import (
 	"strings"
 )
 
+// ------------------------------------------------------------------------------------
+// Page implementation
+// ------------------------------------------------------------------------------------
+
+const GalleryPageName = "gallery"
+
+var GalleryPageTemplate = NewGalleryPage(nil)
+
+func (p GalleryPage) GetBasicPage() BasicPage {
+	return &p.BasicPageStruct
+}
+
+func (p GalleryPage) Constructor() PageConstructFunc {
+	return NewGalleryPage
+}
+
+// ------------------------------------------------------------------------------------
+
+type GalleryPage = *GalleryPageStruct
+
 type GalleryPageStruct struct {
 	BasicPageStruct
 }
 
-type GalleryPage = *GalleryPageStruct
-
-func NewGalleryPage(sess Session) GalleryPage {
+func NewGalleryPage(sess Session) Page {
 	t := &GalleryPageStruct{}
-	InitPage(&t.BasicPageStruct, "gallery", sess, t.generate)
+	InitPage(&t.BasicPageStruct, GalleryPageName, sess, t.generate)
 	return t
 }
 

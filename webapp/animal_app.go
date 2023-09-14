@@ -64,7 +64,7 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 	user := DefaultUser
 	sess.PutSessionData(SessionKey_User, user)
 	CheckState(user.Id() == 0)
-	NewLandingPage(sess).Generate()
+	NewLandingPage(sess)
 }
 
 // JServer callback to handle a request.  Returns true if it was handled.
@@ -127,7 +127,6 @@ func (oper AnimalOper) writeFooter(s Session, bp MarkupBuilder) {
 		Pr("appending URL expr:", s.PendingURLExpr)
 		code := `
 <script type="text/javascript">
-pr('location.origin:',location.origin,'pending url expr:','` + s.PendingURLExpr + `')
 history.pushState(null, null, location.origin+'` + s.PendingURLExpr + `')
 </script>
 `
@@ -230,12 +229,6 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 		NewFeedPage(sess).Generate()
 		return
 	}
-	////if false {
-	////	NewCreateAnimalPage(sess, sess.PageWidget).Generate()
-	////	return
-	////}
-	//
-	//NewManagerPage(sess, sess.PageWidget).Generate()
 }
 
 // ------------------------------------------------------------------------------------
@@ -247,7 +240,13 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 	pr := PrIf(true)
 
 	if true {
-		return oper.pageRequester.Process(s, path)
+		page := oper.pageRequester.Process(s, path)
+		bp := page.GetBasicPage()
+		s.SetURLExpression(bp.PageName)
+		Todo("Maybe the Generate function should be in the abstract Page type?")
+		bp.Generate()
+		oper.renderPage(s)
+		return true
 	}
 
 	if path == "/" {
@@ -279,8 +278,9 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 
 func (oper AnimalOper) registerPages(r PageRequester) {
 
-	r.RegisterPage(LandingPageName, LandingPageTemplate)
-	r.RegisterPage(FeedPageName, FeedPageTemplate)
+	r.RegisterPage(LandingPageTemplate)
+	r.RegisterPage(FeedPageTemplate)
+	r.RegisterPage(GalleryPageTemplate)
 
 	//
 	//

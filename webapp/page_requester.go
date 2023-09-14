@@ -9,13 +9,14 @@ import (
 
 type PageRequesterStruct struct {
 	BaseObject
-	registry map[string]any
+	registry map[string]Page
 }
 
 func NewPageRequester() PageRequester {
 	t := &PageRequesterStruct{
-		registry: make(map[string]any),
+		registry: make(map[string]Page),
 	}
+	t.SetName("PageRequester")
 	return t
 }
 
@@ -44,7 +45,7 @@ func (r PageRequester) DefaultPage(user User) string {
 	return result
 }
 
-func (r PageRequester) Process(s Session, path string) bool {
+func (r PageRequester) Process(s Session, path string) Page {
 	r.AlertVerbose()
 	pr := r.Log
 
@@ -59,23 +60,37 @@ func (r PageRequester) Process(s Session, path string) bool {
 		requestedPageName = r.DefaultPage(user)
 	}
 
-	var resultPath string
+	pr("getting template from registry for:", requestedPageName)
 
-	if !IsUserLoggedIn(user.Id()) {
-		resultPath = "/"
-	} else {
-		resultPath = "/feed"
-	}
-	Pr(resultPath)
-
-	return false
+	templatePage := r.registry[requestedPageName]
+	page := templatePage.Constructor()(s)
+	pr("constructed page:", page)
+	return page
+	//s.SetURLExpression(requestedPageName)
+	//Todo("Maybe the Generate function should be in the abstract Page type?")
+	//page.GetBasicPage().Generate()
+	//pr("generated page")
+	//
+	//return true
+	//
+	//var resultPath string
+	//
+	//if !IsUserLoggedIn(user.Id()) {
+	//	resultPath = "/"
+	//} else {
+	//	resultPath = "/feed"
+	//}
+	//Pr(resultPath)
+	//
+	//return false
 }
 
-func (r PageRequester) RegisterPage(name string, template any) {
-	if HasKey(r.registry, name) {
-		BadState("duplicate page in registry:", name)
+func (r PageRequester) RegisterPage(template Page) {
+	key := template.GetBasicPage().PageName
+	if HasKey(r.registry, key) {
+		BadState("duplicate page in registry:", key)
 	}
-	r.registry[name] = template
+	r.registry[key] = template
 }
 
 func (r PageRequester) Register(page BasicPage) {

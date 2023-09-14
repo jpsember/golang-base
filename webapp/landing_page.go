@@ -6,9 +6,23 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
+// ------------------------------------------------------------------------------------
+// Page implementation
+// ------------------------------------------------------------------------------------
+
 const LandingPageName = "signin"
 
 var LandingPageTemplate = NewLandingPage(nil)
+
+func (p LandingPage) GetBasicPage() BasicPage {
+	return &p.BasicPageStruct
+}
+
+func (p LandingPage) Constructor() PageConstructFunc {
+	return NewLandingPage
+}
+
+// ------------------------------------------------------------------------------------
 
 type LandingPageStruct struct {
 	BasicPageStruct
@@ -18,7 +32,7 @@ type LandingPageStruct struct {
 
 type LandingPage = *LandingPageStruct
 
-func NewLandingPage(sess Session) LandingPage {
+func NewLandingPage(sess Session) Page {
 	t := &LandingPageStruct{
 		editing: true,
 	}
@@ -156,7 +170,7 @@ func (p LandingPage) signUpListener(s Session, widget Widget) {
 }
 
 func (p LandingPage) galleryListener(sess Session, widget Widget) {
-	NewGalleryPage(sess).Generate()
+	NewGalleryPage(sess).GetBasicPage().Generate()
 }
 
 func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {
