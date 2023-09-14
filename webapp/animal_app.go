@@ -48,6 +48,7 @@ func (oper AnimalOper) Perform(app *App) {
 	Todo("!Emphasize that PageRequester must be threadsafe")
 	oper.registerPages(SharedPageRequester)
 
+	DevLabelRenderer = AddDevPageLabel
 	// Initialize and start the JServer
 	//
 	{
@@ -59,6 +60,10 @@ func (oper AnimalOper) Perform(app *App) {
 		s.KeyDir = oper.appRoot.JoinM("https_keys")
 		s.StartServing()
 	}
+
+}
+
+func devLabelRenderer(s Session, p Page) {
 }
 
 // JServer callback to perform initialization for a new session.  We assign a user,
@@ -128,10 +133,10 @@ func (oper AnimalOper) writeFooter(s Session, bp MarkupBuilder) {
 	bp.CloseTag() // page container
 
 	// Add a bit of javascript that will change the url to what we want
-	if s.PendingURLExpr != "" {
+	if s.BrowserURLExpr != "" {
 		code := `
 <script type="text/javascript">
-history.pushState(null, null, location.origin+'` + s.PendingURLExpr + `')
+history.pushState(null, null, location.origin+'` + s.BrowserURLExpr + `')
 </script>
 `
 		//	Pr("Appending code to end of <body>:", INDENT, code)

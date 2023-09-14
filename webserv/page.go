@@ -1,8 +1,7 @@
-package webapp
+package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/webserv"
 )
 
 type Page interface {
@@ -14,6 +13,10 @@ type Page interface {
 	Request(s Session, parser PathParse) Page
 }
 
+type PageDevLabelRenderer func(s Session, p Page)
+
+var DevLabelRenderer PageDevLabelRenderer
+
 // Some common boilerplate that is typically some of the first code that
 // Generate() would otherwise execute.
 func GenerateHeader(page Page) WidgetManager {
@@ -22,8 +25,11 @@ func GenerateHeader(page Page) WidgetManager {
 	s := page.Session()
 	m := s.WidgetManager()
 	m.With(s.PageWidget)
-	AddDevPageLabel(s, page.Name())
+	if DevLabelRenderer != nil {
+		DevLabelRenderer(s, page)
+	}
 	Todo("We must also include the arguments, if any... but how?")
-	s.SetURLExpression(page.Name())
+	Todo("Set browser expression to url expr?")
+	//s.SetURLExpression(page.Name())
 	return m
 }

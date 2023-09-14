@@ -159,17 +159,9 @@ func (p ManagerPage) clickListener(sess Session, message string) {
 		//
 		// construct a path, e.g. edit/42
 		// have the page_requester process this path
-		
-		RequestPage(sess, EditAnimalPageTemplate, animal.Id())
-		//NewEditAnimalPage(sess, animal.Id()).Generate()
-	}
-}
 
-func RequestPage(sess Session, page Page, args ...any) Session {
-	CheckState(sess.PendingURLExpr == "")
-	sess.AddArg(page.Name())
-	for _, arg := range args {
-		sess.AddArg(arg)
+		sess.RequestPage(EditAnimalPageTemplate, animal.Id())
+		Todo("even assuming this works, can we have the sess.RequestPage do it automatically?")
+		NewEditAnimalPage(sess, animal.Id()).Generate()
 	}
-	return sess
 }

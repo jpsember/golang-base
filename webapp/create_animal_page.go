@@ -338,7 +338,7 @@ func (p CreateAnimalPage) doneEditListener(s Session, widget Widget) {
 	if ReportIfError(err, "UpdateAnimal after editing") {
 		return
 	}
-	pr("updated animal", b)
+	pr("updated animal", b.ToJson().AsJSMap().CompactString())
 	p.exit()
 }
 

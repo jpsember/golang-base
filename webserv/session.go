@@ -78,8 +78,10 @@ type SessionStruct struct {
 	clientInfoString string // If nonempty information sent from client about screen size, etc
 	ajaxWidgetId     string // Id of widget that ajax call is being sent to
 	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
-	PendingURLExpr   string // If not nil, client browser should push this onto the history
+	PendingURLExpr2  string // If not nil, client browser should push this onto the history
 	PendingURLArgs2  []any
+	BrowserURLExpr   string // If not nil, client browser should push this onto the history
+
 }
 
 var ourDefaultBrowserInfo = webserv_data.NewClientInfo().SetDevicePixelRatio(1.25).SetScreenSizeX(2560).SetScreenSizeY(1440).Build()
@@ -380,7 +382,7 @@ func (s Session) sendAjaxResponse() {
 	s.processRepaintFlags(s.WidgetManager().repaintSet, 0, s.PageWidget, refmap, false)
 
 	jsmap.Put(respKeyWidgetsToRefresh, refmap)
-	if s.PendingURLExpr != "" {
+	if s.PendingURLExpr2 != "" {
 		path := s.ConstructPathFromPendingURL()
 		jsmap.Put(respKeyURLExpr, path)
 		Pr("sending url expression:", path)
@@ -569,11 +571,13 @@ func (s Session) SetURLExpression(args ...any) {
 		sb.WriteByte('/')
 		sb.WriteString(s)
 	}
-	s.ClearPendingURL()
-	s.PendingURLExpr = sb.String()
-
-	pr("...pendingURLExpr set to:", s.PendingURLExpr)
-
+	if false {
+		//s.ClearPendingURL()
+		//
+		//s.PendingURLExpr = sb.String()
+		//
+		//pr("...pendingURLExpr set to:", s.PendingURLExpr)
+	}
 	// Ok, when clicking a button it is not appending the button url to the program 'root' url, rather the current one
 	// Solved by using location.origin
 
@@ -586,25 +590,26 @@ func (s Session) AddArg(arg any) Session {
 	pr := PrIf(true)
 	pr("AddArg:", arg)
 	CheckArg(arg != nil)
-	if s.PendingURLExpr == "" {
-		s.PendingURLExpr = arg.(string)
+	if s.PendingURLExpr2 == "" {
+		s.PendingURLExpr2 = arg.(string)
 	} else {
 		s.PendingURLArgs2 = append(s.PendingURLArgs2, arg)
 	}
-	pr("...pending URL is --->", s.PendingURLExpr, s.PendingURLArgs2)
+	pr("...pending URL is --->", s.PendingURLExpr2, s.PendingURLArgs2)
 	return s
 }
 
 func (s Session) ClearPendingURL() {
-	s.PendingURLExpr = ""
+	s.PendingURLExpr2 = ""
 	s.PendingURLArgs2 = []any{}
+	s.BrowserURLExpr = ""
 }
 
 func (s Session) ConstructPathFromPendingURL() string {
-	CheckState(s.PendingURLExpr != "")
+	CheckState(s.PendingURLExpr2 != "")
 
 	var a []string
-	a = append(a, s.PendingURLExpr)
+	a = append(a, s.PendingURLExpr2)
 	for _, k := range s.PendingURLArgs2 {
 		var argStr string
 		switch z := k.(type) {
@@ -618,5 +623,15 @@ func (s Session) ConstructPathFromPendingURL() string {
 		}
 		a = append(a, argStr)
 	}
+	Pr("joining args:", a)
 	return "/" + strings.Join(a, "/")
+}
+
+func (sess Session) RequestPage(page Page, args ...any) Session {
+	CheckState(sess.PendingURLExpr2 == "")
+	sess.AddArg(page.Name())
+	for _, arg := range args {
+		sess.AddArg(arg)
+	}
+	return sess
 }
