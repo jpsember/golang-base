@@ -78,10 +78,9 @@ type SessionStruct struct {
 	clientInfoString string // If nonempty information sent from client about screen size, etc
 	ajaxWidgetId     string // Id of widget that ajax call is being sent to
 	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
-	PendingURLExpr2  string // If not nil, client browser should push this onto the history
-	PendingURLArgs2  []any
-	BrowserURLExpr   string // If not nil, client browser should push this onto the history
-
+	//PendingURLExpr2  string // If not nil, client browser should push this onto the history
+	//PendingURLArgs2  []any
+	browserURLExpr string // If not nil, client browser should push this onto the history
 }
 
 var ourDefaultBrowserInfo = webserv_data.NewClientInfo().SetDevicePixelRatio(1.25).SetScreenSizeX(2560).SetScreenSizeY(1440).Build()
@@ -382,10 +381,10 @@ func (s Session) sendAjaxResponse() {
 	s.processRepaintFlags(s.WidgetManager().repaintSet, 0, s.PageWidget, refmap, false)
 
 	jsmap.Put(respKeyWidgetsToRefresh, refmap)
-	if s.PendingURLExpr2 != "" {
-		path := s.ConstructPathFromPendingURL()
-		jsmap.Put(respKeyURLExpr, path)
-		Pr("sending url expression:", path)
+	expr := s.browserURLExpr
+	if expr != "" {
+		jsmap.Put(respKeyURLExpr, expr)
+		Pr("sending url expression:", expr)
 	}
 	pr("sending back to Ajax caller:", INDENT, jsmap)
 	content := jsmap.CompactString()
@@ -404,7 +403,7 @@ func (s Session) ReleaseLockAndDiscardRequest() {
 	s.ajaxWidgetId = ""
 	s.ajaxWidgetValue = ""
 	s.clientInfoString = ""
-	s.ClearPendingURL()
+	s.browserURLExpr = ""
 
 	Todo("!Consider moving the repaint set from the widget manager to the session, and perhaps other things")
 	s.WidgetManager().clearRepaintSet()
@@ -558,6 +557,19 @@ func (s Session) SetClickListener(listener ClickListener) {
 	s.clickListener = listener
 }
 
+// ------------------------------------------------------------------------------------
+// Page url and arguments
+// ------------------------------------------------------------------------------------
+
+func (s Session) SwitchToPage(page Page) {
+	page.Generate()
+	s.browserURLExpr = s.ConstructPathFromPage(page)
+}
+
+func (s Session) NewBrowserPath() string {
+	return s.browserURLExpr
+}
+
 // Cause a new URL to be pushed onto the browser history.  This gets sent when the AJAX response is sent.
 //
 // Working from blog:  https://css-tricks.com/using-the-html5-history-api/
@@ -584,33 +596,54 @@ func (s Session) SetURLExpression(args ...any) {
 	Todo("!What about : 'Make sure to return true from Javascript click handlers when people middle or command click so that we don't override them accidentally.'")
 }
 
-// Add an argument to the pending URL expression.  If there are no arguments, the first such argument
-// is assumed to be a page name
-func (s Session) AddArg(arg any) Session {
-	pr := PrIf(true)
-	pr("AddArg:", arg)
-	CheckArg(arg != nil)
-	if s.PendingURLExpr2 == "" {
-		s.PendingURLExpr2 = arg.(string)
-	} else {
-		s.PendingURLArgs2 = append(s.PendingURLArgs2, arg)
-	}
-	pr("...pending URL is --->", s.PendingURLExpr2, s.PendingURLArgs2)
-	return s
-}
+//// Add an argument to the pending URL expression.  If there are no arguments, the first such argument
+//// is assumed to be a page name
+//func (s Session) AddArg(arg any) Session {
+//	pr := PrIf(true)
+//	pr("AddArg:", arg)
+//	CheckArg(arg != nil)
+//	if s.PendingURLExpr2 == "" {
+//		s.PendingURLExpr2 = arg.(string)
+//	} else {
+//		s.PendingURLArgs2 = append(s.PendingURLArgs2, arg)
+//	}
+//	pr("...pending URL is --->", s.PendingURLExpr2, s.PendingURLArgs2)
+//	return s
+//}
 
-func (s Session) ClearPendingURL() {
-	s.PendingURLExpr2 = ""
-	s.PendingURLArgs2 = []any{}
-	s.BrowserURLExpr = ""
-}
+//
+//func (s Session) ClearPendingURL() {
+//	s.PendingURLExpr2 = ""
+//	s.PendingURLArgs2 = []any{}
+//	s.BrowserURLExpr = ""
+//}
 
-func (s Session) ConstructPathFromPendingURL() string {
-	CheckState(s.PendingURLExpr2 != "")
+//
+//func (s Session) ConstructPathFromPendingURL() string {
+//	CheckState(s.PendingURLExpr2 != "")
+//
+//	var a []string
+//	a = append(a, s.PendingURLExpr2)
+//	for _, k := range s.PendingURLArgs2 {
+//		var argStr string
+//		switch z := k.(type) {
+//		case string:
+//			argStr = z
+//		case int:
+//			argStr = IntToString(z)
+//		default:
+//			Alert("#50 unknown type in arg:", Info(k))
+//			argStr = "X"
+//		}
+//		a = append(a, argStr)
+//	}
+//	Pr("joining args:", a)
+//	return "/" + strings.Join(a, "/")
+//}
 
-	var a []string
-	a = append(a, s.PendingURLExpr2)
-	for _, k := range s.PendingURLArgs2 {
+func (s Session) ConstructPathFromPage(page Page) string {
+	var a = []string{page.Name()}
+	for _, k := range page.Args() {
 		var argStr string
 		switch z := k.(type) {
 		case string:
@@ -618,20 +651,22 @@ func (s Session) ConstructPathFromPendingURL() string {
 		case int:
 			argStr = IntToString(z)
 		default:
-			Alert("#50 unknown type in arg:", Info(k))
-			argStr = "X"
+			BadArg(" unknown type in arg:", Info(k))
 		}
 		a = append(a, argStr)
 	}
-	Pr("joining args:", a)
-	return "/" + strings.Join(a, "/")
+	result := "/" + strings.Join(a, "/")
+	Pr("constructPathFromPage:", result)
+	return result
 }
 
-func (sess Session) RequestPage(page Page, args ...any) Session {
-	CheckState(sess.PendingURLExpr2 == "")
-	sess.AddArg(page.Name())
-	for _, arg := range args {
-		sess.AddArg(arg)
-	}
-	return sess
-}
+//func (sess Session) RequestPage(page Page, args ...any) Session {
+//	CheckState(sess.PendingURLExpr2 == "")
+//	sess.AddArg(page.Name())
+//	for _, arg := range args {
+//		sess.AddArg(arg)
+//	}
+//	return sess
+//}
+
+// ------------------------------------------------------------------------------------

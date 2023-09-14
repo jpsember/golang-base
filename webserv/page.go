@@ -9,9 +9,9 @@ type Page interface {
 	Name() string
 	Args() []any // The additional arguments that would show up in the url (e.g., edit/17), args would be [17]
 	Session() Session
+	// Attempt to construct a new page with the specified args; return nil if args aren't valid
 	Construct(s Session, args ...any) Page
 	Generate()
-	Request(s Session, parser PathParse) Page
 }
 
 var EmptyPageArgs = []any{}
@@ -35,4 +35,31 @@ func GenerateHeader(page Page) WidgetManager {
 	Todo("Set browser expression to url expr?")
 	//s.SetURLExpression(page.Name())
 	return m
+}
+
+func asInt(arg any) (int, error) {
+	switch k := arg.(type) {
+	case string:
+		return ParseInt2(k)
+	case int:
+		return k, nil
+	default:
+		return -1, NotIntError
+	}
+
+}
+
+var NotIntError = Error("Not an integer")
+
+func ParsePageIntArg(args []any, index int) int {
+	if PageArgExists(args, index) {
+		val := args[index]
+		intVal, _ := asInt(val)
+		return intVal
+	}
+	return -1
+}
+
+func PageArgExists(args []any, index int) bool {
+	return index >= 0 && index < len(args)
 }

@@ -40,10 +40,10 @@ const (
 	id_manager_list = manager_id_prefix + "list"
 )
 
-func (p ManagerPage) Request(s Session, parser PathParse) Page {
+func (p ManagerPage) Request(s Session) Page {
 	user := OptSessionUser(s)
 	if user.UserClass() == UserClassManager {
-		return ManagerPageTemplate
+		return p
 	}
 	return nil
 }
@@ -86,7 +86,7 @@ func (p ManagerPage) constructAnimalList() AnimalList {
 }
 
 func (p ManagerPage) newAnimalListener(sess Session, widget Widget) {
-	NewCreateAnimalPage(sess).Generate()
+	sess.SwitchToPage(NewCreateAnimalPage(sess))
 }
 
 func (p ManagerPage) listListener(sess Session, widget ListWidget) error {
@@ -161,8 +161,8 @@ func (p ManagerPage) clickListener(sess Session, message string) {
 		// construct a path, e.g. edit/42
 		// have the page_requester process this path
 
-		sess.RequestPage(EditAnimalPageTemplate, animal.Id())
+		//sess.RequestPage(EditAnimalPageTemplate, animal.Id())
 		Todo("even assuming this works, can we have the sess.RequestPage do it automatically?")
-		NewEditAnimalPage(sess, animal.Id()).Generate()
+		sess.SwitchToPage(NewEditAnimalPage(sess, animal.Id()))
 	}
 }

@@ -62,14 +62,33 @@ func NewViewAnimalPage(sess Session, animalId int) Page {
 func (p CreateAnimalPage) Session() Session { return p.session }
 
 func (p CreateAnimalPage) Construct(s Session, args ...any) Page {
-	if !p.editing {
-		return NewViewAnimalPage(s, args[0].(int))
+	switch p.name {
+	case "new":
+		if !PageArgExists(args, 0) {
+			return NewCreateAnimalPage(s)
+		}
+	case "view", "edit":
+		i := ParsePageIntArg(args, 0)
+		if i <= 0 {
+			break
+		}
+		anim := ReadAnimalIgnoreError(i)
+		if anim.Id() == 0 {
+			break
+		}
+		user := SessionUser(s)
+		if user.UserClass() == UserClassDonor {
+			if p.name == "edit" {
+				break
+			}
+		} else {
+			if anim.ManagerId() != user.Id() {
+				break
+			}
+		}
+		return p
 	}
-	if p.animalId != 0 {
-		return NewEditAnimalPage(s, args[0].(int))
-	} else {
-		return NewCreateAnimalPage(s)
-	}
+	return nil
 }
 
 func (p CreateAnimalPage) Name() string {
@@ -83,41 +102,41 @@ func (p CreateAnimalPage) Args() []any {
 	return EmptyPageArgs
 }
 
-func (p CreateAnimalPage) Request(s Session, parser PathParse) Page {
-	requestedId := parser.PeekInt()
-	user := OptSessionUser(s)
-
-	Todo("Clear pendingURLexpr before starting the request process, and if afterward, it is empty, fill it in; maybe have requestedArgs?")
-	var result Page
-
-	switch user.UserClass() {
-	default:
-		return nil
-	case UserClassDonor:
-		result = FeedPageTemplate
-		if p.Name() == "view" {
-			if AnimalExistsAndIsActive(requestedId) {
-				Todo("have separate pendingargs")
-				s.AddArg(requestedId)
-				result = ViewAnimalPageTemplate
-			}
-		}
-		break
-	case UserClassManager:
-		result = ManagerPageTemplate
-		if p.Name() == "view" || p.Name() == "edit" {
-			if AnimalExistsAndIsActiveForManager(requestedId, user.Id()) {
-				Todo("have separate pendingargs")
-				s.AddArg(requestedId)
-				result = ViewAnimalPageTemplate
-			}
-		} else {
-			result = CreateAnimalPageTemplate
-		}
-		break
-	}
-	return result
-}
+//func (p CreateAnimalPage) Request(s Session) Page {
+//	//requestedId := parser.PeekInt()
+//	user := OptSessionUser(s)
+//
+//	Todo("Clear pendingURLexpr before starting the request process, and if afterward, it is empty, fill it in; maybe have requestedArgs?")
+//	var result Page
+//
+//	switch user.UserClass() {
+//	default:
+//		return nil
+//	case UserClassDonor:
+//		result = FeedPageTemplate
+//		if p.Name() == "view" {
+//			if AnimalExistsAndIsActive(requestedId) {
+//				Todo("have separate pendingargs")
+//				s.AddArg(requestedId)
+//				result = ViewAnimalPageTemplate
+//			}
+//		}
+//		break
+//	case UserClassManager:
+//		result = ManagerPageTemplate
+//		if p.Name() == "view" || p.Name() == "edit" {
+//			if AnimalExistsAndIsActiveForManager(requestedId, user.Id()) {
+//				Todo("have separate pendingargs")
+//				s.AddArg(requestedId)
+//				result = ViewAnimalPageTemplate
+//			}
+//		} else {
+//			result = CreateAnimalPageTemplate
+//		}
+//		break
+//	}
+//	return result
+//}
 
 func (p CreateAnimalPage) readStateFromAnimal() {
 	a := DefaultAnimal

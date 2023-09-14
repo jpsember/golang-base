@@ -24,10 +24,10 @@ type LandingPageStruct struct {
 
 type LandingPage = *LandingPageStruct
 
-func (p LandingPage) Request(s Session, parser PathParse) Page {
+func (p LandingPage) Request(s Session) Page {
 	user := OptSessionUser(s)
 	if user.Id() == 0 {
-		return LandingPageTemplate
+		return p
 	}
 	return nil
 }
@@ -187,7 +187,7 @@ func (p LandingPage) signUpListener(s Session, widget Widget) {
 }
 
 func (p LandingPage) galleryListener(sess Session, widget Widget) {
-	NewGalleryPage(sess).Generate()
+	sess.SwitchToPage(NewGalleryPage(sess))
 }
 
 func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {

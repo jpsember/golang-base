@@ -133,10 +133,11 @@ func (oper AnimalOper) writeFooter(s Session, bp MarkupBuilder) {
 	bp.CloseTag() // page container
 
 	// Add a bit of javascript that will change the url to what we want
-	if s.BrowserURLExpr != "" {
+	expr := s.NewBrowserPath()
+	if expr != "" {
 		code := `
 <script type="text/javascript">
-history.pushState(null, null, location.origin+'` + s.BrowserURLExpr + `')
+history.pushState(null, null, location.origin+'` + expr + `')
 </script>
 `
 		//	Pr("Appending code to end of <body>:", INDENT, code)
@@ -246,7 +247,7 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 	}
 	//
 	if true {
-		NewFeedPage(sess).Generate()
+		sess.SwitchToPage(NewFeedPage(sess))
 		return
 	}
 }

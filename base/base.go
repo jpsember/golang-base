@@ -419,6 +419,16 @@ func ParseIntM(str string) int {
 	return int(CheckOkWith(result, err, "Failed to parse int from:", str))
 }
 
+func ParseInt2(str string) (int, error) {
+	result, err := strconv.ParseInt(str, 10, 64)
+	return int(result), err
+}
+
+func ParseInt2M(str string) int {
+	result := ParseIntM(str)
+	return int(result)
+}
+
 func IntToString(value int) string {
 	return strconv.Itoa(value)
 }

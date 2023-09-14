@@ -40,9 +40,9 @@ func (p SignUpPage) Args() []any  { return EmptyPageArgs }
 
 func (p SignUpPage) Session() Session                      { return p.session }
 func (p SignUpPage) Construct(s Session, args ...any) Page { return NewSignUpPage(s, args...) }
-func (p SignUpPage) Request(s Session, parser PathParse) Page {
+func (p SignUpPage) Request(s Session) Page {
 	if OptSessionUser(s).Id() == 0 {
-		return SignUpPageTemplate
+		return p
 	}
 	return nil
 }

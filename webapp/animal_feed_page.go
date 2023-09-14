@@ -39,7 +39,7 @@ const (
 
 func (p FeedPage) Name() string { return FeedPageName }
 
-func (p FeedPage) Request(s Session, parser PathParse) Page {
+func (p FeedPage) Request(s Session) Page {
 	if SessionUserIs(s, UserClassDonor) {
 		Todo("Maybe don't set the url string until a page is accepted?")
 		return p
@@ -76,7 +76,7 @@ func (p FeedPage) constructAnimalList() AnimalList {
 }
 
 func (p FeedPage) newAnimalListener(sess Session, widget Widget) {
-	NewCreateAnimalPage(sess).Generate()
+	sess.SwitchToPage(NewCreateAnimalPage(sess))
 }
 
 func (p FeedPage) listListener(sess Session, widget ListWidget) error {
@@ -117,7 +117,7 @@ func (p FeedPage) clickListener(sess Session, message string) {
 			return
 		}
 		sess.SetClickListener(nil)
-		NewViewAnimalPage(sess, anim.Id()).Generate()
+		sess.SwitchToPage(NewViewAnimalPage(sess, anim.Id()))
 		return
 	}
 
