@@ -45,7 +45,7 @@ const sampleImageId = "sample_image"
 var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
 
-func (p GalleryPage) Generate(s Session) {
+func (p GalleryPage) Generate() {
 	m := GenerateHeader(p)
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)

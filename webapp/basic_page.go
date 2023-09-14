@@ -7,8 +7,7 @@ import (
 type Page interface {
 	// Note: go doesn't support covariant return types, so this must return Page, not some concrete implementation of it
 	Construct(s Session) Page
-	// Todo: why do we need to pass in the session here?
-	Generate(s Session)
+	Generate()
 	Name() string
 	Session() Session
 }

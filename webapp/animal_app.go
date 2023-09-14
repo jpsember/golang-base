@@ -95,6 +95,7 @@ func (oper AnimalOper) handleBlobRequest(s Session, blobId string) {
 }
 
 func (oper AnimalOper) renderPage(sess Session) {
+	Todo("Rename to avoid confusion with 'Page.Generate'?")
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
 	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
@@ -226,7 +227,7 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 	}
 	//
 	if true {
-		NewFeedPage(sess).Generate(sess)
+		NewFeedPage(sess).Generate()
 		return
 	}
 }
@@ -242,7 +243,7 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 	if true {
 		page := oper.pageRequester.Process(s, path)
 		s.SetURLExpression(page.Name())
-		page.Generate(s)
+		page.Generate()
 		oper.renderPage(s)
 		return true
 	}
@@ -255,7 +256,7 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 	}
 
 	if _, found := TrimIfPrefix(path, "/manager"); found {
-		NewManagerPage(s).Generate(s)
+		NewManagerPage(s).Generate()
 		oper.renderPage(s)
 		pr("rendered manager page")
 		return true
@@ -265,7 +266,7 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 		if animalId, err := ParseAsPositiveInt(remainder); err == nil {
 			pr("generating page to edit animal #", animalId)
 			page := NewEditAnimalPage(s, animalId)
-			page.Generate(s)
+			page.Generate()
 			oper.renderPage(s)
 			return true
 		}

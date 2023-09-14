@@ -35,7 +35,8 @@ const (
 	id_manager_list = manager_id_prefix + "list"
 )
 
-func (p ManagerPage) Generate(sess Session) {
+func (p ManagerPage) Generate() {
+	sess := p.session
 	Todo("?Think about ways of cleaning up the click listener which is not tied to a widget")
 	//SetWidgetDebugRendering()
 	m := GenerateHeader(p)
@@ -72,7 +73,7 @@ func (p ManagerPage) constructAnimalList() AnimalList {
 }
 
 func (p ManagerPage) newAnimalListener(sess Session, widget Widget) {
-	NewCreateAnimalPage(sess).Generate(sess)
+	NewCreateAnimalPage(sess).Generate()
 }
 
 func (p ManagerPage) listListener(sess Session, widget ListWidget) error {
@@ -137,6 +138,6 @@ func (p ManagerPage) clickListener(sess Session, message string) {
 		}
 		sess.SetClickListener(nil)
 
-		NewEditAnimalPage(sess, anim.Id()).Generate(sess)
+		NewEditAnimalPage(sess, anim.Id()).Generate()
 	}
 }

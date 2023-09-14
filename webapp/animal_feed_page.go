@@ -44,7 +44,8 @@ const (
 
 func (p FeedPage) Name() string { return FeedPageName }
 
-func (p FeedPage) Generate(s Session) {
+func (p FeedPage) Generate() {
+	s := p.session
 	// Set click listener for this page
 	s.SetClickListener(p.clickListener)
 
@@ -78,7 +79,7 @@ func (p FeedPage) constructAnimalList() AnimalList {
 }
 
 func (p FeedPage) newAnimalListener(sess Session, widget Widget) {
-	NewCreateAnimalPage(sess).Generate(sess)
+	NewCreateAnimalPage(sess).Generate()
 }
 
 func (p FeedPage) listListener(sess Session, widget ListWidget) error {
@@ -119,7 +120,7 @@ func (p FeedPage) clickListener(sess Session, message string) {
 			return
 		}
 		sess.SetClickListener(nil)
-		NewViewAnimalPage(sess, anim.Id()).Generate(sess)
+		NewViewAnimalPage(sess, anim.Id()).Generate()
 		return
 	}
 

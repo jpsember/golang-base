@@ -37,7 +37,8 @@ func (p SignUpPage) Name() string {
 func (p SignUpPage) Construct(s Session) Page {
 	return NewSignUpPage(s)
 }
-func (p SignUpPage) Generate(s Session) {
+func (p SignUpPage) Generate() {
+	s := p.session
 	s.DeleteStateErrors()
 	m := GenerateHeader(p)
 

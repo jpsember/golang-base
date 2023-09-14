@@ -93,7 +93,8 @@ func (p CreateAnimalPage) readStateFromAnimal() {
 	s.Put(id_animal_display_pic, a.PhotoThumbnail())
 }
 
-func (p CreateAnimalPage) Generate(s Session) {
+func (p CreateAnimalPage) Generate() {
+	s := p.session
 	//SetWidgetDebugRendering()
 	s.SetClickListener(nil)
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
@@ -335,7 +336,7 @@ func (p CreateAnimalPage) exit() {
 	s.DeleteSessionData(SessionKey_MgrList)
 
 	Todo("Do a 'back' operation to go back to the previous page")
-	NewManagerPage(s).Generate(s)
+	NewManagerPage(s).Generate()
 }
 
 func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (string, error) {
