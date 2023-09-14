@@ -87,24 +87,14 @@ func (r PageRequester) Process(s Session, path string) Page {
 	templatePage = r.PageWithNameM(requestedPageName)
 
 	remainingArgs := p.RemainingArgs()
-	Alert("#50remaining args:", remainingArgs)
+	pr("remaining args:", remainingArgs)
 	page := templatePage.Construct(s, remainingArgs...)
-
-	// Ask the page to confirm it is ok
-	//
-	//if len(s.PendingURLArgs2) != 0 {
-	//	BadState("PendingURLArgs is not empty")
-	//}
-	//page = page.Request(s)
-	//pr("requested page:", page, "url expr:", s.PendingURLExpr2)
+	Pr("attempted to construct page of type:", templatePage.Name(), "with args:", remainingArgs, "yielded:", page)
 	if page == nil {
 		page = r.DefaultPagePage(user)
+		Pr("showing default page:", page)
 	}
 	CheckState(page != nil, "requested page is nil")
-
-	// NOT ANY MORE: construct a non-template version of the page to return
-	//page = page.Construct(s, s.PendingURLArgs2...)
-	Todo("how do we transmit the url args to the page construction args?")
 	return page
 }
 

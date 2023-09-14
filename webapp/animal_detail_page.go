@@ -17,21 +17,21 @@ const (
 	id_animal_display_pic = anim_state_prefix + "pic"
 )
 
-type CreateAnimalPageStruct struct {
+type AnimalDetailPageStruct struct {
 	session  Session
 	animalId int
 	editing  bool
 	name     string
 }
 
-type CreateAnimalPage = *CreateAnimalPageStruct
+type AnimalDetailPage = *AnimalDetailPageStruct
 
 var CreateAnimalPageTemplate = NewCreateAnimalPage(nil)
 var EditAnimalPageTemplate = NewEditAnimalPage(nil, 0)
 var ViewAnimalPageTemplate = NewViewAnimalPage(nil, 0)
 
 func NewCreateAnimalPage(sess Session, args ...any) Page {
-	t := &CreateAnimalPageStruct{
+	t := &AnimalDetailPageStruct{
 		session: sess,
 		editing: true,
 		name:    "new",
@@ -40,7 +40,7 @@ func NewCreateAnimalPage(sess Session, args ...any) Page {
 }
 
 func NewEditAnimalPage(sess Session, animalId int) Page {
-	t := &CreateAnimalPageStruct{
+	t := &AnimalDetailPageStruct{
 		session:  sess,
 		animalId: animalId,
 		editing:  true,
@@ -50,7 +50,7 @@ func NewEditAnimalPage(sess Session, animalId int) Page {
 }
 
 func NewViewAnimalPage(sess Session, animalId int) Page {
-	t := &CreateAnimalPageStruct{
+	t := &AnimalDetailPageStruct{
 		session:  sess,
 		animalId: animalId,
 		editing:  false,
@@ -59,9 +59,9 @@ func NewViewAnimalPage(sess Session, animalId int) Page {
 	return t
 }
 
-func (p CreateAnimalPage) Session() Session { return p.session }
+func (p AnimalDetailPage) Session() Session { return p.session }
 
-func (p CreateAnimalPage) Construct(s Session, args ...any) Page {
+func (p AnimalDetailPage) Construct(s Session, args ...any) Page {
 	switch p.name {
 	case "new":
 		if !PageArgExists(args, 0) {
@@ -91,18 +91,18 @@ func (p CreateAnimalPage) Construct(s Session, args ...any) Page {
 	return nil
 }
 
-func (p CreateAnimalPage) Name() string {
+func (p AnimalDetailPage) Name() string {
 	return p.name
 }
 
-func (p CreateAnimalPage) Args() []any {
+func (p AnimalDetailPage) Args() []any {
 	if p.animalId != 0 {
 		return []any{p.animalId}
 	}
 	return EmptyPageArgs
 }
 
-//func (p CreateAnimalPage) Request(s Session) Page {
+//func (p AnimalDetailPage) Request(s Session) Page {
 //	//requestedId := parser.PeekInt()
 //	user := OptSessionUser(s)
 //
@@ -138,12 +138,12 @@ func (p CreateAnimalPage) Args() []any {
 //	return result
 //}
 
-func (p CreateAnimalPage) readStateFromAnimal() {
+func (p AnimalDetailPage) readStateFromAnimal() {
 	a := DefaultAnimal
 	if p.animalId != 0 {
 		var err error
 		a, err = ReadActualAnimal(p.animalId)
-		if ReportIfError(err, "CreateAnimalPage readStateFromAnimal") {
+		if ReportIfError(err, "AnimalDetailPage readStateFromAnimal") {
 			return
 		}
 	}
@@ -154,7 +154,7 @@ func (p CreateAnimalPage) readStateFromAnimal() {
 	s.Put(id_animal_display_pic, a.PhotoThumbnail())
 }
 
-func (p CreateAnimalPage) Generate() {
+func (p AnimalDetailPage) Generate() {
 	s := p.session
 	//SetWidgetDebugRendering()
 	s.SetClickListener(nil)
@@ -174,7 +174,7 @@ func (p CreateAnimalPage) Generate() {
 	}
 }
 
-func (p CreateAnimalPage) generateForEditing() {
+func (p AnimalDetailPage) generateForEditing() {
 	m := p.Session().WidgetManager()
 	m.Col(6).Open()
 	{
@@ -208,7 +208,7 @@ func (p CreateAnimalPage) generateForEditing() {
 	m.Close()
 }
 
-func (p CreateAnimalPage) generateForViewing() {
+func (p AnimalDetailPage) generateForViewing() {
 	m := p.Session().WidgetManager()
 
 	m.Col(6).Open()
@@ -244,7 +244,7 @@ func AnimalNameListener(s Session, widget InputWidget, value string) (string, er
 	return ValidateAnimalName(value, VALIDATE_EMPTYOK)
 }
 
-func (p CreateAnimalPage) AnimalTextListener(sess Session, widget InputWidget, value string) (string, error) {
+func (p AnimalDetailPage) AnimalTextListener(sess Session, widget InputWidget, value string) (string, error) {
 	if widget.Id() == id_animal_summary {
 		return animalInfoListener(value, 20, 200, true)
 	} else {
@@ -252,7 +252,7 @@ func (p CreateAnimalPage) AnimalTextListener(sess Session, widget InputWidget, v
 	}
 }
 
-func (p CreateAnimalPage) createAnimalButtonListener(s Session, widget Widget) {
+func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget) {
 	pr := PrIf(true)
 
 	if !p.validateAll() {
@@ -302,7 +302,7 @@ func (p CreateAnimalPage) createAnimalButtonListener(s Session, widget Widget) {
 	//NewManagerPage(s, p.parentPage).Generate()
 }
 
-func (p CreateAnimalPage) validateAll() bool {
+func (p AnimalDetailPage) validateAll() bool {
 	pr := PrIf(true)
 	s := p.Session()
 
@@ -326,7 +326,7 @@ func (p CreateAnimalPage) validateAll() bool {
 	return errcount == 0
 }
 
-func (p CreateAnimalPage) doneEditListener(s Session, widget Widget) {
+func (p AnimalDetailPage) doneEditListener(s Session, widget Widget) {
 	pr := PrIf(true)
 
 	if !p.validateAll() {
@@ -368,15 +368,15 @@ func (p CreateAnimalPage) doneEditListener(s Session, widget Widget) {
 	p.exit()
 }
 
-func (p CreateAnimalPage) doneViewListener(s Session, widget Widget) {
+func (p AnimalDetailPage) doneViewListener(s Session, widget Widget) {
 	p.exit()
 }
 
-func (p CreateAnimalPage) abortEditListener(s Session, widget Widget) {
+func (p AnimalDetailPage) abortEditListener(s Session, widget Widget) {
 	p.exit()
 }
 
-func (p CreateAnimalPage) writeStateToAnimal(b AnimalBuilder) {
+func (p AnimalDetailPage) writeStateToAnimal(b AnimalBuilder) {
 	s := p.Session()
 	b.SetName(strings.TrimSpace(s.WidgetStrValue(id_animal_name)))
 	b.SetSummary(strings.TrimSpace(s.WidgetStrValue(id_animal_summary)))
@@ -385,7 +385,7 @@ func (p CreateAnimalPage) writeStateToAnimal(b AnimalBuilder) {
 	b.SetManagerId(SessionUser(s).Id())
 }
 
-func (p CreateAnimalPage) exit() {
+func (p AnimalDetailPage) exit() {
 	s := p.Session()
 
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
@@ -394,7 +394,7 @@ func (p CreateAnimalPage) exit() {
 	s.DeleteSessionData(SessionKey_MgrList)
 
 	Todo("Do a 'back' operation to go back to the previous page")
-	NewManagerPage(s).Generate()
+	s.SwitchToPage(NewManagerPage(s))
 }
 
 func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (string, error) {
@@ -432,7 +432,7 @@ func preCreateValidateText(s Session, widgetId string, minLength int, maxLength 
 	s.SetWidgetProblem(widgetId, err)
 }
 
-func (p CreateAnimalPage) uploadPhotoListener(s Session, widget FileUpload, by []byte) error {
+func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by []byte) error {
 	pr := PrIf(false)
 
 	m := s.WidgetManager()
@@ -511,7 +511,7 @@ func (p CreateAnimalPage) uploadPhotoListener(s Session, widget FileUpload, by [
 	return err
 }
 
-func (p CreateAnimalPage) provideURL() string {
+func (p AnimalDetailPage) provideURL() string {
 	pr := PrIf(false)
 	url := ""
 	s := p.Session()

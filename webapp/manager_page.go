@@ -154,7 +154,7 @@ func (p ManagerPage) clickListener(sess Session, message string) {
 			return
 		}
 		sess.SetClickListener(nil)
-		Pr("requesting url for:", animal)
+		Pr("requesting url for:", animal.Id())
 
 		// We are still processing an AJAX event, so we have to somehow cause a new page to load...
 		//

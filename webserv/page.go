@@ -26,14 +26,12 @@ func GenerateHeader(page Page) WidgetManager {
 	var _ = Pr
 	//SetWidgetDebugRendering()
 	s := page.Session()
+	CheckState(s != nil)
 	m := s.WidgetManager()
 	m.With(s.PageWidget)
 	if DevLabelRenderer != nil {
 		DevLabelRenderer(s, page)
 	}
-	Todo("We must also include the arguments, if any... but how?")
-	Todo("Set browser expression to url expr?")
-	//s.SetURLExpression(page.Name())
 	return m
 }
 

@@ -174,10 +174,10 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 	} else {
 		switch user.UserClass() {
 		case UserClassDonor:
-			NewFeedPage(sess).Generate()
+			sess.SwitchToPage(NewFeedPage(sess))
 			break
 		case UserClassManager:
-			NewManagerPage(sess).Generate()
+			sess.SwitchToPage(NewManagerPage(sess))
 		}
 	}
 }

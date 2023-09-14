@@ -82,6 +82,10 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 func (oper AnimalOper) HandleRequest(s Session, path string) bool {
 	pr := PrIf(false)
 
+	if s == nil {
+		Alert("#50HandleRequest, but session is nil for:", path)
+		return false
+	}
 	var text string
 	var flag bool
 	if text, flag = TrimIfPrefix(path, BlobURLPrefix); flag {
@@ -231,21 +235,19 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 		return
 	}
 	oper.autoLoggedIn = true
-	Alert("Auto logging in")
 
 	//if false {
 	//	NewGalleryPage(sess, sess.PageWidget).Generate()
 	//	return
 	//}
 	user2, _ := ReadUserWithName("manager1")
-	Pr("read user:", user2)
+	Alert("Auto logging in", user2)
 	if user2.Id() == 0 {
 		return
 	}
 	if !TryLoggingIn(sess, user2) {
 		return
 	}
-	//
 	if true {
 		sess.SwitchToPage(NewFeedPage(sess))
 		return
@@ -281,8 +283,7 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 
 	page := SharedPageRequester.Process(s, path)
 	if page != nil {
-		s.SetURLExpression(page.Name())
-		page.Generate()
+		s.SwitchToPage(page)
 		oper.renderPage(s)
 		return true
 	}

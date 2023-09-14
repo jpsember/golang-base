@@ -52,8 +52,6 @@ func (p FeedPage) Generate() {
 	// Set click listener for this page
 	s.SetClickListener(p.clickListener)
 
-	Todo("How do we modify the client's URL to e.g. set `/manager`?")
-
 	m := GenerateHeader(p)
 	al := p.animalList()
 	m.Id(id_feed_list).AddList(al, p.renderItem, p.listListener)
