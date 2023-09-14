@@ -17,6 +17,7 @@ func (p FeedPage) Session() Session {
 func (p FeedPage) Construct(s Session, args ...any) Page {
 	return NewFeedPage(s, args...)
 }
+func (p FeedPage) Args() []any { return EmptyPageArgs }
 
 type FeedPageStruct struct {
 	session Session

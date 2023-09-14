@@ -7,11 +7,14 @@ import (
 type Page interface {
 	// Note: go doesn't support covariant return types, so this must return Page, not some concrete implementation of it
 	Name() string
+	Args() []any // The additional arguments that would show up in the url (e.g., edit/17), args would be [17]
 	Session() Session
 	Construct(s Session, args ...any) Page
 	Generate()
 	Request(s Session, parser PathParse) Page
 }
+
+var EmptyPageArgs = []any{}
 
 type PageDevLabelRenderer func(s Session, p Page)
 

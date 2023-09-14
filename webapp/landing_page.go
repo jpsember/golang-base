@@ -48,6 +48,7 @@ func (p LandingPage) Name() string {
 func (p LandingPage) Construct(s Session, args ...any) Page {
 	return NewLandingPage(s, args...)
 }
+func (p LandingPage) Args() []any { return EmptyPageArgs }
 
 func (p LandingPage) Generate() {
 	sess := p.Session()

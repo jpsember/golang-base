@@ -76,6 +76,13 @@ func (p CreateAnimalPage) Name() string {
 	return p.name
 }
 
+func (p CreateAnimalPage) Args() []any {
+	if p.animalId != 0 {
+		return []any{p.animalId}
+	}
+	return EmptyPageArgs
+}
+
 func (p CreateAnimalPage) Request(s Session, parser PathParse) Page {
 	requestedId := parser.PeekInt()
 	user := OptSessionUser(s)

@@ -35,7 +35,9 @@ var SignUpPageTemplate = NewSignUpPage(nil)
 
 const SignUpPageName = "signup"
 
-func (p SignUpPage) Name() string                          { return SignUpPageName }
+func (p SignUpPage) Name() string { return SignUpPageName }
+func (p SignUpPage) Args() []any  { return EmptyPageArgs }
+
 func (p SignUpPage) Session() Session                      { return p.session }
 func (p SignUpPage) Construct(s Session, args ...any) Page { return NewSignUpPage(s, args...) }
 func (p SignUpPage) Request(s Session, parser PathParse) Page {
@@ -44,6 +46,7 @@ func (p SignUpPage) Request(s Session, parser PathParse) Page {
 	}
 	return nil
 }
+
 func (p SignUpPage) Generate() {
 	s := p.session
 	s.DeleteStateErrors()

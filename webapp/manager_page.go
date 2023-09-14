@@ -31,6 +31,7 @@ func (p ManagerPage) Name() string {
 func (p ManagerPage) Construct(s Session, args ...any) Page {
 	return NewManagerPage(s, args...)
 }
+func (p ManagerPage) Args() []any { return EmptyPageArgs }
 
 const ManagerPageName = "manager"
 

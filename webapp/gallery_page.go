@@ -23,6 +23,9 @@ func (p GalleryPage) Construct(s Session, args ...any) Page {
 func (p GalleryPage) Name() string {
 	return GalleryPageName
 }
+
+func (p GalleryPage) Args() []any { return EmptyPageArgs }
+
 func (p GalleryPage) Session() Session { return p.session }
 
 // ------------------------------------------------------------------------------------
