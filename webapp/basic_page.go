@@ -4,31 +4,14 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-type PageConstructFunc = func(s Session) Page
-
 type Page interface {
-	//GetBasicPage() BasicPage
+	// Note: go doesn't support covariant return types, so this must return Page, not some concrete implementation of it
 	Construct(s Session) Page
+	// Todo: why do we need to pass in the session here?
 	Generate(s Session)
 	Name() string
 	Session() Session
 }
-
-type PageGenerateFunc func()
-
-//
-//type BasicPageStruct struct {
-//	//Session Session
-//}
-//
-//type BasicPage = *BasicPageStruct
-//
-//func InitPage(pg BasicPage, sess Session) {
-//	Todo("!Move BasicPage to webserv package")
-//	//CheckArg(name != "")
-//	//pg.PageName = name
-//	//pg.Session = sess
-//}
 
 // Some common boilerplate that is typically some of the first code that
 // Generate() would otherwise execute.
