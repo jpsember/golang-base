@@ -25,6 +25,10 @@ type CreateAnimalPageStruct struct {
 
 type CreateAnimalPage = *CreateAnimalPageStruct
 
+var CreateAnimalPageTemplate = NewCreateAnimalPage(nil)
+var EditAnimalPageTemplate = NewEditAnimalPage(nil, 0)
+var ViewAnimalPageTemplate = NewViewAnimalPage(nil, 0)
+
 func NewCreateAnimalPage(sess Session, args ...any) Page {
 	t := &CreateAnimalPageStruct{
 		session: sess,
@@ -75,6 +79,42 @@ func (p CreateAnimalPage) Name() string {
 		return "view"
 	}
 	return FeedPageName
+}
+
+func (p CreateAnimalPage) Request(s Session, parser PathParse) Page {
+	requestedId := parser.PeekInt()
+	user := OptSessionUser(s)
+
+	Todo("Clear pendingURLexpr before starting the request process, and if afterward, it is empty, fill it in; maybe have requestedArgs?")
+	var result Page
+
+	switch user.UserClass() {
+	default:
+		return nil
+	case UserClassDonor:
+		result = FeedPageTemplate
+		if p.Name() == "view" {
+			if AnimalExistsAndIsActive(requestedId) {
+				Todo("have separate pendingargs")
+				s.AddArg(requestedId)
+				result = ViewAnimalPageTemplate
+			}
+		}
+		break
+	case UserClassManager:
+		result = ManagerPageTemplate
+		if p.Name() == "view" || p.Name() == "edit" {
+			if AnimalExistsAndIsActiveForManager(requestedId, user.Id()) {
+				Todo("have separate pendingargs")
+				s.AddArg(requestedId)
+				result = ViewAnimalPageTemplate
+			}
+		} else {
+			result = CreateAnimalPageTemplate
+		}
+		break
+	}
+	return result
 }
 
 func (p CreateAnimalPage) readStateFromAnimal() {

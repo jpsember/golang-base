@@ -23,6 +23,22 @@ func NewPageRequester() PageRequester {
 type PageRequester = *PageRequesterStruct
 
 // Get the name of the default page for a user
+func (r PageRequester) DefaultPagePage(user User) Page {
+	nm := r.DefaultPage(user)
+	return r.PageWithNameM(nm)
+}
+func (r PageRequester) PageWithName(nm string) Page {
+	return r.registry[nm]
+}
+func (r PageRequester) PageWithNameM(nm string) Page {
+	pg := r.registry[nm]
+	if pg == nil {
+		BadArg("No page found with name:", nm)
+	}
+	return pg
+}
+
+// Get the name of the default page for a user
 func (r PageRequester) DefaultPage(user User) string {
 	userId := 0
 	if user != nil {
@@ -54,7 +70,7 @@ func (r PageRequester) Process(s Session, path string) Page {
 
 	user := OptSessionUser(s)
 
-	requestedPageName, _ := p.ReadIf()
+	requestedPageName := p.Read()
 
 	if requestedPageName == "" /*|| !HasKey(r.registry, requestedPageName) */ {
 		requestedPageName = r.DefaultPage(user)
@@ -62,31 +78,33 @@ func (r PageRequester) Process(s Session, path string) Page {
 
 	pr("getting template from registry for:", requestedPageName)
 
-	templatePage := r.registry[requestedPageName]
+	templatePage := r.PageWithName(requestedPageName)
 	if templatePage == nil {
-		pr("...could not find any page for:", Quoted(requestedPageName))
-		return nil
+		if requestedPageName != "" {
+			pr("...could not find any page for:", Quoted(requestedPageName))
+		}
+		requestedPageName = r.DefaultPage(user)
 	}
+	templatePage = r.PageWithNameM(requestedPageName)
+
 	page := templatePage.Construct(s)
-	pr("constructed page:", page)
+
+	// Ask the page to confirm it is ok
+
+	if len(s.PendingURLArgs2) != 0 {
+		BadState("PendingURLArgs is not empty")
+	}
+	page = page.Request(s, p)
+	pr("requested page:", page, "url expr:", s.PendingURLExpr)
+	if page == nil {
+		page = r.DefaultPagePage(user)
+	}
+	CheckState(page != nil, "requested page is nil")
+
+	// Construct a non-template version of the page to return
+	page = page.Construct(s, s.PendingURLArgs2...)
+	Todo("how do we transmit the url args to the page construction args?")
 	return page
-	//s.SetURLExpression(requestedPageName)
-	//Todo("Maybe the Generate function should be in the abstract Page type?")
-	//page.GetBasicPage().Generate()
-	//pr("generated page")
-	//
-	//return true
-	//
-	//var resultPath string
-	//
-	//if !IsUserLoggedIn(user.Id()) {
-	//	resultPath = "/"
-	//} else {
-	//	resultPath = "/feed"
-	//}
-	//Pr(resultPath)
-	//
-	//return false
 }
 
 func (r PageRequester) RegisterPage(template Page) {
@@ -137,36 +155,39 @@ func (p PathParse) Peek() string {
 	return ""
 }
 
-func (p PathParse) PeekInt() (int, bool) {
+func (p PathParse) PeekInt() int {
 	x := p.Peek()
 	if x != "" {
 		val, err := ParseInt(x)
 		if err == nil {
-			return int(val), true
+			return int(val)
 		}
 	}
-	return -1, false
+	return -1
 }
 
-func (p PathParse) ReadIf() (string, bool) {
+//func (p PathParse) ReadIf() (string, bool) {
+//	if p.HasNext() {
+//		return p.Read(), true
+//	}
+//	return "", false
+//}
+
+func (p PathParse) ReadInt() int {
+	x := p.PeekInt()
+	p.advance()
+	return x
+}
+
+func (p PathParse) advance() {
 	if p.HasNext() {
-		return p.Read(), true
-	}
-	return "", false
-}
-
-func (p PathParse) ReadIfInt() (int, bool) {
-	x, flag := p.PeekInt()
-	if flag {
 		p.cursor++
 	}
-	return x, flag
 }
 
 func (p PathParse) Read() string {
-	CheckState(p.HasNext())
 	x := p.Peek()
-	p.cursor++
+	p.advance()
 	return x
 }
 

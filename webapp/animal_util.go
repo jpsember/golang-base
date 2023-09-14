@@ -64,3 +64,22 @@ func ReadActualAnimal(id int) (Animal, error) {
 	}
 	return result, err
 }
+
+func ReadAnimalIgnoreError(id int) Animal {
+	anim := DefaultAnimal
+	anim2, err := ReadAnimal(id)
+	if !ReportIfError(err, "failed to read animal") {
+		anim = anim2
+	}
+	return anim
+}
+
+func AnimalExistsAndIsActive(id int) bool {
+	anim := ReadAnimalIgnoreError(id)
+	return anim.Id() != 0
+}
+
+func AnimalExistsAndIsActiveForManager(animalId int, managerId int) bool {
+	anim := ReadAnimalIgnoreError(animalId)
+	return anim.Id() != 0 && anim.ManagerId() == managerId
+}

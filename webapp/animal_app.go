@@ -9,13 +9,12 @@ import (
 )
 
 type AnimalOperStruct struct {
-	appRoot       Path
-	headerMarkup  string
-	FullWidth     bool // If true, page occupies full width of screen
-	TopPadding    int  // If nonzero, adds padding to top of page
-	autoLoggedIn  bool
-	resources     Path
-	pageRequester PageRequester
+	appRoot      Path
+	headerMarkup string
+	FullWidth    bool // If true, page occupies full width of screen
+	TopPadding   int  // If nonzero, adds padding to top of page
+	autoLoggedIn bool
+	resources    Path
 }
 
 type AnimalOper = *AnimalOperStruct
@@ -32,6 +31,7 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 var DevDatabase = Alert("!Using development database")
+var SharedPageRequester PageRequester
 
 func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
@@ -42,8 +42,9 @@ func (oper AnimalOper) Perform(app *App) {
 	oper.headerMarkup = oper.resources.JoinM("header.html").ReadStringM()
 	oper.prepareDatabase()
 
-	oper.pageRequester = NewPageRequester()
-	oper.registerPages(oper.pageRequester)
+	SharedPageRequester = NewPageRequester()
+	Todo("!Emphasize that PageRequester must be threadsafe")
+	oper.registerPages(SharedPageRequester)
 
 	// Initialize and start the JServer
 	//
@@ -81,7 +82,6 @@ func (oper AnimalOper) HandleRequest(s Session, path string) bool {
 	pr("AnimalOper, HandleRequest:", path)
 
 	return oper.processPageRequest(s, path)
-
 }
 
 func (oper AnimalOper) handleBlobRequest(s Session, blobId string) {
@@ -131,7 +131,7 @@ func (oper AnimalOper) writeFooter(s Session, bp MarkupBuilder) {
 history.pushState(null, null, location.origin+'` + s.PendingURLExpr + `')
 </script>
 `
-		Pr("Appending code to end of <body>:", VERT_SP, code, VERT_SP)
+		Pr("Appending code to end of <body>:", INDENT, code)
 
 		bp.WriteString(code)
 	}
@@ -181,9 +181,23 @@ const (
 	SessionKey_MgrList  = "mgr.list"
 )
 
-// Get session's User, or nil if there isn't one.
+// Get session's User, or default user if there isn't one.
 func OptSessionUser(sess Session) User {
-	return sess.GetSessionData(SessionKey_User).(User)
+	u := sess.GetSessionData(SessionKey_User).(User)
+	if u == nil {
+		u = DefaultUser
+	}
+	return u
+}
+
+func SessionUserIs(sess Session, class UserClass) bool {
+	user := OptSessionUser(sess)
+	return user.UserClass() == class
+}
+
+func SessionDefaultPage(sess Session) Page {
+	user := OptSessionUser(sess)
+	return SharedPageRequester.DefaultPagePage(user)
 }
 
 // Get session's User.
@@ -239,7 +253,7 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 // Parse URL requested by client, and serve up an appropriate page.
 func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 
-	page := oper.pageRequester.Process(s, path)
+	page := SharedPageRequester.Process(s, path)
 	if page != nil {
 		s.SetURLExpression(page.Name())
 		page.Generate()

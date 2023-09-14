@@ -38,6 +38,12 @@ const SignUpPageName = "signup"
 func (p SignUpPage) Name() string                          { return SignUpPageName }
 func (p SignUpPage) Session() Session                      { return p.session }
 func (p SignUpPage) Construct(s Session, args ...any) Page { return NewSignUpPage(s, args...) }
+func (p SignUpPage) Request(s Session, parser PathParse) Page {
+	if OptSessionUser(s).Id() == 0 {
+		return SignUpPageTemplate
+	}
+	return nil
+}
 func (p SignUpPage) Generate() {
 	s := p.session
 	s.DeleteStateErrors()

@@ -38,6 +38,14 @@ const (
 
 func (p FeedPage) Name() string { return FeedPageName }
 
+func (p FeedPage) Request(s Session, parser PathParse) Page {
+	if SessionUserIs(s, UserClassDonor) {
+		Todo("Maybe don't set the url string until a page is accepted?")
+		return p
+	}
+	return SessionDefaultPage(s)
+}
+
 func (p FeedPage) Generate() {
 	s := p.session
 	// Set click listener for this page

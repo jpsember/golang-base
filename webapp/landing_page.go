@@ -24,6 +24,14 @@ type LandingPageStruct struct {
 
 type LandingPage = *LandingPageStruct
 
+func (p LandingPage) Request(s Session, parser PathParse) Page {
+	user := OptSessionUser(s)
+	if user.Id() == 0 {
+		return LandingPageTemplate
+	}
+	return nil
+}
+
 func NewLandingPage(sess Session, args ...any) Page {
 	t := &LandingPageStruct{
 		session: sess,
@@ -42,8 +50,10 @@ func (p LandingPage) Construct(s Session, args ...any) Page {
 }
 
 func (p LandingPage) Generate() {
-	sess := p.session
+	sess := p.Session()
+	CheckState(sess != nil, "There is no session!")
 	s := sess.State
+	CheckState(s != nil, "there is no State for the session!")
 	s.DeleteEach(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
 
 	m := GenerateHeader(p)

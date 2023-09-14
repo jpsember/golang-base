@@ -35,6 +35,14 @@ const (
 	id_manager_list = manager_id_prefix + "list"
 )
 
+func (p ManagerPage) Request(s Session, parser PathParse) Page {
+	user := OptSessionUser(s)
+	if user.UserClass() == UserClassManager {
+		return ManagerPageTemplate
+	}
+	return nil
+}
+
 func (p ManagerPage) Generate() {
 	sess := p.session
 	Todo("?Think about ways of cleaning up the click listener which is not tied to a widget")

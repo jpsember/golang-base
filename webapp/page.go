@@ -10,6 +10,7 @@ type Page interface {
 	Session() Session
 	Construct(s Session, args ...any) Page
 	Generate()
+	Request(s Session, parser PathParse) Page
 }
 
 // Some common boilerplate that is typically some of the first code that

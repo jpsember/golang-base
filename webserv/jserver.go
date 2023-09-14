@@ -2,11 +2,9 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"net/url"
-	"strings"
-
 	"log"
 	"net/http"
+	"net/url"
 )
 
 type ServerApp interface {
@@ -60,7 +58,7 @@ func (s JServer) StartServing() {
 // A handler such as this must be thread safe!
 func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 	pr := PrIf(true)
-	pr("handler, request:", req.RequestURI)
+	pr("JServer handler, request:", req.RequestURI)
 
 	// We don't know what the session is yet, so we don't have a lock on it...
 	sess := DetermineSession(s.SessionManager, w, req, true)
@@ -91,7 +89,7 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 		var text string
 		var flag bool
 
-		pr("url path:", path)
+		pr("JServer, url path:", path)
 		if path == "/ajax" {
 			Todo("!Use TrimIfPrefix here as well")
 			sess.HandleAjaxRequest()
@@ -102,15 +100,10 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 			pr("handling upload request with:", text)
 			sess.HandleUploadRequest(text)
 		} else {
-			var result bool
-			if false && strings.Contains(path, "base") {
-				Alert("experiment, seeing how base.js, base.css are handled")
-			} else {
-				result = s.App.HandleRequest(sess, path)
-			}
+			result := s.App.HandleRequest(sess, path)
 			if !result {
 				// If we fail to parse any requests, assume it's a resource, like that stupid favicon
-				pr("handling resource request for:", path)
+				pr("JServer handling resource request for:", path)
 				err = sess.HandleResourceRequest(s.Resources)
 				if err != nil {
 					Todo("Issue a 404")
@@ -125,6 +118,6 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if p := sess.GetRequestProblem(); p != nil {
-		Pr("...problem with request, URL:", req.RequestURI, INDENT, p)
+		Pr("jserver:...problem with request, URL:", req.RequestURI, INDENT, p)
 	}
 }

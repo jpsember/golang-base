@@ -79,6 +79,7 @@ type SessionStruct struct {
 	ajaxWidgetId     string // Id of widget that ajax call is being sent to
 	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
 	PendingURLExpr   string // If not nil, client browser should push this onto the history
+	PendingURLArgs2  []any
 }
 
 var ourDefaultBrowserInfo = webserv_data.NewClientInfo().SetDevicePixelRatio(1.25).SetScreenSizeX(2560).SetScreenSizeY(1440).Build()
@@ -381,7 +382,7 @@ func (s Session) sendAjaxResponse() {
 	jsmap.Put(respKeyWidgetsToRefresh, refmap)
 	if s.PendingURLExpr != "" {
 		jsmap.Put(respKeyURLExpr, s.PendingURLExpr)
-		Pr(VERT_SP, "sending url expression, and clearing:", s.PendingURLExpr, VERT_SP)
+		Pr("sending url expression, and clearing:", s.PendingURLExpr)
 	}
 	pr("sending back to Ajax caller:", INDENT, jsmap)
 	content := jsmap.CompactString()
@@ -401,7 +402,7 @@ func (s Session) ReleaseLockAndDiscardRequest() {
 	s.ajaxWidgetId = ""
 	s.ajaxWidgetValue = ""
 	s.clientInfoString = ""
-	s.PendingURLExpr = ""
+	s.ClearPendingURL()
 
 	Todo("!Consider moving the repaint set from the widget manager to the session, and perhaps other things")
 	s.WidgetManager().clearRepaintSet()
@@ -569,11 +570,23 @@ func (s Session) SetURLExpression(args ...any) {
 		sb.WriteByte('/')
 		sb.WriteString(s)
 	}
+	s.ClearPendingURL()
 	s.PendingURLExpr = sb.String()
-	pr(VERT_SP, "SetURLExpression:", s.PendingURLExpr, VERT_SP)
+
+	pr("SetURLExpression:", s.PendingURLExpr)
 
 	// Ok, when clicking a button it is not appending the button url to the program 'root' url, rather the current one
 	// Solved by using location.origin
 
 	Todo("!What about: 'Make sure to return true from Javascript click handlers when people middle or command click so that we don’t override them accidentally.'")
+}
+
+func (s Session) AddArg(arg any) {
+	CheckArg(arg != nil)
+	s.PendingURLArgs2 = append(s.PendingURLArgs2, arg)
+}
+
+func (s Session) ClearPendingURL() {
+	s.PendingURLExpr = ""
+	s.PendingURLArgs2 = []any{}
 }

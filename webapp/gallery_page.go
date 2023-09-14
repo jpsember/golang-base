@@ -33,6 +33,10 @@ type GalleryPageStruct struct {
 	session Session
 }
 
+func (p GalleryPage) Request(s Session, parser PathParse) Page {
+	return GalleryPageTemplate
+}
+
 func NewGalleryPage(sess Session, args ...any) Page {
 	t := &GalleryPageStruct{
 		session: sess,
