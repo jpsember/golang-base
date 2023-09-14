@@ -25,7 +25,7 @@ type CreateAnimalPageStruct struct {
 
 type CreateAnimalPage = *CreateAnimalPageStruct
 
-func NewCreateAnimalPage(sess Session) Page {
+func NewCreateAnimalPage(sess Session, args ...any) Page {
 	t := &CreateAnimalPageStruct{
 		session: sess,
 		editing: true,
@@ -54,12 +54,12 @@ func NewViewAnimalPage(sess Session, animalId int) Page {
 
 func (p CreateAnimalPage) Session() Session { return p.session }
 
-func (p CreateAnimalPage) Construct(s Session) Page {
+func (p CreateAnimalPage) Construct(s Session, args ...any) Page {
 	if !p.editing {
-		return NewViewAnimalPage(s, 0)
+		return NewViewAnimalPage(s, args[0].(int))
 	}
 	if p.animalId != 0 {
-		return NewEditAnimalPage(s, 0)
+		return NewEditAnimalPage(s, args[0].(int))
 	} else {
 		return NewCreateAnimalPage(s)
 	}

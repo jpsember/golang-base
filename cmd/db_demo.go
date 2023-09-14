@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	. "github.com/jpsember/golang-base/base"
 	_ "github.com/mattn/go-sqlite3"
-	"math/rand"
 )
 
 func main() {
@@ -49,7 +48,7 @@ func main() {
 		Pr("affected rows:", affected)
 	}
 
-	rnd := rand.New(rand.NewSource(1965))
+	rnd := NewJSRand().SetSeed(1965)
 	for i := 0; i < 100-rowTotal; i++ {
 		name := RandomText(rnd, 20, false)
 		age := rnd.Intn(65) + 8

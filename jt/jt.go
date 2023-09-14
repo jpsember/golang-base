@@ -318,12 +318,16 @@ func makeSysCall(c []string) (string, error) {
 }
 
 func (j JTest) Seed(seed int) JTest {
-	j.rand.SetSeed(seed)
+	j.JSRand().SetSeed(seed)
 	return j
 }
 
 func (j JTest) Rand() *rand.Rand {
-	return j.rand.Rand()
+	return j.JSRand().Rand()
+}
+
+func (j JTest) JSRand() JSRand {
+	return j.rand
 }
 
 // Generate a directory structure based upon a JSMap script.  The target argument, if not an absolute directory,
@@ -350,7 +354,7 @@ func (j JTest) auxGenDir(dir Path, jsmap JSMap) {
 			j.auxGenDir(dir.JoinM(key), s)
 		} else {
 			targ := dir.JoinM(key)
-			text := RandomText(j.Rand(), 80, false) + "\n"
+			text := RandomText(j.JSRand(), 80, false) + "\n"
 			targ.WriteStringM(text)
 		}
 	}

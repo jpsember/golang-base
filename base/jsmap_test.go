@@ -128,7 +128,7 @@ func TestEscapes(t *testing.T) {
 }
 
 func TestGenerateDir(t *testing.T) {
-	j := jt.New(t)
+	j := jt.Newz(t)
 
 	const tree1 = `
 {"a.txt" : "",

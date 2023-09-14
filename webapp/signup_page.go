@@ -14,34 +14,34 @@ const (
 	id_sign_up         = "sign_up"
 )
 
+// ------------------------------------------------------------------------------------
+// This is the canonical boilerplate that I will turn into a goland live template,
+// to simplify creating new pages:
+// ------------------------------------------------------------------------------------
+
 type SignUpPageStruct struct {
 	session Session
 }
-
 type SignUpPage = *SignUpPageStruct
 
-func NewSignUpPage(session Session) SignUpPage {
+func NewSignUpPage(session Session, args ...any) SignUpPage {
 	t := &SignUpPageStruct{
 		session: session,
 	}
 	return t
 }
-func (p SignUpPage) Session() Session { return p.session }
+
+var SignUpPageTemplate = NewSignUpPage(nil)
 
 const SignUpPageName = "signup"
 
-func (p SignUpPage) Name() string {
-	return SignUpPageName
-}
-
-func (p SignUpPage) Construct(s Session) Page {
-	return NewSignUpPage(s)
-}
+func (p SignUpPage) Name() string                          { return SignUpPageName }
+func (p SignUpPage) Session() Session                      { return p.session }
+func (p SignUpPage) Construct(s Session, args ...any) Page { return NewSignUpPage(s, args...) }
 func (p SignUpPage) Generate() {
 	s := p.session
 	s.DeleteStateErrors()
 	m := GenerateHeader(p)
-
 	m.Label("Sign Up Page").Size(SizeLarge).AddHeading()
 	m.Col(6).Open()
 	{
@@ -57,6 +57,8 @@ func (p SignUpPage) Generate() {
 	}
 	m.Close()
 }
+
+// ------------------------------------------------------------------------------------
 
 func getWidget(sess Session, id string) Widget {
 	return sess.WidgetManager().Get(id)

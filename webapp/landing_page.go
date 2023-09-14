@@ -24,7 +24,7 @@ type LandingPageStruct struct {
 
 type LandingPage = *LandingPageStruct
 
-func NewLandingPage(sess Session) Page {
+func NewLandingPage(sess Session, args ...any) Page {
 	t := &LandingPageStruct{
 		session: sess,
 		editing: true,
@@ -37,8 +37,8 @@ func (p LandingPage) Name() string {
 	return LandingPageName
 }
 
-func (p LandingPage) Construct(s Session) Page {
-	return NewLandingPage(s)
+func (p LandingPage) Construct(s Session, args ...any) Page {
+	return NewLandingPage(s, args...)
 }
 
 func (p LandingPage) Generate() {

@@ -6,10 +6,10 @@ import (
 
 type Page interface {
 	// Note: go doesn't support covariant return types, so this must return Page, not some concrete implementation of it
-	Construct(s Session) Page
-	Generate()
 	Name() string
 	Session() Session
+	Construct(s Session, args ...any) Page
+	Generate()
 }
 
 // Some common boilerplate that is typically some of the first code that

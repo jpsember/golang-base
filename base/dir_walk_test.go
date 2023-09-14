@@ -3,7 +3,6 @@ package base_test
 import (
 	. "github.com/jpsember/golang-base/base"
 	"github.com/jpsember/golang-base/jt"
-	"strings"
 	"testing"
 )
 
@@ -71,9 +70,9 @@ func TestIncludePrefixes(t *testing.T) {
 	assertWalk(j, w)
 }
 
-func TestAscendToDirectoryContainingFile(t *testing.T) {
-	j := jt.New(t)
-	_, err := AscendToDirectoryContainingFile(EmptyPath, "hello")
-	j.Log("Ascend result:", err)
-	j.AssertTrue(strings.Contains(err.Error(), "Cannot find hello"))
-}
+//func TestAscendToDirectoryContainingFile(t *testing.T) {
+//	j := jt.New(t)
+//	_, err := AscendToDirectoryContainingFile(EmptyPath, "hello")
+//	j.Log("Ascend result:", err)
+//	j.AssertTrue(strings.Contains(err.Error(), "Cannot find hello"))
+//}

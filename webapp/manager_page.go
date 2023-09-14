@@ -12,7 +12,7 @@ type ManagerPageStruct struct {
 
 type ManagerPage = *ManagerPageStruct
 
-func NewManagerPage(session Session) ManagerPage {
+func NewManagerPage(session Session, args ...any) ManagerPage {
 	t := &ManagerPageStruct{session: session}
 	return t
 }
@@ -24,8 +24,8 @@ func (p ManagerPage) Name() string {
 	return ManagerPageName
 }
 
-func (p ManagerPage) Construct(s Session) Page {
-	return NewManagerPage(s)
+func (p ManagerPage) Construct(s Session, args ...any) Page {
+	return NewManagerPage(s, args...)
 }
 
 const ManagerPageName = "manager"

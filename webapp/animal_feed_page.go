@@ -6,10 +6,6 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-// ------------------------------------------------------------------------------------
-// Page implementation
-// ------------------------------------------------------------------------------------
-
 const FeedPageName = "feed"
 
 var FeedPageTemplate = NewFeedPage(nil)
@@ -18,11 +14,9 @@ func (p FeedPage) Session() Session {
 	return p.session
 }
 
-func (p FeedPage) Construct(s Session) Page {
-	return NewLandingPage(s)
+func (p FeedPage) Construct(s Session, args ...any) Page {
+	return NewFeedPage(s, args...)
 }
-
-// ------------------------------------------------------------------------------------
 
 type FeedPageStruct struct {
 	session Session
@@ -30,7 +24,7 @@ type FeedPageStruct struct {
 
 type FeedPage = *FeedPageStruct
 
-func NewFeedPage(s Session) FeedPage {
+func NewFeedPage(s Session, args ...any) FeedPage {
 	t := &FeedPageStruct{
 		session: s,
 	}

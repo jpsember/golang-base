@@ -16,8 +16,8 @@ const GalleryPageName = "gallery"
 
 var GalleryPageTemplate = NewGalleryPage(nil)
 
-func (p GalleryPage) Construct(s Session) Page {
-	return NewGalleryPage(s)
+func (p GalleryPage) Construct(s Session, args ...any) Page {
+	return NewGalleryPage(s, args...)
 }
 
 func (p GalleryPage) Name() string {
@@ -33,7 +33,7 @@ type GalleryPageStruct struct {
 	session Session
 }
 
-func NewGalleryPage(sess Session) Page {
+func NewGalleryPage(sess Session, args ...any) Page {
 	t := &GalleryPageStruct{
 		session: sess,
 	}

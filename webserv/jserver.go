@@ -3,6 +3,7 @@ package webserv
 import (
 	. "github.com/jpsember/golang-base/base"
 	"net/url"
+	"strings"
 
 	"log"
 	"net/http"
@@ -58,7 +59,7 @@ func (s JServer) StartServing() {
 
 // A handler such as this must be thread safe!
 func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(false)
+	pr := PrIf(true)
 	pr("handler, request:", req.RequestURI)
 
 	// We don't know what the session is yet, so we don't have a lock on it...
@@ -101,7 +102,12 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 			pr("handling upload request with:", text)
 			sess.HandleUploadRequest(text)
 		} else {
-			result := s.App.HandleRequest(sess, path)
+			var result bool
+			if false && strings.Contains(path, "base") {
+				Alert("experiment, seeing how base.js, base.css are handled")
+			} else {
+				result = s.App.HandleRequest(sess, path)
+			}
 			if !result {
 				// If we fail to parse any requests, assume it's a resource, like that stupid favicon
 				pr("handling resource request for:", path)

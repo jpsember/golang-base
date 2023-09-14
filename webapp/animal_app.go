@@ -238,63 +238,20 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 
 // Parse URL requested by client, and serve up an appropriate page.
 func (oper AnimalOper) processPageRequest(s Session, path string) bool {
-	pr := PrIf(true)
 
-	if true {
-		page := oper.pageRequester.Process(s, path)
+	page := oper.pageRequester.Process(s, path)
+	if page != nil {
 		s.SetURLExpression(page.Name())
 		page.Generate()
 		oper.renderPage(s)
 		return true
 	}
 
-	if path == "/" {
-		oper.debugAutoLogIn(s)
-		oper.renderPage(s)
-		s.SetURLExpression("what", "the", "heck")
-		return true
-	}
-
-	if _, found := TrimIfPrefix(path, "/manager"); found {
-		NewManagerPage(s).Generate()
-		oper.renderPage(s)
-		pr("rendered manager page")
-		return true
-	}
-	Todo("Experiment: checking for editing a particular animal")
-	if remainder, found := TrimIfPrefix(path, "/edit/"); found {
-		if animalId, err := ParseAsPositiveInt(remainder); err == nil {
-			pr("generating page to edit animal #", animalId)
-			page := NewEditAnimalPage(s, animalId)
-			page.Generate()
-			oper.renderPage(s)
-			return true
-		}
-		return false
-	}
 	return false
 }
 
 func (oper AnimalOper) registerPages(r PageRequester) {
-
 	r.RegisterPage(LandingPageTemplate)
 	r.RegisterPage(FeedPageTemplate)
 	r.RegisterPage(GalleryPageTemplate)
-
-	//
-	//
-	//
-	//Pr("landing page:",x.PageName,x.animalId)
-	//y = &x.BasicPageStruct
-	//Pr("pointer to basic page struct:",y)
-	//
-	//
-	//q := &x.BasicPageStruct
-	//r := q.(LandingPage)
-	//
-	////z = (y.(*LandingPageStruct))
-	//z = &(y.(LandingPage))
-	//Pr("
-	//
-	//r.Register(NewLandingPage(nil))
 }

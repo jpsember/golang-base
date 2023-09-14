@@ -56,13 +56,17 @@ func (r PageRequester) Process(s Session, path string) Page {
 
 	requestedPageName, _ := p.ReadIf()
 
-	if requestedPageName == "" || !HasKey(r.registry, requestedPageName) {
+	if requestedPageName == "" /*|| !HasKey(r.registry, requestedPageName) */ {
 		requestedPageName = r.DefaultPage(user)
 	}
 
 	pr("getting template from registry for:", requestedPageName)
 
 	templatePage := r.registry[requestedPageName]
+	if templatePage == nil {
+		pr("...could not find any page for:", Quoted(requestedPageName))
+		return nil
+	}
 	page := templatePage.Construct(s)
 	pr("constructed page:", page)
 	return page
