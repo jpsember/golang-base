@@ -14,7 +14,7 @@ type ManagerPage = *ManagerPageStruct
 
 func NewManagerPage(session Session) ManagerPage {
 	t := &ManagerPageStruct{}
-	InitPage(&t.BasicPageStruct, "manager", session, t.generate)
+	InitPage(&t.BasicPageStruct, "manager", session)
 	return t
 }
 
@@ -27,7 +27,7 @@ const (
 	id_manager_list = manager_id_prefix + "list"
 )
 
-func (p ManagerPage) generate() {
+func (p ManagerPage) Generate(sess Session) {
 	Todo("?Think about ways of cleaning up the click listener which is not tied to a widget")
 	//SetWidgetDebugRendering()
 	m := p.GenerateHeader()
@@ -41,7 +41,7 @@ func (p ManagerPage) generate() {
 	m.Close()
 
 	// Set click listener for the card list
-	p.Session.SetClickListener(p.clickListener)
+	sess.SetClickListener(p.clickListener)
 
 	al := p.animalList()
 	m.Id(id_manager_list).AddList(al, p.renderItem, p.listListener)

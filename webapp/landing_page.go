@@ -36,12 +36,12 @@ func NewLandingPage(sess Session) Page {
 	t := &LandingPageStruct{
 		editing: true,
 	}
-	InitPage(&t.BasicPageStruct, LandingPageName, sess, t.generate)
+	InitPage(&t.BasicPageStruct, LandingPageName, sess)
 	return t
 }
 
-func (p LandingPage) generate() {
-	s := p.Session.State
+func (p LandingPage) Generate(sess Session) {
+	s := sess.State
 	s.DeleteEach(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
 
 	m := p.GenerateHeader()
@@ -156,21 +156,21 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 	} else {
 		switch user.UserClass() {
 		case webapp_data.UserClassDonor:
-			NewFeedPage(sess).Generate()
+			NewFeedPage(sess).Generate(sess)
 			break
 		case webapp_data.UserClassManager:
 			Todo("?Maybe make AnimalFeed, Manager pages implement a common interface")
-			NewManagerPage(sess).Generate()
+			NewManagerPage(sess).Generate(sess)
 		}
 	}
 }
 
 func (p LandingPage) signUpListener(s Session, widget Widget) {
-	NewSignUpPage(s).Generate()
+	NewSignUpPage(s).Generate(s)
 }
 
 func (p LandingPage) galleryListener(sess Session, widget Widget) {
-	NewGalleryPage(sess).GetBasicPage().Generate()
+	NewGalleryPage(sess).Generate(sess)
 }
 
 func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {

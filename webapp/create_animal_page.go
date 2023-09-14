@@ -29,7 +29,7 @@ func NewCreateAnimalPage(sess Session) CreateAnimalPage {
 	t := &CreateAnimalPageStruct{
 		editing: true,
 	}
-	InitPage(&t.BasicPageStruct, "new", sess, t.generate)
+	InitPage(&t.BasicPageStruct, "new", sess)
 	return t
 }
 
@@ -38,7 +38,7 @@ func NewEditAnimalPage(sess Session, animalId int) CreateAnimalPage {
 		animalId: animalId,
 		editing:  true,
 	}
-	InitPage(&t.BasicPageStruct, "edit", sess, t.generate)
+	InitPage(&t.BasicPageStruct, "edit", sess)
 	return t
 }
 
@@ -47,7 +47,7 @@ func NewViewAnimalPage(sess Session, parentWidget Widget, animalId int) CreateAn
 		animalId: animalId,
 		editing:  false,
 	}
-	InitPage(&t.BasicPageStruct, "view", sess, t.generate)
+	InitPage(&t.BasicPageStruct, "view", sess)
 	return t
 }
 
@@ -67,7 +67,7 @@ func (p CreateAnimalPage) readStateFromAnimal() {
 	s.Put(id_animal_display_pic, a.PhotoThumbnail())
 }
 
-func (p CreateAnimalPage) generate() {
+func (p CreateAnimalPage) Generate() {
 	s := p.Session
 	//SetWidgetDebugRendering()
 	s.SetClickListener(nil)
@@ -310,7 +310,7 @@ func (p CreateAnimalPage) exit() {
 	s.DeleteSessionData(SessionKey_MgrList)
 
 	Todo("Do a 'back' operation to go back to the previous page")
-	NewManagerPage(s).Generate()
+	NewManagerPage(s).Generate(s)
 }
 
 func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (string, error) {

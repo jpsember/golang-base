@@ -32,7 +32,7 @@ type FeedPage = *FeedPageStruct
 
 func NewFeedPage(s Session) FeedPage {
 	t := &FeedPageStruct{}
-	InitPage(&t.BasicPageStruct, FeedPageName, s, t.generate)
+	InitPage(&t.BasicPageStruct, FeedPageName, s)
 	return t
 }
 
@@ -41,8 +41,7 @@ const (
 	id_feed_list = feed_id_prefix + "list"
 )
 
-func (p FeedPage) generate() {
-	s := p.Session
+func (p FeedPage) Generate(s Session) {
 	// Set click listener for this page
 	s.SetClickListener(p.clickListener)
 

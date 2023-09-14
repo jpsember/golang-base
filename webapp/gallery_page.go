@@ -34,7 +34,7 @@ type GalleryPageStruct struct {
 
 func NewGalleryPage(sess Session) Page {
 	t := &GalleryPageStruct{}
-	InitPage(&t.BasicPageStruct, GalleryPageName, sess, t.generate)
+	InitPage(&t.BasicPageStruct, GalleryPageName, sess)
 	return t
 }
 
@@ -43,7 +43,7 @@ const sampleImageId = "sample_image"
 var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
 
-func (p GalleryPage) generate() {
+func (p GalleryPage) Generate(s Session) {
 	m := p.GenerateHeader()
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)

@@ -9,25 +9,23 @@ type PageConstructFunc = func(s Session) Page
 type Page interface {
 	GetBasicPage() BasicPage
 	Constructor() func(s Session) Page
+	Generate(s Session)
 }
 
 type PageGenerateFunc func()
 type BasicPageStruct struct {
 	Session  Session
 	PageName string
-	Generate PageGenerateFunc
+	//Generate PageGenerateFunc
 }
 
 type BasicPage = *BasicPageStruct
 
-func InitPage(pg BasicPage, name string, sess Session, gen PageGenerateFunc) {
+func InitPage(pg BasicPage, name string, sess Session) {
 	Todo("!Move BasicPage to webserv package")
-	//CheckArg(sess != nil)
 	CheckArg(name != "")
-	CheckArg(gen != nil)
 	pg.PageName = name
 	pg.Session = sess
-	pg.Generate = gen
 }
 
 // Some common boilerplate that is typically some of the first code that

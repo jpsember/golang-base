@@ -226,7 +226,7 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 	}
 	//
 	if true {
-		NewFeedPage(sess).Generate()
+		NewFeedPage(sess).Generate(sess)
 		return
 	}
 }
@@ -244,7 +244,7 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 		bp := page.GetBasicPage()
 		s.SetURLExpression(bp.PageName)
 		Todo("Maybe the Generate function should be in the abstract Page type?")
-		bp.Generate()
+		page.Generate(s)
 		oper.renderPage(s)
 		return true
 	}
@@ -257,7 +257,7 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 	}
 
 	if _, found := TrimIfPrefix(path, "/manager"); found {
-		NewManagerPage(s).Generate()
+		NewManagerPage(s).Generate(s)
 		oper.renderPage(s)
 		pr("rendered manager page")
 		return true
