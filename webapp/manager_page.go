@@ -71,6 +71,7 @@ func (p ManagerPage) animalList(s Session) AnimalList {
 	if alist == nil {
 		alist = p.constructAnimalList(s)
 		s.PutSessionData(key, alist)
+		Todo("!We should maybe just store the mgrlist in the ManagerPage struct")
 	}
 	return alist.(AnimalList)
 }

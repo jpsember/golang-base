@@ -19,7 +19,7 @@ var DevLabelRenderer PageDevLabelRenderer
 // Some common boilerplate that is typically some of the first code that
 // GenerateWidgets() would otherwise execute.
 func GenerateHeader(s Session, p Page) WidgetManager {
-	Todo("We could merge Construct(...) and GenerateWidgets(...)")
+	Todo("!We could merge Construct(...) and GenerateWidgets(...)")
 	var _ = Pr
 	//SetWidgetDebugRendering()
 	CheckState(s != nil)

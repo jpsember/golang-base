@@ -85,9 +85,10 @@ function processServerResponse(text) {
 
     if (response_key_url_expr in obj) {
         const url = window.origin + obj.u
-        pr("calling history.pushState with:",url,"because key was in the server response:",response_key_url_expr)
-        //pr("NOT calling pushState!")
-          history.pushState(null, null, url);
+        //pr("calling history.pushState with:",url,"because key was in the server response:",response_key_url_expr)
+        history.pushState(null, null, url);
+        // I think it is ok to call pushState() here because this never happens as a result of
+        // the user hitting the back button.
     }
 }
 

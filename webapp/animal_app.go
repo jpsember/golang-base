@@ -107,7 +107,7 @@ func (oper AnimalOper) handleBlobRequest(s Session, blobId string) {
 	ReportIfError(err, "Trouble writing blob response")
 }
 
-func (oper AnimalOper) renderPage(sess Session) {
+func (oper AnimalOper) sendFullPage(sess Session) {
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
 	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
@@ -135,23 +135,18 @@ func (oper AnimalOper) writeHeader(bp MarkupBuilder) {
 func (oper AnimalOper) writeFooter(s Session, bp MarkupBuilder) {
 	bp.CloseTag() // page container
 
+	Todo("move this to webserv module")
+
 	// Add a bit of javascript that will change the url to what we want
 	expr := s.NewBrowserPath()
 	if expr != "" {
 		code := `
-// Later, make this a base.js function 
-//
 <script type="text/javascript">
 var url = location.origin+'` + expr + `'
-console.log('writeFooter, history set url to: '+url)
 history.replaceState(null, null, url)
-
-//history.pushState(null, null, url)
 </script>
 `
 		// ^^^I suspect we don't want to do pushState if we got here due to user pressing the back button.
-
-		//	Pr("Appending code to end of <body>:", INDENT, code)
 		bp.WriteString(code)
 	}
 	bp.CloseTag() // body
@@ -287,7 +282,7 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 	page := SharedPageRequester.Process(s, path)
 	if page != nil {
 		s.SwitchToPage(page)
-		oper.renderPage(s)
+		oper.sendFullPage(s)
 		return true
 	}
 

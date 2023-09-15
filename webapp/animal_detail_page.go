@@ -253,7 +253,7 @@ func (p AnimalDetailPage) validateAll(s Session) bool {
 }
 
 func (p AnimalDetailPage) doneEditListener(s Session, widget Widget) {
-	pr := PrIf(true)
+	pr := PrIf(false)
 
 	if !p.validateAll(s) {
 		return
@@ -293,10 +293,9 @@ func (p AnimalDetailPage) writeStateToAnimal(s Session, b AnimalBuilder) {
 func (p AnimalDetailPage) exit(s Session) {
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
 
-	Todo("Discard any existing manager animal list, as its contents have now changed")
+	Todo("Discard any existing manager animal list, as its contents may have changed")
 	s.DeleteSessionData(SessionKey_MgrList)
 
-	Todo("Do a 'back' operation to go back to the previous page")
 	s.SwitchToPage(NewManagerPage(s))
 }
 
