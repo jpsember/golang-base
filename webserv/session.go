@@ -46,20 +46,18 @@ func DiscardAllSessions(sessionManager SessionManager) {
 
 type ClickListener func(sess *SessionStruct, id string)
 
-//type URLRequestHandler func(sess *SessionStruct, expr string) bool
-
 type Session = *SessionStruct
 
 type SessionStruct struct {
 	Id string
 
 	// For storing an application Oper, for example
-	AppData map[string]any
+	appData map[string]any
 
 	// widget representing the entire page; nil if not constructed yet
 	PageWidget Widget
-	// Lock for making request handling thread safe; we synchronize a particular session's requests
-	Lock sync.RWMutex
+	// lock for making request handling thread safe; we synchronize a particular session's requests
+	lock sync.RWMutex
 	// JSMap containing widget values, other user session state
 	State JSMap
 
@@ -72,7 +70,7 @@ type SessionStruct struct {
 
 	// Current request variables
 	ResponseWriter         http.ResponseWriter
-	Request                *http.Request
+	request                *http.Request
 	requestProblem         error  // If not nil, problem detected with current request
 	clientInfoString       string // If nonempty information sent from client about screen size, etc
 	ajaxWidgetId           string // Id of widget that ajax call is being sent to
@@ -88,7 +86,7 @@ func NewSession() Session {
 	s := SessionStruct{
 		State:       NewJSMap(),
 		BrowserInfo: ourDefaultBrowserInfo,
-		AppData:     make(map[string]any),
+		appData:     make(map[string]any),
 	}
 	Todo("!Restore user session from filesystem/database")
 	Todo("?ClientInfo (browser info) not sent soon enough")
@@ -98,7 +96,7 @@ func NewSession() Session {
 
 func (s Session) PrepareForHandlingRequest(w http.ResponseWriter, req *http.Request) {
 	s.ResponseWriter = w
-	s.Request = req
+	s.request = req
 	s.repaintSet = NewStringSet()
 }
 
@@ -132,7 +130,7 @@ func ParseSession(source JSEntity) Session {
 func (s Session) HandleAjaxRequest() {
 	s.parseAjaxRequest()
 	if false && Alert("dumping") {
-		Pr("Query:", INDENT, s.Request.URL.Query())
+		Pr("Query:", INDENT, s.request.URL.Query())
 	}
 	s.processClientMessage()
 	s.sendAjaxResponse()
@@ -163,7 +161,7 @@ func (s Session) processUpload(uploadWidgetId string) {
 	var result []byte
 
 	for {
-		req := s.Request
+		req := s.request
 
 		problem = "upload request was not POST"
 		if req.Method != "POST" {
@@ -220,7 +218,7 @@ func (s Session) processUpload(uploadWidgetId string) {
 func (s Session) HandleResourceRequest(resourcePath Path) error {
 
 	var err error
-	resource := s.Request.URL.Path
+	resource := s.request.URL.Path
 	var resPath Path
 	resPath, err = resourcePath.Join(resource)
 	if err != nil {
@@ -244,7 +242,7 @@ func (s Session) parseAjaxRequest() {
 	//  w=<widget id>
 	//  v=<widget value>
 	//  i=<client information as json map, encoded as string>
-	v := s.Request.URL.Query()
+	v := s.request.URL.Query()
 
 	// A url can contain multiple values for a parameter, though we
 	// will expected just one.
@@ -402,17 +400,14 @@ func (s Session) ReleaseLockAndDiscardRequest() {
 		Pr("Problem processing client message:", INDENT, problem)
 	}
 	s.ResponseWriter = nil
-	s.Request = nil
+	s.request = nil
 	s.requestProblem = nil
 	s.ajaxWidgetId = ""
 	s.ajaxWidgetValue = ""
 	s.clientInfoString = ""
 	s.browserURLExpr = ""
 	s.repaintSet = nil
-
-	Todo("!Consider moving the repaint set from the widget manager to the session, and perhaps other things")
-
-	s.Lock.Unlock()
+	s.lock.Unlock()
 }
 
 func (s Session) SetRequestError(problem error) error {
@@ -524,11 +519,11 @@ func (s Session) PutSessionData(key string, value any) {
 	if logSessionData {
 		Pr("Storing session data", key, "=>", TypeOf(value))
 	}
-	s.AppData[key] = value
+	s.appData[key] = value
 }
 
 func (s Session) OptSessionData(key string) any {
-	value := s.AppData[key]
+	value := s.appData[key]
 	if logSessionData {
 		Pr("Getting session data", key, "=>", TypeOf(value))
 	}
@@ -544,7 +539,7 @@ func (s Session) GetSessionData(key string) any {
 }
 
 func (s Session) DeleteSessionData(key string) {
-	delete(s.AppData, key)
+	delete(s.appData, key)
 }
 
 func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {

@@ -295,10 +295,6 @@ func (p AnimalDetailPage) writeStateToAnimal(s Session, b AnimalBuilder) {
 
 func (p AnimalDetailPage) exit(s Session) {
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
-
-	Todo("Discard any existing manager animal list, as its contents may have changed")
-	s.DeleteSessionData(SessionKey_MgrList)
-
 	s.SwitchToPage(NewManagerPage(s))
 }
 

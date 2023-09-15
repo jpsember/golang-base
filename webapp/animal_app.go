@@ -10,11 +10,8 @@ import (
 
 type AnimalOperStruct struct {
 	appRoot      Path
-	FullWidth    bool // If true, page occupies full width of screen
-	TopPadding   int  // If nonzero, adds padding to top of page
 	autoLoggedIn bool
 	resources    Path
-	jserver      JServer
 }
 
 type AnimalOper = *AnimalOperStruct
@@ -30,8 +27,6 @@ func (oper AnimalOper) GetHelp(bp *BasePrinter) {
 func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
-var DevDatabase = Alert("!Using development database")
-
 func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
 	ExitOnPanic()
@@ -41,19 +36,18 @@ func (oper AnimalOper) Perform(app *App) {
 	oper.prepareDatabase()
 
 	DevLabelRenderer = AddDevPageLabel
-	// Initialize and start the JServer
-	//
-	{
-		s := NewJServer(oper)
-		oper.jserver = s
-		s.SessionManager = BuildSessionMap()
-		s.BaseURL = "jeff.org"
-		s.KeyDir = oper.appRoot.JoinM("https_keys")
-		s.AddResourceHandler(BlobURLPrefix, oper.handleBlobRequest)
-		s.StartServing()
-	}
 
+	s := NewJServer(oper)
+	s.SessionManager = BuildSessionMap()
+	s.BaseURL = "jeff.org"
+	s.KeyDir = oper.appRoot.JoinM("https_keys")
+	s.AddResourceHandler(BlobURLPrefix, oper.handleBlobRequest)
+	s.StartServing()
 }
+
+// ------------------------------------------------------------------------------------
+// ServerApp interface
+// ------------------------------------------------------------------------------------
 
 func (oper AnimalOper) PageTemplates() []Page {
 	return []Page{
@@ -91,9 +85,6 @@ func (oper AnimalOper) DefaultPageForUser(abstractUser AbstractUser) Page {
 	return result
 }
 
-func devLabelRenderer(s Session, p Page) {
-}
-
 // JServer callback to perform initialization for a new session.  We assign a user,
 // and open the landing page. It might get replaced by another page immediately...?
 func (oper AnimalOper) PrepareSession(sess Session) {
@@ -106,6 +97,8 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 	}
 }
 
+// ------------------------------------------------------------------------------------
+
 func (oper AnimalOper) handleBlobRequest(s Session, blobId string) {
 	blob := SharedWebCache.GetBlobWithName(blobId)
 	if blob.Id() == 0 {
@@ -115,6 +108,8 @@ func (oper AnimalOper) handleBlobRequest(s Session, blobId string) {
 	Todo("?Detect someone requesting huge numbers of items that don't exist?")
 	ReportIfError(err, "Trouble writing blob response")
 }
+
+var DevDatabase = Alert("!Using development database")
 
 func (oper AnimalOper) prepareDatabase() {
 	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
@@ -127,7 +122,7 @@ func (oper AnimalOper) prepareDatabase() {
 	if b, _ := ReadBlob(1); b.Id() == 0 {
 
 		// Generate default images as blobs
-		animalPicPlaceholderPath := oper.resources.JoinM("placeholder.jpg")
+		animalPicPlaceholderPath := oper.Resources().JoinM("placeholder.jpg")
 		img := CheckOkWith(jimg.DecodeImage(animalPicPlaceholderPath.ReadBytesM()))
 		img = img.ScaleToSize(AnimalPicSizeNormal)
 		jpeg := CheckOkWith(img.ToJPEG())
@@ -151,8 +146,6 @@ func (oper AnimalOper) prepareDatabase() {
 
 const (
 	SessionKey_User     = "user"
-	SessionKey_FeedList = "feed.list"
-	SessionKey_MgrList  = "mgr.list"
 )
 
 // Get session's User, or default user if there isn't one.

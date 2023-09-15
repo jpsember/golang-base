@@ -9,6 +9,7 @@ import (
 type ManagerPageStruct struct {
 	manager    User
 	listWidget ListWidget
+	animList   AnimalList
 }
 
 type ManagerPage = *ManagerPageStruct
@@ -25,7 +26,7 @@ func NewManagerPage(session Session) ManagerPage {
 var ManagerPageTemplate = NewManagerPage(nil)
 
 func (p ManagerPage) Name() string {
-	return ManagerPageName
+	return managerPageName
 }
 
 func (p ManagerPage) ConstructPage(s Session, args PageArgs) Page {
@@ -39,9 +40,8 @@ func (p ManagerPage) ConstructPage(s Session, args PageArgs) Page {
 }
 func (p ManagerPage) Args() []string { return EmptyStringSlice }
 
-const ManagerPageName = "manager"
-
-const manager_id_prefix = ManagerPageName + "."
+const managerPageName = "manager"
+const manager_id_prefix = managerPageName + "."
 const (
 	id_manager_list = manager_id_prefix + "list"
 )
@@ -50,7 +50,6 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	Todo("?Think about ways of cleaning up the click listener which is not tied to a widget")
 	m := GenerateHeader(sess, p)
 
-	Todo("?If we are generating a new page, we shouldn't try to store the error in the old one")
 	// Row of buttons at top.
 	m.Open()
 	{
@@ -66,14 +65,12 @@ func (p ManagerPage) generateWidgets(sess Session) {
 }
 
 func (p ManagerPage) animalList(s Session) AnimalList {
-	key := SessionKey_MgrList
-	alist := s.OptSessionData(key)
+	alist := p.animList
 	if alist == nil {
 		alist = p.constructAnimalList(s)
-		s.PutSessionData(key, alist)
-		Todo("!We should maybe just store the mgrlist in the ManagerPage struct")
+		p.animList = alist
 	}
-	return alist.(AnimalList)
+	return alist
 }
 
 func (p ManagerPage) constructAnimalList(s Session) AnimalList {

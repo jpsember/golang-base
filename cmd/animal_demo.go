@@ -17,9 +17,6 @@ func main() {
 	app.Version = "1.0"
 	app.CmdLineArgs().Add("insecure").Desc("insecure (http) mode")
 
-	app.RegisterOper(&AnimalOperStruct{
-		//FullWidth: true,
-		TopPadding: 5,
-	})
+	app.RegisterOper(&AnimalOperStruct{})
 	app.Start()
 }

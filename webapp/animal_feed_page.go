@@ -24,6 +24,7 @@ func (p FeedPage) Args() []string { return EmptyStringSlice }
 
 type FeedPageStruct struct {
 	listWidget ListWidget
+	animList   AnimalList
 }
 
 type FeedPage = *FeedPageStruct
@@ -53,14 +54,10 @@ func (p FeedPage) generateWidgets(s Session) {
 }
 
 func (p FeedPage) animalList(s Session) AnimalList {
-	key := SessionKey_FeedList
-	alist := s.OptSessionData(key)
-	if alist == nil {
-		Todo("!store the animalList in the FeedPage struct")
-		alist = p.constructAnimalList()
-		s.PutSessionData(key, alist)
+	if p.animList == nil {
+		p.animList = p.constructAnimalList()
 	}
-	return alist.(AnimalList)
+	return p.animList
 }
 
 func (p FeedPage) constructAnimalList() AnimalList {

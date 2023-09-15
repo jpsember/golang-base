@@ -9,6 +9,7 @@ type AbstractUser any
 type PageRequesterStruct struct {
 	PageRequesterInterface
 	BaseObject
+	// Maps are thread safe for reading.  We won't modify the map once the map has been initialized.
 	registry map[string]Page
 }
 
@@ -23,8 +24,6 @@ func NewPageRequester(fn PageRequesterInterface) PageRequester {
 		registry:               make(map[string]Page),
 	}
 	t.SetName("PageRequester")
-	Todo("!Emphasize that PageRequester must be threadsafe")
-
 	return t
 }
 
@@ -33,6 +32,7 @@ type PageRequester = *PageRequesterStruct
 func (r PageRequester) PageWithName(nm string) Page {
 	return r.registry[nm]
 }
+
 func (r PageRequester) PageWithNameM(nm string) Page {
 	pg := r.registry[nm]
 	if pg == nil {
@@ -86,6 +86,7 @@ func (r PageRequester) Process(s Session, path string) Page {
 	return page
 }
 
+// PageRequester must be threadsafe (once all the pages have been registered).
 func (r PageRequester) RegisterPage(template Page) {
 	key := template.Name()
 	if HasKey(r.registry, key) {

@@ -26,41 +26,40 @@ type JServerStruct struct {
 	KeyDir         Path
 	SessionManager SessionManager
 	resources      Path
-	PgRequester    PageRequester
+	pageRequester  PageRequester
 	TopPadding     int
 	headerMarkup   string
 	handlerMap     map[string]PathHandler
+	started        bool
 }
 
 type JServer = *JServerStruct
 
 func NewJServer(app ServerApp) JServer {
-	Todo("Use the ServerApp interface to support the PrepareSession, HandleRequest stuff")
 	t := &JServerStruct{
-		App:         app,
-		PgRequester: NewPageRequester(app),
-		handlerMap:  make(map[string]PathHandler),
+		App:           app,
+		pageRequester: NewPageRequester(app),
+		handlerMap:    make(map[string]PathHandler),
 	}
 	t.resources = app.Resources().AssertNonEmpty()
 	t.registerPages()
+	t.headerMarkup = t.resources.JoinM("header.html").ReadStringM()
 	return t
 }
 
 func (j JServer) registerPages() {
 	pgs := j.App.PageTemplates()
 	for _, pg := range pgs {
-		j.PgRequester.RegisterPage(pg)
+		j.pageRequester.RegisterPage(pg)
 	}
-}
-
-func (j JServer) init() {
-	j.headerMarkup = j.resources.JoinM("header.html").ReadStringM()
 }
 
 func (j JServer) StartServing() {
 
-	j.init()
-	var ourUrl = "jeff.org"
+	CheckState(!j.started, "server has already started")
+	j.started = true
+
+	var ourUrl = CheckNonEmpty(j.BaseURL, "BaseURL")
 
 	var keyDir = j.KeyDir //oper.appRoot.JoinM("https_keys")
 	var certPath = keyDir.JoinM(ourUrl + ".crt")
@@ -74,7 +73,6 @@ func (j JServer) StartServing() {
 					BadState("<1Panic during http.HandleFunc:", r)
 				}
 			}()
-			Todo("!This should be moved to the webserv package, maybe if an initialization parameter was specified")
 			j.handle(w, req)
 		})
 
@@ -95,7 +93,7 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 	sess := DetermineSession(j.SessionManager, w, req, true)
 
 	// Now that we have the session, lock it
-	sess.Lock.Lock()
+	sess.lock.Lock()
 	defer sess.ReleaseLockAndDiscardRequest()
 
 	sess.PrepareForHandlingRequest(w, req)
@@ -181,7 +179,7 @@ func (j JServer) writeHeader(bp MarkupBuilder) {
 	bp.Comments("page container").OpenTag(`div class='` + containerClass + `'`)
 }
 
-func (j JServer) SendFullPage(sess Session) {
+func (j JServer) sendFullPage(sess Session) {
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
 	sb := NewMarkupBuilder()
 	j.writeHeader(sb)
@@ -230,15 +228,15 @@ func (j JServer) processPageRequest(s Session, path string) bool {
 		pageName := modifiedPath[0:i]
 
 		// If what remains is a nonempty string that isn't the name of a page, exit
-		if pageName != "" && j.PgRequester.PageWithName(pageName) == nil {
+		if pageName != "" && j.pageRequester.PageWithName(pageName) == nil {
 			return false
 		}
 	}
 
-	page := j.PgRequester.Process(s, path)
+	page := j.pageRequester.Process(s, path)
 	if page != nil {
 		s.SwitchToPage(page)
-		j.SendFullPage(s)
+		j.sendFullPage(s)
 		return true
 	}
 
@@ -246,6 +244,7 @@ func (j JServer) processPageRequest(s Session, path string) bool {
 }
 
 func (j JServer) AddResourceHandler(pathPrefix string, handler PathHandler) {
+	CheckState(!j.started, "server has already started")
 	CheckState(!HasKey(j.handlerMap, pathPrefix), "duplicate handler for prefix:", pathPrefix)
 	j.handlerMap[pathPrefix] = handler
 }
