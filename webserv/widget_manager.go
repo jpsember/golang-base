@@ -244,14 +244,13 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 // Have subsequent WidgetManager operations operate on a particular container widget.
 // The container is marked for repainting.
 func (m WidgetManager) With(container Widget) WidgetManager {
-	id := container.Id()
+	cont := container.(ContainerWidget)
+	id := cont.Id()
 
 	CheckState(m.Exists(id))
-	Todo("should WidgetManagers have pointers to their sessions?")
 
 	// Discard any existing child widgets
-	m.removeWidgets(container.Children())
-	cont := container.(ContainerWidget)
+	m.removeWidgets(cont.Children())
 	cont.ClearChildren()
 
 	m.parentStack.Clear()
