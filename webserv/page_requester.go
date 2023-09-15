@@ -49,35 +49,9 @@ func (r PageRequester) PageWithNameM(nm string) Page {
 
 // Get the name of the default page for a user
 func (r PageRequester) DefaultPagePage(user AbstractUser) Page {
-	//	nm := r.DefaultPage(user)
-	//	return r.PageWithNameM(nm)
-	//}
-	//
-	//// Get the name of the default page for a user
-	//func (r PageRequester) DefaultPage(user AbstractUser) string {
-	//
-	//	userId := 0
-	//	if user != nil {
-	//		userId = user.Id()
-	//	}
-
 	p := r.defaultPageForUserProvider(user)
 	CheckArg(p != nil)
 	return p
-	//var result string
-	//if userId == 0 || !IsUserLoggedIn(user.Id()) {
-	//	result = LandingPageName
-	//} else {
-	//	switch user.UserClass() {
-	//	case UserClassDonor:
-	//		result = FeedPageName
-	//	case UserClassManager:
-	//		result = ManagerPageName
-	//	default:
-	//		NotSupported("page for", user.UserClass())
-	//	}
-	//}
-	//return result
 }
 
 func (r PageRequester) Process(s Session, path string) Page {

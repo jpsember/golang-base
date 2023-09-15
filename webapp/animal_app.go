@@ -58,8 +58,7 @@ func (oper AnimalOper) Perform(app *App) {
 		s.SessionManager = BuildSessionMap()
 		s.BaseURL = "jeff.org"
 		s.KeyDir = oper.appRoot.JoinM("https_keys")
-		SharedPageRequester.Prepare(sessionUserProvider, DefaultPageForUser)
-
+		SharedPageRequester.Prepare(sessionUserProvider, defaultPageForUser)
 		s.StartServing()
 	}
 
@@ -69,9 +68,27 @@ func sessionUserProvider(s Session) AbstractUser {
 	return OptSessionUser(s)
 }
 
-//func defaultPageForUserProvider(user AbstractUser) Page {
-//
-//}
+func defaultPageForUser(abstractUser AbstractUser) Page {
+	user := abstractUser.(User)
+	userId := 0
+	if user != nil {
+		userId = user.Id()
+	}
+	var result Page
+	if userId == 0 || !IsUserLoggedIn(user.Id()) {
+		result = LandingPageTemplate
+	} else {
+		switch user.UserClass() {
+		case UserClassDonor:
+			result = FeedPageTemplate
+		case UserClassManager:
+			result = ManagerPageTemplate
+		default:
+			NotSupported("page for", user.UserClass())
+		}
+	}
+	return result
+}
 
 func devLabelRenderer(s Session, p Page) {
 }
