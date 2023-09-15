@@ -54,17 +54,6 @@ func (w BaseWidget) Size() WidgetSize {
 	return w.size
 }
 
-//func (w BaseWidget) Listener() WidgetListener {
-//	return w.listener
-//}
-
-//func (w BaseWidget) SetListener(listener WidgetListener) {
-//	if w.listener != nil {
-//		BadState("Widget", w.Id(), "already has a listener")
-//	}
-//	w.listener = listener
-//}
-
 func (w BaseWidget) Base() BaseWidget {
 	return w
 }
