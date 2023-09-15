@@ -321,10 +321,11 @@ func (m WidgetManager) AddPassword(listener InputWidgetListener) WidgetManager {
 	return m.auxAddInput(listener, true)
 }
 
-func (m WidgetManager) AddList(list ListInterface, renderer ListItemRenderer, listener ListWidgetListener) WidgetManager {
+func (m WidgetManager) AddList(list ListInterface, renderer ListItemRenderer, listener ListWidgetListener) ListWidget {
 	id := m.consumeOptionalPendingId()
 	t := NewListWidget(id, list, renderer, listener)
-	return m.Add(t)
+	m.Add(t)
+	return t
 }
 
 // Utility method to determine the label and id for text fields (text fields, headings).
@@ -461,7 +462,6 @@ func SetWidgetDebugRendering() {
 // an AJAX call)
 func (m WidgetManager) Repaint(w Widget) WidgetManager {
 	if m.repaintSet != nil {
-
 		pr := PrIf(debRepaint)
 		pr("Repaint:", w)
 		if m.repaintSet.Add(w.Id()) {
@@ -475,7 +475,6 @@ func (m WidgetManager) Repaint(w Widget) WidgetManager {
 func (m WidgetManager) RepaintIds(ids ...string) WidgetManager {
 	for _, id := range ids {
 		w := m.Opt(id)
-		Pr("repaint:", id, "found:", w)
 		if w != nil {
 			m.Repaint(w)
 		} else {

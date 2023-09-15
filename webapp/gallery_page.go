@@ -27,7 +27,7 @@ func (p GalleryPage) Name() string {
 	return GalleryPageName
 }
 
-func (p GalleryPage) Args() []any { return EmptyPageArgs }
+func (p GalleryPage) Args() []string { return EmptyStringSlice }
 
 func (p GalleryPage) Session() Session { return p.session }
 
@@ -37,10 +37,6 @@ type GalleryPage = *GalleryPageStruct
 
 type GalleryPageStruct struct {
 	session Session
-}
-
-func (p GalleryPage) Request(s Session) Page {
-	return p
 }
 
 func NewGalleryPage(sess Session) Page {

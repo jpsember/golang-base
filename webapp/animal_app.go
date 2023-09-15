@@ -73,7 +73,7 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 	sess.PutSessionData(SessionKey_User, user)
 	CheckState(user.Id() == 0)
 
-	if Alert("Doing auto login") {
+	if Alert("!Doing auto login") {
 		oper.debugAutoLogIn(sess)
 	}
 }
@@ -108,7 +108,7 @@ func (oper AnimalOper) handleBlobRequest(s Session, blobId string) {
 }
 
 func (oper AnimalOper) renderPage(sess Session) {
-	Todo("Rename to avoid confusion with 'Page.Generate'?")
+	Todo("!Rename to avoid confusion with 'Page.Generate'?")
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
 	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
@@ -236,12 +236,8 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 	}
 	oper.autoLoggedIn = true
 
-	//if false {
-	//	NewGalleryPage(sess, sess.PageWidget).Generate()
-	//	return
-	//}
 	user2, _ := ReadUserWithName("manager1")
-	Alert("Auto logging in", user2)
+	Alert("?Auto logging in", user2.Id(), user2.Name())
 	if user2.Id() == 0 {
 		return
 	}

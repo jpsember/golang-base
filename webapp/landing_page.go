@@ -24,14 +24,6 @@ type LandingPageStruct struct {
 
 type LandingPage = *LandingPageStruct
 
-func (p LandingPage) Request(s Session) Page {
-	user := OptSessionUser(s)
-	if user.Id() == 0 {
-		return p
-	}
-	return nil
-}
-
 func NewLandingPage(sess Session, args ...any) Page {
 	t := &LandingPageStruct{
 		session: sess,
@@ -47,11 +39,14 @@ func (p LandingPage) Name() string {
 
 func (p LandingPage) Construct(s Session, args PageArgs) Page {
 	if args.CheckDone() {
-		return NewLandingPage(s)
+		user := OptSessionUser(s)
+		if user.Id() == 0 {
+			return NewLandingPage(s)
+		}
 	}
 	return nil
 }
-func (p LandingPage) Args() []any { return EmptyPageArgs }
+func (p LandingPage) Args() []string { return EmptyStringSlice }
 
 func (p LandingPage) Generate() {
 	sess := p.Session()

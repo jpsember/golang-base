@@ -84,10 +84,10 @@ function processServerResponse(text) {
     }
 
     if (response_key_url_expr in obj) {
-        const urlExpr = obj.u
-        pr("update_url_expr:",urlExpr)
-        pr("origin:",window.origin)
-        history.pushState(null, null, window.origin + urlExpr);
+        const url = window.origin + obj.u
+        pr("calling history.pushState with:",url)
+        //pr("NOT calling pushState!")
+          history.pushState(null, null, url);
     }
 }
 
@@ -169,3 +169,4 @@ function jsPopStateEventHandler(e) {
 window.addEventListener('popstate', jsPopStateEventHandler);
 
 pr("...base.js has loaded")
+

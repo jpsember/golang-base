@@ -125,8 +125,6 @@ func ParseSession(source JSEntity) Session {
 
 // Prepare for serving a client request from this session's user. Acquire a lock on this session.
 func (s Session) HandleAjaxRequest() {
-	Todo("pass the session, which contains the writer and request")
-
 	s.parseAjaxRequest()
 	if false && Alert("dumping") {
 		Pr("Query:", INDENT, s.Request.URL.Query())
@@ -384,7 +382,6 @@ func (s Session) sendAjaxResponse() {
 	expr := s.browserURLExpr
 	if expr != "" {
 		jsmap.Put(respKeyURLExpr, expr)
-		Pr("sending url expression:", expr)
 	}
 	pr("sending back to Ajax caller:", INDENT, jsmap)
 	content := jsmap.CompactString()
@@ -564,55 +561,15 @@ func (s Session) SetClickListener(listener ClickListener) {
 func (s Session) SwitchToPage(page Page) {
 	page.Generate()
 	s.browserURLExpr = s.ConstructPathFromPage(page)
-	Todo("Maybe have it call oper.RenderPage iff it's not an ajax call?")
+	Todo("!Maybe have it call oper.RenderPage iff it's not an ajax call?")
 }
 
 func (s Session) NewBrowserPath() string {
 	return s.browserURLExpr
 }
 
-//// Cause a new URL to be pushed onto the browser history.  This gets sent when the AJAX response is sent.
-////
-//// Working from blog:  https://css-tricks.com/using-the-html5-history-api/
-//func (s Session) SetURLExpression(args ...any) {
-//	pr := PrIf(true)
-//	pr("SetURLExpression:", args)
-//	sb := strings.Builder{}
-//
-//	for _, arg := range args {
-//		s := strings.TrimSpace(ToString(arg))
-//		sb.WriteByte('/')
-//		sb.WriteString(s)
-//	}
-//	if false {
-//		//s.ClearPendingURL()
-//		//
-//		//s.PendingURLExpr = sb.String()
-//		//
-//		//pr("...pendingURLExpr set to:", s.PendingURLExpr)
-//	}
-//	// Ok, when clicking a button it is not appending the button url to the program 'root' url, rather the current one
-//	// Solved by using location.origin
-//
-//	Todo("!What about : 'Make sure to return true from Javascript click handlers when people middle or command click so that we don't override them accidentally.'")
-//}
-
 func (s Session) ConstructPathFromPage(page Page) string {
-	var a = []string{page.Name()}
-	for _, k := range page.Args() {
-		var argStr string
-		switch z := k.(type) {
-		case string:
-			argStr = z
-		case int:
-			argStr = IntToString(z)
-		default:
-			BadArg(" unknown type in arg:", Info(k))
-		}
-		a = append(a, argStr)
-	}
-	result := "/" + strings.Join(a, "/")
-	Pr("constructPathFromPage:", result)
+	result := "/" + page.Name() + "/" + strings.Join(page.Args(), "/")
 	return result
 }
 

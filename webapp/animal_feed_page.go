@@ -16,15 +16,19 @@ func (p FeedPage) Session() Session {
 
 func (p FeedPage) Construct(s Session, args PageArgs) Page {
 	if args.CheckDone() {
-		return NewFeedPage(s)
+		if SessionUserIs(s, UserClassDonor) {
+			Todo("Maybe don't set the url string until a page is accepted?")
+			return NewFeedPage(s)
+		}
 	}
 	return nil
 }
 
-func (p FeedPage) Args() []any { return EmptyPageArgs }
+func (p FeedPage) Args() []string { return EmptyStringSlice }
 
 type FeedPageStruct struct {
-	session Session
+	session    Session
+	listWidget ListWidget
 }
 
 type FeedPage = *FeedPageStruct
@@ -43,14 +47,6 @@ const (
 
 func (p FeedPage) Name() string { return FeedPageName }
 
-func (p FeedPage) Request(s Session) Page {
-	if SessionUserIs(s, UserClassDonor) {
-		Todo("Maybe don't set the url string until a page is accepted?")
-		return p
-	}
-	return SessionDefaultPage(s)
-}
-
 func (p FeedPage) Generate() {
 	s := p.session
 	// Set click listener for this page
@@ -58,7 +54,7 @@ func (p FeedPage) Generate() {
 
 	m := GenerateHeader(p)
 	al := p.animalList()
-	m.Id(id_feed_list).AddList(al, p.renderItem, p.listListener)
+	p.listWidget = m.Id(id_feed_list).AddList(al, p.renderItem, p.listListener)
 }
 
 func (p FeedPage) animalList() AnimalList {
@@ -123,13 +119,8 @@ func (p FeedPage) clickListener(sess Session, message string) {
 		return
 	}
 
-	Todo("Pages, and perhaps Sessions, should have embeddings to simplify expressions like this one:")
-	listWidget := p.Session().WidgetManager().Get(id_feed_list).(ListWidget)
-
-	if listWidget.HandleClick(sess, message) {
-
+	if p.listWidget.HandleClick(sess, message) {
 		return
 	}
 	Alert("#50Ignoring click:", message)
-
 }

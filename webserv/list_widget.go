@@ -68,7 +68,7 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 
 func (w ListWidget) renderPagePiece(m MarkupBuilder, label string, targetPage int, edges bool) {
 	m.A(`<li class="page-item"><a class="page-link`)
-	targetPage = Clamp(targetPage, 0, w.list.TotalPages())
+	targetPage = Clamp(targetPage, 0, w.list.TotalPages()-1)
 	if w.list.CurrentPage() == targetPage {
 		if edges {
 			m.A(` disabled`)

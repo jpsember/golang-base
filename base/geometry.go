@@ -192,15 +192,8 @@ func FitRectToRect(srcSize IPoint, targSize IPoint, padVsCropBias float64, horzB
 	targAspect := targSize.AspectRatio()
 	scaleMin := targWidth / srcWidth
 	scaleMax := targHeight / srcHeight
-	Pr("srcAsp:", srcAspect, "targAsp:", targAspect, "padvcrop:", padVsCropBias)
 	if targAspect < srcAspect {
 		padVsCropBias = 1 - padVsCropBias
-		Pr("new padvcrop:", padVsCropBias)
-		if false { // Maybe I need to flip the horz/vert bias too?
-			tmp := horzBias
-			horzBias = vertBias
-			vertBias = tmp
-		}
 	}
 
 	scale := (1-padVsCropBias)*scaleMin + padVsCropBias*scaleMax

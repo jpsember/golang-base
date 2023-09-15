@@ -61,7 +61,7 @@ func (r PageRequester) DefaultPage(user User) string {
 }
 
 func (r PageRequester) Process(s Session, path string) Page {
-	r.AlertVerbose()
+	//r.AlertVerbose()
 	pr := r.Log
 
 	p := NewPathParse(path)
@@ -89,11 +89,9 @@ func (r PageRequester) Process(s Session, path string) Page {
 	remainingArgs := NewPageArgs(p.RemainingArgs())
 	pr("remaining args:", remainingArgs)
 	page := templatePage.Construct(s, remainingArgs)
-	Pr("attempted to construct page of type:", templatePage.Name(), "with args:", remainingArgs, "yielded:", page)
 	if page == nil {
 		page = r.DefaultPagePage(user)
 		page = page.Construct(s, NewPageArgs(nil))
-		Pr("showing default page:", page)
 	}
 	CheckState(page != nil, "requested page is nil")
 	return page

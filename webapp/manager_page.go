@@ -7,19 +7,21 @@ import (
 )
 
 type ManagerPageStruct struct {
-	session Session
-	manager User
+	session    Session
+	manager    User
+	listWidget ListWidget
 }
 
 type ManagerPage = *ManagerPageStruct
 
-func NewManagerPage(session Session, args ...any) ManagerPage {
+func NewManagerPage(session Session) ManagerPage {
 	t := &ManagerPageStruct{session: session}
 	if session != nil {
 		t.manager = SessionUser(session)
 	}
 	return t
 }
+
 func (p ManagerPage) Session() Session { return p.session }
 
 var ManagerPageTemplate = NewManagerPage(nil)
@@ -29,12 +31,15 @@ func (p ManagerPage) Name() string {
 }
 
 func (p ManagerPage) Construct(s Session, args PageArgs) Page {
-	if args.CheckDone() {
-		return NewManagerPage(s)
+	user := OptSessionUser(s)
+	if user.UserClass() == UserClassManager {
+		if args.CheckDone() {
+			return NewManagerPage(s)
+		}
 	}
 	return nil
 }
-func (p ManagerPage) Args() []any { return EmptyPageArgs }
+func (p ManagerPage) Args() []string { return EmptyStringSlice }
 
 const ManagerPageName = "manager"
 
@@ -42,14 +47,6 @@ const manager_id_prefix = ManagerPageName + "."
 const (
 	id_manager_list = manager_id_prefix + "list"
 )
-
-func (p ManagerPage) Request(s Session) Page {
-	user := OptSessionUser(s)
-	if user.UserClass() == UserClassManager {
-		return p
-	}
-	return nil
-}
 
 func (p ManagerPage) Generate() {
 	sess := p.session
@@ -69,7 +66,7 @@ func (p ManagerPage) Generate() {
 	sess.SetClickListener(p.clickListener)
 
 	al := p.animalList()
-	m.Id(id_manager_list).AddList(al, p.renderItem, p.listListener)
+	p.listWidget = m.Id(id_manager_list).AddList(al, p.renderItem, p.listListener)
 }
 
 func (p ManagerPage) animalList() AnimalList {
@@ -157,15 +154,12 @@ func (p ManagerPage) clickListener(sess Session, message string) {
 			return
 		}
 		sess.SetClickListener(nil)
-		Pr("requesting url for:", animal.Id())
-
-		// We are still processing an AJAX event, so we have to somehow cause a new page to load...
-		//
-		// construct a path, e.g. edit/42
-		// have the page_requester process this path
-
-		//sess.RequestPage(EditAnimalPageTemplate, animal.Id())
-		Todo("even assuming this works, can we have the sess.RequestPage do it automatically?")
 		sess.SwitchToPage(NewEditAnimalPage(sess, animal.Id()))
+		return
 	}
+
+	if p.listWidget.HandleClick(sess, message) {
+		return
+	}
+
 }

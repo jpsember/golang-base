@@ -97,48 +97,12 @@ func (p AnimalDetailPage) Name() string {
 	return p.name
 }
 
-func (p AnimalDetailPage) Args() []any {
+func (p AnimalDetailPage) Args() []string {
 	if p.animalId != 0 {
-		return []any{p.animalId}
+		return []string{IntToString(p.animalId)}
 	}
-	return EmptyPageArgs
+	return EmptyStringSlice
 }
-
-//func (p AnimalDetailPage) Request(s Session) Page {
-//	//requestedId := parser.PeekInt()
-//	user := OptSessionUser(s)
-//
-//	Todo("Clear pendingURLexpr before starting the request process, and if afterward, it is empty, fill it in; maybe have requestedArgs?")
-//	var result Page
-//
-//	switch user.UserClass() {
-//	default:
-//		return nil
-//	case UserClassDonor:
-//		result = FeedPageTemplate
-//		if p.Name() == "view" {
-//			if AnimalExistsAndIsActive(requestedId) {
-//				Todo("have separate pendingargs")
-//				s.AddArg(requestedId)
-//				result = ViewAnimalPageTemplate
-//			}
-//		}
-//		break
-//	case UserClassManager:
-//		result = ManagerPageTemplate
-//		if p.Name() == "view" || p.Name() == "edit" {
-//			if AnimalExistsAndIsActiveForManager(requestedId, user.Id()) {
-//				Todo("have separate pendingargs")
-//				s.AddArg(requestedId)
-//				result = ViewAnimalPageTemplate
-//			}
-//		} else {
-//			result = CreateAnimalPageTemplate
-//		}
-//		break
-//	}
-//	return result
-//}
 
 func (p AnimalDetailPage) readStateFromAnimal() {
 	a := DefaultAnimal
@@ -260,34 +224,10 @@ func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget) {
 	if !p.validateAll() {
 		return
 	}
-	//{
-	//	text := s.WidgetStrValue(id_animal_name)
-	//	_, err := ValidateAnimalName(text, 0)
-	//	s.SetWidgetProblem(id_animal_name, err)
-	//}
-	//
-	//preCreateValidateText(s, id_animal_summary, 20, 200, 0)
-	//preCreateValidateText(s, id_animal_details, 200, 2000, 0)
-	//{
-	//	picId := s.WidgetIntValue(id_animal_display_pic)
-	//	if picId == 0 {
-	//		s.SetWidgetProblem(id_animal_uploadpic, "Please upload a photo")
-	//	}
-	//}
-	//
-	//errcount := WidgetErrorCount(p.parentPage, s.State)
-	//pr("error count:", errcount)
-	//if errcount != 0 {
-	//	return nil
-	//}
 
 	b := NewAnimal()
 	p.writeStateToAnimal(b)
-	//b.SetName(strings.TrimSpace(s.WidgetStrValue(id_animal_name)))
-	//b.SetSummary(strings.TrimSpace(s.WidgetStrValue(id_animal_summary)))
-	//b.SetDetails(strings.TrimSpace(s.WidgetStrValue(id_animal_details)))
-	//b.SetPhotoThumbnail(s.WidgetIntValue(id_animal_display_pic))
-	//b.SetManagerId(SessionUser(s).Id())
+
 	ub, err := CreateAnimal(b)
 	if ReportIfError(err, "CreateAnimal after editing") {
 		return
@@ -295,13 +235,6 @@ func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget) {
 
 	pr("created animal:", INDENT, ub)
 	p.exit()
-	//s.DeleteStateFieldsWithPrefix(anim_state_prefix)
-	//
-	//Todo("Discard any existing manager animal list, as its contents have now changed")
-	//s.DeleteSessionData(SessionKey_MgrList)
-	//
-	//Todo("Do a 'back' operation to go back to the previous page")
-	//NewManagerPage(s, p.parentPage).Generate()
 }
 
 func (p AnimalDetailPage) validateAll() bool {
@@ -334,26 +267,6 @@ func (p AnimalDetailPage) doneEditListener(s Session, widget Widget) {
 	if !p.validateAll() {
 		return
 	}
-	//{
-	//	text := s.WidgetStrValue(id_animal_name)
-	//	_, err := ValidateAnimalName(text, 0)
-	//	s.SetWidgetProblem(id_animal_name, err)
-	//}
-	//
-	//preCreateValidateText(s, id_animal_summary, 20, 200, 0)
-	//preCreateValidateText(s, id_animal_details, 200, 2000, 0)
-	//{
-	//	picId := s.WidgetIntValue(id_animal_display_pic)
-	//	if picId == 0 {
-	//		s.SetWidgetProblem(id_animal_uploadpic, "Please upload a photo")
-	//	}
-	//}
-	//
-	//errcount := WidgetErrorCount(p.parentPage, s.State)
-	//pr("error count:", errcount)
-	//if errcount != 0 {
-	//	return nil
-	//}
 
 	a, err := ReadActualAnimal(p.animalId)
 	if ReportIfError(err, "ReadAnimal after editing") {

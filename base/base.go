@@ -997,3 +997,5 @@ func ReportIfError(err error, msg ...any) bool {
 	}
 	return false
 }
+
+var EmptyStringSlice = []string{}
