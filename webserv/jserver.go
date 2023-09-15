@@ -25,6 +25,7 @@ type JServerStruct struct {
 	BaseURL        string // e.g. "jeff.org"
 	KeyDir         Path
 	SessionManager SessionManager
+	BlobCache      BlobCache
 	resources      Path
 	pageRequester  PageRequester
 	TopPadding     int
@@ -54,9 +55,16 @@ func (j JServer) registerPages() {
 	}
 }
 
+const BlobURLPrefix = "~/"
+
 func (j JServer) StartServing() {
 
 	CheckState(!j.started, "server has already started")
+
+	if j.BlobCache != nil {
+		j.AddResourceHandler(BlobURLPrefix, j.handleBlobRequest)
+	}
+
 	j.started = true
 
 	var ourUrl = CheckNonEmpty(j.BaseURL, "BaseURL")
@@ -82,6 +90,16 @@ func (j JServer) StartServing() {
 		log.Fatal("ListenAndServe: ", err)
 	}
 
+}
+
+func (j JServer) handleBlobRequest(s Session, blobId string) {
+	blob := j.BlobCache.GetBlobWithName(blobId)
+	if blob.Id() == 0 {
+		Alert("#50Can't find blob with name:", Quoted(blobId))
+	}
+	err := WriteResponse(s.ResponseWriter, InferContentTypeFromBlob(blob.Data()), blob.Data())
+	Todo("?Detect someone requesting huge numbers of items that don't exist?")
+	ReportIfError(err, "Trouble writing blob response")
 }
 
 // A handler such as this must be thread safe!

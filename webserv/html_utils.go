@@ -41,3 +41,44 @@ func TextAlignStr(align WidgetAlign) string {
 	// Wtf, keeps changing:  https://stackoverflow.com/questions/15446189
 	return alignStrs[align]
 }
+
+var contentTypeNames = []string{
+	"image/jpeg", //
+	"image/png",  //
+}
+
+var contentTypeSignatures = []byte{
+	3, 0xff, 0xd8, 0xff, // jpeg
+	8, 137, 80, 78, 71, 13, 10, 26, 10, // png
+}
+
+func InferContentTypeFromBlob(data []byte) string {
+	result := ""
+
+	sig := contentTypeSignatures
+
+	i := 0
+	for fn := 0; i < len(sig); fn++ {
+		recSize := int(sig[i])
+		j := i + 1
+		i += recSize + 1
+		match := true
+		for k := 0; k < recSize; k++ {
+			if sig[j+k] != data[k] {
+				match = false
+				break
+			}
+		}
+		if match {
+			result = contentTypeNames[fn]
+			break
+		}
+	}
+
+	if result == "" {
+		Alert("#50<1Failed to determine content-type from bytes:", CR,
+			HexDumpWithASCII(ByteSlice(data, 0, 16)))
+		result = "application/octet-stream"
+	}
+	return result
+}

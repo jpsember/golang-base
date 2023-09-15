@@ -33,20 +33,6 @@ func (w AnimalCardWidget) RenderTo(s Session, m MarkupBuilder) {
 	RenderAnimalCard(s, w.animal, m, w.buttonLabel, action_prefix_animal_card, action_prefix_animal_card)
 }
 
-const BlobURLPrefix = "~/"
-
-func ReadImageIntoCache(blobId int) string {
-	s := SharedWebCache
-	blob := s.GetBlobWithId(blobId)
-	var url string
-	if blob.Id() == 0 {
-		url = "missing.jpg"
-	} else {
-		url = BlobURLPrefix + blob.Name()
-	}
-	return url
-}
-
 func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel string, buttonActionPrefix string, cardActionPrefix string) {
 
 	// Open a bootstrap card

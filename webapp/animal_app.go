@@ -41,7 +41,8 @@ func (oper AnimalOper) Perform(app *App) {
 	s.SessionManager = BuildSessionMap()
 	s.BaseURL = "jeff.org"
 	s.KeyDir = oper.appRoot.JoinM("https_keys")
-	s.AddResourceHandler(BlobURLPrefix, oper.handleBlobRequest)
+	SharedWebCache = ConstructSharedWebCache()
+	s.BlobCache = SharedWebCache
 	s.StartServing()
 }
 
@@ -99,16 +100,6 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 
 // ------------------------------------------------------------------------------------
 
-func (oper AnimalOper) handleBlobRequest(s Session, blobId string) {
-	blob := SharedWebCache.GetBlobWithName(blobId)
-	if blob.Id() == 0 {
-		Alert("#50Can't find blob with name:", Quoted(blobId))
-	}
-	err := WriteResponse(s.ResponseWriter, InferContentTypeFromBlob(blob), blob.Data())
-	Todo("?Detect someone requesting huge numbers of items that don't exist?")
-	ReportIfError(err, "Trouble writing blob response")
-}
-
 var DevDatabase = Alert("!Using development database")
 
 func (oper AnimalOper) prepareDatabase() {
@@ -145,7 +136,7 @@ func (oper AnimalOper) prepareDatabase() {
 // ------------------------------------------------------------------------------------
 
 const (
-	SessionKey_User     = "user"
+	SessionKey_User = "user"
 )
 
 // Get session's User, or default user if there isn't one.
