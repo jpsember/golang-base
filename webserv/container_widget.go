@@ -47,7 +47,7 @@ func (w ContainerWidget) Children() []Widget {
 
 func (w ContainerWidget) ClearChildren() {
 	w.children = EmptyWidgetList()
-	w.cells = nil //.Clear()
+	w.cells = nil
 	// Reset the columns to the default (12)
 	w.columns = 12
 }
@@ -64,7 +64,7 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 		Width: cols,
 	}
 	if len(w.cells) != 0 {
-		c := w.cells[len(w.cells)-1]
+		c := Last(w.cells)
 		cell.Location = IPointWith(c.Location.X+c.Width, c.Location.Y)
 	}
 	if cell.Location.X+cell.Width > MaxColumns {

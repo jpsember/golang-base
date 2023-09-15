@@ -98,6 +98,7 @@ func (p AnimalDetailPage) Args() []string {
 	if p.animalId != 0 {
 		return []string{IntToString(p.animalId)}
 	}
+	Alert("EmptyStringSlice should be removed")
 	return EmptyStringSlice
 }
 
