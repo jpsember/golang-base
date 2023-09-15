@@ -243,27 +243,16 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 
 // Have subsequent WidgetManager operations operate on a particular container widget.
 // The container is marked for repainting.
-func (m WidgetManager) With(s Session, container Widget) WidgetManager {
-	pr := PrIf(false)
+func (m WidgetManager) With(container Widget) WidgetManager {
 	id := container.Id()
-	pr(VERT_SP, "With:", id, "at:", CallerLocation(1))
 
 	CheckState(m.Exists(id))
 	Todo("should WidgetManagers have pointers to their sessions?")
 
-	Todo("This method should maybe be moved to the Session?")
-	s.Repaint(container)
-
-	Todo("The repainting should be done elsewhere, then we can remove the session argument")
-
-	pr("current widget map:", INDENT, m.WidgetMapSummary())
-	pr("removing all child widgets")
 	// Discard any existing child widgets
 	m.removeWidgets(container.Children())
 	cont := container.(ContainerWidget)
 	cont.ClearChildren()
-
-	pr("after removal, current widget map:", INDENT, m.WidgetMapSummary())
 
 	m.parentStack.Clear()
 	m.parentStack.Add(container)
