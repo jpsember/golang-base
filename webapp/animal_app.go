@@ -139,10 +139,18 @@ func (oper AnimalOper) writeFooter(s Session, bp MarkupBuilder) {
 	expr := s.NewBrowserPath()
 	if expr != "" {
 		code := `
+// Later, make this a base.js function 
+//
 <script type="text/javascript">
-history.pushState(null, null, location.origin+'` + expr + `')
+var url = location.origin+'` + expr + `'
+console.log('writeFooter, history set url to: '+url)
+history.replaceState(null, null, url)
+
+//history.pushState(null, null, url)
 </script>
 `
+		// ^^^I suspect we don't want to do pushState if we got here due to user pressing the back button.
+
 		//	Pr("Appending code to end of <body>:", INDENT, code)
 		bp.WriteString(code)
 	}

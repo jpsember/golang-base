@@ -85,7 +85,7 @@ function processServerResponse(text) {
 
     if (response_key_url_expr in obj) {
         const url = window.origin + obj.u
-        pr("calling history.pushState with:",url)
+        pr("calling history.pushState with:",url,"because key was in the server response:",response_key_url_expr)
         //pr("NOT calling pushState!")
           history.pushState(null, null, url);
     }

@@ -69,7 +69,6 @@ type SessionStruct struct {
 
 	widgetManager WidgetManager
 	clickListener ClickListener
-	//URLRequestHandler URLRequestHandler
 
 	// Current request variables
 	ResponseWriter   http.ResponseWriter
@@ -78,9 +77,7 @@ type SessionStruct struct {
 	clientInfoString string // If nonempty information sent from client about screen size, etc
 	ajaxWidgetId     string // Id of widget that ajax call is being sent to
 	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
-	//PendingURLExpr2  string // If not nil, client browser should push this onto the history
-	//PendingURLArgs2  []any
-	browserURLExpr string // If not nil, client browser should push this onto the history
+	browserURLExpr   string // If not nil, client browser should push this onto the history
 }
 
 var ourDefaultBrowserInfo = webserv_data.NewClientInfo().SetDevicePixelRatio(1.25).SetScreenSizeX(2560).SetScreenSizeY(1440).Build()
