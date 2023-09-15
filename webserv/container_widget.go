@@ -46,7 +46,7 @@ func (w ContainerWidget) Children() []Widget {
 }
 
 func (w ContainerWidget) ClearChildren() {
-	w.children = EmptyWidgetList()
+	w.children = nil
 	w.cells = nil
 	// Reset the columns to the default (12)
 	w.columns = 12

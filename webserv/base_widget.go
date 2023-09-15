@@ -59,7 +59,7 @@ func (w BaseWidget) Base() BaseWidget {
 }
 
 func (w BaseWidget) Children() []Widget {
-	return emptyWidgetList
+	return nil
 }
 
 func (w BaseWidget) SetStaticContent(content any) {
@@ -94,15 +94,8 @@ func (w BaseWidget) ReceiveValue(sess Session, value string) {
 	Pr("Ignoring ReceiveValue for widget:", w.BaseId, "value:", Quoted(value))
 }
 
-func EmptyWidgetList() []Widget {
-	Todo("I suspect a nil slice should work just as well")
-	return []Widget{}
-}
-
-var emptyWidgetList = EmptyWidgetList()
-
 func (w BaseWidget) GetChildren() []Widget {
-	return emptyWidgetList
+	return nil
 }
 
 func (w BaseWidget) IdSummary() string {

@@ -215,8 +215,6 @@ func FitRectToRect(srcSize IPoint, targSize IPoint, padVsCropBias float64, horzB
 		cropBiasVertValue = vertBias
 	}
 
-	Pr("cropWidth:", cropWidth, "cropHeight:", cropHeight, "croipBiasH:", cropBiasHorzValue, "v:", cropBiasVertValue)
-
 	resultRect := RectWithFloat(
 		-cropWidth*((cropBiasHorzValue*.5)+.5),
 		-cropHeight*((cropBiasVertValue*.5)+.5),
