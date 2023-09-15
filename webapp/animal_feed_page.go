@@ -14,9 +14,13 @@ func (p FeedPage) Session() Session {
 	return p.session
 }
 
-func (p FeedPage) Construct(s Session, args ...any) Page {
-	return NewFeedPage(s, args...)
+func (p FeedPage) Construct(s Session, args PageArgs) Page {
+	if args.CheckDone() {
+		return NewFeedPage(s)
+	}
+	return nil
 }
+
 func (p FeedPage) Args() []any { return EmptyPageArgs }
 
 type FeedPageStruct struct {
@@ -25,7 +29,7 @@ type FeedPageStruct struct {
 
 type FeedPage = *FeedPageStruct
 
-func NewFeedPage(s Session, args ...any) FeedPage {
+func NewFeedPage(s Session) FeedPage {
 	t := &FeedPageStruct{
 		session: s,
 	}

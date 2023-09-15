@@ -28,8 +28,11 @@ func (p ManagerPage) Name() string {
 	return ManagerPageName
 }
 
-func (p ManagerPage) Construct(s Session, args ...any) Page {
-	return NewManagerPage(s, args...)
+func (p ManagerPage) Construct(s Session, args PageArgs) Page {
+	if args.CheckDone() {
+		return NewManagerPage(s)
+	}
+	return nil
 }
 func (p ManagerPage) Args() []any { return EmptyPageArgs }
 

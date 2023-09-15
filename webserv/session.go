@@ -571,75 +571,30 @@ func (s Session) NewBrowserPath() string {
 	return s.browserURLExpr
 }
 
-// Cause a new URL to be pushed onto the browser history.  This gets sent when the AJAX response is sent.
-//
-// Working from blog:  https://css-tricks.com/using-the-html5-history-api/
-func (s Session) SetURLExpression(args ...any) {
-	pr := PrIf(true)
-	pr("SetURLExpression:", args)
-	sb := strings.Builder{}
-
-	for _, arg := range args {
-		s := strings.TrimSpace(ToString(arg))
-		sb.WriteByte('/')
-		sb.WriteString(s)
-	}
-	if false {
-		//s.ClearPendingURL()
-		//
-		//s.PendingURLExpr = sb.String()
-		//
-		//pr("...pendingURLExpr set to:", s.PendingURLExpr)
-	}
-	// Ok, when clicking a button it is not appending the button url to the program 'root' url, rather the current one
-	// Solved by using location.origin
-
-	Todo("!What about : 'Make sure to return true from Javascript click handlers when people middle or command click so that we don't override them accidentally.'")
-}
-
-//// Add an argument to the pending URL expression.  If there are no arguments, the first such argument
-//// is assumed to be a page name
-//func (s Session) AddArg(arg any) Session {
+//// Cause a new URL to be pushed onto the browser history.  This gets sent when the AJAX response is sent.
+////
+//// Working from blog:  https://css-tricks.com/using-the-html5-history-api/
+//func (s Session) SetURLExpression(args ...any) {
 //	pr := PrIf(true)
-//	pr("AddArg:", arg)
-//	CheckArg(arg != nil)
-//	if s.PendingURLExpr2 == "" {
-//		s.PendingURLExpr2 = arg.(string)
-//	} else {
-//		s.PendingURLArgs2 = append(s.PendingURLArgs2, arg)
+//	pr("SetURLExpression:", args)
+//	sb := strings.Builder{}
+//
+//	for _, arg := range args {
+//		s := strings.TrimSpace(ToString(arg))
+//		sb.WriteByte('/')
+//		sb.WriteString(s)
 //	}
-//	pr("...pending URL is --->", s.PendingURLExpr2, s.PendingURLArgs2)
-//	return s
-//}
-
-//
-//func (s Session) ClearPendingURL() {
-//	s.PendingURLExpr2 = ""
-//	s.PendingURLArgs2 = []any{}
-//	s.BrowserURLExpr = ""
-//}
-
-//
-//func (s Session) ConstructPathFromPendingURL() string {
-//	CheckState(s.PendingURLExpr2 != "")
-//
-//	var a []string
-//	a = append(a, s.PendingURLExpr2)
-//	for _, k := range s.PendingURLArgs2 {
-//		var argStr string
-//		switch z := k.(type) {
-//		case string:
-//			argStr = z
-//		case int:
-//			argStr = IntToString(z)
-//		default:
-//			Alert("#50 unknown type in arg:", Info(k))
-//			argStr = "X"
-//		}
-//		a = append(a, argStr)
+//	if false {
+//		//s.ClearPendingURL()
+//		//
+//		//s.PendingURLExpr = sb.String()
+//		//
+//		//pr("...pendingURLExpr set to:", s.PendingURLExpr)
 //	}
-//	Pr("joining args:", a)
-//	return "/" + strings.Join(a, "/")
+//	// Ok, when clicking a button it is not appending the button url to the program 'root' url, rather the current one
+//	// Solved by using location.origin
+//
+//	Todo("!What about : 'Make sure to return true from Javascript click handlers when people middle or command click so that we don't override them accidentally.'")
 //}
 
 func (s Session) ConstructPathFromPage(page Page) string {
@@ -660,14 +615,5 @@ func (s Session) ConstructPathFromPage(page Page) string {
 	Pr("constructPathFromPage:", result)
 	return result
 }
-
-//func (sess Session) RequestPage(page Page, args ...any) Session {
-//	CheckState(sess.PendingURLExpr2 == "")
-//	sess.AddArg(page.Name())
-//	for _, arg := range args {
-//		sess.AddArg(arg)
-//	}
-//	return sess
-//}
 
 // ------------------------------------------------------------------------------------

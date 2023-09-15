@@ -45,8 +45,11 @@ func (p LandingPage) Name() string {
 	return LandingPageName
 }
 
-func (p LandingPage) Construct(s Session, args ...any) Page {
-	return NewLandingPage(s, args...)
+func (p LandingPage) Construct(s Session, args PageArgs) Page {
+	if args.CheckDone() {
+		return NewLandingPage(s)
+	}
+	return nil
 }
 func (p LandingPage) Args() []any { return EmptyPageArgs }
 

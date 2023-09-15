@@ -86,12 +86,13 @@ func (r PageRequester) Process(s Session, path string) Page {
 	}
 	templatePage = r.PageWithNameM(requestedPageName)
 
-	remainingArgs := p.RemainingArgs()
+	remainingArgs := NewPageArgs(p.RemainingArgs())
 	pr("remaining args:", remainingArgs)
-	page := templatePage.Construct(s, remainingArgs...)
+	page := templatePage.Construct(s, remainingArgs)
 	Pr("attempted to construct page of type:", templatePage.Name(), "with args:", remainingArgs, "yielded:", page)
 	if page == nil {
 		page = r.DefaultPagePage(user)
+		page = page.Construct(s, NewPageArgs(nil))
 		Pr("showing default page:", page)
 	}
 	CheckState(page != nil, "requested page is nil")

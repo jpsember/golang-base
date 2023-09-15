@@ -16,8 +16,11 @@ const GalleryPageName = "gallery"
 
 var GalleryPageTemplate = NewGalleryPage(nil)
 
-func (p GalleryPage) Construct(s Session, args ...any) Page {
-	return NewGalleryPage(s, args...)
+func (p GalleryPage) Construct(s Session, args PageArgs) Page {
+	if args.CheckDone() {
+		return NewGalleryPage(s)
+	}
+	return nil
 }
 
 func (p GalleryPage) Name() string {
@@ -40,7 +43,7 @@ func (p GalleryPage) Request(s Session) Page {
 	return p
 }
 
-func NewGalleryPage(sess Session, args ...any) Page {
+func NewGalleryPage(sess Session) Page {
 	t := &GalleryPageStruct{
 		session: sess,
 	}

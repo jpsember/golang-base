@@ -61,18 +61,18 @@ func NewViewAnimalPage(sess Session, animalId int) Page {
 
 func (p AnimalDetailPage) Session() Session { return p.session }
 
-func (p AnimalDetailPage) Construct(s Session, args ...any) Page {
+func (p AnimalDetailPage) Construct(s Session, args PageArgs) Page {
 	switch p.name {
 	case "new":
-		if !PageArgExists(args, 0) {
+		if args.Done() {
 			return NewCreateAnimalPage(s)
 		}
 	case "view", "edit":
-		i := ParsePageIntArg(args, 0)
-		if i <= 0 {
+		animalId := args.PositiveInt()
+		if args.Problem() {
 			break
 		}
-		anim := ReadAnimalIgnoreError(i)
+		anim := ReadAnimalIgnoreError(animalId)
 		if anim.Id() == 0 {
 			break
 		}
@@ -81,10 +81,12 @@ func (p AnimalDetailPage) Construct(s Session, args ...any) Page {
 			if p.name == "edit" {
 				break
 			}
+			return NewViewAnimalPage(s, animalId)
 		} else {
 			if anim.ManagerId() != user.Id() {
 				break
 			}
+			return NewEditAnimalPage(s, animalId)
 		}
 		return p
 	}

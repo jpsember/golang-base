@@ -10,7 +10,7 @@ type Page interface {
 	Args() []any // The additional arguments that would show up in the url (e.g., edit/17), args would be [17]
 	Session() Session
 	// Attempt to construct a new page with the specified args; return nil if args aren't valid
-	Construct(s Session, args ...any) Page
+	Construct(s Session, args PageArgs) Page
 	Generate()
 }
 

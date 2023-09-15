@@ -38,8 +38,13 @@ const SignUpPageName = "signup"
 func (p SignUpPage) Name() string { return SignUpPageName }
 func (p SignUpPage) Args() []any  { return EmptyPageArgs }
 
-func (p SignUpPage) Session() Session                      { return p.session }
-func (p SignUpPage) Construct(s Session, args ...any) Page { return NewSignUpPage(s, args...) }
+func (p SignUpPage) Session() Session { return p.session }
+func (p SignUpPage) Construct(s Session, args PageArgs) Page {
+	if args.CheckDone() {
+		return NewSignUpPage(s)
+	}
+	return nil
+}
 func (p SignUpPage) Request(s Session) Page {
 	if OptSessionUser(s).Id() == 0 {
 		return p

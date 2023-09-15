@@ -92,17 +92,8 @@ func (p PathParse) parse() {
 	p.parts = f
 }
 
-func (p PathParse) RemainingArgs() []any {
-	result := []any{}
-	for p.HasNext() {
-		var value any
-		x := p.Read()
-		value = x
-		y, err := ParseInt(x)
-		if err == nil {
-			value = y
-		}
-		result = append(result, value)
-	}
+func (p PathParse) RemainingArgs() []string {
+	result := p.parts[p.cursor:]
+	p.cursor = len(p.parts)
 	return result
 }
