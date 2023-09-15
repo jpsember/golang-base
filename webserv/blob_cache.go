@@ -87,6 +87,15 @@ func (c BlobCache) GetBlobWithName(name blobName) blobData {
 	return data
 }
 
+func (c BlobCache) GetBlobURL(blobId int) string {
+	blob := c.GetBlobWithId(blobId)
+	var url string
+	if blob.Id() != 0 {
+		url = BlobURLPrefix + blob.Name()
+	}
+	return url
+}
+
 func (c BlobCache) add(blob blobData) {
 	c.lock.Lock()
 

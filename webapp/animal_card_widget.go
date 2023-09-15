@@ -49,7 +49,7 @@ func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel str
 		if photoId == 0 {
 			Alert("!Animal has no photo")
 		} else {
-			imgUrl = ReadImageIntoCache(photoId)
+			imgUrl = SharedWebCache.GetBlobURL(photoId)
 		}
 
 		m.Comment("animal image")

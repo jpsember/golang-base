@@ -422,7 +422,7 @@ func (p AnimalDetailPage) provideURL(s Session) string {
 	pr("provideURL, image id read from state:", imageId)
 
 	if imageId != 0 {
-		url = ReadImageIntoCache(imageId)
+		url = SharedWebCache.GetBlobURL(imageId)
 		pr("read into cache, url:", url)
 	}
 	return url
