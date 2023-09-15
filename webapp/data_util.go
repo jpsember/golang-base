@@ -3,6 +3,7 @@ package webapp
 import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	"github.com/jpsember/golang-base/webserv"
 	"net/mail"
 	"strings"
 	"sync"
@@ -235,7 +236,7 @@ var contentTypeSignatures = []byte{
 	8, 137, 80, 78, 71, 13, 10, 26, 10, // png
 }
 
-func InferContentTypeFromBlob(blob Blob) string {
+func InferContentTypeFromBlob(blob webserv.AbstractBlob) string {
 	result := ""
 	data := blob.Data()
 
