@@ -360,7 +360,7 @@ func (s Session) processRepaintFlags(w Widget) {
 		RenderWidget(w, s, m)
 		s.repaintWidgetMarkupMap.Put(id, m.String())
 	} else {
-		for _, c := range w.Children().Array() {
+		for _, c := range w.Children() {
 			s.processRepaintFlags(c)
 		}
 	}

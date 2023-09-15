@@ -417,8 +417,8 @@ func (m WidgetManager) AllocateAnonymousId() string {
 	return "." + IntToString(m.anonymousIdCounter)
 }
 
-func (m WidgetManager) removeWidgets(widgets *Array[Widget]) {
-	for _, widget := range widgets.Array() {
+func (m WidgetManager) removeWidgets(widgets []Widget) {
+	for _, widget := range widgets {
 		m.Remove(widget)
 	}
 }

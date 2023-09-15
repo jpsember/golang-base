@@ -22,7 +22,7 @@ func (g *GridCell) String() string {
 // A concrete Widget that can contain others
 type ContainerWidgetObj struct {
 	BaseWidgetObj
-	children *Array[Widget]
+	children []Widget
 	cells    *Array[GridCell]
 	columns  int // The columns to apply to child widgets
 }
@@ -31,7 +31,7 @@ type ContainerWidget = *ContainerWidgetObj
 
 func NewContainerWidget(id string) ContainerWidget {
 	w := ContainerWidgetObj{
-		children: NewArray[Widget](),
+		children: []Widget{},
 		cells:    NewArray[GridCell](),
 		columns:  12,
 	}
@@ -43,19 +43,19 @@ func (w ContainerWidget) String() string {
 	return "<" + w.BaseId + " ContainerWidget>"
 }
 
-func (w ContainerWidget) Children() *Array[Widget] {
+func (w ContainerWidget) Children() []Widget {
 	return w.children
 }
 
 func (w ContainerWidget) ClearChildren() {
-	w.children.Clear()
+	w.children = EmptyWidgetList()
 	w.cells.Clear()
 	// Reset the columns to the default (12)
 	w.columns = 12
 }
 
 func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
-	w.children.Add(c)
+	w.children = append(w.children, c)
 	pr := PrIf(false)
 	pr(VERT_SP, "ContainerWidget", w.BaseId, "adding child", c.Id(), "to container", w.BaseId, "columns:", w.columns)
 	cols := w.columns
@@ -82,13 +82,13 @@ func (w ContainerWidget) SetColumns(columns int) {
 }
 
 func (w ContainerWidget) RenderTo(s Session, m MarkupBuilder) {
-	CheckState(w.cells.Size() == w.children.Size())
+	CheckState(w.cells.Size() == len(w.children))
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
 	m.Comments(`ContainerWidget`, w.IdSummary()).OpenTag(`div id='` + w.BaseId + `'`)
 	if w.Visible() {
 		prevPoint := IPointWith(0, -1)
-		for index, child := range w.children.Array() {
+		for index, child := range w.children {
 			cell := w.cells.Get(index)
 			// If this cell lies in a row below the current, Close the current and start a new one
 			if cell.Location.Y > prevPoint.Y {

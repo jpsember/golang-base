@@ -13,7 +13,7 @@ type Widget interface {
 	Visible() bool
 	// This should not be called directly; rather, RenderWidget() to handle invisible widgets properly
 	RenderTo(s *SessionStruct, m MarkupBuilder)
-	Children() *Array[Widget]
+	Children() []Widget
 	AddChild(c Widget, manager WidgetManager)
 
 	SetStaticContent(content any)
@@ -63,7 +63,7 @@ func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
 	if state.OptString(problemId, "") != "" {
 		count++
 	}
-	for _, child := range w.Children().Array() {
+	for _, child := range w.Children() {
 		count = auxWidgetErrorCount(count, child, state)
 	}
 	return count

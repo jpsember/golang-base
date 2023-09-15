@@ -58,10 +58,8 @@ func (w BaseWidget) Base() BaseWidget {
 	return w
 }
 
-var emptyChildrenList = NewArray[Widget]().Lock()
-
-func (w BaseWidget) Children() *Array[Widget] {
-	return emptyChildrenList
+func (w BaseWidget) Children() []Widget {
+	return emptyWidgetList
 }
 
 func (w BaseWidget) SetStaticContent(content any) {
@@ -96,7 +94,11 @@ func (w BaseWidget) ReceiveValue(sess Session, value string) {
 	Pr("Ignoring ReceiveValue for widget:", w.BaseId, "value:", Quoted(value))
 }
 
-var emptyWidgetList = make([]Widget, 0)
+func EmptyWidgetList() []Widget {
+	return []Widget{}
+}
+
+var emptyWidgetList = EmptyWidgetList()
 
 func (w BaseWidget) GetChildren() []Widget {
 	return emptyWidgetList
