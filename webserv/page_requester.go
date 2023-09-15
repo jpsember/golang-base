@@ -18,6 +18,8 @@ func NewPageRequester() PageRequester {
 		registry: make(map[string]Page),
 	}
 	t.SetName("PageRequester")
+	Todo("!Emphasize that PageRequester must be threadsafe")
+
 	return t
 }
 

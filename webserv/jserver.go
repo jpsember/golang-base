@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 )
 
@@ -20,6 +21,7 @@ type JServerStruct struct {
 	SessionManager SessionManager
 	App            ServerApp
 	Resources      Path
+	PgRequester    PageRequester
 	TopPadding     int
 	headerMarkup   string
 }
@@ -28,6 +30,7 @@ type JServer = *JServerStruct
 
 func NewJServer() JServer {
 	t := &JServerStruct{}
+	t.PgRequester = NewPageRequester()
 	return t
 }
 
@@ -216,4 +219,39 @@ history.replaceState(null, null, url)
 	bp.CloseTag() // body
 
 	bp.A(`</html>`).Cr()
+}
+
+// Strings that start with {zero or more lowercase letters}/
+var looksLikePageRexEx = CheckOkWith(regexp.Compile(`^[a-z]*\/`))
+
+// Parse URL requested by client, and serve up an appropriate page.
+func (j JServer) ProcessPageRequest(s Session, path string) bool {
+
+	Todo("This won't need to be public")
+	Todo("Issue #67: move to webserv; processPageRequest")
+	// If path is NOT one of "", "pagename", or "pagename[non-alpha]..., exit with false immediately
+	{
+		// Add a trailing / to make this logic simpler
+		modifiedPath := path + `/`
+		if !looksLikePageRexEx.MatchString(modifiedPath) {
+			return false
+		}
+		// Extract page name
+		i := strings.IndexByte(modifiedPath, '/')
+		pageName := modifiedPath[0:i]
+
+		// If what remains is a nonempty string that isn't the name of a page, exit
+		if pageName != "" && j.PgRequester.PageWithName(pageName) == nil {
+			return false
+		}
+	}
+
+	page := j.PgRequester.Process(s, path)
+	if page != nil {
+		s.SwitchToPage(page)
+		j.SendFullPage(s)
+		return true
+	}
+
+	return false
 }

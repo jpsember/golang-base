@@ -6,8 +6,6 @@ import (
 	"github.com/jpsember/golang-base/jimg"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
-	"regexp"
-	"strings"
 )
 
 type AnimalOperStruct struct {
@@ -33,7 +31,6 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 var DevDatabase = Alert("!Using development database")
-var SharedPageRequester PageRequester
 
 func (oper AnimalOper) Perform(app *App) {
 	//ClearAlertHistory()
@@ -42,10 +39,6 @@ func (oper AnimalOper) Perform(app *App) {
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
 	oper.prepareDatabase()
-
-	SharedPageRequester = NewPageRequester()
-	Todo("!Emphasize that PageRequester must be threadsafe")
-	oper.registerPages(SharedPageRequester)
 
 	DevLabelRenderer = AddDevPageLabel
 	// Initialize and start the JServer
@@ -58,7 +51,12 @@ func (oper AnimalOper) Perform(app *App) {
 		s.SessionManager = BuildSessionMap()
 		s.BaseURL = "jeff.org"
 		s.KeyDir = oper.appRoot.JoinM("https_keys")
-		SharedPageRequester.Prepare(sessionUserProvider, defaultPageForUser)
+		preq := s.PgRequester
+		preq.Prepare(sessionUserProvider, defaultPageForUser)
+
+		//SharedPageRequester = NewPageRequester()
+		oper.registerPages(preq)
+
 		s.StartServing()
 	}
 
@@ -121,7 +119,7 @@ func (oper AnimalOper) HandleRequest(s Session, path string) bool {
 	}
 	pr("AnimalOper, HandleRequest:", path)
 
-	return oper.processPageRequest(s, path)
+	return oper.jserver.ProcessPageRequest(s, path)
 }
 
 func (oper AnimalOper) handleBlobRequest(s Session, blobId string) {
@@ -187,10 +185,11 @@ func SessionUserIs(sess Session, class UserClass) bool {
 	return user.UserClass() == class
 }
 
-func SessionDefaultPage(sess Session) Page {
-	user := OptSessionUser(sess)
-	return SharedPageRequester.DefaultPagePage(user)
-}
+//
+//func SessionDefaultPage(sess Session) Page {
+//	user := OptSessionUser(sess)
+//	return SharedPageRequester.DefaultPagePage(user)
+//}
 
 // Get session's User.
 func SessionUser(sess Session) User {
@@ -235,40 +234,6 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 // ------------------------------------------------------------------------------------
 // User state and current page
 // ------------------------------------------------------------------------------------
-
-// Strings that start with {zero or more lowercase letters}/
-var looksLikePageRexEx = CheckOkWith(regexp.Compile(`^[a-z]*\/`))
-
-// Parse URL requested by client, and serve up an appropriate page.
-func (oper AnimalOper) processPageRequest(s Session, path string) bool {
-
-	Todo("Issue #67: move to webserv; processPageRequest")
-	// If path is NOT one of "", "pagename", or "pagename[non-alpha]..., exit with false immediately
-	{
-		// Add a trailing / to make this logic simpler
-		modifiedPath := path + `/`
-		if !looksLikePageRexEx.MatchString(modifiedPath) {
-			return false
-		}
-		// Extract page name
-		i := strings.IndexByte(modifiedPath, '/')
-		pageName := modifiedPath[0:i]
-
-		// If what remains is a nonempty string that isn't the name of a page, exit
-		if pageName != "" && SharedPageRequester.PageWithName(pageName) == nil {
-			return false
-		}
-	}
-
-	page := SharedPageRequester.Process(s, path)
-	if page != nil {
-		s.SwitchToPage(page)
-		oper.jserver.SendFullPage(s)
-		return true
-	}
-
-	return false
-}
 
 func (oper AnimalOper) registerPages(r PageRequester) {
 	r.RegisterPages(LandingPageTemplate, GalleryPageTemplate, NewSignUpPage(nil), FeedPageTemplate, ManagerPageTemplate,
