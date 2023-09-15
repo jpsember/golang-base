@@ -68,8 +68,7 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 	sess.Lock.Lock()
 	defer sess.ReleaseLockAndDiscardRequest()
 
-	sess.ResponseWriter = w
-	sess.Request = req
+	sess.PrepareForHandlingRequest(w, req)
 
 	if !sess.prepared {
 		sess.prepared = true

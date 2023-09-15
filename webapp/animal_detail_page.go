@@ -115,7 +115,6 @@ func (p AnimalDetailPage) readStateFromAnimal(sess Session) {
 }
 
 func (p AnimalDetailPage) GenerateWidgets(s Session) {
-	//SetWidgetDebugRendering()
 	s.SetClickListener(nil)
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
 	GenerateHeader(s, p)
@@ -123,8 +122,6 @@ func (p AnimalDetailPage) GenerateWidgets(s Session) {
 	p.readStateFromAnimal(s)
 
 	Todo("!Have ajax listener that can show advice without an actual error, e.g., if user left some fields blank")
-
-	//m.Label("Create New Animal Record").Size(SizeLarge).AddHeading()
 
 	if p.editing {
 		p.generateForEditing(s)
@@ -337,8 +334,6 @@ func preCreateValidateText(s Session, widgetId string, minLength int, maxLength 
 func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by []byte) error {
 	pr := PrIf(false)
 
-	m := s.WidgetManager()
-
 	var jpeg []byte
 	var imageId int
 	var img jimg.JImage
@@ -406,7 +401,7 @@ func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by [
 		s.State.Put(picId, imageId)
 
 		pr("repainting animal_display_pic")
-		m.RepaintIds(picId)
+		s.RepaintIds(picId)
 
 		pr("state:", s.State)
 	}

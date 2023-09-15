@@ -61,8 +61,8 @@ function where(skip) {
     return x
 }
 
-const response_key_widget_refresh = 'w'
-const response_key_url_expr = 'u'
+const respKeyWidgetsToRefresh = 'w'
+const respKeyURLExpr = 'u'
 
 
 function processServerResponse(text) {
@@ -71,7 +71,8 @@ function processServerResponse(text) {
     }
     //pr("processServerResponse, text:",text)
     const obj = JSON.parse(text)
-    if (response_key_widget_refresh in obj) {
+    pr("procesServerResponse:",obj)
+    if (respKeyWidgetsToRefresh in obj) {
         const widgetMap = obj.w
         for (const [id, markup] of Object.entries(widgetMap)) {
             const elem = document.getElementById(id);
@@ -83,7 +84,7 @@ function processServerResponse(text) {
         }
     }
 
-    if (response_key_url_expr in obj) {
+    if (respKeyURLExpr in obj) {
         const url = window.origin + obj.u
         //pr("calling history.pushState with:",url,"because key was in the server response:",response_key_url_expr)
         history.pushState(null, null, url);

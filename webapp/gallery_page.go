@@ -115,7 +115,7 @@ func zebraListener(s Session, widget InputWidget, newVal string) (string, error)
 	s.State.Put(alertWidget.BaseId,
 		strings.TrimSpace(newVal+" "+
 			RandomText(myRand, 55, false)))
-	s.WidgetManager().Repaint(alertWidget)
+	s.Repaint(alertWidget)
 	return newVal, nil
 }
 
@@ -129,7 +129,7 @@ func buttonListener(s Session, widget Widget) {
 
 	s.State.Put(alertWidget.BaseId,
 		strings.TrimSpace(newVal))
-	s.WidgetManager().Repaint(alertWidget)
+	s.Repaint(alertWidget)
 }
 
 func (p GalleryPage) checkboxListener(s Session, widget CheckboxWidget, state bool) (bool, error) {
@@ -139,8 +139,6 @@ func (p GalleryPage) checkboxListener(s Session, widget CheckboxWidget, state bo
 
 func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, value []byte) error {
 	pr := PrIf(false)
-
-	m := s.WidgetManager()
 
 	var jpeg []byte
 	var imageId int
@@ -203,7 +201,7 @@ func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, valu
 	} else {
 		// Store the id of the blob in the image widget
 		s.State.Put(sampleImageId, imageId)
-		m.RepaintIds(sampleImageId)
+		s.RepaintIds(sampleImageId)
 	}
 	return errOut
 }

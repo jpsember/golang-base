@@ -125,7 +125,7 @@ func (w ListWidget) HandleClick(sess Session, message string) bool {
 				break
 			}
 			w.list.SetCurrentPage(targetPage)
-			sess.WidgetManager().Repaint(w)
+			sess.Repaint(w)
 			break
 		}
 		return true

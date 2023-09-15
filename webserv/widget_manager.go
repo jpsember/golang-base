@@ -20,7 +20,6 @@ type WidgetManagerObj struct {
 	pendingId                   string
 	pendingLabel                string
 	anonymousIdCounter          int
-	repaintSet                  StringSet
 }
 
 func NewWidgetManager(session Session) WidgetManager {
@@ -244,14 +243,16 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 
 // Have subsequent WidgetManager operations operate on a particular container widget.
 // The container is marked for repainting.
-func (m WidgetManager) With(container Widget) WidgetManager {
+func (m WidgetManager) With(s Session, container Widget) WidgetManager {
 	pr := PrIf(false)
 	id := container.Id()
 	pr(VERT_SP, "With:", id, "at:", CallerLocation(1))
 
 	CheckState(m.Exists(id))
+	Todo("should WidgetManagers have pointers to their sessions?")
 
-	m.Repaint(container)
+	Todo("This method should maybe be moved to the Session?")
+	s.Repaint(container)
 
 	pr("current widget map:", INDENT, m.WidgetMapSummary())
 	pr("removing all child widgets")
@@ -458,32 +459,16 @@ func SetWidgetDebugRendering() {
 	WidgetDebugRenderingFlag = true
 }
 
-// Mark a widget for repainting.  Does nothing if there is no repaintSet (i.e., it is not being done within
-// an AJAX call)
-func (m WidgetManager) Repaint(w Widget) WidgetManager {
-	if m.repaintSet != nil {
-		pr := PrIf(debRepaint)
-		pr("Repaint:", w)
-		if m.repaintSet.Add(w.Id()) {
-			pr("...adding to set")
-		}
-	}
-	return m
-}
-
 // Mark widgets for repainting (if they exist).  Does nothing if there is no repaintSet.
-func (m WidgetManager) RepaintIds(ids ...string) WidgetManager {
+func (s Session) RepaintIds(ids ...string) WidgetManager {
+	m := s.WidgetManager()
 	for _, id := range ids {
 		w := m.Opt(id)
 		if w != nil {
-			m.Repaint(w)
+			s.Repaint(w)
 		} else {
 			Alert("#50<1Can't find widget to repaint with id:", id)
 		}
 	}
 	return m
-}
-
-func (m WidgetManager) clearRepaintSet() {
-	m.repaintSet = NewStringSet()
 }

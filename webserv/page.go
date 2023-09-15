@@ -24,7 +24,7 @@ func GenerateHeader(s Session, p Page) WidgetManager {
 	//SetWidgetDebugRendering()
 	CheckState(s != nil)
 	m := s.WidgetManager()
-	m.With(s.PageWidget)
+	m.With(s, s.PageWidget)
 	if DevLabelRenderer != nil {
 		DevLabelRenderer(s, p)
 	}

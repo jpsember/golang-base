@@ -78,6 +78,7 @@ type SessionStruct struct {
 	ajaxWidgetId     string // Id of widget that ajax call is being sent to
 	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
 	browserURLExpr   string // If not nil, client browser should push this onto the history
+	repaintSet       StringSet
 }
 
 var ourDefaultBrowserInfo = webserv_data.NewClientInfo().SetDevicePixelRatio(1.25).SetScreenSizeX(2560).SetScreenSizeY(1440).Build()
@@ -92,6 +93,12 @@ func NewSession() Session {
 	Todo("?ClientInfo (browser info) not sent soon enough")
 	Todo("?The Session should have WidgetManager embedded within it, so we can call through to its methods")
 	return &s
+}
+
+func (s Session) PrepareForHandlingRequest(w http.ResponseWriter, req *http.Request) {
+	s.ResponseWriter = w
+	s.Request = req
+	s.repaintSet = NewStringSet()
 }
 
 // Get WidgetManager for this session, creating one if necessary
@@ -333,6 +340,19 @@ func (s Session) processClientInfo(infoString string) {
 	Todo("?Datagen generated parse() methods don't report errors cleanly; we will need a wrapper?")
 }
 
+// Mark a widget for repainting.  Does nothing if there is no repaintSet (i.e., it is not being done within
+// an AJAX call)
+func (s Session) Repaint(w Widget) Session {
+	if s.repaintSet != nil {
+		pr := PrIf(debRepaint)
+		pr("Repaint:", w)
+		if s.repaintSet.Add(w.Id()) {
+			pr("...adding to set")
+		}
+	}
+	return s
+}
+
 func (s Session) processRepaintFlags(repaintSet StringSet, debugDepth int, w Widget, refmap JSMap, repaint bool) {
 	id := w.Id()
 	pr := PrIf(debRepaint)
@@ -359,7 +379,7 @@ func (s Session) processRepaintFlags(repaintSet StringSet, debugDepth int, w Wid
 const respKeyWidgetsToRefresh = "w"
 const respKeyURLExpr = "u"
 
-var debRepaint = false && Alert("debRepaint")
+var debRepaint = true && Alert("debRepaint")
 
 // Send Ajax response back to client.
 func (s Session) sendAjaxResponse() {
@@ -373,7 +393,10 @@ func (s Session) sendAjaxResponse() {
 	// refmap will be the map sent to the client with the widgets
 	refmap := NewJSMap()
 
-	s.processRepaintFlags(s.WidgetManager().repaintSet, 0, s.PageWidget, refmap, false)
+	// Issue #66:
+	// For each repainted widget P that contains widget C, remove C from the repaint set.
+
+	s.processRepaintFlags(s.repaintSet, 0, s.PageWidget, refmap, false)
 
 	jsmap.Put(respKeyWidgetsToRefresh, refmap)
 	expr := s.browserURLExpr
@@ -383,6 +406,11 @@ func (s Session) sendAjaxResponse() {
 	pr("sending back to Ajax caller:", INDENT, jsmap)
 	content := jsmap.CompactString()
 	WriteResponse(s.ResponseWriter, "application/json", []byte(content))
+}
+
+func (s Session) clearRepaintSet() {
+	Todo("Func Probably not required")
+	s.repaintSet = NewStringSet()
 }
 
 // Discard state added to session to serve a request.
@@ -398,9 +426,10 @@ func (s Session) ReleaseLockAndDiscardRequest() {
 	s.ajaxWidgetValue = ""
 	s.clientInfoString = ""
 	s.browserURLExpr = ""
+	s.repaintSet = nil
 
 	Todo("!Consider moving the repaint set from the widget manager to the session, and perhaps other things")
-	s.WidgetManager().clearRepaintSet()
+	s.clearRepaintSet()
 
 	s.Lock.Unlock()
 }
@@ -451,7 +480,7 @@ func (s Session) auxSetWidgetProblem(widgetId string, problemText string) {
 		} else {
 			state.Put(key, problemText)
 		}
-		s.WidgetManager().RepaintIds(widgetId)
+		s.RepaintIds(widgetId)
 	}
 }
 
