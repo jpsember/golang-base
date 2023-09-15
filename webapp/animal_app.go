@@ -119,13 +119,14 @@ func (oper AnimalOper) sendFullPage(sess Session) {
 
 // Generate the boilerplate header and scripts markup
 func (oper AnimalOper) writeHeader(bp MarkupBuilder) {
+	Todo("Issue #67: move writeHeader")
 	bp.A(oper.headerMarkup)
 	bp.OpenTag("body")
 	containerClass := "container"
 	if oper.FullWidth {
 		containerClass = "container-fluid"
 	}
-	if oper.TopPadding != 0 {
+	if false && oper.TopPadding != 0 {
 		containerClass += "  pt-" + IntToString(oper.TopPadding)
 	}
 	bp.Comments("page container").OpenTag(`div class='` + containerClass + `'`)
@@ -133,6 +134,7 @@ func (oper AnimalOper) writeHeader(bp MarkupBuilder) {
 
 // Generate the boilerplate footer markup, then write the page to the response
 func (oper AnimalOper) writeFooter(s Session, bp MarkupBuilder) {
+	Todo("Issue #67: move writeFooter")
 	bp.CloseTag() // page container
 
 	Todo("move this to webserv module")
@@ -262,6 +264,7 @@ var looksLikePageRexEx = CheckOkWith(regexp.Compile(`^[a-z]*\/`))
 // Parse URL requested by client, and serve up an appropriate page.
 func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 
+	Todo("Issue #67: move to webserv; processPageRequest")
 	// If path is NOT one of "", "pagename", or "pagename[non-alpha]..., exit with false immediately
 	{
 		// Add a trailing / to make this logic simpler
