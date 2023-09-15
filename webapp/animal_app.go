@@ -11,7 +11,7 @@ import (
 )
 
 type AnimalOperStruct struct {
-	appRoot Path
+	appRoot      Path
 	FullWidth    bool // If true, page occupies full width of screen
 	TopPadding   int  // If nonzero, adds padding to top of page
 	autoLoggedIn bool
@@ -58,10 +58,20 @@ func (oper AnimalOper) Perform(app *App) {
 		s.SessionManager = BuildSessionMap()
 		s.BaseURL = "jeff.org"
 		s.KeyDir = oper.appRoot.JoinM("https_keys")
+		SharedPageRequester.Prepare(sessionUserProvider, DefaultPageForUser)
+
 		s.StartServing()
 	}
 
 }
+
+func sessionUserProvider(s Session) AbstractUser {
+	return OptSessionUser(s)
+}
+
+//func defaultPageForUserProvider(user AbstractUser) Page {
+//
+//}
 
 func devLabelRenderer(s Session, p Page) {
 }
