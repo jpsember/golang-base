@@ -46,7 +46,6 @@ func (oper AnimalOper) Perform(app *App) {
 	{
 		s := NewJServer(oper)
 		oper.jserver = s
-		s.Resources = oper.resources
 		s.SessionManager = BuildSessionMap()
 		s.BaseURL = "jeff.org"
 		s.KeyDir = oper.appRoot.JoinM("https_keys")
@@ -59,6 +58,9 @@ func (oper AnimalOper) Perform(app *App) {
 
 }
 
+func (oper AnimalOper) Resources() Path {
+	return oper.resources
+}
 func (oper AnimalOper) UserForSession(s Session) AbstractUser {
 	return OptSessionUser(s)
 }

@@ -12,6 +12,7 @@ import (
 type ServerApp interface {
 	PageRequesterInterface
 	PrepareSession(s Session)
+	Resources() Path
 }
 
 // Why does leaving the name of the arg off (s) screw things up?
@@ -23,7 +24,7 @@ type JServerStruct struct {
 	BaseURL        string // e.g. "jeff.org"
 	KeyDir         Path
 	SessionManager SessionManager
-	Resources      Path
+	resources      Path
 	PgRequester    PageRequester
 	TopPadding     int
 	headerMarkup   string
@@ -39,11 +40,12 @@ func NewJServer(app ServerApp) JServer {
 		PgRequester: NewPageRequester(app),
 		handlerMap:  make(map[string]PathHandler),
 	}
+	t.resources = app.Resources().AssertNonEmpty()
 	return t
 }
 
 func (j JServer) init() {
-	j.headerMarkup = j.Resources.JoinM("header.html").ReadStringM()
+	j.headerMarkup = j.resources.JoinM("header.html").ReadStringM()
 }
 
 func (j JServer) StartServing() {
@@ -138,7 +140,7 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 			if !result {
 				// If we fail to parse any requests, assume it's a resource, like that stupid favicon
 				pr("JServer handling resource request for:", path)
-				err = sess.HandleResourceRequest(j.Resources)
+				err = sess.HandleResourceRequest(j.resources)
 				if err != nil {
 					Todo("Issue a 404")
 					Alert("<1#50Cannot handle request:", Quoted(path))
