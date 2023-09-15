@@ -227,7 +227,7 @@ func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget) {
 }
 
 func (p AnimalDetailPage) validateAll(s Session) bool {
-	pr := PrIf(true)
+	pr := PrIf(false)
 
 	{
 		text := s.WidgetStrValue(id_animal_name)

@@ -71,14 +71,15 @@ type SessionStruct struct {
 	clickListener ClickListener
 
 	// Current request variables
-	ResponseWriter   http.ResponseWriter
-	Request          *http.Request
-	requestProblem   error  // If not nil, problem detected with current request
-	clientInfoString string // If nonempty information sent from client about screen size, etc
-	ajaxWidgetId     string // Id of widget that ajax call is being sent to
-	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
-	browserURLExpr   string // If not nil, client browser should push this onto the history
-	repaintSet       StringSet
+	ResponseWriter         http.ResponseWriter
+	Request                *http.Request
+	requestProblem         error  // If not nil, problem detected with current request
+	clientInfoString       string // If nonempty information sent from client about screen size, etc
+	ajaxWidgetId           string // Id of widget that ajax call is being sent to
+	ajaxWidgetValue        string // The string representation of the ajax widget's requested value (if there was one)
+	browserURLExpr         string // If not nil, client browser should push this onto the history
+	repaintSet             StringSet
+	repaintWidgetMarkupMap JSMap // Used only during repainting; the map of widget ids -> markup to be repainted by client
 }
 
 var ourDefaultBrowserInfo = webserv_data.NewClientInfo().SetDevicePixelRatio(1.25).SetScreenSizeX(2560).SetScreenSizeY(1440).Build()
@@ -340,46 +341,37 @@ func (s Session) processClientInfo(infoString string) {
 	Todo("?Datagen generated parse() methods don't report errors cleanly; we will need a wrapper?")
 }
 
-// Mark a widget for repainting.  Does nothing if there is no repaintSet (i.e., it is not being done within
-// an AJAX call)
+// Mark a widget for repainting
 func (s Session) Repaint(w Widget) Session {
-	if s.repaintSet != nil {
-		pr := PrIf(debRepaint)
-		pr("Repaint:", w)
-		if s.repaintSet.Add(w.Id()) {
-			pr("...adding to set")
-		}
+	pr := PrIf(debRepaint)
+	pr("Repaint:", w)
+	if s.repaintSet.Add(w.Id()) {
+		pr("...adding to set")
 	}
 	return s
 }
 
-func (s Session) processRepaintFlags(repaintSet StringSet, debugDepth int, w Widget, refmap JSMap, repaint bool) {
+// Traverse a widget tree, rendering widgets that have been marked for repainting.
+func (s Session) processRepaintFlags(w Widget) {
+	// For each widget that has been marked for repainting, we send it and its markup
+	// to the client.  The children need not be descended to, as they will be repainted
+	// by their containers.
 	id := w.Id()
-	pr := PrIf(debRepaint)
-	pr(Dots(debugDepth*4)+IntToString(debugDepth), "repaint, flag:", repaint, "id:", id)
-
-	if !repaint {
-		if repaintSet.Contains(id) {
-			repaint = true
-			pr(Dots(debugDepth*4), "repaint flag was set; repainting entire subtree")
-		}
-	}
-
-	if repaint {
+	if s.repaintSet.Contains(id) {
 		m := NewMarkupBuilder()
 		RenderWidget(w, s, m)
-		refmap.Put(id, m.String())
-	}
-
-	for _, c := range w.Children().Array() {
-		s.processRepaintFlags(repaintSet, 1+debugDepth, c, refmap, repaint)
+		s.repaintWidgetMarkupMap.Put(id, m.String())
+	} else {
+		for _, c := range w.Children().Array() {
+			s.processRepaintFlags(c)
+		}
 	}
 }
 
 const respKeyWidgetsToRefresh = "w"
 const respKeyURLExpr = "u"
 
-var debRepaint = true && Alert("debRepaint")
+var debRepaint = false && Alert("debRepaint")
 
 // Send Ajax response back to client.
 func (s Session) sendAjaxResponse() {
@@ -389,16 +381,11 @@ func (s Session) sendAjaxResponse() {
 	pr := PrIf(debRepaint)
 
 	jsmap := NewJSMap()
+	s.repaintWidgetMarkupMap = NewJSMap()
+	s.processRepaintFlags(s.PageWidget)
+	jsmap.Put(respKeyWidgetsToRefresh, s.repaintWidgetMarkupMap)
+	s.repaintWidgetMarkupMap = nil
 
-	// refmap will be the map sent to the client with the widgets
-	refmap := NewJSMap()
-
-	// Issue #66:
-	// For each repainted widget P that contains widget C, remove C from the repaint set.
-
-	s.processRepaintFlags(s.repaintSet, 0, s.PageWidget, refmap, false)
-
-	jsmap.Put(respKeyWidgetsToRefresh, refmap)
 	expr := s.browserURLExpr
 	if expr != "" {
 		jsmap.Put(respKeyURLExpr, expr)
@@ -406,11 +393,6 @@ func (s Session) sendAjaxResponse() {
 	pr("sending back to Ajax caller:", INDENT, jsmap)
 	content := jsmap.CompactString()
 	WriteResponse(s.ResponseWriter, "application/json", []byte(content))
-}
-
-func (s Session) clearRepaintSet() {
-	Todo("Func Probably not required")
-	s.repaintSet = NewStringSet()
 }
 
 // Discard state added to session to serve a request.
@@ -429,7 +411,6 @@ func (s Session) ReleaseLockAndDiscardRequest() {
 	s.repaintSet = nil
 
 	Todo("!Consider moving the repaint set from the widget manager to the session, and perhaps other things")
-	s.clearRepaintSet()
 
 	s.Lock.Unlock()
 }
@@ -585,6 +566,7 @@ func (s Session) SetClickListener(listener ClickListener) {
 // ------------------------------------------------------------------------------------
 
 func (s Session) SwitchToPage(page Page) {
+	// Do a repaint of Page here later
 	page.GenerateWidgets(s)
 	s.browserURLExpr = s.ConstructPathFromPage(page)
 	Todo("!Maybe have it call oper.RenderPage iff it's not an ajax call?")

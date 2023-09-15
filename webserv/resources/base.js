@@ -69,9 +69,8 @@ function processServerResponse(text) {
     if (text.length == 0) {
         return
     }
-    //pr("processServerResponse, text:",text)
     const obj = JSON.parse(text)
-    pr("procesServerResponse:",obj)
+    //pr("procesServerResponse:",obj)
     if (respKeyWidgetsToRefresh in obj) {
         const widgetMap = obj.w
         for (const [id, markup] of Object.entries(widgetMap)) {

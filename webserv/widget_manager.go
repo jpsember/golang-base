@@ -254,6 +254,8 @@ func (m WidgetManager) With(s Session, container Widget) WidgetManager {
 	Todo("This method should maybe be moved to the Session?")
 	s.Repaint(container)
 
+	Todo("The repainting should be done elsewhere, then we can remove the session argument")
+
 	pr("current widget map:", INDENT, m.WidgetMapSummary())
 	pr("removing all child widgets")
 	// Discard any existing child widgets
