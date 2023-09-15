@@ -53,7 +53,8 @@ func (oper AnimalOper) Perform(app *App) {
 		s.KeyDir = oper.appRoot.JoinM("https_keys")
 		preq := s.PgRequester
 		preq.Prepare(sessionUserProvider, defaultPageForUser)
-		oper.registerPages(preq)
+		preq.RegisterPages(LandingPageTemplate, GalleryPageTemplate, NewSignUpPage(nil), FeedPageTemplate, ManagerPageTemplate,
+			ViewAnimalPageTemplate, CreateAnimalPageTemplate, EditAnimalPageTemplate)
 		s.AddResourceHandler(BlobURLPrefix, oper.handleBlobRequest)
 		s.StartServing()
 	}
@@ -100,27 +101,6 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 		oper.debugAutoLogIn(sess)
 	}
 }
-
-//// JServer callback to handle a request.  Returns true if it was handled.
-//func (oper AnimalOper) HandleRequest(s Session, path string) bool {
-//	Todo("Make this pluggable")
-//
-//	pr := PrIf(false)
-//
-//	if s == nil {
-//		Alert("#50HandleRequest, but session is nil for:", path)
-//		return false
-//	}
-//	var text string
-//	var flag bool
-//	if text, flag = TrimIfPrefix(path, BlobURLPrefix); flag {
-//		oper.handleBlobRequest(s, text)
-//		return true
-//	}
-//	pr("AnimalOper, HandleRequest:", path)
-//
-//	return oper.jserver.ProcessPageRequest(s, path)
-//}
 
 func (oper AnimalOper) handleBlobRequest(s Session, blobId string) {
 	blob := SharedWebCache.GetBlobWithName(blobId)

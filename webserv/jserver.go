@@ -42,16 +42,16 @@ func NewJServer() JServer {
 	return t
 }
 
-func (s JServer) init() {
-	s.headerMarkup = s.Resources.JoinM("header.html").ReadStringM()
+func (j JServer) init() {
+	j.headerMarkup = j.Resources.JoinM("header.html").ReadStringM()
 }
 
-func (s JServer) StartServing() {
+func (j JServer) StartServing() {
 
-	s.init()
+	j.init()
 	var ourUrl = "jeff.org"
 
-	var keyDir = s.KeyDir //oper.appRoot.JoinM("https_keys")
+	var keyDir = j.KeyDir //oper.appRoot.JoinM("https_keys")
 	var certPath = keyDir.JoinM(ourUrl + ".crt")
 	var keyPath = keyDir.JoinM(ourUrl + ".key")
 	Pr("URL:", INDENT, `https://`+ourUrl)
@@ -64,7 +64,7 @@ func (s JServer) StartServing() {
 				}
 			}()
 			Todo("!This should be moved to the webserv package, maybe if an initialization parameter was specified")
-			s.handle(w, req)
+			j.handle(w, req)
 		})
 
 	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
@@ -76,12 +76,12 @@ func (s JServer) StartServing() {
 }
 
 // A handler such as this must be thread safe!
-func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
+func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 	pr := PrIf(false)
 	pr("JServer handler, request:", req.RequestURI)
 
 	// We don't know what the session is yet, so we don't have a lock on it...
-	sess := DetermineSession(s.SessionManager, w, req, true)
+	sess := DetermineSession(j.SessionManager, w, req, true)
 
 	// Now that we have the session, lock it
 	sess.Lock.Lock()
@@ -99,7 +99,7 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 			sess.PageWidget = widget
 			m.Close()
 		}
-		s.App.PrepareSession(sess)
+		j.App.PrepareSession(sess)
 	}
 
 	url, err := url.Parse(req.RequestURI)
@@ -123,7 +123,7 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 		} else {
 
 			result := false
-			for key, handler := range s.handlerMap {
+			for key, handler := range j.handlerMap {
 				if text, flag = TrimIfPrefix(path, key); flag {
 					handler(sess, text)
 					result = true
@@ -132,17 +132,13 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 			}
 
 			if !result {
-				result = s.ProcessPageRequest(sess, path)
+				result = j.processPageRequest(sess, path)
 			}
-			//result := s.App.HandleRequest(sess, path)
 
-			//	if !result {
-			//		result = s.processPageRequest(sess, path)
-			//	}
 			if !result {
 				// If we fail to parse any requests, assume it's a resource, like that stupid favicon
 				pr("JServer handling resource request for:", path)
-				err = sess.HandleResourceRequest(s.Resources)
+				err = sess.HandleResourceRequest(j.Resources)
 				if err != nil {
 					Todo("Issue a 404")
 					Alert("<1#50Cannot handle request:", Quoted(path))
@@ -209,9 +205,8 @@ history.replaceState(null, null, url)
 var looksLikePageRexEx = CheckOkWith(regexp.Compile(`^[a-z]*\/`))
 
 // Parse URL requested by client, and serve up an appropriate page.
-func (j JServer) ProcessPageRequest(s Session, path string) bool {
+func (j JServer) processPageRequest(s Session, path string) bool {
 
-	Todo("This won't need to be public")
 	// If path is NOT one of "", "pagename", or "pagename[non-alpha]..., exit with false immediately
 	{
 		// Add a trailing / to make this logic simpler
