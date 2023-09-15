@@ -29,20 +29,15 @@ func (p GalleryPage) Name() string {
 
 func (p GalleryPage) Args() []string { return EmptyStringSlice }
 
-func (p GalleryPage) Session() Session { return p.session }
-
 // ------------------------------------------------------------------------------------
 
 type GalleryPage = *GalleryPageStruct
 
 type GalleryPageStruct struct {
-	session Session
 }
 
 func NewGalleryPage(sess Session) Page {
-	t := &GalleryPageStruct{
-		session: sess,
-	}
+	t := &GalleryPageStruct{}
 	return t
 }
 
@@ -51,8 +46,8 @@ const sampleImageId = "sample_image"
 var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
 
-func (p GalleryPage) Generate() {
-	m := GenerateHeader(p)
+func (p GalleryPage) GenerateWidgets(sess Session) {
+	m := GenerateHeader(sess, p)
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
@@ -213,10 +208,9 @@ func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, valu
 	return errOut
 }
 
-func (p GalleryPage) provideURL() string {
+func (p GalleryPage) provideURL(s Session) string {
 	pr := PrIf(true)
 	url := ""
-	s := p.Session()
 	imageId := s.State.OptInt(sampleImageId, 0)
 
 	pr("provideURL, image id read from state:", imageId)

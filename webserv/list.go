@@ -14,7 +14,7 @@ type ListInterface interface {
 	SetCurrentPage(pageNumber int)
 }
 
-type ListItemRenderer func(widget ListWidget, elementId int, m MarkupBuilder)
+type ListItemRenderer func(session Session, widget ListWidget, elementId int, m MarkupBuilder)
 
 type BasicListStruct struct {
 	ElementsPerPage int

@@ -16,5 +16,5 @@ func AddDevPageLabel(sess Session, page Page) {
 		label = label + ", user:" + user.Name()
 	}
 	m.Size(SizeMicro).Align(AlignRight).Label(label).AddHeading()
-	 
+
 }

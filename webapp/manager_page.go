@@ -7,7 +7,6 @@ import (
 )
 
 type ManagerPageStruct struct {
-	session    Session
 	manager    User
 	listWidget ListWidget
 }
@@ -15,14 +14,12 @@ type ManagerPageStruct struct {
 type ManagerPage = *ManagerPageStruct
 
 func NewManagerPage(session Session) ManagerPage {
-	t := &ManagerPageStruct{session: session}
+	t := &ManagerPageStruct{}
 	if session != nil {
 		t.manager = SessionUser(session)
 	}
 	return t
 }
-
-func (p ManagerPage) Session() Session { return p.session }
 
 var ManagerPageTemplate = NewManagerPage(nil)
 
@@ -48,11 +45,10 @@ const (
 	id_manager_list = manager_id_prefix + "list"
 )
 
-func (p ManagerPage) Generate() {
-	sess := p.session
+func (p ManagerPage) GenerateWidgets(sess Session) {
 	Todo("?Think about ways of cleaning up the click listener which is not tied to a widget")
 	//SetWidgetDebugRendering()
-	m := GenerateHeader(p)
+	m := GenerateHeader(sess, p)
 
 	Todo("?If we are generating a new page, we shouldn't try to store the error in the old one")
 	// Row of buttons at top.
@@ -65,22 +61,22 @@ func (p ManagerPage) Generate() {
 	// Set click listener for the card list
 	sess.SetClickListener(p.clickListener)
 
-	al := p.animalList()
+	al := p.animalList(sess)
 	p.listWidget = m.Id(id_manager_list).AddList(al, p.renderItem, p.listListener)
 }
 
-func (p ManagerPage) animalList() AnimalList {
+func (p ManagerPage) animalList(s Session) AnimalList {
 	key := SessionKey_MgrList
-	alist := p.Session().OptSessionData(key)
+	alist := s.OptSessionData(key)
 	if alist == nil {
-		alist = p.constructAnimalList()
-		p.Session().PutSessionData(key, alist)
+		alist = p.constructAnimalList(s)
+		s.PutSessionData(key, alist)
 	}
 	return alist.(AnimalList)
 }
 
-func (p ManagerPage) constructAnimalList() AnimalList {
-	managerId := SessionUser(p.Session()).Id()
+func (p ManagerPage) constructAnimalList(s Session) AnimalList {
+	managerId := SessionUser(s).Id()
 	animalList := NewAnimalList(getManagerAnimals(managerId))
 	return animalList
 }
@@ -116,7 +112,7 @@ func getManagerAnimals(managerId int) []int {
 	return result
 }
 
-func (p ManagerPage) renderItem(widget ListWidget, elementId int, m MarkupBuilder) {
+func (p ManagerPage) renderItem(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
 	anim, err := ReadActualAnimal(elementId)
 	if ReportIfError(err, "renderItem in manager page page:", elementId) {
 		return
@@ -132,7 +128,7 @@ func (p ManagerPage) renderItem(widget ListWidget, elementId int, m MarkupBuilde
 	//<div class="card bg-light mb-3 animal-card">
 
 	m.OpenTag(`div class="col-sm-3"`)
-	RenderAnimalCard(p.Session(), anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
+	RenderAnimalCard(session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
 	m.CloseTag()
 }
 

@@ -10,10 +10,6 @@ const FeedPageName = "feed"
 
 var FeedPageTemplate = NewFeedPage(nil)
 
-func (p FeedPage) Session() Session {
-	return p.session
-}
-
 func (p FeedPage) Construct(s Session, args PageArgs) Page {
 	if args.CheckDone() {
 		if SessionUserIs(s, UserClassDonor) {
@@ -27,16 +23,13 @@ func (p FeedPage) Construct(s Session, args PageArgs) Page {
 func (p FeedPage) Args() []string { return EmptyStringSlice }
 
 type FeedPageStruct struct {
-	session    Session
 	listWidget ListWidget
 }
 
 type FeedPage = *FeedPageStruct
 
 func NewFeedPage(s Session) FeedPage {
-	t := &FeedPageStruct{
-		session: s,
-	}
+	t := &FeedPageStruct{}
 	return t
 }
 
@@ -47,19 +40,17 @@ const (
 
 func (p FeedPage) Name() string { return FeedPageName }
 
-func (p FeedPage) Generate() {
-	s := p.session
+func (p FeedPage) GenerateWidgets(s Session) {
 	// Set click listener for this page
 	s.SetClickListener(p.clickListener)
 
-	m := GenerateHeader(p)
-	al := p.animalList()
+	m := GenerateHeader(s, p)
+	al := p.animalList(s)
 	p.listWidget = m.Id(id_feed_list).AddList(al, p.renderItem, p.listListener)
 }
 
-func (p FeedPage) animalList() AnimalList {
+func (p FeedPage) animalList(s Session) AnimalList {
 	key := SessionKey_FeedList
-	s := p.Session()
 	alist := s.OptSessionData(key)
 	if alist == nil {
 		alist = p.constructAnimalList()
@@ -94,13 +85,13 @@ func getAnimals() []int {
 	return result
 }
 
-func (p FeedPage) renderItem(widget ListWidget, elementId int, m MarkupBuilder) {
+func (p FeedPage) renderItem(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
 	anim, err := ReadActualAnimal(elementId)
 	if ReportIfError(err, "renderItem in animal feed page:", elementId) {
 		return
 	}
 	m.OpenTag(`div class="col-sm-3"`)
-	RenderAnimalCard(p.Session(), anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
+	RenderAnimalCard(session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
 	m.CloseTag()
 }
 

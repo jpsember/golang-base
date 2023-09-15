@@ -20,14 +20,11 @@ const (
 // ------------------------------------------------------------------------------------
 
 type SignUpPageStruct struct {
-	session Session
 }
 type SignUpPage = *SignUpPageStruct
 
-func NewSignUpPage(session Session, args ...any) SignUpPage {
-	t := &SignUpPageStruct{
-		session: session,
-	}
+func NewSignUpPage(session Session) SignUpPage {
+	t := &SignUpPageStruct{}
 	return t
 }
 
@@ -38,7 +35,6 @@ const SignUpPageName = "signup"
 func (p SignUpPage) Name() string   { return SignUpPageName }
 func (p SignUpPage) Args() []string { return EmptyStringSlice }
 
-func (p SignUpPage) Session() Session { return p.session }
 func (p SignUpPage) Construct(s Session, args PageArgs) Page {
 	if args.CheckDone() {
 		if OptSessionUser(s).Id() == 0 {
@@ -48,10 +44,9 @@ func (p SignUpPage) Construct(s Session, args PageArgs) Page {
 	return nil
 }
 
-func (p SignUpPage) Generate() {
-	s := p.session
+func (p SignUpPage) GenerateWidgets(s Session) {
 	s.DeleteStateErrors()
-	m := GenerateHeader(p)
+	m := GenerateHeader(s, p)
 	m.Label("Sign Up Page").Size(SizeLarge).AddHeading()
 	m.Col(6).Open()
 	{

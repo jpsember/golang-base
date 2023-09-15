@@ -17,21 +17,14 @@ var LandingPageTemplate = NewLandingPage(nil)
 // ------------------------------------------------------------------------------------
 
 type LandingPageStruct struct {
-	session  Session
-	animalId int
-	editing  bool
 }
 
 type LandingPage = *LandingPageStruct
 
-func NewLandingPage(sess Session, args ...any) Page {
-	t := &LandingPageStruct{
-		session: sess,
-		editing: true,
-	}
+func NewLandingPage(sess Session) Page {
+	t := &LandingPageStruct{}
 	return t
 }
-func (p LandingPage) Session() Session { return p.session }
 
 func (p LandingPage) Name() string {
 	return LandingPageName
@@ -48,14 +41,13 @@ func (p LandingPage) Construct(s Session, args PageArgs) Page {
 }
 func (p LandingPage) Args() []string { return EmptyStringSlice }
 
-func (p LandingPage) Generate() {
-	sess := p.Session()
+func (p LandingPage) GenerateWidgets(sess Session) {
 	CheckState(sess != nil, "There is no session!")
 	s := sess.State
 	CheckState(s != nil, "there is no State for the session!")
 	s.DeleteEach(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
 
-	m := GenerateHeader(p)
+	m := GenerateHeader(sess, p)
 
 	m.Label("gallery").Align(AlignRight).Size(SizeTiny).AddButton(p.galleryListener)
 	m.Col(6)
@@ -181,7 +173,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 }
 
 func (p LandingPage) signUpListener(s Session, widget Widget) {
-	NewSignUpPage(s).Generate()
+	NewSignUpPage(s).GenerateWidgets(nil)
 }
 
 func (p LandingPage) galleryListener(sess Session, widget Widget) {

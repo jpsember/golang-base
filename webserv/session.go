@@ -559,7 +559,7 @@ func (s Session) SetClickListener(listener ClickListener) {
 // ------------------------------------------------------------------------------------
 
 func (s Session) SwitchToPage(page Page) {
-	page.Generate()
+	page.GenerateWidgets(s)
 	s.browserURLExpr = s.ConstructPathFromPage(page)
 	Todo("!Maybe have it call oper.RenderPage iff it's not an ajax call?")
 }

@@ -108,7 +108,6 @@ func (oper AnimalOper) handleBlobRequest(s Session, blobId string) {
 }
 
 func (oper AnimalOper) renderPage(sess Session) {
-	Todo("!Rename to avoid confusion with 'Page.Generate'?")
 	CheckState(sess.PageWidget != nil, "no PageWidget!")
 	sb := NewMarkupBuilder()
 	oper.writeHeader(sb)
@@ -118,7 +117,7 @@ func (oper AnimalOper) renderPage(sess Session) {
 	WriteResponse(sess.ResponseWriter, "text/html", sb.Bytes())
 }
 
-// Generate the biolerplate header and scripts markup
+// Generate the boilerplate header and scripts markup
 func (oper AnimalOper) writeHeader(bp MarkupBuilder) {
 	bp.A(oper.headerMarkup)
 	bp.OpenTag("body")

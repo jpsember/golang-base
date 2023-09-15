@@ -37,8 +37,6 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 		return
 	}
 
-	//m.Comment("Rendering pagination, number of pages:", np)
-
 	windowSize := MinInt(np, 5)
 	windowStart := Clamp(w.list.CurrentPage()-windowSize/2, 0, np-windowSize)
 	windowStop := Clamp(windowStart+windowSize, 0, np-1)
@@ -63,7 +61,6 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 		m.CloseTag()
 	}
 	m.CloseTag()
-	//m.Comment("done Rendering pagination")
 }
 
 func (w ListWidget) renderPagePiece(m MarkupBuilder, label string, targetPage int, edges bool) {
@@ -97,7 +94,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			pr("rendering page num:", w.list.CurrentPage(), "element ids:", elementIds)
 			for _, id := range elementIds {
 				m.Comment("--------------------------- rendering id:", id)
-				w.renderer(w, id, m)
+				w.renderer(s, w, id, m)
 			}
 		}
 		m.CloseTag()
@@ -136,7 +133,7 @@ func (w ListWidget) HandleClick(sess Session, message string) bool {
 	return false
 }
 
-func defaultRenderer(widget ListWidget, elementId int, m MarkupBuilder) {
+func defaultRenderer(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
 	m.OpenTag(`div class="col-sm-16" style="background-color:` + DebugColor(elementId) + `"`)
 	m.WriteString("default list render, Id:" + IntToString(elementId))
 	m.CloseTag()

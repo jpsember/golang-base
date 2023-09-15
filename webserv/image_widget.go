@@ -5,7 +5,7 @@ import (
 )
 
 // This general type of listener can serve as a validator as well
-type ImageURLProvider func() string
+type ImageURLProvider func(s Session) string
 
 type ImageWidgetObj struct {
 	BaseWidgetObj
@@ -40,7 +40,7 @@ func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 		var imageSource string
 
 		if w.URLProvider != nil {
-			imageSource = w.URLProvider()
+			imageSource = w.URLProvider(s)
 			pr("url provider returned image source:", imageSource)
 			if imageSource == "" {
 				imageSource = "https://upload.wikimedia.org/wikipedia/en/a/a9/Example.jpg"
