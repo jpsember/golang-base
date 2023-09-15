@@ -14,11 +14,14 @@ type ServerApp interface {
 }
 
 type JServerStruct struct {
+	FullWidth      bool
 	BaseURL        string // e.g. "jeff.org"
 	KeyDir         Path
 	SessionManager SessionManager
 	App            ServerApp
 	Resources      Path
+	TopPadding     int
+	headerMarkup   string
 }
 
 type JServer = *JServerStruct
@@ -28,8 +31,15 @@ func NewJServer() JServer {
 	return t
 }
 
+func (s JServer) init() {
+	//oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
+	//oper.resources = oper.appRoot.JoinM("resources")
+	s.headerMarkup = s.Resources.JoinM("header.html").ReadStringM()
+}
+
 func (s JServer) StartServing() {
 
+	s.init()
 	var ourUrl = "jeff.org"
 
 	var keyDir = s.KeyDir //oper.appRoot.JoinM("https_keys")
@@ -103,6 +113,10 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 			sess.HandleUploadRequest(text)
 		} else {
 			result := s.App.HandleRequest(sess, path)
+
+			//	if !result {
+			//		result = s.processPageRequest(sess, path)
+			//	}
 			if !result {
 				// If we fail to parse any requests, assume it's a resource, like that stupid favicon
 				pr("JServer handling resource request for:", path)
@@ -122,4 +136,88 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 	if p := sess.GetRequestProblem(); p != nil {
 		Pr("jserver:...problem with request, URL:", req.RequestURI, INDENT, p)
 	}
+}
+
+//
+//// Strings that start with {zero or more lowercase letters}/
+//var looksLikePageRexEx = CheckOkWith(regexp.Compile(`^[a-z]*\/`))
+//
+//// Parse URL requested by client, and serve up an appropriate page.
+//func (j JServer) processPageRequest(s Session, path string) bool {
+//
+//	Todo("Issue #67: move to webserv; processPageRequest")
+//	// If path is NOT one of "", "pagename", or "pagename[non-alpha]..., exit with false immediately
+//	{
+//		// Add a trailing / to make this logic simpler
+//		modifiedPath := path + `/`
+//		if !looksLikePageRexEx.MatchString(modifiedPath) {
+//			return false
+//		}
+//		// Extract page name
+//		i := strings.IndexByte(modifiedPath, '/')
+//		pageName := modifiedPath[0:i]
+//
+//		// If what remains is a nonempty string that isn't the name of a page, exit
+//		if pageName != "" && SharedPageRequester.PageWithName(pageName) == nil {
+//			return false
+//		}
+//	}
+//
+//	page := SharedPageRequester.Process(s, path)
+//	if page != nil {
+//		s.SwitchToPage(page)
+//		oper.sendFullPage(s)
+//		return true
+//	}
+//
+//	return false
+//}
+
+// Generate the boilerplate header and scripts markup
+func (j JServer) writeHeader(bp MarkupBuilder) {
+	Todo("Issue #67: move writeHeader")
+	bp.A(j.headerMarkup)
+	bp.OpenTag("body")
+	containerClass := "container"
+	if j.FullWidth {
+		containerClass = "container-fluid"
+	}
+	if false && j.TopPadding != 0 {
+		containerClass += "  pt-" + IntToString(j.TopPadding)
+	}
+	bp.Comments("page container").OpenTag(`div class='` + containerClass + `'`)
+}
+
+func (j JServer) SendFullPage(sess Session) {
+	CheckState(sess.PageWidget != nil, "no PageWidget!")
+	sb := NewMarkupBuilder()
+	j.writeHeader(sb)
+	RenderWidget(sess.PageWidget, sess, sb)
+	sess.RequestClientInfo(sb)
+	j.writeFooter(sess, sb)
+	WriteResponse(sess.ResponseWriter, "text/html", sb.Bytes())
+}
+
+// Generate the boilerplate footer markup, then write the page to the response
+func (j JServer) writeFooter(s Session, bp MarkupBuilder) {
+	Todo("Issue #67: move writeFooter")
+	bp.CloseTag() // page container
+
+	Todo("move this to webserv module")
+
+	// Add a bit of javascript that will change the url to what we want
+	expr := s.NewBrowserPath()
+	if expr != "" {
+		code := `
+<script type="text/javascript">
+var url = location.origin+'` + expr + `'
+history.replaceState(null, null, url)
+</script>
+`
+		// ^^^I suspect we don't want to do pushState if we got here due to user pressing the back button.
+		bp.WriteString(code)
+	}
+	bp.CloseTag() // body
+
+	bp.A(`</html>`).Cr()
 }

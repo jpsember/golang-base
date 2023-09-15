@@ -11,12 +11,12 @@ import (
 )
 
 type AnimalOperStruct struct {
-	appRoot      Path
-	headerMarkup string
+	appRoot Path
 	FullWidth    bool // If true, page occupies full width of screen
 	TopPadding   int  // If nonzero, adds padding to top of page
 	autoLoggedIn bool
 	resources    Path
+	jserver      JServer
 }
 
 type AnimalOper = *AnimalOperStruct
@@ -41,7 +41,6 @@ func (oper AnimalOper) Perform(app *App) {
 
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
 	oper.resources = oper.appRoot.JoinM("resources")
-	oper.headerMarkup = oper.resources.JoinM("header.html").ReadStringM()
 	oper.prepareDatabase()
 
 	SharedPageRequester = NewPageRequester()
@@ -53,6 +52,7 @@ func (oper AnimalOper) Perform(app *App) {
 	//
 	{
 		s := NewJServer()
+		oper.jserver = s
 		s.App = oper
 		s.Resources = oper.resources
 		s.SessionManager = BuildSessionMap()
@@ -105,55 +105,6 @@ func (oper AnimalOper) handleBlobRequest(s Session, blobId string) {
 	err := WriteResponse(s.ResponseWriter, InferContentTypeFromBlob(blob), blob.Data())
 	Todo("?Detect someone requesting huge numbers of items that don't exist?")
 	ReportIfError(err, "Trouble writing blob response")
-}
-
-func (oper AnimalOper) sendFullPage(sess Session) {
-	CheckState(sess.PageWidget != nil, "no PageWidget!")
-	sb := NewMarkupBuilder()
-	oper.writeHeader(sb)
-	RenderWidget(sess.PageWidget, sess, sb)
-	sess.RequestClientInfo(sb)
-	oper.writeFooter(sess, sb)
-	WriteResponse(sess.ResponseWriter, "text/html", sb.Bytes())
-}
-
-// Generate the boilerplate header and scripts markup
-func (oper AnimalOper) writeHeader(bp MarkupBuilder) {
-	Todo("Issue #67: move writeHeader")
-	bp.A(oper.headerMarkup)
-	bp.OpenTag("body")
-	containerClass := "container"
-	if oper.FullWidth {
-		containerClass = "container-fluid"
-	}
-	if false && oper.TopPadding != 0 {
-		containerClass += "  pt-" + IntToString(oper.TopPadding)
-	}
-	bp.Comments("page container").OpenTag(`div class='` + containerClass + `'`)
-}
-
-// Generate the boilerplate footer markup, then write the page to the response
-func (oper AnimalOper) writeFooter(s Session, bp MarkupBuilder) {
-	Todo("Issue #67: move writeFooter")
-	bp.CloseTag() // page container
-
-	Todo("move this to webserv module")
-
-	// Add a bit of javascript that will change the url to what we want
-	expr := s.NewBrowserPath()
-	if expr != "" {
-		code := `
-<script type="text/javascript">
-var url = location.origin+'` + expr + `'
-history.replaceState(null, null, url)
-</script>
-`
-		// ^^^I suspect we don't want to do pushState if we got here due to user pressing the back button.
-		bp.WriteString(code)
-	}
-	bp.CloseTag() // body
-
-	bp.A(`</html>`).Cr()
 }
 
 func (oper AnimalOper) prepareDatabase() {
@@ -285,7 +236,7 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 	page := SharedPageRequester.Process(s, path)
 	if page != nil {
 		s.SwitchToPage(page)
-		oper.sendFullPage(s)
+		oper.jserver.SendFullPage(s)
 		return true
 	}
 
