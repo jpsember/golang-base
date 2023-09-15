@@ -17,6 +17,7 @@ func NewManagerPage(session Session) ManagerPage {
 	t := &ManagerPageStruct{}
 	if session != nil {
 		t.manager = SessionUser(session)
+		t.generateWidgets(session)
 	}
 	return t
 }
@@ -27,7 +28,7 @@ func (p ManagerPage) Name() string {
 	return ManagerPageName
 }
 
-func (p ManagerPage) Construct(s Session, args PageArgs) Page {
+func (p ManagerPage) ConstructPage(s Session, args PageArgs) Page {
 	user := OptSessionUser(s)
 	if user.UserClass() == UserClassManager {
 		if args.CheckDone() {
@@ -45,9 +46,8 @@ const (
 	id_manager_list = manager_id_prefix + "list"
 )
 
-func (p ManagerPage) GenerateWidgets(sess Session) {
+func (p ManagerPage) generateWidgets(sess Session) {
 	Todo("?Think about ways of cleaning up the click listener which is not tied to a widget")
-	//SetWidgetDebugRendering()
 	m := GenerateHeader(sess, p)
 
 	Todo("?If we are generating a new page, we shouldn't try to store the error in the old one")

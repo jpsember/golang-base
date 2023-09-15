@@ -88,10 +88,10 @@ func (r PageRequester) Process(s Session, path string) Page {
 
 	remainingArgs := NewPageArgs(p.RemainingArgs())
 	pr("remaining args:", remainingArgs)
-	page := templatePage.Construct(s, remainingArgs)
+	page := templatePage.ConstructPage(s, remainingArgs)
 	if page == nil {
 		page = r.DefaultPagePage(user)
-		page = page.Construct(s, NewPageArgs(nil))
+		page = page.ConstructPage(s, NewPageArgs(nil))
 	}
 	CheckState(page != nil, "requested page is nil")
 	return page

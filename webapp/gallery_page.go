@@ -16,7 +16,7 @@ const GalleryPageName = "gallery"
 
 var GalleryPageTemplate = NewGalleryPage(nil)
 
-func (p GalleryPage) Construct(s Session, args PageArgs) Page {
+func (p GalleryPage) ConstructPage(s Session, args PageArgs) Page {
 	if args.CheckDone() {
 		return NewGalleryPage(s)
 	}
@@ -38,6 +38,9 @@ type GalleryPageStruct struct {
 
 func NewGalleryPage(sess Session) Page {
 	t := &GalleryPageStruct{}
+	if sess != nil {
+		t.generateWidgets(sess)
+	}
 	return t
 }
 
@@ -46,7 +49,7 @@ const sampleImageId = "sample_image"
 var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
 
-func (p GalleryPage) GenerateWidgets(sess Session) {
+func (p GalleryPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)
 
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)

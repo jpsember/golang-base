@@ -290,6 +290,6 @@ func (oper AnimalOper) processPageRequest(s Session, path string) bool {
 }
 
 func (oper AnimalOper) registerPages(r PageRequester) {
-	r.RegisterPages(LandingPageTemplate, GalleryPageTemplate, SignUpPageTemplate, FeedPageTemplate, ManagerPageTemplate,
+	r.RegisterPages(LandingPageTemplate, GalleryPageTemplate, NewSignUpPage(nil), FeedPageTemplate, ManagerPageTemplate,
 		ViewAnimalPageTemplate, CreateAnimalPageTemplate, EditAnimalPageTemplate)
 }

@@ -23,6 +23,9 @@ type LandingPage = *LandingPageStruct
 
 func NewLandingPage(sess Session) Page {
 	t := &LandingPageStruct{}
+	if sess != nil {
+		t.generateWidgets(sess)
+	}
 	return t
 }
 
@@ -30,7 +33,7 @@ func (p LandingPage) Name() string {
 	return LandingPageName
 }
 
-func (p LandingPage) Construct(s Session, args PageArgs) Page {
+func (p LandingPage) ConstructPage(s Session, args PageArgs) Page {
 	if args.CheckDone() {
 		user := OptSessionUser(s)
 		if user.Id() == 0 {
@@ -41,7 +44,7 @@ func (p LandingPage) Construct(s Session, args PageArgs) Page {
 }
 func (p LandingPage) Args() []string { return EmptyStringSlice }
 
-func (p LandingPage) GenerateWidgets(sess Session) {
+func (p LandingPage) generateWidgets(sess Session) {
 	CheckState(sess != nil, "There is no session!")
 	s := sess.State
 	CheckState(s != nil, "there is no State for the session!")
@@ -173,7 +176,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 }
 
 func (p LandingPage) signUpListener(s Session, widget Widget) {
-	NewSignUpPage(s).GenerateWidgets(nil)
+	s.SwitchToPage(NewSignUpPage(s))
 }
 
 func (p LandingPage) galleryListener(sess Session, widget Widget) {

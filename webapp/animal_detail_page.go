@@ -29,33 +29,36 @@ var CreateAnimalPageTemplate = NewCreateAnimalPage(nil)
 var EditAnimalPageTemplate = NewEditAnimalPage(nil, 0)
 var ViewAnimalPageTemplate = NewViewAnimalPage(nil, 0)
 
-func NewCreateAnimalPage(sess Session) Page {
+func NewCreateAnimalPage(sess Session) AnimalDetailPage {
 	t := &AnimalDetailPageStruct{
 		editing: true,
 		name:    "new",
 	}
+	t.generateWidgets(sess)
 	return t
 }
 
-func NewEditAnimalPage(sess Session, animalId int) Page {
+func NewEditAnimalPage(sess Session, animalId int) AnimalDetailPage {
 	t := &AnimalDetailPageStruct{
 		animalId: animalId,
 		editing:  true,
 		name:     "edit",
 	}
+	t.generateWidgets(sess)
 	return t
 }
 
-func NewViewAnimalPage(sess Session, animalId int) Page {
+func NewViewAnimalPage(sess Session, animalId int) AnimalDetailPage {
 	t := &AnimalDetailPageStruct{
 		animalId: animalId,
 		editing:  false,
 		name:     "view",
 	}
+	t.generateWidgets(sess)
 	return t
 }
 
-func (p AnimalDetailPage) Construct(s Session, args PageArgs) Page {
+func (p AnimalDetailPage) ConstructPage(s Session, args PageArgs) Page {
 	switch p.name {
 	case "new":
 		if args.Done() {
@@ -114,7 +117,10 @@ func (p AnimalDetailPage) readStateFromAnimal(sess Session) {
 	s.Put(id_animal_display_pic, a.PhotoThumbnail())
 }
 
-func (p AnimalDetailPage) GenerateWidgets(s Session) {
+func (p AnimalDetailPage) generateWidgets(s Session) {
+	if s == nil {
+		return
+	}
 	s.SetClickListener(nil)
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
 	GenerateHeader(s, p)

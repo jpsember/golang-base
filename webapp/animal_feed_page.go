@@ -10,7 +10,7 @@ const FeedPageName = "feed"
 
 var FeedPageTemplate = NewFeedPage(nil)
 
-func (p FeedPage) Construct(s Session, args PageArgs) Page {
+func (p FeedPage) ConstructPage(s Session, args PageArgs) Page {
 	if args.CheckDone() {
 		if SessionUserIs(s, UserClassDonor) {
 			Todo("Maybe don't set the url string until a page is accepted?")
@@ -30,6 +30,9 @@ type FeedPage = *FeedPageStruct
 
 func NewFeedPage(s Session) FeedPage {
 	t := &FeedPageStruct{}
+	if s != nil {
+		t.generateWidgets(s)
+	}
 	return t
 }
 
@@ -40,7 +43,7 @@ const (
 
 func (p FeedPage) Name() string { return FeedPageName }
 
-func (p FeedPage) GenerateWidgets(s Session) {
+func (p FeedPage) generateWidgets(s Session) {
 	// Set click listener for this page
 	s.SetClickListener(p.clickListener)
 

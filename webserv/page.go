@@ -8,8 +8,7 @@ type Page interface {
 	Name() string
 	Args() []string // The additional arguments that would show up in the url (e.g., edit/17), args would be ["17"]
 	// Attempt to construct a new page with the specified args; return nil if args aren't valid
-	Construct(s Session, args PageArgs) Page
-	GenerateWidgets(s Session)
+	ConstructPage(s Session, args PageArgs) Page
 }
 
 type PageDevLabelRenderer func(s Session, page Page)
@@ -17,11 +16,9 @@ type PageDevLabelRenderer func(s Session, page Page)
 var DevLabelRenderer PageDevLabelRenderer
 
 // Some common boilerplate that is typically some of the first code that
-// GenerateWidgets() would otherwise execute.
+// generateWidgets() would otherwise execute.
 func GenerateHeader(s Session, p Page) WidgetManager {
-	Todo("!We could merge Construct(...) and GenerateWidgets(...)")
 	var _ = Pr
-	//SetWidgetDebugRendering()
 	CheckState(s != nil)
 	m := s.WidgetManager()
 	m.With(s.PageWidget)

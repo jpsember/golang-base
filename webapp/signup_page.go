@@ -20,22 +20,24 @@ const (
 // ------------------------------------------------------------------------------------
 
 type SignUpPageStruct struct {
+	// Any additional state for the page can go here, e.g., data backing lists
 }
 type SignUpPage = *SignUpPageStruct
 
 func NewSignUpPage(session Session) SignUpPage {
 	t := &SignUpPageStruct{}
+	// The session will be nil if this is to be the 'template' page (used to construct
+	// other instances)
+	if session != nil {
+		t.generateWidgets(session)
+	}
 	return t
 }
 
-var SignUpPageTemplate = NewSignUpPage(nil)
-
-const SignUpPageName = "signup"
-
-func (p SignUpPage) Name() string   { return SignUpPageName }
+func (p SignUpPage) Name() string   { return "signup" }
 func (p SignUpPage) Args() []string { return EmptyStringSlice }
-
-func (p SignUpPage) Construct(s Session, args PageArgs) Page {
+func (p SignUpPage) ConstructPage(s Session, args PageArgs) Page {
+	// Use the PageArgs to verify that the construction parameters are valid.
 	if args.CheckDone() {
 		if OptSessionUser(s).Id() == 0 {
 			return NewSignUpPage(s)
@@ -44,7 +46,7 @@ func (p SignUpPage) Construct(s Session, args PageArgs) Page {
 	return nil
 }
 
-func (p SignUpPage) GenerateWidgets(s Session) {
+func (p SignUpPage) generateWidgets(s Session) {
 	s.DeleteStateErrors()
 	m := GenerateHeader(s, p)
 	m.Label("Sign Up Page").Size(SizeLarge).AddHeading()
