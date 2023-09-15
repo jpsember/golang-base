@@ -44,15 +44,13 @@ func (oper AnimalOper) Perform(app *App) {
 	// Initialize and start the JServer
 	//
 	{
-		s := NewJServer()
+		s := NewJServer(oper)
 		oper.jserver = s
-		s.App = oper
 		s.Resources = oper.resources
 		s.SessionManager = BuildSessionMap()
 		s.BaseURL = "jeff.org"
 		s.KeyDir = oper.appRoot.JoinM("https_keys")
 		preq := s.PgRequester
-		preq.Prepare(sessionUserProvider, defaultPageForUser)
 		preq.RegisterPages(LandingPageTemplate, GalleryPageTemplate, NewSignUpPage(nil), FeedPageTemplate, ManagerPageTemplate,
 			ViewAnimalPageTemplate, CreateAnimalPageTemplate, EditAnimalPageTemplate)
 		s.AddResourceHandler(BlobURLPrefix, oper.handleBlobRequest)
@@ -61,11 +59,11 @@ func (oper AnimalOper) Perform(app *App) {
 
 }
 
-func sessionUserProvider(s Session) AbstractUser {
+func (oper AnimalOper) UserForSession(s Session) AbstractUser {
 	return OptSessionUser(s)
 }
 
-func defaultPageForUser(abstractUser AbstractUser) Page {
+func (oper AnimalOper) DefaultPageForUser(abstractUser AbstractUser) Page {
 	user := abstractUser.(User)
 	userId := 0
 	if user != nil {

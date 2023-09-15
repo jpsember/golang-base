@@ -10,19 +10,19 @@ import (
 )
 
 type ServerApp interface {
+	PageRequesterInterface
 	PrepareSession(s Session)
-	//HandleRequest(s Session, path string) bool
 }
 
 // Why does leaving the name of the arg off (s) screw things up?
 type PathHandler func(s Session, remainingPath string)
 
 type JServerStruct struct {
+	App            ServerApp
 	FullWidth      bool
 	BaseURL        string // e.g. "jeff.org"
 	KeyDir         Path
 	SessionManager SessionManager
-	App            ServerApp
 	Resources      Path
 	PgRequester    PageRequester
 	TopPadding     int
@@ -32,13 +32,13 @@ type JServerStruct struct {
 
 type JServer = *JServerStruct
 
-func NewJServer() JServer {
+func NewJServer(app ServerApp) JServer {
 	Todo("Use the ServerApp interface to support the PrepareSession, HandleRequest stuff")
 	t := &JServerStruct{
-		PgRequester: NewPageRequester(),
+		App:         app,
+		PgRequester: NewPageRequester(app),
 		handlerMap:  make(map[string]PathHandler),
 	}
-
 	return t
 }
 

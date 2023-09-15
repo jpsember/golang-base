@@ -7,15 +7,20 @@ import (
 type AbstractUser any
 
 type PageRequesterStruct struct {
+	PageRequesterInterface
 	BaseObject
-	registry                   map[string]Page
-	sessionUserProvider        func(Session) AbstractUser
-	defaultPageForUserProvider func(AbstractUser) Page
+	registry map[string]Page
 }
 
-func NewPageRequester() PageRequester {
+type PageRequesterInterface interface {
+	UserForSession(s Session) AbstractUser
+	DefaultPageForUser(user AbstractUser) Page
+}
+
+func NewPageRequester(fn PageRequesterInterface) PageRequester {
 	t := &PageRequesterStruct{
-		registry: make(map[string]Page),
+		PageRequesterInterface: fn,
+		registry:               make(map[string]Page),
 	}
 	t.SetName("PageRequester")
 	Todo("!Emphasize that PageRequester must be threadsafe")
@@ -25,19 +30,6 @@ func NewPageRequester() PageRequester {
 
 type PageRequester = *PageRequesterStruct
 
-func (r PageRequester) Prepare(sessionUserProvider func(Session) AbstractUser, defaultPageForUserProvider func(AbstractUser) Page) {
-	CheckArg(sessionUserProvider != nil)
-	CheckArg(defaultPageForUserProvider != nil)
-	r.sessionUserProvider = sessionUserProvider
-	r.defaultPageForUserProvider = defaultPageForUserProvider
-}
-
-func (r PageRequester) assertPrepared() PageRequester {
-	if r.sessionUserProvider == nil {
-		BadState("PageRequester.Prepare() has not been called")
-	}
-	return r
-}
 func (r PageRequester) PageWithName(nm string) Page {
 	return r.registry[nm]
 }
@@ -51,7 +43,7 @@ func (r PageRequester) PageWithNameM(nm string) Page {
 
 // Get the name of the default page for a user
 func (r PageRequester) DefaultPagePage(user AbstractUser) Page {
-	p := r.defaultPageForUserProvider(user)
+	p := r.DefaultPageForUser(user)
 	CheckArg(p != nil)
 	return p
 }
@@ -60,11 +52,10 @@ func (r PageRequester) Process(s Session, path string) Page {
 	//r.AlertVerbose()
 	pr := r.Log
 
-	r.assertPrepared()
 	p := NewPathParse(path)
 	pr("Process path:", p)
 
-	user := r.sessionUserProvider(s) //OptSessionUser(s)
+	user := r.UserForSession(s)
 
 	defPageForUser := r.DefaultPagePage(user)
 	requestedPageName := p.Read()
