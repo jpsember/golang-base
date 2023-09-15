@@ -11,8 +11,11 @@ import (
 
 type ServerApp interface {
 	PrepareSession(s Session)
-	HandleRequest(s Session, path string) bool
+	//HandleRequest(s Session, path string) bool
 }
+
+// Why does leaving the name of the arg off (s) screw things up?
+type PathHandler func(s Session, remainingPath string)
 
 type JServerStruct struct {
 	FullWidth      bool
@@ -24,19 +27,22 @@ type JServerStruct struct {
 	PgRequester    PageRequester
 	TopPadding     int
 	headerMarkup   string
+	handlerMap     map[string]PathHandler
 }
 
 type JServer = *JServerStruct
 
 func NewJServer() JServer {
-	t := &JServerStruct{}
-	t.PgRequester = NewPageRequester()
+	Todo("Use the ServerApp interface to support the PrepareSession, HandleRequest stuff")
+	t := &JServerStruct{
+		PgRequester: NewPageRequester(),
+		handlerMap:  make(map[string]PathHandler),
+	}
+
 	return t
 }
 
 func (s JServer) init() {
-	//oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
-	//oper.resources = oper.appRoot.JoinM("resources")
 	s.headerMarkup = s.Resources.JoinM("header.html").ReadStringM()
 }
 
@@ -115,7 +121,20 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 			pr("handling upload request with:", text)
 			sess.HandleUploadRequest(text)
 		} else {
-			result := s.App.HandleRequest(sess, path)
+
+			result := false
+			for key, handler := range s.handlerMap {
+				if text, flag = TrimIfPrefix(path, key); flag {
+					handler(sess, text)
+					result = true
+					break
+				}
+			}
+
+			if !result {
+				result = s.ProcessPageRequest(sess, path)
+			}
+			//result := s.App.HandleRequest(sess, path)
 
 			//	if !result {
 			//		result = s.processPageRequest(sess, path)
@@ -140,41 +159,6 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 		Pr("jserver:...problem with request, URL:", req.RequestURI, INDENT, p)
 	}
 }
-
-//
-//// Strings that start with {zero or more lowercase letters}/
-//var looksLikePageRexEx = CheckOkWith(regexp.Compile(`^[a-z]*\/`))
-//
-//// Parse URL requested by client, and serve up an appropriate page.
-//func (j JServer) processPageRequest(s Session, path string) bool {
-//
-//	Todo("Issue #67: move to webserv; processPageRequest")
-//	// If path is NOT one of "", "pagename", or "pagename[non-alpha]..., exit with false immediately
-//	{
-//		// Add a trailing / to make this logic simpler
-//		modifiedPath := path + `/`
-//		if !looksLikePageRexEx.MatchString(modifiedPath) {
-//			return false
-//		}
-//		// Extract page name
-//		i := strings.IndexByte(modifiedPath, '/')
-//		pageName := modifiedPath[0:i]
-//
-//		// If what remains is a nonempty string that isn't the name of a page, exit
-//		if pageName != "" && SharedPageRequester.PageWithName(pageName) == nil {
-//			return false
-//		}
-//	}
-//
-//	page := SharedPageRequester.Process(s, path)
-//	if page != nil {
-//		s.SwitchToPage(page)
-//		oper.sendFullPage(s)
-//		return true
-//	}
-//
-//	return false
-//}
 
 // Generate the boilerplate header and scripts markup
 func (j JServer) writeHeader(bp MarkupBuilder) {
@@ -228,7 +212,6 @@ var looksLikePageRexEx = CheckOkWith(regexp.Compile(`^[a-z]*\/`))
 func (j JServer) ProcessPageRequest(s Session, path string) bool {
 
 	Todo("This won't need to be public")
-	Todo("Issue #67: move to webserv; processPageRequest")
 	// If path is NOT one of "", "pagename", or "pagename[non-alpha]..., exit with false immediately
 	{
 		// Add a trailing / to make this logic simpler
@@ -254,4 +237,9 @@ func (j JServer) ProcessPageRequest(s Session, path string) bool {
 	}
 
 	return false
+}
+
+func (j JServer) AddResourceHandler(pathPrefix string, handler PathHandler) {
+	CheckState(!HasKey(j.handlerMap, pathPrefix), "duplicate handler for prefix:", pathPrefix)
+	j.handlerMap[pathPrefix] = handler
 }
