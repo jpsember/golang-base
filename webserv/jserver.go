@@ -12,7 +12,8 @@ import (
 type ServerApp interface {
 	PageRequesterInterface
 	PrepareSession(s Session)
-	Resources() Path
+	Resources() Path // Directory where resources to be served to client can be found, including header.html
+	PageTemplates() []Page
 }
 
 // Why does leaving the name of the arg off (s) screw things up?
@@ -41,7 +42,15 @@ func NewJServer(app ServerApp) JServer {
 		handlerMap:  make(map[string]PathHandler),
 	}
 	t.resources = app.Resources().AssertNonEmpty()
+	t.registerPages()
 	return t
+}
+
+func (j JServer) registerPages() {
+	pgs := j.App.PageTemplates()
+	for _, pg := range pgs {
+		j.PgRequester.RegisterPage(pg)
+	}
 }
 
 func (j JServer) init() {

@@ -49,13 +49,17 @@ func (oper AnimalOper) Perform(app *App) {
 		s.SessionManager = BuildSessionMap()
 		s.BaseURL = "jeff.org"
 		s.KeyDir = oper.appRoot.JoinM("https_keys")
-		preq := s.PgRequester
-		preq.RegisterPages(LandingPageTemplate, GalleryPageTemplate, NewSignUpPage(nil), FeedPageTemplate, ManagerPageTemplate,
-			ViewAnimalPageTemplate, CreateAnimalPageTemplate, EditAnimalPageTemplate)
 		s.AddResourceHandler(BlobURLPrefix, oper.handleBlobRequest)
 		s.StartServing()
 	}
 
+}
+
+func (oper AnimalOper) PageTemplates() []Page {
+	return []Page{
+		LandingPageTemplate, GalleryPageTemplate, NewSignUpPage(nil), FeedPageTemplate, ManagerPageTemplate,
+		ViewAnimalPageTemplate, CreateAnimalPageTemplate, EditAnimalPageTemplate,
+	}
 }
 
 func (oper AnimalOper) Resources() Path {
@@ -203,13 +207,4 @@ func (oper AnimalOper) debugAutoLogIn(sess Session) {
 		sess.SwitchToPage(NewFeedPage(sess))
 		return
 	}
-}
-
-// ------------------------------------------------------------------------------------
-// User state and current page
-// ------------------------------------------------------------------------------------
-
-func (oper AnimalOper) registerPages(r PageRequester) {
-	r.RegisterPages(LandingPageTemplate, GalleryPageTemplate, NewSignUpPage(nil), FeedPageTemplate, ManagerPageTemplate,
-		ViewAnimalPageTemplate, CreateAnimalPageTemplate, EditAnimalPageTemplate)
 }

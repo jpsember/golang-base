@@ -86,12 +86,6 @@ func (r PageRequester) Process(s Session, path string) Page {
 	return page
 }
 
-func (r PageRequester) RegisterPages(template ...Page) {
-	for _, t := range template {
-		r.RegisterPage(t)
-	}
-}
-
 func (r PageRequester) RegisterPage(template Page) {
 	key := template.Name()
 	if HasKey(r.registry, key) {
