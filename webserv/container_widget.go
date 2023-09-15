@@ -23,7 +23,7 @@ func (g *GridCell) String() string {
 type ContainerWidgetObj struct {
 	BaseWidgetObj
 	children []Widget
-	cells    *Array[GridCell]
+	cells    []GridCell
 	columns  int // The columns to apply to child widgets
 }
 
@@ -31,9 +31,7 @@ type ContainerWidget = *ContainerWidgetObj
 
 func NewContainerWidget(id string) ContainerWidget {
 	w := ContainerWidgetObj{
-		children: []Widget{},
-		cells:    NewArray[GridCell](),
-		columns:  12,
+		columns: 12,
 	}
 	w.BaseId = id
 	return &w
@@ -49,7 +47,7 @@ func (w ContainerWidget) Children() []Widget {
 
 func (w ContainerWidget) ClearChildren() {
 	w.children = EmptyWidgetList()
-	w.cells.Clear()
+	w.cells = nil //.Clear()
 	// Reset the columns to the default (12)
 	w.columns = 12
 }
@@ -65,8 +63,8 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 	cell := GridCell{
 		Width: cols,
 	}
-	if w.cells.NonEmpty() {
-		c := w.cells.Last()
+	if len(w.cells) != 0 {
+		c := w.cells[len(w.cells)-1]
 		cell.Location = IPointWith(c.Location.X+c.Width, c.Location.Y)
 	}
 	if cell.Location.X+cell.Width > MaxColumns {
@@ -74,7 +72,7 @@ func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
 		Todo("!add support for cell heights > 1")
 	}
 	pr("added cell, now:", w.cells)
-	w.cells.Add(cell)
+	w.cells = append(w.cells, cell)
 }
 
 func (w ContainerWidget) SetColumns(columns int) {
@@ -82,14 +80,14 @@ func (w ContainerWidget) SetColumns(columns int) {
 }
 
 func (w ContainerWidget) RenderTo(s Session, m MarkupBuilder) {
-	CheckState(w.cells.Size() == len(w.children))
+	CheckState(len(w.cells) == len(w.children))
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
 	m.Comments(`ContainerWidget`, w.IdSummary()).OpenTag(`div id='` + w.BaseId + `'`)
 	if w.Visible() {
 		prevPoint := IPointWith(0, -1)
 		for index, child := range w.children {
-			cell := w.cells.Get(index)
+			cell := w.cells[index]
 			// If this cell lies in a row below the current, Close the current and start a new one
 			if cell.Location.Y > prevPoint.Y {
 				if prevPoint.Y >= 0 {

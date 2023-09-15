@@ -95,6 +95,7 @@ func (w BaseWidget) ReceiveValue(sess Session, value string) {
 }
 
 func EmptyWidgetList() []Widget {
+	Todo("I suspect a nil slice should work just as well")
 	return []Widget{}
 }
 
