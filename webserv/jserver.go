@@ -175,7 +175,6 @@ func (s JServer) handle(w http.ResponseWriter, req *http.Request) {
 
 // Generate the boilerplate header and scripts markup
 func (j JServer) writeHeader(bp MarkupBuilder) {
-	Todo("Issue #67: move writeHeader")
 	bp.A(j.headerMarkup)
 	bp.OpenTag("body")
 	containerClass := "container"
@@ -200,10 +199,7 @@ func (j JServer) SendFullPage(sess Session) {
 
 // Generate the boilerplate footer markup, then write the page to the response
 func (j JServer) writeFooter(s Session, bp MarkupBuilder) {
-	Todo("Issue #67: move writeFooter")
 	bp.CloseTag() // page container
-
-	Todo("move this to webserv module")
 
 	// Add a bit of javascript that will change the url to what we want
 	expr := s.NewBrowserPath()
