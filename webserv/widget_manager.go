@@ -304,6 +304,7 @@ func (m WidgetManager) AddInput(listener InputWidgetListener) WidgetManager {
 
 func (m WidgetManager) AddUserHeader() UserHeaderWidget {
 	w := NewUserHeaderWidget(m.consumeOptionalPendingId())
+	w.BgndImageMarkup = `style=" height:50px; background-image:url('app_header.jpg'); background-repeat: no-repeat;"`
 	m.Add(w)
 	return w
 }

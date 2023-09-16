@@ -6,6 +6,7 @@ import (
 
 type UserHeaderWidgetStruct struct {
 	BaseWidgetObj
+	BgndImageMarkup string
 }
 
 type UserHeaderWidget = *UserHeaderWidgetStruct
@@ -27,21 +28,15 @@ func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
 	user := app.UserForSession(s)
 	signedIn := user.Id() != 0
 
-	// These are the widgets we'd like, something like this:
-	_ = `               
-                 <div id=".3" class="text-end">
-                  <span style="font-size:0.6em">
-                    Welcome, manager1
-                  </span>
-
-                  <button class="m-2 btn btn-outline-primary btn-sm" style="font-size:0.6em">Sign Out</button>
-
-                </div>
-`
-
 	fontSizeExpr := ` style="font-size:0.6em"`
 	m.OpenTag(`div id=`, w.BaseId, `'`)
-	m.DoIndent()
+
+	// Adding a background image; I read this post: https://mdbootstrap.com/docs/standard/navigation/headers/
+	img := w.BgndImageMarkup
+	if img != "" {
+		m.OpenTag(`div class="bg-image" `, img)
+	}
+
 	{
 		m.OpenTag(`div class="text-end"`)
 		{
@@ -78,6 +73,8 @@ func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
 		}
 		m.CloseTag()
 	}
-	m.DoOutdent()
+	if img != "" {
+		m.CloseTag()
+	}
 	m.CloseTag()
 }
