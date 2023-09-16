@@ -38,9 +38,9 @@ type JServer = *JServerStruct
 
 func NewJServer(app ServerApp) JServer {
 	t := &JServerStruct{
-		App:           app,
-		pageRequester: NewPageRequester(app),
-		handlerMap:    make(map[string]PathHandler),
+		App:            app,
+		pageRequester:  NewPageRequester(app),
+		handlerMap:     make(map[string]PathHandler),
 	}
 	t.resources = app.Resources().AssertNonEmpty()
 	t.registerPages()
@@ -109,6 +109,7 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 
 	// We don't know what the session is yet, so we don't have a lock on it...
 	sess := DetermineSession(j.SessionManager, w, req, true)
+	sess.app = j.App
 
 	// Now that we have the session, lock it
 	sess.lock.Lock()

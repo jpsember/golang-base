@@ -50,6 +50,8 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	Todo("?Think about ways of cleaning up the click listener which is not tied to a widget")
 	m := GenerateHeader(sess, p)
 
+	m.AddUserHeader()
+
 	// Row of buttons at top.
 	m.Open()
 	{

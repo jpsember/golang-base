@@ -63,7 +63,8 @@ type SessionStruct struct {
 
 	BrowserInfo webserv_data.ClientInfo
 
-	prepared bool // True once application has been able to initialize the session
+	app      any // ServerApp is stored here, will clean up later
+	prepared bool      // True once application has been able to initialize the session
 
 	widgetManager WidgetManager
 	clickListener ClickListener

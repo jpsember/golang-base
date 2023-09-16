@@ -302,6 +302,12 @@ func (m WidgetManager) AddInput(listener InputWidgetListener) WidgetManager {
 	return m.auxAddInput(listener, false)
 }
 
+func (m WidgetManager) AddUserHeader() HeaderWidget {
+	w := NewHeaderWidget(m.consumeOptionalPendingId())
+	m.Add(w)
+	return w
+}
+
 func (m WidgetManager) auxAddInput(listener InputWidgetListener, password bool) WidgetManager {
 	id := m.consumeOptionalPendingId()
 	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()), listener, password)

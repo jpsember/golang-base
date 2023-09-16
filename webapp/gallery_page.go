@@ -52,6 +52,7 @@ var myRand = NewJSRand().SetSeed(1234)
 func (p GalleryPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)
 
+	m.AddUserHeader()
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
 	m.Add(alertWidget)

@@ -4,7 +4,10 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
-type AbstractUser any
+type AbstractUser interface {
+	Name() string
+	Id() int
+}
 
 type PageRequesterStruct struct {
 	PageRequesterInterface
