@@ -302,8 +302,8 @@ func (m WidgetManager) AddInput(listener InputWidgetListener) WidgetManager {
 	return m.auxAddInput(listener, false)
 }
 
-func (m WidgetManager) AddUserHeader() HeaderWidget {
-	w := NewHeaderWidget(m.consumeOptionalPendingId())
+func (m WidgetManager) AddUserHeader() UserHeaderWidget {
+	w := NewUserHeaderWidget(m.consumeOptionalPendingId())
 	m.Add(w)
 	return w
 }

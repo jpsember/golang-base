@@ -1,21 +1,19 @@
 package webserv
 
-type HeaderWidgetObj struct {
+type UserHeaderWidgetStruct struct {
 	BaseWidgetObj
 }
 
-type HeaderWidget = *HeaderWidgetObj
+type UserHeaderWidget = *UserHeaderWidgetStruct
 
-func NewHeaderWidget(id string) HeaderWidget {
-	t := &HeaderWidgetObj{}
+func NewUserHeaderWidget(id string) UserHeaderWidget {
+	t := &UserHeaderWidgetStruct{}
 	t.BaseId = id
 	return t
 }
 
-func (w HeaderWidget) RenderTo(s Session, m MarkupBuilder) {
-
-	var app ServerApp
-	app = s.app.(ServerApp)
+func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
+	app := SessionApp(s)
 
 	m.A(`<div id='`, w.BaseId, `'>`)
 	m.DoIndent()
