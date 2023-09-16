@@ -135,6 +135,11 @@ func (p ManagerPage) renderItem(session Session, widget ListWidget, elementId in
 const action_prefix_animal_card = "animal_id_"
 
 func (p ManagerPage) clickListener(sess Session, message string) {
+
+	if ProcessUserHeaderClick(sess, message) {
+		return
+	}
+
 	if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
 		id, err := ParseAsPositiveInt(id_str)
 		if ReportIfError(err) {
@@ -158,4 +163,5 @@ func (p ManagerPage) clickListener(sess Session, message string) {
 		return
 	}
 
+	Alert("#50No handler for click:", message)
 }

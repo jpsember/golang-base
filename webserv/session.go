@@ -10,17 +10,20 @@ import (
 	"sync"
 )
 
+var dbPr = PrIf(false)
+
 var loggedInUsersSet = NewSet[int]()
 var loggedInUsersSetLock sync.RWMutex
 
 func IsUserLoggedIn(userId int) bool {
 	loggedInUsersSetLock.Lock()
 	defer loggedInUsersSetLock.Unlock()
-	return loggedInUsersSet.Contains(userId)
+	result := loggedInUsersSet.Contains(userId)
+	dbPr("IsUserLoggedIn:", userId, result)
+	return result
 }
 
 func TryRegisteringUserAsLoggedIn(userId int, loggedInState bool) bool {
-	// Don't have webserv refer to webapp_data
 	loggedInUsersSetLock.Lock()
 	defer loggedInUsersSetLock.Unlock()
 	currentState := loggedInUsersSet.Contains(userId)
@@ -28,11 +31,25 @@ func TryRegisteringUserAsLoggedIn(userId int, loggedInState bool) bool {
 	if changed {
 		if loggedInState {
 			loggedInUsersSet.Add(userId)
+			dbPr("Registering user as logged in:", userId)
+
 		} else {
 			loggedInUsersSet.Remove(userId)
+			dbPr("Unregistring user as logged in:", userId)
 		}
 	}
 	return changed
+}
+
+func LogUserOut(userId int) bool {
+	loggedInUsersSetLock.Lock()
+	defer loggedInUsersSetLock.Unlock()
+	wasLoggedIn := loggedInUsersSet.Contains(userId)
+	if wasLoggedIn {
+		loggedInUsersSet.Remove(userId)
+		dbPr("LogUserOut, Unregistring user as logged in:", userId)
+	}
+	return wasLoggedIn
 }
 
 func DiscardAllSessions(sessionManager SessionManager) {
@@ -41,6 +58,7 @@ func DiscardAllSessions(sessionManager SessionManager) {
 
 	Alert("Discarding all sessions")
 	sessionManager.DiscardAllSessions()
+	dbPr("DiscardAllSessions, cleared")
 	loggedInUsersSet.Clear()
 }
 

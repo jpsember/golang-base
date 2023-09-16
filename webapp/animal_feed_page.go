@@ -49,6 +49,8 @@ func (p FeedPage) generateWidgets(s Session) {
 	s.SetClickListener(p.clickListener)
 
 	m := GenerateHeader(s, p)
+	m.AddUserHeader()
+
 	al := p.animalList(s)
 	p.listWidget = m.Id(id_feed_list).AddList(al, p.renderItem, p.listListener)
 }
@@ -97,6 +99,11 @@ func (p FeedPage) renderItem(session Session, widget ListWidget, elementId int, 
 }
 
 func (p FeedPage) clickListener(sess Session, message string) {
+
+	if ProcessUserHeaderClick(sess, message) {
+		return
+	}
+
 	if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
 		id, err1 := ParseAsPositiveInt(id_str)
 		if ReportIfError(err1, "AnimalFeedPage parsing", message) {

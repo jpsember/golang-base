@@ -11,10 +11,6 @@ type Page interface {
 	ConstructPage(s *SessionStruct, args PageArgs) Page
 }
 
-type PageDevLabelRenderer func(s Session, page Page)
-
-var DevLabelRenderer PageDevLabelRenderer
-
 // Some common boilerplate that is typically some of the first code that
 // generateWidgets() would otherwise execute.
 func GenerateHeader(s Session, p Page) WidgetManager {
@@ -22,8 +18,5 @@ func GenerateHeader(s Session, p Page) WidgetManager {
 	CheckState(s != nil)
 	m := s.WidgetManager()
 	m.With(s.PageWidget)
-	if DevLabelRenderer != nil {
-		DevLabelRenderer(s, p)
-	}
 	return m
 }

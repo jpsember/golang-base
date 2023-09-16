@@ -123,7 +123,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 
 		prob = "User is already logged in"
 		if IsUserLoggedIn(userId) {
-			return
+			break
 		}
 
 		prob = "User is unavaliable; sorry"
@@ -165,12 +165,15 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 	if prob != "" {
 		sess.SetWidgetProblem(id_user_name, prob)
 	} else {
+		pr("attempting to select page for user:", INDENT, user)
 		switch user.UserClass() {
 		case UserClassDonor:
 			sess.SwitchToPage(NewFeedPage(sess))
 			break
 		case UserClassManager:
 			sess.SwitchToPage(NewManagerPage(sess))
+		default:
+			NotImplemented("Page for user class:", user.UserClass())
 		}
 	}
 }

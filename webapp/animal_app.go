@@ -89,10 +89,11 @@ func (oper AnimalOper) DefaultPageForUser(abstractUser AbstractUser) Page {
 // JServer callback to perform initialization for a new session.  We assign a user,
 // and open the landing page. It might get replaced by another page immediately...?
 func (oper AnimalOper) PrepareSession(sess Session) {
-	user := DefaultUser
-	sess.PutSessionData(SessionKey_User, user)
-	CheckState(user.Id() == 0)
-
+	if !Alert("Suspect this code is unnecessary:") {
+		user := DefaultUser
+		sess.PutSessionData(SessionKey_User, user)
+		CheckState(user.Id() == 0)
+	}
 	if Alert("!Doing auto login") {
 		oper.debugAutoLogIn(sess)
 	}
@@ -169,6 +170,21 @@ func TryLoggingIn(s Session, user User) bool {
 		s.PutSessionData(SessionKey_User, user)
 	}
 	return success
+}
+
+// Attempt to log the user out. Return true if successful.
+func LogOut(s Session) bool {
+	user := SessionUser(s)
+	if user.Id() == 0 {
+		Alert("#50Attempt to log out user that is not logged in:", INDENT, user)
+		return false
+	}
+	wasLoggedIn := LogUserOut(user.Id())
+	if !wasLoggedIn {
+		Alert("#50LogUserOut returned false:", INDENT, user)
+	}
+	s.PutSessionData(SessionKey_User, nil)
+	return true
 }
 
 // Perform a once-only attempt to log in the user automatically and set a particular page.
