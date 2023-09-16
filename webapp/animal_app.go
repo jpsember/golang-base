@@ -8,6 +8,8 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
+const AutoLogInName = "manager1"
+
 type AnimalOperStruct struct {
 	appRoot      Path
 	autoLoggedIn bool
@@ -86,16 +88,31 @@ func (oper AnimalOper) DefaultPageForUser(abstractUser AbstractUser) Page {
 	return result
 }
 
-// JServer callback to perform initialization for a new session.  We assign a user,
-// and open the landing page. It might get replaced by another page immediately...?
+// JServer callback to perform any optional additional initialization for a new session.
 func (oper AnimalOper) PrepareSession(sess Session) {
-	if !Alert("Suspect this code is unnecessary:") {
-		user := DefaultUser
-		sess.PutSessionData(SessionKey_User, user)
-		CheckState(user.Id() == 0)
-	}
-	if Alert("!Doing auto login") {
-		oper.debugAutoLogIn(sess)
+
+	// Perform a once-only attempt to do an auto login
+	for {
+		nm := AutoLogInName
+		if nm == "" {
+			break
+		}
+		Todo("!Auto logging in:", nm)
+		if oper.autoLoggedIn {
+			break
+		}
+		oper.autoLoggedIn = true
+
+		user2, _ := ReadUserWithName(nm)
+		if user2.Id() == 0 {
+			Alert("Can't find auto login user:", nm)
+			break
+		}
+		if !TryLoggingIn(sess, user2) {
+			break
+		}
+
+		break
 	}
 }
 
@@ -142,9 +159,10 @@ const (
 
 // Get session's User, or default user if there isn't one.
 func OptSessionUser(sess Session) User {
-	u := sess.GetSessionData(SessionKey_User).(User)
-	if u == nil {
-		u = DefaultUser
+	u := DefaultUser
+	data := sess.OptSessionData(SessionKey_User)
+	if data != nil {
+		u = data.(User)
 	}
 	return u
 }
@@ -185,26 +203,4 @@ func LogOut(s Session) bool {
 	}
 	s.PutSessionData(SessionKey_User, nil)
 	return true
-}
-
-// Perform a once-only attempt to log in the user automatically and set a particular page.
-// For development only.
-func (oper AnimalOper) debugAutoLogIn(sess Session) {
-	if oper.autoLoggedIn {
-		return
-	}
-	oper.autoLoggedIn = true
-
-	user2, _ := ReadUserWithName("manager1")
-	Alert("?Auto logging in", user2.Id(), user2.Name())
-	if user2.Id() == 0 {
-		return
-	}
-	if !TryLoggingIn(sess, user2) {
-		return
-	}
-	if true {
-		sess.SwitchToPage(NewFeedPage(sess))
-		return
-	}
 }
