@@ -8,7 +8,7 @@ type Page interface {
 	Name() string
 	Args() []string // The additional arguments that would show up in the url (e.g., edit/17), args would be ["17"]
 	// Attempt to construct a new page with the specified args; return nil if args aren't valid
-	ConstructPage(s Session, args PageArgs) Page
+	ConstructPage(s *SessionStruct, args PageArgs) Page
 }
 
 type PageDevLabelRenderer func(s Session, page Page)

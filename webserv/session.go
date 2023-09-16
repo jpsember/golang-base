@@ -62,6 +62,7 @@ type SessionStruct struct {
 	State JSMap
 
 	BrowserInfo webserv_data.ClientInfo
+	DebugPage   Page
 
 	app      any  // ServerApp is stored here, will clean up later
 	prepared bool // True once application has been able to initialize the session
@@ -564,6 +565,7 @@ func (s Session) SetClickListener(listener ClickListener) {
 func (s Session) SwitchToPage(page Page) {
 	s.Repaint(s.PageWidget)
 	s.browserURLExpr = s.ConstructPathFromPage(page)
+	s.DebugPage = page
 }
 
 func (s Session) NewBrowserPath() string {

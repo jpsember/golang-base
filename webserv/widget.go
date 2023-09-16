@@ -5,6 +5,8 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
+var DebugUIFlag = false
+
 // The interface that all widgets must support
 type Widget interface {
 	Id() string

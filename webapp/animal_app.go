@@ -35,7 +35,7 @@ func (oper AnimalOper) Perform(app *App) {
 	oper.resources = oper.appRoot.JoinM("resources")
 	oper.prepareDatabase()
 
-	DevLabelRenderer = AddDevPageLabel
+	DebugUIFlag = true
 
 	s := NewJServer(oper)
 	s.SessionManager = BuildSessionMap()
