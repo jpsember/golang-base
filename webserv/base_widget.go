@@ -17,6 +17,7 @@ type BaseWidgetObj struct {
 	size          WidgetSize
 	align         WidgetAlign
 	columns       int
+	stateProvider WidgetStateProvider
 }
 
 type BaseWidget = *BaseWidgetObj
@@ -111,4 +112,23 @@ func (w BaseWidget) RenderTo(s Session, m MarkupBuilder) {
 
 func (w BaseWidget) AuxId() string {
 	return w.BaseId + ".aux"
+}
+
+func (w BaseWidget) SetStateProvider(p WidgetStateProvider) {
+	if p == nil {
+		Todo("create a default provider")
+	}
+	w.stateProvider = p
+}
+
+func (w BaseWidget) StateProvider() WidgetStateProvider {
+	p := w.stateProvider
+	if p == nil {
+		p = defaultWidgetStateProvider
+	}
+	return p
+}
+
+func defaultWidgetStateProvider(s Session, widgetId string) any {
+	return s.State.OptUnsafe(widgetId)
 }

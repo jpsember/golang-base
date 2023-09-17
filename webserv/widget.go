@@ -7,6 +7,9 @@ import (
 
 var DebugUIFlag = false
 
+// Function for supplying state to widgets during rendering.
+type WidgetStateProvider func(s *SessionStruct, widgetId string) any
+
 // The interface that all widgets must support.  Widgets can embed the BaseWidget struct to
 // supply default implementations.
 type Widget interface {
@@ -23,7 +26,8 @@ type Widget interface {
 	AddChildren(manager WidgetManager) // Add any child widgets
 	SetColumns(columns int)            // Set the number of columns the widget occupies in its row
 	Columns() int                      // Get the number of columns the widget occupies in its row
-
+	StateProvider() WidgetStateProvider
+	SetStateProvider(p WidgetStateProvider)
 	fmt.Stringer
 }
 
