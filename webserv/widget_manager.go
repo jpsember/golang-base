@@ -20,6 +20,7 @@ type WidgetManagerObj struct {
 	pendingId                   string
 	pendingLabel                string
 	anonymousIdCounter          int
+	pendingChildColumns         int
 }
 
 func NewWidgetManager(session Session) WidgetManager {
@@ -28,7 +29,15 @@ func NewWidgetManager(session Session) WidgetManager {
 		widgetMap:   make(map[string]Widget),
 	}
 	w.SetName("WidgetManager")
+	w.resetPendingColumns()
+	w.LogCols("Constructed")
 	return &w
+}
+
+func (m WidgetManager) LogCols(message string) {
+	if !Alert("!remove this at some point") {
+		Pr("WidgetManager pending child columns:", m.pendingChildColumns)
+	}
 }
 
 type WidgetManager = *WidgetManagerObj
@@ -91,12 +100,10 @@ func (m WidgetManager) Align(align WidgetAlign) WidgetManager {
 	return m
 }
 
-// Set number of Bootstrap columns for next widget
+// Set number of Bootstrap columns the next widget will occupy within its container.
 func (m WidgetManager) Col(columns int) WidgetManager {
-	w := m.currentPanel()
-	c, ok := w.(ContainerWidget)
-	CheckState(ok)
-	c.SetColumns(columns)
+	m.pendingChildColumns = columns
+	m.LogCols("Set col;")
 	return m
 }
 
@@ -255,13 +262,17 @@ func (m WidgetManager) With(container Widget) WidgetManager {
 
 	m.parentStack.Clear()
 	m.parentStack.Add(container)
+	m.resetPendingColumns()
 	return m
+}
+
+func (m WidgetManager) resetPendingColumns() {
+	m.pendingChildColumns = 12
 }
 
 // Create a child container widget and push onto stack
 func (m WidgetManager) Open() Widget {
 	m.Log("open")
-	// the number of columns a widget is to occupy should be sent to the *parent*...
 	widget := NewContainerWidget(m.consumeOptionalPendingId())
 	m.OpenContainer(widget)
 	return widget

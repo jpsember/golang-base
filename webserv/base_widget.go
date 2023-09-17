@@ -16,6 +16,7 @@ type BaseWidgetObj struct {
 	idHashcode    int
 	size          WidgetSize
 	align         WidgetAlign
+	columns       int
 }
 
 type BaseWidget = *BaseWidgetObj
@@ -97,6 +98,12 @@ func (w BaseWidget) ReceiveValue(sess Session, value string) {
 func (w BaseWidget) GetChildren() []Widget {
 	return nil
 }
+
+func (w BaseWidget) SetColumns(columns int) {
+	w.columns = columns
+}
+
+func (w BaseWidget) Columns() int { return w.columns }
 
 func (w BaseWidget) IdSummary() string {
 	if w.BaseId == "" {

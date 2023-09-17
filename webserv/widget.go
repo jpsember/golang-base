@@ -17,9 +17,11 @@ type Widget interface {
 	RenderTo(s *SessionStruct, m MarkupBuilder)
 	Children() []Widget
 	AddChild(c Widget, manager WidgetManager)
-
 	SetStaticContent(content any)
 	StaticContent() any
+
+	SetColumns(columns int) // Set the number of columnsthe widget occupies in its row
+	Columns() int           // Get the number of columns the widget occupies in its row
 
 	fmt.Stringer
 }
