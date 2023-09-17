@@ -64,9 +64,14 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	{
 		m.Col(6)
-		cw := NewNewCard(m, "gallery_card", ReadAnimalIgnoreError(1),
+		// Create a new card that will contain other widgets
+		cw := NewNewCard("gallery_card", ReadAnimalIgnoreError(1),
 			func(sess Session, widget Widget) { Pr("gallery click listener") }, "Hello")
-		m.Add(cw)
+
+		// We ask this container widget to add itself to the widget manager.  It will call OpenContainer(),
+		// add its own child widgets, then Close().
+		cw.AddTo(m)
+
 		m.Label("spacer").AddText()
 	}
 

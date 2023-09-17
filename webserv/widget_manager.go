@@ -4,17 +4,6 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
-type MgrStateStruct struct {
-}
-
-type MgrState = *MgrStateStruct
-
-func newMgrState() MgrState {
-	t := &MgrStateStruct{}
-	return t
-}
-
-
 type WidgetManagerObj struct {
 	BaseObject
 	widgetMap                   WidgetMap
@@ -32,15 +21,12 @@ type WidgetManagerObj struct {
 	pendingLabel                string
 	anonymousIdCounter          int
 	pendingChildColumns         int
-	//state MgrState
-	//stateStack []MgrState
 }
 
 func NewWidgetManager(session Session) WidgetManager {
 	w := WidgetManagerObj{
 		parentStack: NewArray[Widget](),
 		widgetMap:   make(map[string]Widget),
-		//state:newMgrState()
 	}
 	w.SetName("WidgetManager")
 	w.resetPendingColumns()
@@ -369,21 +355,13 @@ func (m WidgetManager) AddHeading() WidgetManager {
 	staticContent, id := m.getStaticContentAndId()
 	w := NewHeadingWidget(id)
 	w.SetSize(m.consumePendingSize())
+	Todo("Setting WidgetSize seems to have no effect on headings")
 	w.SetAlign(m.consumePendingAlign())
 	if staticContent != "" {
 		w.SetStaticContent(staticContent)
 	}
 	return m.Add(w)
 }
-
-//
-//func (m WidgetManager) assignRequiredPendingListener(widget Widget) {
-//	if m.pendingListener == nil {
-//		BadState("no listener found for widget", widget.Id())
-//	}
-//	widget.SetListener(m.pendingListener)
-//	m.pendingListener = nil
-//}
 
 func (m WidgetManager) AddText() WidgetManager {
 	staticContent, id := m.getStaticContentAndId()
@@ -499,7 +477,6 @@ func (m WidgetManager) PushContainer(container Widget) WidgetManager {
 	Todo("!this is a lot like OpenContainer, but without the adding")
 	// Push a container widget onto the stack
 	m.parentStack.Add(container)
-
 
 	// Save current state
 	//m.stateStack = append(m.stateStack, m.state)

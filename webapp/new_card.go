@@ -22,38 +22,42 @@ const (
 
 type NewCard = *NewCardObj
 
-func NewNewCard(
-	wm WidgetManager, // manager to add child views
-	widgetId string, animal Animal, viewButtonListener ButtonWidgetListener, buttonLabel string) NewCard {
+func NewNewCard(widgetId string, animal Animal, viewButtonListener ButtonWidgetListener, buttonLabel string) NewCard {
 	w := NewCardObj{}
 	w.BaseId = widgetId
 	w.animal = animal
 	w.buttonListener = viewButtonListener
 	w.buttonLabel = buttonLabel
 
-	Todo("instead of passing around WidgetManager, maybe pass around Sessions, which contain the wm?")
+	Todo("!instead of passing around WidgetManager, maybe pass around Sessions, which contain the wm?")
 	c := &w
-	// save manager state, and start working with this widget
-	wm.PushContainer(c)
-	c.addChildren(wm)
-	wm.PopContainer()
 	return c
 }
 
-func (w NewCard) addChildren(m WidgetManager) {
-	Todo("We want the id to be tied to the parent widget id, and resolve somehow")
-	Todo("We want it to add this widget to a *new* widget map, not the current one")
-	m.Id("anonid1").AddHeading()
-	m.Id("anonid2").AddText()
+func (w NewCard) AddTo(m WidgetManager) {
+	m.OpenContainer(w)
+	{
+		Todo("!We want the id to be tied to the parent widget id, and resolve somehow")
+		m.Id("anonid1").Size(SizeTiny).AddHeading()
+		m.Id("anonid2").AddText()
+	}
+	m.Close()
+}
+
+func (w NewCard) AddChild(c Widget, manager WidgetManager) {
+	Todo("!How does this differ from the container_widget method?")
+	w.children = append(w.children, c)
 }
 
 func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
-	RenderAnimalCard(s, w.animal, m, w.buttonLabel, action_prefix_animal_card, action_prefix_animal_card)
-}
-
-func NewRenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel string, buttonActionPrefix string, cardActionPrefix string) {
+	//}
+	//
+	//func NewRenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel string, buttonActionPrefix string, cardActionPrefix string) {
 
 	// Open a bootstrap card
+
+	cardActionPrefix := ""
+	animal := ReadAnimalIgnoreError(3)
 
 	m.Comments("NewCard")
 	clickArg := ""
@@ -81,16 +85,16 @@ func NewRenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel 
 		m.Comments("title and summary")
 		m.OpenTag(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`)
 		{
-
 			m.OpenTag(`h6 class="card-title"`)
-			{
-				m.Escape(animal.Name())
-			}
+			// Render the name as the first child
+			w.children[0].RenderTo(s, m)
+
 			m.CloseTag()
 
+			// Render the second child
 			m.OpenTag(`p class="card-text" style="font-size:75%;"`)
 			{
-				m.Escape(animal.Summary())
+				w.children[1].RenderTo(s, m)
 			}
 			m.CloseTag()
 		}
@@ -112,19 +116,19 @@ func NewRenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel 
 			}
 			m.CloseTag()
 
-			if buttonLabel != "" {
-				m.Comments("right-justified button")
-				m.OpenTag(`div class="row"`)
-				{
-					m.OpenTag(`div class="d-grid justify-content-md-end"`)
-					{
-						buttonId := buttonActionPrefix + IntToString(animal.Id())
-						RenderButton(s, m, buttonId, buttonId, true, buttonLabel, SizeSmall, AlignRight, 0)
-					}
-					m.CloseTag()
-				}
-				m.CloseTag()
-			}
+			//if buttonLabel != "" {
+			//	m.Comments("right-justified button")
+			//	m.OpenTag(`div class="row"`)
+			//	{
+			//		m.OpenTag(`div class="d-grid justify-content-md-end"`)
+			//		{
+			//			buttonId := buttonActionPrefix + IntToString(animal.Id())
+			//			RenderButton(s, m, buttonId, buttonId, true, buttonLabel, SizeSmall, AlignRight, 0)
+			//		}
+			//		m.CloseTag()
+			//	}
+			//	m.CloseTag()
+			//}
 		}
 		m.CloseTag()
 	}
