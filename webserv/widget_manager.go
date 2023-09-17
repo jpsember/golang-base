@@ -245,6 +245,9 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		m.parentStack.Last().AddChild(widget, m)
 	}
 	m.clearPendingComponentFields()
+
+	// Ask widget to add any children that it may need
+	widget.AddChildren(m)
 	return m
 }
 
@@ -274,6 +277,7 @@ func (m WidgetManager) resetPendingColumns() {
 func (m WidgetManager) Open() Widget {
 	m.Log("open")
 	widget := NewContainerWidget(m.consumeOptionalPendingId())
+	m.Add(widget)
 	m.OpenContainer(widget)
 	return widget
 }
@@ -281,15 +285,19 @@ func (m WidgetManager) Open() Widget {
 // Push a container widget onto the stack
 func (m WidgetManager) OpenContainer(widget Widget) {
 	m.Log("Adding container widget")
-	m.Add(widget)
 	m.parentStack.Add(widget)
 	m.Log("added container to stack")
+}
+
+func (m WidgetManager) CloseContainer() {
+	m.Log("CloseContainer")
+	m.parentStack.Pop()
 }
 
 // Pop a container widget from the stack.
 func (m WidgetManager) Close() WidgetManager {
 	m.Log("Close")
-	m.parentStack.Pop()
+	m.CloseContainer()
 	return m
 }
 

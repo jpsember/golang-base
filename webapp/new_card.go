@@ -23,6 +23,7 @@ const (
 type NewCard = *NewCardObj
 
 func NewNewCard(widgetId string, animal Animal, viewButtonListener ButtonWidgetListener, buttonLabel string) NewCard {
+	Pr("constructing new card")
 	w := NewCardObj{}
 	w.BaseId = widgetId
 	w.animal = animal
@@ -34,14 +35,14 @@ func NewNewCard(widgetId string, animal Animal, viewButtonListener ButtonWidgetL
 	return c
 }
 
-func (w NewCard) AddTo(m WidgetManager) {
+func (w NewCard) AddChildren(m WidgetManager) {
+	Pr("adding children to new card")
 	m.OpenContainer(w)
-	{
-		Todo("!We want the id to be tied to the parent widget id, and resolve somehow")
-		m.Id("anonid1").Size(SizeTiny).AddHeading()
-		m.Id("anonid2").AddText()
-	}
-	m.Close()
+	Todo("!We want the id to be tied to the parent widget id, and resolve somehow")
+	m.Id("anonid1").Size(SizeTiny).AddHeading()
+	m.Id("anonid2").AddText()
+	m.CloseContainer()
+	Pr("done adding children")
 }
 
 func (w NewCard) AddChild(c Widget, manager WidgetManager) {
@@ -86,15 +87,16 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 		m.OpenTag(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`)
 		{
 			m.OpenTag(`h6 class="card-title"`)
-			// Render the name as the first child
-			w.children[0].RenderTo(s, m)
-
+			{
+				// Render the name as the first child
+				RenderWidget(w.children[0], s, m)
+			}
 			m.CloseTag()
 
 			// Render the second child
 			m.OpenTag(`p class="card-text" style="font-size:75%;"`)
 			{
-				w.children[1].RenderTo(s, m)
+				RenderWidget(w.children[1], s, m)
 			}
 			m.CloseTag()
 		}

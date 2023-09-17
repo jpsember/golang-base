@@ -20,9 +20,9 @@ type Widget interface {
 	AddChild(c Widget, manager WidgetManager)
 	SetStaticContent(content any)
 	StaticContent() any
-
-	SetColumns(columns int) // Set the number of columns the widget occupies in its row
-	Columns() int           // Get the number of columns the widget occupies in its row
+	AddChildren(manager WidgetManager) // Add any child widgets
+	SetColumns(columns int)            // Set the number of columns the widget occupies in its row
+	Columns() int                      // Get the number of columns the widget occupies in its row
 
 	fmt.Stringer
 }

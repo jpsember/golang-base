@@ -60,6 +60,10 @@ func (w BaseWidget) Children() []Widget {
 	return nil
 }
 
+// Base widgets don't add any children
+func (w BaseWidget) AddChildren(m WidgetManager) {
+}
+
 func (w BaseWidget) SetStaticContent(content any) {
 	w.staticContent = content
 }
