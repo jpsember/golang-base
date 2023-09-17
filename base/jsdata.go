@@ -39,3 +39,22 @@ func ParseEnumFromMap(enumInfo *EnumInfo, m JSMap, key string, defaultValue int)
 	}
 	return result
 }
+
+func ParseOrDefault(json JSEntity, defaultValue DataClass) (DataClass, error) {
+	var err error
+	result := attemptParse(json, defaultValue)
+	if result == nil {
+		err = DataClassParseError
+	}
+	return result, err
+}
+
+var DataClassParseError = Error("DataClass parse error")
+
+func attemptParse(json JSEntity, parser DataClass) DataClass {
+	defer func() {
+		if r := recover(); r != nil {
+		}
+	}()
+	return parser.Parse(json)
+}

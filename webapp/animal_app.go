@@ -8,7 +8,9 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-const AutoLogInName = "manager1"
+const AutoLogInName = "donor2"
+
+var DevDatabase = Alert("!Using development database")
 
 type AnimalOperStruct struct {
 	appRoot      Path
@@ -117,8 +119,6 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 }
 
 // ------------------------------------------------------------------------------------
-
-var DevDatabase = Alert("!Using development database")
 
 func (oper AnimalOper) prepareDatabase() {
 	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")

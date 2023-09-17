@@ -100,12 +100,10 @@ type SessionStruct struct {
 	repaintWidgetMarkupMap JSMap // Used only during repainting; the map of widget ids -> markup to be repainted by client
 }
 
-var ourDefaultBrowserInfo = webserv_data.NewClientInfo().SetDevicePixelRatio(1.25).SetScreenSizeX(2560).SetScreenSizeY(1440).Build()
-
 func NewSession() Session {
 	s := SessionStruct{
 		State:       NewJSMap(),
-		BrowserInfo: ourDefaultBrowserInfo,
+		BrowserInfo: webserv_data.DefaultClientInfo,
 		appData:     make(map[string]any),
 	}
 	Todo("!Restore user session from filesystem/database")
@@ -352,11 +350,10 @@ func (s Session) processClientInfo(infoString string) {
 		Pr("failed to parse json:", err, INDENT, infoString)
 		return
 	}
-	s.BrowserInfo = webserv_data.NewClientInfo(). //
-							SetDevicePixelRatio(json.OptFloat32("dp", 1.0)). //
-							SetScreenSizeX(json.OptInt("sw", 2000)).         //
-							SetScreenSizeY(json.OptInt("sh", 0)).Build()
-	Todo("?Datagen generated parse() methods don't report errors cleanly; we will need a wrapper?")
+	n, err := ParseOrDefault(json, s.BrowserInfo)
+	if !ReportIfError(err, "Trouble parsing BrowserInfo") {
+		s.BrowserInfo = n.(webserv_data.ClientInfo)
+	}
 }
 
 // Mark a widget for repainting

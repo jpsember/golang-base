@@ -74,7 +74,7 @@ func PlotImageSizeMarkup(s Session, m MarkupBuilder, normalizedTargetSize IPoint
 	sz := normalizedTargetSize
 	if sz.IsPositive() {
 		Todo("?Investigate relationship between pixel ratio, screen size")
-		screenWidth := s.BrowserInfo.ScreenSizeX()
+		screenWidth := s.BrowserInfo.ScreenSize().X
 		scaleFactor := float64(screenWidth) / 2000
 		plotSize := sz.ScaledBy(scaleFactor)
 		m.A(` width="`, plotSize.X, `" height="`, plotSize.Y, `" `)

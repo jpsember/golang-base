@@ -207,6 +207,10 @@ func (m JSMap) OptMap(key string) *JSMapStruct {
 	return val.(*JSMapStruct)
 }
 
+func (m JSMap) OptUnsafe(key string) any {
+	return m.wrappedMap[key]
+}
+
 func (m JSMap) OptMapOrEmpty(key string) *JSMapStruct {
 	var val = m.wrappedMap[key]
 	if val == nil {

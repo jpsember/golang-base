@@ -102,6 +102,10 @@ func (p AnimalDetailPage) Args() []string {
 	return EmptyStringSlice
 }
 
+func (p AnimalDetailPage) viewing() bool {
+	return p.name == "view"
+}
+
 func (p AnimalDetailPage) readStateFromAnimal(sess Session) {
 	a := DefaultAnimal
 	if p.animalId != 0 {
@@ -122,10 +126,12 @@ func (p AnimalDetailPage) generateWidgets(s Session) {
 	if s == nil {
 		return
 	}
-	s.SetClickListener(nil)
+	s.SetClickListener(p.clickListener)
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
-	GenerateHeader(s, p)
-
+	m := GenerateHeader(s, p)
+	if p.viewing() {
+		m.AddUserHeader()
+	}
 	p.readStateFromAnimal(s)
 
 	Todo("!Have ajax listener that can show advice without an actual error, e.g., if user left some fields blank")
@@ -431,5 +437,12 @@ func (p AnimalDetailPage) provideURL(s Session) string {
 func DiscardBlob(id int) {
 	if id != 0 {
 		Todo("#50Discard blob id", id)
+	}
+}
+
+func (p AnimalDetailPage) clickListener(sess Session, message string) {
+	Todo("ClickListeners should return true if handled")
+	if ProcessUserHeaderClick(sess, message) {
+		return
 	}
 }

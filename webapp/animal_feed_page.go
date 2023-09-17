@@ -13,7 +13,6 @@ var FeedPageTemplate = NewFeedPage(nil)
 func (p FeedPage) ConstructPage(s Session, args PageArgs) Page {
 	if args.CheckDone() {
 		if SessionUserIs(s, UserClassDonor) {
-			Todo("Maybe don't set the url string until a page is accepted?")
 			return NewFeedPage(s)
 		}
 	}
@@ -94,7 +93,7 @@ func (p FeedPage) renderItem(session Session, widget ListWidget, elementId int, 
 		return
 	}
 	m.OpenTag(`div class="col-sm-3"`)
-	RenderAnimalCard(session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
+	RenderAnimalCard(session, anim, m, "View", action_prefix_animal_card, action_prefix_animal_card)
 	m.CloseTag()
 }
 
