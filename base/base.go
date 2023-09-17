@@ -1004,3 +1004,8 @@ func Last[T any](slice []T) T {
 	i := len(slice)
 	return slice[i-1]
 }
+
+func PopLast[T any](slice []T) (T, []T) {
+	i := len(slice)
+	return slice[i-1], slice[:i-1]
+}

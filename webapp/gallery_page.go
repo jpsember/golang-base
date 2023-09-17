@@ -50,6 +50,9 @@ var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
 
 func (p GalleryPage) generateWidgets(sess Session) {
+
+	sess.SetClickListener(ProcessUserHeaderClick)
+
 	m := GenerateHeader(sess, p)
 
 	m.AddUserHeader()
@@ -58,7 +61,15 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	m.Add(alertWidget)
 
 	m.Open()
-	m.Col(6)
+
+	{
+		m.Col(6)
+		cw := NewNewCard(m, "gallery_card", ReadAnimalIgnoreError(1),
+			func(sess Session, widget Widget) { Pr("gallery click listener") }, "Hello")
+		m.Add(cw)
+		m.Label("spacer").AddText()
+	}
+
 	m.Id("sample_upload").Label("Photo").AddFileUpload(p.uploadListener)
 	imgWidget := m.Id("sample_image").AddImage()
 	imgWidget.URLProvider = p.provideURL

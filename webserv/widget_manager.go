@@ -4,6 +4,17 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
+type MgrStateStruct struct {
+}
+
+type MgrState = *MgrStateStruct
+
+func newMgrState() MgrState {
+	t := &MgrStateStruct{}
+	return t
+}
+
+
 type WidgetManagerObj struct {
 	BaseObject
 	widgetMap                   WidgetMap
@@ -21,12 +32,15 @@ type WidgetManagerObj struct {
 	pendingLabel                string
 	anonymousIdCounter          int
 	pendingChildColumns         int
+	//state MgrState
+	//stateStack []MgrState
 }
 
 func NewWidgetManager(session Session) WidgetManager {
 	w := WidgetManagerObj{
 		parentStack: NewArray[Widget](),
 		widgetMap:   make(map[string]Widget),
+		//state:newMgrState()
 	}
 	w.SetName("WidgetManager")
 	w.resetPendingColumns()
@@ -478,5 +492,22 @@ func (s Session) RepaintIds(ids ...string) WidgetManager {
 			Alert("#50<1Can't find widget to repaint with id:", id)
 		}
 	}
+	return m
+}
+
+func (m WidgetManager) PushContainer(container Widget) WidgetManager {
+	Todo("!this is a lot like OpenContainer, but without the adding")
+	// Push a container widget onto the stack
+	m.parentStack.Add(container)
+
+
+	// Save current state
+	//m.stateStack = append(m.stateStack, m.state)
+	//m.state = newMgrState()
+	return m
+}
+
+func (m WidgetManager) PopContainer() WidgetManager {
+	//m.state, m.stateStack = PopLast(m.stateStack)
 	return m
 }
