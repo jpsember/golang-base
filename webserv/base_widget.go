@@ -55,10 +55,7 @@ func (w BaseWidget) Size() WidgetSize {
 	return w.size
 }
 
-func (w BaseWidget) Base() BaseWidget {
-	return w
-}
-
+// Base widgets have no children
 func (w BaseWidget) Children() []Widget {
 	return nil
 }
@@ -89,14 +86,6 @@ func (w BaseWidget) SetEnabled(s bool) {
 
 func (w BaseWidget) AddChild(c Widget, manager WidgetManager) {
 	NotSupported("AddChild not supported")
-}
-
-func (w BaseWidget) ReceiveValue(sess Session, value string) {
-	Pr("Ignoring ReceiveValue for widget:", w.BaseId, "value:", Quoted(value))
-}
-
-func (w BaseWidget) GetChildren() []Widget {
-	return nil
 }
 
 func (w BaseWidget) SetColumns(columns int) {

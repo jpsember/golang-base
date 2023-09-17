@@ -31,7 +31,7 @@ func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, p
 		Password: password,
 		listener: listener,
 	}
-	w.Base().LowListen = inputListenWrapper
+	w.LowListen = inputListenWrapper
 	return &w
 }
 

@@ -7,7 +7,8 @@ import (
 
 var DebugUIFlag = false
 
-// The interface that all widgets must support
+// The interface that all widgets must support.  Widgets can embed the BaseWidget struct to
+// supply default implementations.
 type Widget interface {
 	Id() string
 	LowListener() LowLevelWidgetListener
@@ -20,7 +21,7 @@ type Widget interface {
 	SetStaticContent(content any)
 	StaticContent() any
 
-	SetColumns(columns int) // Set the number of columnsthe widget occupies in its row
+	SetColumns(columns int) // Set the number of columns the widget occupies in its row
 	Columns() int           // Get the number of columns the widget occupies in its row
 
 	fmt.Stringer

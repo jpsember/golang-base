@@ -18,7 +18,7 @@ type AnimalCardWidget = *AnimalCardWidgetObj
 
 func NewAnimalCardWidget(widgetId string, animal Animal, viewButtonListener ButtonWidgetListener, buttonLabel string) AnimalCardWidget {
 	w := AnimalCardWidgetObj{}
-	w.Base().BaseId = widgetId
+	w.BaseId = widgetId
 	w.animal = animal
 	w.buttonListener = viewButtonListener
 	w.buttonLabel = buttonLabel

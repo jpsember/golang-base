@@ -267,7 +267,7 @@ func (m WidgetManager) With(container Widget) WidgetManager {
 }
 
 func (m WidgetManager) resetPendingColumns() {
-	m.pendingChildColumns = 12
+	m.pendingChildColumns = MaxColumns
 }
 
 // Create a child container widget and push onto stack

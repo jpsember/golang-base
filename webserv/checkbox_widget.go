@@ -31,8 +31,8 @@ func NewCheckboxWidget(switchFlag bool, id string, label HtmlString, listener Ch
 		switchFlag: switchFlag,
 		listener:   listener,
 	}
-	w.Base().BaseId = id
-	w.Base().LowListen = checkboxListenWrapper
+	w.BaseId = id
+	w.LowListen = checkboxListenWrapper
 	return &w
 }
 
