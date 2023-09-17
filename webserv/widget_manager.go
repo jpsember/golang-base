@@ -254,7 +254,7 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 // Have subsequent WidgetManager operations operate on a particular container widget.
 // The container is marked for repainting.
 func (m WidgetManager) With(container Widget) WidgetManager {
-	cont := container.(ContainerWidget)
+	cont := container.(GridWidget)
 	id := cont.Id()
 
 	CheckState(m.Exists(id))
@@ -273,31 +273,26 @@ func (m WidgetManager) resetPendingColumns() {
 	m.pendingChildColumns = MaxColumns
 }
 
-// Create a child container widget and push onto stack
+// Add a child GridContainerWidget, and push onto stack as active container
 func (m WidgetManager) Open() Widget {
 	m.Log("open")
 	widget := NewContainerWidget(m.consumeOptionalPendingId())
 	m.Add(widget)
-	m.OpenContainer(widget)
-	return widget
+	return m.OpenContainer(widget)
 }
 
-// Push a container widget onto the stack
-func (m WidgetManager) OpenContainer(widget Widget) {
+// Push a container widget onto the stack as an active container
+func (m WidgetManager) OpenContainer(widget Widget) Widget {
 	m.Log("Adding container widget")
 	m.parentStack.Add(widget)
 	m.Log("added container to stack")
+	return widget
 }
 
-func (m WidgetManager) CloseContainer() {
-	m.Log("CloseContainer")
-	m.parentStack.Pop()
-}
-
-// Pop a container widget from the stack.
+// Pop the active container from the stack.
 func (m WidgetManager) Close() WidgetManager {
 	m.Log("Close")
-	m.CloseContainer()
+	m.parentStack.Pop()
 	return m
 }
 

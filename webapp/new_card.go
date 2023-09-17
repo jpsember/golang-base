@@ -41,7 +41,7 @@ func (w NewCard) AddChildren(m WidgetManager) {
 	Todo("!We want the id to be tied to the parent widget id, and resolve somehow")
 	m.Id("anonid1").Size(SizeTiny).AddHeading()
 	m.Id("anonid2").AddText()
-	m.CloseContainer()
+	m.Close()
 	Pr("done adding children")
 }
 
@@ -51,9 +51,6 @@ func (w NewCard) AddChild(c Widget, manager WidgetManager) {
 }
 
 func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
-	//}
-	//
-	//func NewRenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel string, buttonActionPrefix string, cardActionPrefix string) {
 
 	// Open a bootstrap card
 
