@@ -76,6 +76,7 @@ func WidgetIdWithProblem(id string) string {
 	return id + ".problem"
 }
 
+// Call w.RenderTo(...) iff the widget is visible, otherwise render an empty div with the widget's id.
 func RenderWidget(w Widget, s Session, m MarkupBuilder) {
 	if !w.Visible() {
 		m.A(`<div id='`, w.Id(), `'></div>`).Cr()

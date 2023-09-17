@@ -113,7 +113,6 @@ func zebraListener(s Session, widget InputWidget, newVal string) (string, error)
 
 	// Increment the alert class, and update its message
 	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
-
 	alertWidget.SetVisible(newVal != "")
 
 	s.State.Put(alertWidget.BaseId,

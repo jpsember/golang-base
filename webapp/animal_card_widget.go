@@ -26,10 +26,6 @@ func NewAnimalCardWidget(widgetId string, animal Animal, viewButtonListener Butt
 }
 
 func (w AnimalCardWidget) RenderTo(s Session, m MarkupBuilder) {
-	if !w.Visible() {
-		m.RenderInvisible(w)
-		return
-	}
 	RenderAnimalCard(s, w.animal, m, w.buttonLabel, action_prefix_animal_card, action_prefix_animal_card)
 }
 
