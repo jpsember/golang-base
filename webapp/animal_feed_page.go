@@ -97,28 +97,28 @@ func (p FeedPage) renderItem(session Session, widget ListWidget, elementId int, 
 	m.CloseTag()
 }
 
-func (p FeedPage) clickListener(sess Session, message string) {
+func (p FeedPage) clickListener(sess Session, message string) bool {
 
 	if ProcessUserHeaderClick(sess, message) {
-		return
+		return true
 	}
 
 	if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
 		id, err1 := ParseAsPositiveInt(id_str)
 		if ReportIfError(err1, "AnimalFeedPage parsing", message) {
-			return
+			return true
 		}
 		anim, err := ReadActualAnimal(id)
 		if ReportIfError(err, "AnimalFeed message", message) {
-			return
+			return true
 		}
 		sess.SetClickListener(nil)
 		sess.SwitchToPage(NewViewAnimalPage(sess, anim.Id()))
-		return
+		return true
 	}
 
 	if p.listWidget.HandleClick(sess, message) {
-		return
+		return true
 	}
-	Alert("#50Ignoring click:", message)
+	return false
 }

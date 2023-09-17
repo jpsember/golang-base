@@ -62,7 +62,7 @@ func DiscardAllSessions(sessionManager SessionManager) {
 	loggedInUsersSet.Clear()
 }
 
-type ClickListener func(sess *SessionStruct, id string)
+type ClickListener func(sess *SessionStruct, id string) bool
 
 type Session = *SessionStruct
 
@@ -341,7 +341,10 @@ func (s Session) processClickEvent(sourceId string) {
 		Alert("#50No ClickListener for id:" + sourceId)
 		return
 	}
-	listener(s, sourceId)
+	result := listener(s, sourceId)
+	if !result {
+		Alert("#50Nobody handled click:", sourceId)
+	}
 }
 
 func (s Session) processClientInfo(infoString string) {

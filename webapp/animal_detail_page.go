@@ -126,7 +126,8 @@ func (p AnimalDetailPage) generateWidgets(s Session) {
 	if s == nil {
 		return
 	}
-	s.SetClickListener(p.clickListener)
+	// Until more are needed, the user header (assuming one is present) is the only listener, so forward it
+	s.SetClickListener(ProcessUserHeaderClick)
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
 	m := GenerateHeader(s, p)
 	if p.viewing() {
@@ -437,12 +438,5 @@ func (p AnimalDetailPage) provideURL(s Session) string {
 func DiscardBlob(id int) {
 	if id != 0 {
 		Todo("#50Discard blob id", id)
-	}
-}
-
-func (p AnimalDetailPage) clickListener(sess Session, message string) {
-	Todo("ClickListeners should return true if handled")
-	if ProcessUserHeaderClick(sess, message) {
-		return
 	}
 }

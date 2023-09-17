@@ -134,34 +134,37 @@ func (p ManagerPage) renderItem(session Session, widget ListWidget, elementId in
 
 const action_prefix_animal_card = "animal_id_"
 
-func (p ManagerPage) clickListener(sess Session, message string) {
+func (p ManagerPage) clickListener(sess Session, message string) bool {
 
-	if ProcessUserHeaderClick(sess, message) {
-		return
-	}
-
-	if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
-		id, err := ParseAsPositiveInt(id_str)
-		if ReportIfError(err) {
-			return
+	for {
+		if ProcessUserHeaderClick(sess, message) {
+			break
 		}
-		animal, err := ReadActualAnimal(id)
-		if err != nil || animal.Id() == 0 {
-			Alert("#50trouble reading animal for clickListener message", message)
-			return
-		}
-		if animal.ManagerId() != p.manager.Id() {
-			Alert("#50wrong manager for animal", message, animal)
-			return
-		}
-		sess.SetClickListener(nil)
-		sess.SwitchToPage(NewEditAnimalPage(sess, animal.Id()))
-		return
-	}
 
-	if p.listWidget.HandleClick(sess, message) {
-		return
-	}
+		if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
+			id, err := ParseAsPositiveInt(id_str)
+			if ReportIfError(err) {
+				break
+			}
+			animal, err := ReadActualAnimal(id)
+			if err != nil || animal.Id() == 0 {
+				Alert("#50trouble reading animal for clickListener message", message)
+				break
+			}
+			if animal.ManagerId() != p.manager.Id() {
+				Alert("#50wrong manager for animal", message, animal)
+				break
+			}
+			sess.SetClickListener(nil)
+			sess.SwitchToPage(NewEditAnimalPage(sess, animal.Id()))
+			break
+		}
 
-	Alert("#50No handler for click:", message)
+		if p.listWidget.HandleClick(sess, message) {
+			break
+		}
+		return false
+	}
+	return true
+
 }
