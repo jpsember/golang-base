@@ -14,7 +14,7 @@ type GridWidget = *GridWidgetStruct
 
 func NewContainerWidget(id string) GridWidget {
 	w := GridWidgetStruct{}
-	w.BaseId = id
+	w.InitBase(id)
 	return &w
 }
 

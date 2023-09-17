@@ -15,22 +15,19 @@ func NewTextWidget(id string, size WidgetSize) TextWidget {
 	t := &TextWidgetObj{
 		size: size,
 	}
-	t.BaseId = id
+	t.InitBase(id)
 	return t
 }
 
 func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 	Alert("!Refactoring how the widgets get the state to render")
-	textContent, wasStatic := s.GetStaticOrDynamicLabel(w)
+	textContent := ReadStateString(s, w)
 
 	h := NewHtmlString(textContent)
 
 	args := NewArray[any]()
-	args.Add(`div`)
 
-	if !wasStatic {
-		args.Add(`div id='` + w.BaseId + `'`)
-	}
+	args.Add(`div id='` + w.BaseId + `'`)
 	if w.size != SizeDefault {
 		Todo("?A better way to do this, no doubt")
 		args.Add(textSize[w.size])

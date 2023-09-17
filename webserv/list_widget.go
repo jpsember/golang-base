@@ -25,7 +25,7 @@ func NewListWidget(id string, list ListInterface, renderer ListItemRenderer, lis
 		list:     list,
 		renderer: renderer,
 	}
-	w.BaseId = id
+	w.InitBase(id)
 	w.pagePrefix = id + ".page_"
 	return &w
 }

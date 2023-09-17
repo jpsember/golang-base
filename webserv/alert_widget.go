@@ -29,7 +29,7 @@ func NewAlertWidget(id string, alertClass AlertClass) AlertWidget {
 	w := AlertWidgetObj{
 		Class: alertClass,
 	}
-	w.BaseId = id
+	w.InitBase(id)
 	return &w
 }
 

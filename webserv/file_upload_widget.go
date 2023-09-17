@@ -12,22 +12,23 @@ type FileUpload = *FileUploadObj
 
 func NewFileUpload(id string, label HtmlString, listener FileUploadWidgetListener) FileUpload {
 	t := &FileUploadObj{}
-	t.BaseId = id
+	t.InitBase(id)
 	t.Label = label
 	t.listener = listener
 	return t
 }
 
 func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
-	inputId := w.BaseId + ".input"
-	formId := w.BaseId + ".form"
-	inputName := w.BaseId + ".input"
+	id := w.BaseId
+	inputId := id + ".input"
+	formId := id + ".form"
+	inputName := id + ".input"
 
 	m.Comment("file upload")
 
 	// The outermost element must have the widget's id!  Or chaos happens during repainting.
 
-	m.OpenTag(`div id="`, w.BaseId, `" class="mb-3"`)
+	m.OpenTag(`div id="`, id, `" class="mb-3"`)
 	{
 
 		m.OpenTag(`form id="`, formId, `" enctype="multipart/form-data" method="post" `)

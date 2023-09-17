@@ -13,7 +13,7 @@ type UserHeaderWidget = *UserHeaderWidgetStruct
 
 func NewUserHeaderWidget(id string) UserHeaderWidget {
 	t := &UserHeaderWidgetStruct{}
-	t.BaseId = id
+	t.InitBase(id)
 	return t
 }
 

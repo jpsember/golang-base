@@ -22,9 +22,14 @@ type BaseWidgetObj struct {
 
 type BaseWidget = *BaseWidgetObj
 
+func (w BaseWidget) InitBase(id string) {
+	w.BaseId = id
+	w.stateProvider = defaultWidgetStateProvider
+}
+
 func NewBaseWidget(id string) BaseWidget {
 	t := &BaseWidgetObj{}
-	t.BaseId = id
+	t.InitBase(id)
 	return t
 }
 
@@ -124,7 +129,7 @@ func (w BaseWidget) SetStateProvider(p WidgetStateProvider) {
 func (w BaseWidget) StateProvider() WidgetStateProvider {
 	p := w.stateProvider
 	if p == nil {
-		p = defaultWidgetStateProvider
+		BadState("no state provider for:", w.Id())
 	}
 	return p
 }

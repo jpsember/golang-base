@@ -377,8 +377,7 @@ func (m WidgetManager) AddText() WidgetManager {
 }
 
 func (m WidgetManager) AddButton(listener ButtonWidgetListener) ButtonWidget {
-	w := NewButtonWidget(listener)
-	w.BaseId = m.consumeOptionalPendingId()
+	w := NewButtonWidget(m.consumeOptionalPendingId(), listener)
 	w.SetSize(m.consumePendingSize())
 	w.SetAlign(m.consumePendingAlign())
 	m.Log("Adding button, id:", w.BaseId)

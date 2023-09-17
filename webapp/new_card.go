@@ -25,7 +25,7 @@ type NewCard = *NewCardObj
 func NewNewCard(widgetId string, animal Animal, viewButtonListener ButtonWidgetListener, buttonLabel string) NewCard {
 	Pr("constructing new card")
 	w := NewCardObj{}
-	w.BaseId = widgetId
+	w.InitBase(widgetId)
 	w.animal = animal
 	w.buttonListener = viewButtonListener
 	w.buttonLabel = buttonLabel

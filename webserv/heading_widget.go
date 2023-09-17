@@ -13,12 +13,13 @@ type HeadingWidget = *HeadingWidgetStruct
 
 func NewHeadingWidget(id string) HeadingWidget {
 	w := HeadingWidgetStruct{}
-	w.BaseId = id
+	w.InitBase(id)
 	return &w
 }
 
 func (w HeadingWidget) RenderTo(s Session, m MarkupBuilder) {
-	textContent, _ := s.GetStaticOrDynamicLabel(w)
+	textContent := ReadStateString(s, w)
+
 	Pr("HeadingWidget", w.Id(), "RenderTo; textContent:", Quoted(textContent))
 	if Alert("setting some non-empty text") && textContent == "" {
 		textContent = "abra cadabra"

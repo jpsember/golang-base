@@ -21,8 +21,6 @@ type Widget interface {
 	RenderTo(s *SessionStruct, m MarkupBuilder)
 	Children() []Widget
 	AddChild(c Widget, manager WidgetManager)
-	SetStaticContent(content any)
-	StaticContent() any
 	AddChildren(manager WidgetManager) // Add any child widgets
 	SetColumns(columns int)            // Set the number of columns the widget occupies in its row
 	Columns() int                      // Get the number of columns the widget occupies in its row
@@ -90,4 +88,18 @@ func RenderWidget(w Widget, s Session, m MarkupBuilder) {
 	} else {
 		w.RenderTo(s, m)
 	}
+}
+
+func ReadStateString(s Session, w Widget) string {
+	id := w.Id()
+	p := w.StateProvider()
+	obj := p(s, id)
+	if obj == nil {
+		return ""
+	}
+	if x, ok := obj.(string); ok {
+		return x
+	}
+	Alert("#50<1State for widget id", id, "was not a string:", Info(obj))
+	return "???"
 }

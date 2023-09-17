@@ -563,13 +563,7 @@ func (s Session) DeleteSessionData(key string) {
 }
 
 func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
-	Todo("?we are assuming static content is a string here")
-	sc := widget.StaticContent()
-	if sc != nil {
-		return sc.(string), true
-	} else {
-		return s.WidgetStrValue(widget.Id()), false
-	}
+	return s.WidgetStrValue(widget.Id()), false
 }
 
 func (s Session) SetClickListener(listener ClickListener) {

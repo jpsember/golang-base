@@ -12,14 +12,15 @@ type ButtonWidgetObj struct {
 
 type ButtonWidget = *ButtonWidgetObj
 
-func NewButtonWidget(listener ButtonWidgetListener) ButtonWidget {
+func NewButtonWidget(id string, listener ButtonWidgetListener) ButtonWidget {
 	if listener == nil {
 		listener = doNothingButtonListener
 	}
 	b := &ButtonWidgetObj{
 		listener: listener,
 	}
-	b.BaseWidgetObj.LowListen = buttonListenWrapper
+	b.InitBase(id)
+	b.LowListen = buttonListenWrapper
 	return b
 }
 

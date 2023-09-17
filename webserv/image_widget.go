@@ -17,7 +17,7 @@ type ImageWidget = *ImageWidgetObj
 
 func NewImageWidget(id string) ImageWidget {
 	t := &ImageWidgetObj{}
-	t.BaseId = id
+	t.InitBase(id)
 	return t
 }
 
