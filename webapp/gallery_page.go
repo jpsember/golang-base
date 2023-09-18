@@ -81,7 +81,8 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	m.Id("sample_upload").Label("Photo").AddFileUpload(p.uploadListener)
 	imgWidget := m.Id("sample_image").AddImage()
-	Todo("image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
+	Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
+	Todo("!give widgets values (state) in this way wherever appropriate")
 	imgWidget.URLProvider = p.provideURL
 	m.Close()
 

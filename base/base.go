@@ -247,9 +247,13 @@ func Todo(key string, message ...any) bool {
 }
 
 // Deprecated.  So references show up in editor for easy deletion.
-func ClearAlertHistory() {
-	Alert("<1 clearing alert history")
-	clearAlertHistoryFlag = true
+func ClearAlertHistory(flag bool) {
+	if flag {
+		Alert("<1 clearing alert history")
+		clearAlertHistoryFlag = flag
+	} else {
+		Alert("<1 not clearing alert history")
+	}
 }
 
 func processClearAlertHistoryFlag() {

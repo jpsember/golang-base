@@ -26,6 +26,7 @@ func NewAnimalCardWidget(widgetId string, animal Animal, viewButtonListener Butt
 }
 
 func (w AnimalCardWidget) RenderTo(s Session, m MarkupBuilder) {
+	Todo("!deprecate AnimalCardWidget in favor of new_card")
 	RenderAnimalCard(s, w.animal, m, w.buttonLabel, action_prefix_animal_card, action_prefix_animal_card)
 }
 

@@ -1,9 +1,5 @@
 package webserv
 
-import (
-	. "github.com/jpsember/golang-base/base"
-)
-
 // A Widget that displays editable text
 type HeadingWidgetStruct struct {
 	BaseWidgetObj
@@ -19,10 +15,6 @@ func NewHeadingWidget(id string) HeadingWidget {
 
 func (w HeadingWidget) RenderTo(s Session, m MarkupBuilder) {
 	textContent := ReadWidgetString(w, s)
-	Pr("HeadingWidget", w.Id(), "RenderTo; textContent:", Quoted(textContent))
-	if Alert("setting some non-empty text") && textContent == "" {
-		textContent = "abra cadabra"
-	}
 	tag := wsHeadingSize[w.Size()]
 	m.A(`<`, tag)
 

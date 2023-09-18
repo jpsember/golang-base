@@ -365,7 +365,7 @@ func (m WidgetManager) AddHeading() WidgetManager {
 	staticContent, id := m.getStaticContentAndId()
 	w := NewHeadingWidget(id)
 	w.SetSize(m.consumePendingSize())
-	Todo("Setting WidgetSize seems to have no effect on headings")
+	Todo("!Setting WidgetSize seems to have no effect on headings")
 	w.SetAlign(m.consumePendingAlign())
 	if staticContent != "" {
 		w.SetStaticContent(staticContent)
@@ -433,7 +433,6 @@ func (m WidgetManager) checkboxHelper(listener CheckboxWidgetListener, switchFla
 }
 
 func (m WidgetManager) AllocateAnonymousId(debugInfo string) string {
-	Todo("Have optional suffix to be wrapped in _xxxx_. for help in debugging")
 	m.anonymousIdCounter++
 	result := "." + IntToString(m.anonymousIdCounter)
 	if debugInfo != "" {
