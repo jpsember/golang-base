@@ -432,6 +432,7 @@ func (m WidgetManager) checkboxHelper(listener CheckboxWidgetListener, switchFla
 }
 
 func (m WidgetManager) AllocateAnonymousId() string {
+	Todo("Have optional suffix to be wrapped in _xxxx_. for help in debugging")
 	m.anonymousIdCounter++
 	return "." + IntToString(m.anonymousIdCounter)
 }

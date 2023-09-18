@@ -35,6 +35,7 @@ func NewNewCard(widgetId string, animal Animal, cardListener CardWidgetListener,
 	Pr("constructing new card")
 
 	CheckArg(animal.Id() != 0, "no animal")
+	CheckArg((buttonLabel == "") == (buttonListener == nil))
 	w := NewCardObj{
 		animal:         animal,
 		cardListener:   cardListener,
@@ -58,15 +59,17 @@ func (w NewCard) AddChildren(m WidgetManager) {
 
 	// Construct a WidgetStateProvider to access this particular animal's data
 
+	Todo("WidgetMAnager generate unique id")
+	unique_card_prefix := m.AllocateAnonymousId() + "_card_"
 	jsmap := w.animal.ToJson().AsJSMap()
-	m.PushStateProvider(anim_state_prefix, jsmap)
-	pr("pushing state provider, prefix:", anim_state_prefix, "map:", jsmap)
+	m.PushStateProvider(unique_card_prefix, jsmap)
+	pr("pushing state provider, prefix:", unique_card_prefix, "map:", jsmap)
 
 	Todo("ability to push id prefix for subsequent id() calls")
 
 	m.OpenContainer(w)
-	m.Id(anim_state_prefix + "name").Size(SizeTiny).AddHeading()
-	m.Id(anim_state_prefix + "summary").AddText()
+	m.Id(unique_card_prefix + "name").Size(SizeTiny).AddHeading()
+	m.Id(unique_card_prefix + "summary").AddText()
 	if w.buttonLabel != "" {
 
 		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.ourButtonListener)
