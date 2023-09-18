@@ -39,7 +39,7 @@ func (w AlertWidget) RenderTo(s Session, m MarkupBuilder) {
 	pr := PrIf(false)
 	desc := `AlertWidget ` + w.IdSummary()
 	pr("rendering AlertWidget, desc:", desc, "class:", w.Class)
-	alertMsg := s.WidgetStrValue(w.Id())
+	alertMsg := s.StringValue(w.Id())
 	m.A(`<div class='alert alert-`, classNames[w.Class],
 		`' role='alert' id='`, w.BaseId, `'>`, html.EscapeString(alertMsg), `</div>`).Cr()
 }

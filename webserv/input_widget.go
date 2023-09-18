@@ -61,7 +61,7 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.DoIndent()
 
 	problemId := WidgetIdWithProblem(w.BaseId)
-	problemText := s.WidgetStrValue(problemId)
+	problemText := s.StringValue(problemId)
 	if false && Alert("always problem") {
 		problemText = "sample problem information"
 	}
@@ -82,7 +82,7 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 	}
 
 	m.A(`" type="`, Ternary(w.Password, "password", "text"), `" id="`, w.BaseId, `.aux" value="`)
-	value := s.WidgetStrValue(w.Id())
+	value := s.StringValue(w.Id())
 	m.Escape(value)
 	m.A(`" onchange='jsVal("`, w.BaseId, `")'>`).Cr()
 

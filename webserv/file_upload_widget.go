@@ -48,7 +48,7 @@ func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 		m.VoidTag(`input class="form-control" type="file" name="`, inputName, `" id="`, inputId, `" onchange='jsUpload("`, w.Id(), `")'`)
 
 		problemId := WidgetIdWithProblem(w.BaseId)
-		problemText := s.WidgetStrValue(problemId)
+		problemText := s.StringValue(problemId)
 
 		hasProblem := problemText != ""
 

@@ -548,7 +548,7 @@ func (s Session) DeleteSessionData(key string) {
 }
 
 func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
-	return s.WidgetStrValue(widget.Id()), false
+	return s.StringValue(widget.Id()), false
 }
 
 func (s Session) SetClickListener(listener ClickListener) {
@@ -628,18 +628,17 @@ func ReadString(prefix string, state JSMap, id string) string {
 }
 
 // Read widget value; assumed to be an int.
-func (s Session) WidgetIntValue(id string) int {
+func (s Session) IntValue(id string) int {
 	return ReadInt("", s.State, id)
 }
 
 // Read widget value; assumed to be a boolean.
-func (s Session) WidgetBooleanValue(id string) bool {
+func (s Session) BoolValue(id string) bool {
 	return ReadBool("", s.State, id)
 }
 
 // Read widget value; assumed to be a string.
-func (s Session) WidgetStrValue(id string) string {
-	Todo("rename this to StrValue")
+func (s Session) StringValue(id string) string {
 	return ReadString("", s.State, id)
 }
 

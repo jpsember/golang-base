@@ -274,7 +274,7 @@ func (p AnimalDetailPage) validateAll(s Session) bool {
 	pr := PrIf(false)
 
 	{
-		text := s.WidgetStrValue(id_animal_name)
+		text := s.StringValue(id_animal_name)
 		_, err := ValidateAnimalName(text, 0)
 		s.SetWidgetProblem(id_animal_name, err)
 	}
@@ -282,7 +282,7 @@ func (p AnimalDetailPage) validateAll(s Session) bool {
 	preCreateValidateText(s, id_animal_summary, 20, 200, 0)
 	preCreateValidateText(s, id_animal_details, 200, 2000, 0)
 	{
-		picId := s.WidgetIntValue(id_animal_display_pic)
+		picId := s.IntValue(id_animal_display_pic)
 		if picId == 0 {
 			s.SetWidgetProblem(id_animal_uploadpic, "Please upload a photo")
 		}
@@ -324,10 +324,10 @@ func (p AnimalDetailPage) abortEditListener(s Session, widget Widget) {
 }
 
 func (p AnimalDetailPage) writeStateToAnimal(s Session, b AnimalBuilder) {
-	b.SetName(strings.TrimSpace(s.WidgetStrValue(id_animal_name)))
-	b.SetSummary(strings.TrimSpace(s.WidgetStrValue(id_animal_summary)))
-	b.SetDetails(strings.TrimSpace(s.WidgetStrValue(id_animal_details)))
-	b.SetPhotoThumbnail(s.WidgetIntValue(id_animal_display_pic))
+	b.SetName(strings.TrimSpace(s.StringValue(id_animal_name)))
+	b.SetSummary(strings.TrimSpace(s.StringValue(id_animal_summary)))
+	b.SetDetails(strings.TrimSpace(s.StringValue(id_animal_details)))
+	b.SetPhotoThumbnail(s.IntValue(id_animal_display_pic))
 	b.SetManagerId(SessionUser(s).Id())
 }
 
@@ -366,7 +366,7 @@ func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (s
 }
 
 func preCreateValidateText(s Session, widgetId string, minLength int, maxLength int, flags ValidateFlag) {
-	n := s.WidgetStrValue(widgetId)
+	n := s.StringValue(widgetId)
 	n, err := animalInfoListener(n, minLength, maxLength, flags.Has(VALIDATE_EMPTYOK))
 	s.SetWidgetProblem(widgetId, err)
 }
@@ -435,7 +435,7 @@ func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by [
 	if err == nil {
 		picId := id_animal_display_pic
 		// Discard the old blob whose id we are now replacing
-		DiscardBlob(s.WidgetIntValue(picId))
+		DiscardBlob(s.IntValue(picId))
 
 		// Store the id of the blob in the image widget
 		s.State.Put(picId, imageId)

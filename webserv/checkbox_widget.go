@@ -67,10 +67,10 @@ func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 
 		m.Comment("checkbox").OpenTag(`div class=`, cbClass)
 		{
-      Todo("Is this the best bool accessor?")
+			Todo("Is this the best bool accessor?")
 			m.VoidTag(
 				`input class="form-check-input" type="checkbox" id="`, auxId, `"`, role,
-				Ternary(s.WidgetBooleanValue(w.Id()), ` checked`, ``),
+				Ternary(s.BoolValue(w.Id()), ` checked`, ``),
 				` onclick='jsCheckboxClicked("`, w.BaseId, `")'`)
 
 			{
