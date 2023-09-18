@@ -34,10 +34,13 @@ func (p GalleryPage) Args() []string { return EmptyStringSlice }
 type GalleryPage = *GalleryPageStruct
 
 type GalleryPageStruct struct {
+	fooMap JSMap
 }
 
 func NewGalleryPage(sess Session) Page {
-	t := &GalleryPageStruct{}
+	t := &GalleryPageStruct{
+		fooMap: NewJSMap().Put("bar", "hello"),
+	}
 	if sess != nil {
 		t.generateWidgets(sess)
 	}
@@ -65,7 +68,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	m.Open()
 
 	{
-		m.Col(6)
+		m.Col(4)
 		cardListener := func(sess Session, widget NewCard) { Pr("card listener, animal id:", widget.Animal().Id()) }
 		cardButtonListener := func(sess Session, widget NewCard) { Pr("card button listener, name:", widget.Animal().Name()) }
 
@@ -75,6 +78,20 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 		m.Add(
 			NewNewCard("gallery_card2", ReadAnimalIgnoreError(4), nil, "Bop", cardButtonListener))
+
+		m.Open()
+
+		m.PushStateProvider("", p.fooMap)
+		m.PushIdPrefix("")
+		{
+
+			m.Col(4)
+			Todo("how do we specify a static label?")
+			m.Label("Lbl").AddText()
+			m.Id("bar").AddInput(p.fooListener)
+		}
+		m.PopStateProvider()
+		m.Close()
 
 		m.Label("spacer").AddText()
 	}
@@ -256,4 +273,10 @@ func (p GalleryPage) clickListener(sess Session, message string) bool {
 
 	}
 	return false
+}
+
+func (p GalleryPage) fooListener(sess Session, widget InputWidget, value string) (string, error) {
+	Todo("Clarify prefix role in provider, widget ids, and resolve confusion about add/subtract prefix")
+	Pr("fooListener, id:", widget.Id(), "value:", value, CR, "current map:", INDENT, p.fooMap)
+	return value, nil
 }

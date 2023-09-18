@@ -326,8 +326,7 @@ func (s Session) processClientMessage() {
 		return
 	}
 	updatedValue, err := widget.LowListener()(s, widget, s.ajaxWidgetValue)
-
-	s.State.Put(widget.Id(), updatedValue)
+	s.SetWidgetValue(widget, updatedValue)
 	if err != nil {
 		Pr("got error from widget listener:", widget.Id(), INDENT, err)
 	}
@@ -548,7 +547,7 @@ func (s Session) DeleteSessionData(key string) {
 }
 
 func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
-	return s.StringValue(widget.Id()), false
+	return s.WidgetStringValue(widget), false
 }
 
 func (s Session) SetClickListener(listener ClickListener) {
@@ -612,54 +611,61 @@ func compileId(prefix string, id string) string {
 	return prefix + id
 }
 
+// ------------------------------------------------------------------------------------
+// Reading widget state values
+// ------------------------------------------------------------------------------------
+
 // Read widget value; assumed to be an int.
-func ReadInt(prefix string, state JSMap, id string) int {
+func readStateIntValue(prefix string, state JSMap, id string) int {
 	return state.OptInt(compileId(prefix, id), 0)
 }
 
 // Read widget value; assumed to be a bool.
-func ReadBool(prefix string, state JSMap, id string) bool {
+func readStateBoolValue(prefix string, state JSMap, id string) bool {
 	return state.OptBool(compileId(prefix, id), false)
 }
 
 // Read widget value; assumed to be a string.
-func ReadString(prefix string, state JSMap, id string) string {
+func readStateStringValue(prefix string, state JSMap, id string) string {
 	return state.OptString(compileId(prefix, id), "")
 }
 
 // Read widget value; assumed to be an int.
 func (s Session) IntValue(id string) int {
-	return ReadInt("", s.State, id)
+	return readStateIntValue("", s.State, id)
 }
 
 // Read widget value; assumed to be a boolean.
 func (s Session) BoolValue(id string) bool {
-	return ReadBool("", s.State, id)
+	return readStateBoolValue("", s.State, id)
 }
 
 // Read widget value; assumed to be a string.
 func (s Session) StringValue(id string) string {
-	return ReadString("", s.State, id)
+	return readStateStringValue("", s.State, id)
 }
 
 // Read widget value; assumed to be an int.
-func ReadWidgetInt(w Widget, s Session) int {
-	Todo("make this a session func")
+func (s Session) WidgetIntValue(w Widget) int {
 	prefix, state := extractStateProvider(s, w.StateProvider())
-	return ReadInt(prefix, state, w.Id())
+	return readStateIntValue(prefix, state, w.Id())
 }
 
 // Read widget value; assumed to be a bool.
-func ReadWidgetBool(w Widget, s Session) bool {
-	Todo("make this a session func")
+func (s Session) WidgetBoolValue(w Widget) bool {
 	prefix, state := extractStateProvider(s, w.StateProvider())
-	return ReadBool(prefix, state, w.Id())
+	return readStateBoolValue(prefix, state, w.Id())
 }
 
 // Read widget value; assumed to be a string.
-func ReadWidgetString(w Widget, s Session) string {
-	Todo("make this a session func")
+func (s Session) WidgetStringValue(w Widget) string {
 	prefix, state := extractStateProvider(s, w.StateProvider())
-	result := ReadString(prefix, state, w.Id())
+	result := readStateStringValue(prefix, state, w.Id())
 	return result
 }
+
+func (s Session) SetWidgetValue(w Widget, value any) {
+	prefix, state := extractStateProvider(s, w.StateProvider())
+	state.Put(compileId(prefix, w.Id()), value)
+}
+

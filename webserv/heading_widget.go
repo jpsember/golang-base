@@ -14,7 +14,7 @@ func NewHeadingWidget(id string) HeadingWidget {
 }
 
 func (w HeadingWidget) RenderTo(s Session, m MarkupBuilder) {
-	textContent := ReadWidgetString(w, s)
+	textContent := s.WidgetStringValue(w)
 	tag := wsHeadingSize[w.Size()]
 	m.A(`<`, tag)
 

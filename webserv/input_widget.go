@@ -82,7 +82,7 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 	}
 
 	m.A(`" type="`, Ternary(w.Password, "password", "text"), `" id="`, w.BaseId, `.aux" value="`)
-	value := s.StringValue(w.Id())
+	value := s.WidgetStringValue(w)
 	m.Escape(value)
 	m.A(`" onchange='jsVal("`, w.BaseId, `")'>`).Cr()
 

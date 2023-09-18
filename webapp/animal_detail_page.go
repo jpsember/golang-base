@@ -455,7 +455,7 @@ func (p AnimalDetailPage) provideURL(s Session) string {
 	// We need to access the state directly, without a widget.
 
 	Todo("Should we have a hidden widget, or a widget that isn't added to the hierarchy? Might simplify things")
-	imageId := ReadInt("", s.State, id_animal_display_pic)
+	imageId := s.IntValue(id_animal_display_pic)
 
 	if imageId == 0 {
 		imageId = 1 // This is the default placeholder blob id

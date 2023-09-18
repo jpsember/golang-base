@@ -6,23 +6,16 @@ import (
 
 type WidgetManagerObj struct {
 	BaseObject
-	widgetMap                   WidgetMap
-	mComboChoices               *Array[string]
-	mPendingBooleanDefaultValue bool
-	mPendingStringDefaultValue  string
-	mPendingTabTitle            string
-	mPendingFloatingPointFlag   bool
-	mPendingDefaultFloatValue   float64
-	mPendingDefaultIntValue     int
-	parentStack                 *Array[Widget]
-	pendingSize                 WidgetSize
-	pendingAlign                WidgetAlign
-	pendingId                   string
-	pendingLabel                string
-	anonymousIdCounter          int
-	pendingChildColumns         int
-	providerStack               []WidgetStateProvider
-	idPrefixStack               []string
+	widgetMap           WidgetMap
+	parentStack         *Array[Widget]
+	pendingSize         WidgetSize
+	pendingAlign        WidgetAlign
+	pendingId           string
+	pendingLabel        string
+	anonymousIdCounter  int
+	pendingChildColumns int
+	providerStack       []WidgetStateProvider
+	idPrefixStack       []string
 }
 
 func NewWidgetManager(session Session) WidgetManager {
@@ -110,70 +103,10 @@ func (m WidgetManager) Col(columns int) WidgetManager {
 	return m
 }
 
-func (m WidgetManager) Floats() WidgetManager {
-	m.mPendingFloatingPointFlag = true
-	return m
-}
-
-/**
- * Set default value for next boolean-valued control
- */
-func (m WidgetManager) DefaultBool(value bool) WidgetManager {
-	m.mPendingBooleanDefaultValue = value
-	return m
-}
-
-func (m WidgetManager) DefaultString(value string) WidgetManager {
-	m.mPendingStringDefaultValue = value
-	return m
-}
-
 func (m WidgetManager) Label(value string) WidgetManager {
 	CheckState(m.pendingLabel == "")
 	m.pendingLabel = value
 	return m
-}
-
-/**
- * Set default value for next double-valued control
- */
-func (m WidgetManager) defaultFloat(value float64) WidgetManager {
-	m.Floats()
-	m.mPendingDefaultFloatValue = value
-	return m
-}
-
-/**
- * Set default value for next integer-valued control
- */
-func (m WidgetManager) defaultInt(value int) WidgetManager {
-	m.mPendingDefaultIntValue = value
-	return m
-}
-
-/**
- * Append some choices for the next ComboBox
- */
-func (m WidgetManager) Choices(choices ...string) WidgetManager {
-	for _, s := range choices {
-		if m.mComboChoices == nil {
-			m.mComboChoices = NewArray[string]()
-		}
-		m.mComboChoices.Add(s)
-	}
-	return m
-}
-
-func (m WidgetManager) ConsumePendingBooleanDefaultValue() bool {
-	v := m.mPendingBooleanDefaultValue
-	m.mPendingBooleanDefaultValue = false
-	return v
-}
-
-func (m WidgetManager) ConsumePendingFloatingPointFlag() bool {
-	v := m.mPendingFloatingPointFlag
-	m.mPendingFloatingPointFlag = false
-	return v
 }
 
 func (m WidgetManager) consumePendingLabel() string {
@@ -194,19 +127,6 @@ func (m WidgetManager) consumePendingAlign() WidgetAlign {
 	return x
 }
 
-func (m WidgetManager) consumePendingStringDefaultValue() string {
-	s := m.mPendingStringDefaultValue
-	m.mPendingStringDefaultValue = ""
-	return s
-}
-
-func (m WidgetManager) consumePendingTabTitle() string {
-	tabNameExpression := m.mPendingTabTitle
-	m.mPendingTabTitle = ""
-	CheckState(tabNameExpression != "", "no pending tab title")
-	return tabNameExpression
-}
-
 func verifyUsed(flag bool, name string) {
 	if flag {
 		return
@@ -216,19 +136,9 @@ func verifyUsed(flag bool, name string) {
 
 func (m WidgetManager) clearPendingComponentFields() {
 	// If some values were not used, issue warnings
-	verifyUsed(m.mPendingDefaultIntValue == 0, "pendingDefaultIntValue")
-	verifyUsed(m.mPendingStringDefaultValue == "", "mPendingStringDefaultValue")
 	verifyUsed(m.pendingLabel == "", "pendingLabel")
-	verifyUsed(!m.mPendingFloatingPointFlag, "mPendingFloatingPoint")
-	//verifyUsed(m.pendingListener == nil, "pendingListener")
 	verifyUsed(m.pendingSize == SizeDefault, "pendingSize")
 	verifyUsed(m.pendingAlign == AlignDefault, "pendingAlign")
-
-	m.mComboChoices = nil
-	m.mPendingDefaultIntValue = 0
-	m.mPendingBooleanDefaultValue = false
-	m.mPendingStringDefaultValue = ""
-	m.mPendingFloatingPointFlag = false
 }
 
 /**
