@@ -69,7 +69,7 @@ func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 		{
 			m.VoidTag(
 				`input class="form-check-input" type="checkbox" id="`, auxId, `"`, role,
-				Ternary(s.WidgetBooleanValue(w.Id()), ` checked`, ``),
+				Ternary(ReadStateBoolean(s, w), ` checked`, ``),
 				` onclick='jsCheckboxClicked("`, w.BaseId, `")'`)
 
 			{

@@ -24,13 +24,11 @@ func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, p
 		listener = dummyInputWidgetListener
 	}
 	w := InputWidgetObj{
-		BaseWidgetObj: BaseWidgetObj{
-			BaseId: id,
-		},
 		Label:    label,
 		Password: password,
 		listener: listener,
 	}
+	w.InitBase(id)
 	w.LowListen = inputListenWrapper
 	return &w
 }
@@ -62,8 +60,11 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	m.DoIndent()
 
+	Todo("Have a separate 'problem' widget here, that is invisible when empty?  Or that is a complication.")
 	problemId := WidgetIdWithProblem(w.BaseId)
-	problemText := s.WidgetStrValue(problemId)
+	problemText :=
+		ReadStateStringForId(s, w, problemId)
+	//s.WidgetStrValue(problemId)
 	if false && Alert("always problem") {
 		problemText = "sample problem information"
 	}
@@ -84,7 +85,7 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 	}
 
 	m.A(`" type="`, Ternary(w.Password, "password", "text"), `" id="`, w.BaseId, `.aux" value="`)
-	value := s.WidgetStrValue(w.Id())
+	value := ReadStateString(s, w)
 	m.Escape(value)
 	m.A(`" onchange='jsVal("`, w.BaseId, `")'>`).Cr()
 

@@ -9,18 +9,22 @@ import (
 )
 
 const anim_state_prefix = "_create_animal_."
+
+// Use the field names that Animal produces as JSMaps
 const (
 	id_animal_name        = anim_state_prefix + "name"
 	id_animal_summary     = anim_state_prefix + "summary"
 	id_animal_details     = anim_state_prefix + "details"
 	id_animal_uploadpic   = anim_state_prefix + "photo"
-	id_animal_display_pic = anim_state_prefix + "pic"
+	id_animal_display_pic = anim_state_prefix + "photo_thumbnail"
 )
 
 type AnimalDetailPageStruct struct {
 	animalId int
 	editing  bool
 	name     string
+	// This will have the fields of the animal we are editing, as a JSMap
+	anim JSMap // AnimalBuilder
 }
 
 type AnimalDetailPage = *AnimalDetailPageStruct
@@ -33,29 +37,53 @@ func NewCreateAnimalPage(sess Session) AnimalDetailPage {
 	t := &AnimalDetailPageStruct{
 		editing: true,
 		name:    "new",
+		anim:    NewJSMap(),
 	}
 	t.generateWidgets(sess)
 	return t
 }
 
 func NewEditAnimalPage(sess Session, animalId int) AnimalDetailPage {
+	Todo("Maybe pass in an actual animal here")
 	t := &AnimalDetailPageStruct{
 		animalId: animalId,
 		editing:  true,
 		name:     "edit",
 	}
+	// This might be the template
+	if animalId == 0 {
+		return t
+	}
+	t.prepareAnimal()
 	t.generateWidgets(sess)
 	return t
 }
 
 func NewViewAnimalPage(sess Session, animalId int) AnimalDetailPage {
+	Todo("Maybe pass in an actual animal here")
 	t := &AnimalDetailPageStruct{
 		animalId: animalId,
 		editing:  false,
 		name:     "view",
 	}
+	// This might be the template
+	if animalId == 0 {
+		return t
+	}
+	t.prepareAnimal()
 	t.generateWidgets(sess)
 	return t
+}
+
+func (p AnimalDetailPage) prepareAnimal() {
+	Pr("attempting to prepare animal")
+	Pr("animalId:", p.animalId)
+	anim, err := ReadAnimal(p.animalId)
+	if ReportIfError(err, "NewEditAnimalPage") {
+		BadState(err)
+	}
+	p.anim = anim.ToJson().AsJSMap()
+	Alert("prepared animal:", INDENT, p.anim)
 }
 
 func (p AnimalDetailPage) ConstructPage(s Session, args PageArgs) Page {
@@ -106,21 +134,21 @@ func (p AnimalDetailPage) viewing() bool {
 	return p.name == "view"
 }
 
-func (p AnimalDetailPage) readStateFromAnimal(sess Session) {
-	a := DefaultAnimal
-	if p.animalId != 0 {
-		var err error
-		a, err = ReadActualAnimal(p.animalId)
-		if ReportIfError(err, "AnimalDetailPage readStateFromAnimal") {
-			return
-		}
-	}
-	s := sess.State
-	s.Put(id_animal_name, a.Name())
-	s.Put(id_animal_summary, a.Summary())
-	s.Put(id_animal_details, a.Details())
-	s.Put(id_animal_display_pic, a.PhotoThumbnail())
-}
+//func (p AnimalDetailPage) readStateFromAnimal(sess Session) {
+//	a := DefaultAnimal
+//	if p.animalId != 0 {
+//		var err error
+//		a, err = ReadActualAnimal(p.animalId)
+//		if ReportIfError(err, "AnimalDetailPage readStateFromAnimal") {
+//			return
+//		}
+//	}
+//	s := sess.State
+//	s.Put(id_animal_name, a.Name())
+//	s.Put(id_animal_summary, a.Summary())
+//	s.Put(id_animal_details, a.Details())
+//	s.Put(id_animal_display_pic, a.PhotoThumbnail())
+//}
 
 func (p AnimalDetailPage) generateWidgets(s Session) {
 	if s == nil {
@@ -133,15 +161,32 @@ func (p AnimalDetailPage) generateWidgets(s Session) {
 	if p.viewing() {
 		m.AddUserHeader()
 	}
-	p.readStateFromAnimal(s)
+
+	Alert("No longer calling readStateFromAnimal")
+
+	//p.readStateFromAnimal(s)
 
 	Todo("!Have ajax listener that can show advice without an actual error, e.g., if user left some fields blank")
 
+	s.WidgetManager().PushStateProvider(p.stateProvider)
 	if p.editing {
 		p.generateForEditing(s)
 	} else {
 		p.generateForViewing(s)
 	}
+	s.WidgetManager().PopStateProvider()
+}
+
+func (p AnimalDetailPage) stateProvider(s Session, widgetId string) any {
+	pr := PrIf(true)
+	pr("stateProvider, widgetId:", widgetId)
+	if id, ok := TrimIfPrefix(widgetId, anim_state_prefix); ok {
+		value := p.anim.OptUnsafe(id)
+		Pr("...read from map", id, "=>", value)
+		return value
+	}
+	Alert("#50Unexpected id:", widgetId)
+	return nil
 }
 
 func (p AnimalDetailPage) generateForEditing(s Session) {
@@ -421,7 +466,8 @@ func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by [
 func (p AnimalDetailPage) provideURL(s Session) string {
 	pr := PrIf(false)
 	url := ""
-	imageId := s.WidgetIntValue(id_animal_display_pic)
+	Todo("Should we have a hidden widget, or a widget that isn't added to the hierarchy? Might simplify things")
+	imageId := ReadIntFromProvider(s, id_animal_display_pic, p.stateProvider)
 
 	if imageId == 0 {
 		imageId = 1 // This is the default placeholder blob id

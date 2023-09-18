@@ -519,17 +519,23 @@ func (s Session) DeleteStateFieldsWithPrefix(prefix string) {
 // ------------------------------------------------------------------------------------
 
 // Read widget value; assumed to be an int.
+// Deprecated.
 func (s Session) WidgetIntValue(id string) int {
+	Alert("#50<1deprecated method of reading widget int state")
 	return s.State.OptInt(id, 0)
 }
 
 // Read widget value; assumed to be a boolean.
+// Deprecated.
 func (s Session) WidgetBooleanValue(id string) bool {
+	Alert("#50<1deprecated method of reading widget boolean state")
 	return s.State.OptBool(id, false)
 }
 
 // Read widget value; assumed to be a string.
+// Deprecated.
 func (s Session) WidgetStrValue(id string) string {
+	Alert("#50<1deprecated method of reading widget string state")
 	return s.State.OptString(id, "")
 }
 

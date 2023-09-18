@@ -19,7 +19,6 @@ func NewHeadingWidget(id string) HeadingWidget {
 
 func (w HeadingWidget) RenderTo(s Session, m MarkupBuilder) {
 	textContent := ReadStateString(s, w)
-
 	Pr("HeadingWidget", w.Id(), "RenderTo; textContent:", Quoted(textContent))
 	if Alert("setting some non-empty text") && textContent == "" {
 		textContent = "abra cadabra"

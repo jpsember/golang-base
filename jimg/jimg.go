@@ -257,30 +257,6 @@ func (ji JImage) ToJPEG() ([]byte, error) {
 	return result, err
 }
 
-// Deprecated.  Use ScaledToSize, which uses our fit algorithm.
-func (ji JImage) ScaledTo(size IPoint) JImage {
-
-	var targetX, targetY int
-
-	origSize := ji.Size()
-	if size.X == 0 {
-		if size.Y > 0 {
-			targetY = size.Y
-			targetX = MaxInt(1, (origSize.X*targetY)/origSize.Y)
-		}
-	} else {
-		if size.X > 0 {
-			targetX = size.X
-			targetY = MaxInt(1, (origSize.Y*targetX)/origSize.X)
-		}
-	}
-	CheckArg(targetX > 0 && targetY > 0, "Cannot scale image of size", ji.Size(), "to", size)
-	scaledImage := image.NewNRGBA(image.Rect(0, 0, targetX, targetY))
-	inputImage := ji.Image()
-	draw.ApproxBiLinear.Scale(scaledImage, scaledImage.Bounds(), inputImage, inputImage.Bounds(), draw.Over, nil)
-	return JImageOf(scaledImage)
-}
-
 func (ji JImage) ScaledToRect(targetSize IPoint, boundsWithinTarget Rect) JImage {
 	scaledImage := image.NewNRGBA(RectWithSize(targetSize).ToImageRectangle())
 	inputImage := ji.Image()
@@ -288,33 +264,6 @@ func (ji JImage) ScaledToRect(targetSize IPoint, boundsWithinTarget Rect) JImage
 		boundsWithinTarget.ToImageRectangle(),
 		inputImage, inputImage.Bounds(), draw.Over, nil)
 	return JImageOf(scaledImage)
-}
-
-// Deprecated.  Use ToPNG instead.
-func (ji JImage) EncodePNG() ([]byte, error) {
-	var err error
-	var result []byte
-	for {
-		byteBuffer := bytes.Buffer{}
-
-		// See https://stackoverflow.com/questions/46437169/png-encoding-with-go-is-slow
-		if Todo("using no-compression png encoder") {
-			enc := &png.Encoder{
-				CompressionLevel: png.NoCompression,
-			}
-			err = enc.Encode(&byteBuffer, ji.Image())
-		} else {
-			err = png.Encode(&byteBuffer, ji.Image())
-		}
-		if err != nil {
-			break
-		}
-		if err == nil {
-			result = byteBuffer.Bytes()
-		}
-		break
-	}
-	return result, err
 }
 
 var purple = []byte{

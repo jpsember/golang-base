@@ -58,14 +58,6 @@ func isNil(value any) bool {
 	return value == nil
 }
 
-// Deprecated.  This is not reliable as nil is not always equal to nil, due to a code smell in the go language.
-func CheckNotNil[T any](value T, message ...any) T {
-	if isNil(value) {
-		auxAbort(1, "Argument is nil", message...)
-	}
-	return value
-}
-
 func CheckNonEmpty(s string, message ...any) string {
 	if s == "" {
 		auxAbortWithArgument(1, "String is empty", s, message...)

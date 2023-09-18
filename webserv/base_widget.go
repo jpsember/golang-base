@@ -24,7 +24,7 @@ type BaseWidget = *BaseWidgetObj
 
 func (w BaseWidget) InitBase(id string) {
 	w.BaseId = id
-	w.stateProvider = defaultWidgetStateProvider
+	w.stateProvider = DefaultWidgetStateProvider
 }
 
 func NewBaseWidget(id string) BaseWidget {
@@ -134,6 +134,6 @@ func (w BaseWidget) StateProvider() WidgetStateProvider {
 	return p
 }
 
-func defaultWidgetStateProvider(s Session, widgetId string) any {
+func DefaultWidgetStateProvider(s Session, widgetId string) any {
 	return s.State.OptUnsafe(widgetId)
 }

@@ -90,16 +90,54 @@ func RenderWidget(w Widget, s Session, m MarkupBuilder) {
 	}
 }
 
-func ReadStateString(s Session, w Widget) string {
-	id := w.Id()
+func ReadStateStringForId(s Session, w Widget, id string) string {
+	Todo("All these global functions are troubling... make this a session function?")
 	p := w.StateProvider()
 	obj := p(s, id)
 	if obj == nil {
 		return ""
 	}
-	if x, ok := obj.(string); ok {
+	switch x := obj.(type) {
+	case string:
+		return x
+	case JSEntity:
+		return x.AsString()
+	default:
+		Alert("#50<1State for widget id", id, "was not a string:", Info(obj))
+		return "???"
+	}
+
+}
+
+func ReadStateString(s Session, w Widget) string {
+	return ReadStateStringForId(s, w, w.Id())
+}
+
+func ReadStateBoolean(s Session, w Widget) bool {
+	p := w.StateProvider()
+	obj := p(s, w.Id())
+	if obj == nil {
+		return false
+	}
+	if x, ok := obj.(bool); ok {
 		return x
 	}
-	Alert("#50<1State for widget id", id, "was not a string:", Info(obj))
-	return "???"
+	Alert("#50<1State for widget id", w.Id(), "was not a bool:", Info(obj))
+	return false
+}
+
+// Reads an integer from a WidgetStateProvider (one that is not necessarily tied to a widget).
+func ReadIntFromProvider(s Session, id string, p WidgetStateProvider) int {
+	obj := p(s, id)
+	if obj == nil {
+		return 0
+	}
+	switch x := obj.(type) {
+	case JSEntity:
+		return int(x.AsInteger())
+	default:
+		Alert("#50<1State for widget id", id, "was not a string:", Info(obj))
+		return 0
+	}
+
 }

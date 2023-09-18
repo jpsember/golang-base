@@ -274,15 +274,6 @@ func (m JSMap) OptInt(key string, defaultValue int) int {
 	return int(m.OptInt64(key, defaultValue))
 }
 
-// Deprecated.. Use OptByte instead.
-func (m JSMap) OptInt8(key string, defaultValue int8) int8 {
-	var val = m.wrappedMap[key]
-	if val == nil {
-		return defaultValue
-	}
-	return int8((val.(JSEntity)).AsInteger())
-}
-
 func (m JSMap) OptByte(key string, defaultValue byte) byte {
 	var val = m.wrappedMap[key]
 	if val == nil {

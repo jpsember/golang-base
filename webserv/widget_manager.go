@@ -21,6 +21,7 @@ type WidgetManagerObj struct {
 	pendingLabel                string
 	anonymousIdCounter          int
 	pendingChildColumns         int
+	providerStack               []WidgetStateProvider
 }
 
 func NewWidgetManager(session Session) WidgetManager {
@@ -31,6 +32,7 @@ func NewWidgetManager(session Session) WidgetManager {
 	w.SetName("WidgetManager")
 	w.resetPendingColumns()
 	w.LogCols("Constructed")
+	w.PushStateProvider(DefaultWidgetStateProvider)
 	return &w
 }
 
@@ -369,6 +371,7 @@ func (m WidgetManager) AddHeading() WidgetManager {
 func (m WidgetManager) AddText() WidgetManager {
 	staticContent, id := m.getStaticContentAndId()
 	w := NewTextWidget(id, m.consumePendingSize())
+	w.SetStateProvider(m.StateProvider())
 	if staticContent != "" {
 		w.SetStaticContent(staticContent)
 	}
@@ -489,4 +492,17 @@ func (m WidgetManager) PushContainer(container Widget) WidgetManager {
 func (m WidgetManager) PopContainer() WidgetManager {
 	//m.state, m.stateStack = PopLast(m.stateStack)
 	return m
+}
+
+func (m WidgetManager) PushStateProvider(provider WidgetStateProvider) {
+	m.providerStack = append(m.providerStack, provider)
+}
+
+func (m WidgetManager) PopStateProvider() {
+	_, m.providerStack = PopLast(m.providerStack)
+	CheckState(len(m.providerStack) != 0)
+}
+
+func (m WidgetManager) StateProvider() WidgetStateProvider {
+	return Last(m.providerStack)
 }
