@@ -9,33 +9,27 @@ import (
 // A Widget that displays editable text
 type NewCardObj struct {
 	BaseWidgetObj
-	animal         Animal
-	buttonListener ButtonWidgetListener
-	buttonLabel    string
-	children       []Widget
+	animal           Animal
+	buttonListener   ButtonWidgetListener
+	buttonLabel      string
+	cardActionPrefix string
+	children         []Widget
 }
-
-const animal_field_prefix = "card."
-
-const (
-	vi_title = iota
-	vi_summary
-)
 
 type NewCard = *NewCardObj
 
-func NewNewCard(widgetId string, animal Animal, viewButtonListener ButtonWidgetListener, buttonLabel string) NewCard {
+func NewNewCard(widgetId string, animal Animal, viewButtonListener ButtonWidgetListener, buttonLabel string, cardActionPrefix string) NewCard {
 	Pr("constructing new card")
-	w := NewCardObj{}
-	w.InitBase(widgetId)
 	CheckArg(animal.Id() != 0, "no animal")
-	w.animal = animal
-	w.buttonListener = viewButtonListener
-	w.buttonLabel = buttonLabel
-
+	w := NewCardObj{
+		animal:           animal,
+		buttonListener:   viewButtonListener,
+		buttonLabel:      buttonLabel,
+		cardActionPrefix: cardActionPrefix,
+	}
+	w.InitBase(widgetId)
 	Todo("!instead of passing around WidgetManager, maybe pass around Sessions, which contain the wm?")
-	c := &w
-	return c
+	return &w
 }
 
 func (w NewCard) AddChildren(m WidgetManager) {
@@ -56,33 +50,30 @@ func (w NewCard) AddChildren(m WidgetManager) {
 	if w.buttonLabel != "" {
 		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.buttonListener)
 	}
-	Todo("Add button somehow")
 	m.Close()
 
 	m.PopStateProvider()
 
-	Pr("done adding children")
+	pr("done adding children")
 }
 
 func (w NewCard) AddChild(c Widget, manager WidgetManager) {
-	Todo("!How does this differ from the container_widget method?")
 	w.children = append(w.children, c)
 }
 
 func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
-
 	ci := 0
 	cimax := len(w.children)
 
+	Todo("I think the button vs card presses are getting jumbled up.  Maybe move the card press to the image only")
 	// Open a bootstrap card
 
-	cardActionPrefix := ""
 	animal := w.animal
 
-	m.Comments("NewCard")
+	m.Comments("Animal Card")
 	clickArg := ""
-	if cardActionPrefix != "" {
-		clickArg = ` onclick="jsButton('` + cardActionPrefix + IntToString(animal.Id()) + `')"`
+	if w.cardActionPrefix != "" {
+		clickArg = ` onclick="jsButton('` + w.cardActionPrefix + IntToString(animal.Id()) + `')"`
 	}
 	m.OpenTag(`div class="card bg-light mb-3" style="width:14em"`, clickArg)
 	{
@@ -146,27 +137,10 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 					m.OpenTag(`div class="d-grid justify-content-md-end"`)
 					RenderWidget(w.children[ci], s, m)
 					ci++
-					//{
-					//	buttonId := buttonActionPrefix + IntToString(animal.Id())
-					//	RenderButton(s, m, buttonId, buttonId, true, buttonLabel, SizeSmall, AlignRight, 0)
-					//}
 					m.CloseTag()
 				}
 				m.CloseTag()
 				ci++
-			}
-			if w.buttonLabel != "" {
-				//m.Comments("right-justified button")
-				//m.OpenTag(`div class="row"`)
-				//{
-				//	m.OpenTag(`div class="d-grid justify-content-md-end"`)
-				//	{
-				//		buttonId := buttonActionPrefix + IntToString(animal.Id())
-				//		RenderButton(s, m, buttonId, buttonId, true, buttonLabel, SizeSmall, AlignRight, 0)
-				//	}
-				//	m.CloseTag()
-				//}
-				//m.CloseTag()
 			}
 		}
 		m.CloseTag()

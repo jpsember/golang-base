@@ -2,7 +2,7 @@ const request_key_widget = 'w'
 const request_key_value = 'v'
 const request_key_info = 'i'
 
-const _db = false && warning("db is true")
+const _db = true && warning("db is true")
 
 function pr() {
     const args = arguments
