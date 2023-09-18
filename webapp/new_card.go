@@ -15,6 +15,8 @@ type NewCardObj struct {
 	children       []Widget
 }
 
+const animal_field_prefix = "card."
+
 const (
 	vi_title = iota
 	vi_summary
@@ -26,6 +28,7 @@ func NewNewCard(widgetId string, animal Animal, viewButtonListener ButtonWidgetL
 	Pr("constructing new card")
 	w := NewCardObj{}
 	w.InitBase(widgetId)
+	CheckArg(animal.Id() != 0, "no animal")
 	w.animal = animal
 	w.buttonListener = viewButtonListener
 	w.buttonLabel = buttonLabel
@@ -36,12 +39,26 @@ func NewNewCard(widgetId string, animal Animal, viewButtonListener ButtonWidgetL
 }
 
 func (w NewCard) AddChildren(m WidgetManager) {
-	Pr("adding children to new card")
+	pr := PrIf(false)
+	pr("adding children to new card")
+
+	// Construct a WidgetStateProvider to access this particular animal's data
+
+	jsmap := w.animal.ToJson().AsJSMap()
+	m.PushStateProvider(anim_state_prefix, jsmap)
+	pr("pushing state provider, prefix:", anim_state_prefix, "map:", jsmap)
+
+	Todo("ability to push id prefix for subsequent id() calls")
+
 	m.OpenContainer(w)
-	Todo("!We want the id to be tied to the parent widget id, and resolve somehow")
-	m.Id("anonid1").Size(SizeTiny).AddHeading()
-	m.Id("anonid2").AddText()
+	m.Id(anim_state_prefix + "name").Size(SizeTiny).AddHeading()
+	m.Id(anim_state_prefix + "summary").AddText()
+
+	Todo("Add button somehow")
 	m.Close()
+
+	m.PopStateProvider()
+
 	Pr("done adding children")
 }
 
@@ -55,7 +72,7 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 	// Open a bootstrap card
 
 	cardActionPrefix := ""
-	animal := ReadAnimalIgnoreError(3)
+	animal := w.animal
 
 	m.Comments("NewCard")
 	clickArg := ""
@@ -115,19 +132,19 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 			}
 			m.CloseTag()
 
-			//if buttonLabel != "" {
-			//	m.Comments("right-justified button")
-			//	m.OpenTag(`div class="row"`)
-			//	{
-			//		m.OpenTag(`div class="d-grid justify-content-md-end"`)
-			//		{
-			//			buttonId := buttonActionPrefix + IntToString(animal.Id())
-			//			RenderButton(s, m, buttonId, buttonId, true, buttonLabel, SizeSmall, AlignRight, 0)
-			//		}
-			//		m.CloseTag()
-			//	}
-			//	m.CloseTag()
-			//}
+			if w.buttonLabel != "" {
+				//m.Comments("right-justified button")
+				//m.OpenTag(`div class="row"`)
+				//{
+				//	m.OpenTag(`div class="d-grid justify-content-md-end"`)
+				//	{
+				//		buttonId := buttonActionPrefix + IntToString(animal.Id())
+				//		RenderButton(s, m, buttonId, buttonId, true, buttonLabel, SizeSmall, AlignRight, 0)
+				//	}
+				//	m.CloseTag()
+				//}
+				//m.CloseTag()
+			}
 		}
 		m.CloseTag()
 	}

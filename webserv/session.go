@@ -603,19 +603,28 @@ func extractStateProvider(s Session, p WidgetStateProvider) (string, JSMap) {
 	return p.Prefix, p.State
 }
 
+func compileId(prefix string, id string) string {
+	// If the id has the prefix, remove it; if it doesn't, add it
+	// ...we may want to make this subtractive only
+	if result, removed := TrimIfPrefix(id, prefix); removed {
+		return result
+	}
+	return prefix + id
+}
+
 // Read widget value; assumed to be an int.
 func ReadInt(prefix string, state JSMap, id string) int {
-	return state.OptInt(prefix+id, 0)
+	return state.OptInt(compileId(prefix, id), 0)
 }
 
 // Read widget value; assumed to be a bool.
 func ReadBool(prefix string, state JSMap, id string) bool {
-	return state.OptBool(prefix+id, false)
+	return state.OptBool(compileId(prefix, id), false)
 }
 
 // Read widget value; assumed to be a string.
 func ReadString(prefix string, state JSMap, id string) string {
-	return state.OptString(prefix+id, "")
+	return state.OptString(compileId(prefix, id), "")
 }
 
 // Read widget value; assumed to be an int.
@@ -647,6 +656,10 @@ func ReadWidgetBool(w Widget, s Session) bool {
 
 // Read widget value; assumed to be a string.
 func ReadWidgetString(w Widget, s Session) string {
+	Pr("read widget string, id:", w.Id())
 	prefix, state := extractStateProvider(s, w.StateProvider())
-	return ReadString(prefix, state, w.Id())
+	Pr("prefix:", prefix, "state:", state)
+	result := ReadString(prefix, state, w.Id())
+	Pr("returning:", result)
+	return result
 }

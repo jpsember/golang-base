@@ -126,10 +126,5 @@ func (w BaseWidget) SetStateProvider(p WidgetStateProvider) {
 }
 
 func (w BaseWidget) StateProvider() WidgetStateProvider {
-	p := w.stateProvider
-	if p == nil {
-		BadState("no state provider for:", w.Id())
-	}
-	return p
+	return w.stateProvider
 }
-

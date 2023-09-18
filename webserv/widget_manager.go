@@ -241,6 +241,10 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		}
 		m.widgetMap[id] = widget
 	}
+	// Set its state provider, if it doesn't already have one
+	if widget.StateProvider() == nil {
+		widget.SetStateProvider(m.StateProvider())
+	}
 
 	m.Log("addWidget, id:", id, "panel stack size:", m.parentStack.Size())
 	if !m.parentStack.IsEmpty() {
