@@ -86,14 +86,12 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		{
 
 			m.Col(4)
-			Todo("how do we specify a static label?")
-			m.Label("Lbl").AddText()
-			m.Id("bar").AddInput(p.fooListener)
+			m.Label("Some static text").AddText()
+			m.Id("bar").Label("Bar:").AddInput(p.fooListener)
 		}
 		m.PopStateProvider()
 		m.Close()
 
-		m.Label("spacer").AddText()
 	}
 
 	m.Id("sample_upload").Label("Photo").AddFileUpload(p.uploadListener)

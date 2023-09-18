@@ -20,7 +20,12 @@ func NewTextWidget(id string, size WidgetSize) TextWidget {
 }
 
 func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
-	textContent := s.WidgetStringValue(w)
+	var textContent string
+	if w.staticContent != nil {
+		textContent = w.staticContent.(string)
+	} else {
+		textContent = s.WidgetStringValue(w)
+	}
 
 	h := NewHtmlString(textContent)
 
