@@ -67,6 +67,8 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	m.Open()
 
+	m.Id("fred").Label(`Fred`).AddButton(buttonListener)
+
 	{
 		m.Col(4)
 		cardListener := func(sess Session, widget NewCard) { Pr("card listener, animal id:", widget.Animal().Id()) }
@@ -104,10 +106,11 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	m.Col(4)
 	m.Label("uniform delta").AddText()
 	m.Col(8)
-	m.Id("x58").Label(`X58`).AddButton(buttonListener).SetEnabled(false)
+	m.Id("x58").Label(`Disabled`).AddButton(buttonListener).SetEnabled(false)
 
 	m.Col(2).AddSpace()
-	m.Col(3).AddSpace()
+	m.Col(3).Id("yz").Label(`Enabled`).AddButton(buttonListener)
+
 	m.Col(3).AddSpace()
 	m.Col(4).AddSpace()
 
@@ -160,6 +163,7 @@ func zebraListener(s Session, widget InputWidget, newVal string) (string, error)
 }
 
 func buttonListener(s Session, widget Widget) {
+	Pr("buttonListener, widget:", widget.Id())
 	wid := widget.Id()
 	newVal := "Clicked: " + wid
 
