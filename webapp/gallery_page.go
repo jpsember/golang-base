@@ -66,7 +66,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.Col(6)
 		// Create a new card that will contain other widgets
 		m.Add(NewNewCard("gallery_card", ReadAnimalIgnoreError(1),
-			func(sess Session, widget Widget) { Pr("gallery click listener") }, "Hello"))
+			func(sess Session, widget Widget) { Pr("card button listener") }, "Hello"))
 		m.Label("spacer").AddText()
 	}
 

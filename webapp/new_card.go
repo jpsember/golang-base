@@ -53,7 +53,9 @@ func (w NewCard) AddChildren(m WidgetManager) {
 	m.OpenContainer(w)
 	m.Id(anim_state_prefix + "name").Size(SizeTiny).AddHeading()
 	m.Id(anim_state_prefix + "summary").AddText()
-
+	if w.buttonLabel != "" {
+		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.buttonListener)
+	}
 	Todo("Add button somehow")
 	m.Close()
 
@@ -68,6 +70,9 @@ func (w NewCard) AddChild(c Widget, manager WidgetManager) {
 }
 
 func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
+
+	ci := 0
+	cimax := len(w.children)
 
 	// Open a bootstrap card
 
@@ -103,14 +108,16 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 			m.OpenTag(`h6 class="card-title"`)
 			{
 				// Render the name as the first child
-				RenderWidget(w.children[0], s, m)
+				RenderWidget(w.children[ci], s, m)
+				ci++
 			}
 			m.CloseTag()
 
 			// Render the second child
 			m.OpenTag(`p class="card-text" style="font-size:75%;"`)
 			{
-				RenderWidget(w.children[1], s, m)
+				RenderWidget(w.children[ci], s, m)
+				ci++
 			}
 			m.CloseTag()
 		}
@@ -132,6 +139,22 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 			}
 			m.CloseTag()
 
+			if ci < cimax {
+				m.Comments("right-justified button")
+				m.OpenTag(`div class="row"`)
+				{
+					m.OpenTag(`div class="d-grid justify-content-md-end"`)
+					RenderWidget(w.children[ci], s, m)
+					ci++
+					//{
+					//	buttonId := buttonActionPrefix + IntToString(animal.Id())
+					//	RenderButton(s, m, buttonId, buttonId, true, buttonLabel, SizeSmall, AlignRight, 0)
+					//}
+					m.CloseTag()
+				}
+				m.CloseTag()
+				ci++
+			}
 			if w.buttonLabel != "" {
 				//m.Comments("right-justified button")
 				//m.OpenTag(`div class="row"`)
