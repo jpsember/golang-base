@@ -9,30 +9,49 @@ import (
 // A Widget that displays editable text
 type NewCardObj struct {
 	BaseWidgetObj
-	animal           Animal
-	buttonListener   ButtonWidgetListener
-	buttonLabel      string
-	cardActionPrefix string
-	children         []Widget
+	animal         Animal
+	cardListener   CardWidgetListener
+	buttonListener CardWidgetListener
+	buttonLabel    string
+	children       []Widget
 }
 
 type NewCard = *NewCardObj
 
-func NewNewCard(widgetId string, animal Animal, viewButtonListener ButtonWidgetListener, buttonLabel string, cardActionPrefix string) NewCard {
+type CardWidgetListener func(sess Session, widget NewCard)
+
+func cardListenWrapper(sess Session, widget Widget, value string) (string, error) {
+	b := widget.(NewCard)
+	b.cardListener(sess, b)
+	return "", nil
+}
+
+func (c NewCard) Animal() Animal {
+	return c.animal
+}
+
+func NewNewCard(widgetId string, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) NewCard {
 	Todo("Add explicit listener for the card action (somehow)")
 	Pr("constructing new card")
+
 	CheckArg(animal.Id() != 0, "no animal")
 	w := NewCardObj{
-		animal:           animal,
-		buttonListener:   viewButtonListener,
-		buttonLabel:      buttonLabel,
-		cardActionPrefix: cardActionPrefix,
+		animal:         animal,
+		cardListener:   cardListener,
+		buttonLabel:    buttonLabel,
+		buttonListener: buttonListener,
 	}
+	Todo("!any way of simplifying the LowListener boilerplate here and in other widgets? Using templates perhaps?")
+	w.LowListen = cardListenWrapper // Only has an effect if cardListener != nil
 	w.InitBase(widgetId)
 	Todo("!instead of passing around WidgetManager, maybe pass around Sessions, which contain the wm?")
 	return &w
 }
 
+func (w NewCard) ourButtonListener(sess Session, widget Widget) {
+	Pr("ourButtonListener called...")
+	w.buttonListener(sess, w)
+}
 func (w NewCard) AddChildren(m WidgetManager) {
 	pr := PrIf(false)
 	pr("adding children to new card")
@@ -49,7 +68,8 @@ func (w NewCard) AddChildren(m WidgetManager) {
 	m.Id(anim_state_prefix + "name").Size(SizeTiny).AddHeading()
 	m.Id(anim_state_prefix + "summary").AddText()
 	if w.buttonLabel != "" {
-		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.buttonListener)
+
+		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.ourButtonListener)
 	}
 	m.Close()
 
@@ -71,6 +91,7 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 
 	animal := w.animal
 
+	Todo("How to assign a listener to the card?")
 	m.Comments("Animal Card")
 
 	m.OpenTag(`div class="card bg-light mb-3" style="width:14em"`)
@@ -83,9 +104,10 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 			imgUrl = SharedWebCache.GetBlobURL(photoId)
 		}
 
+		// If there's a card listener, treat the image as a big button returning the card's id
 		clickArg := ""
-		if w.cardActionPrefix != "" {
-			clickArg = ` onclick="jsButton('` + w.cardActionPrefix + IntToString(animal.Id()) + `')"`
+		if w.cardListener != nil {
+			clickArg = ` onclick="jsButton('` + w.Id() + `')"`
 		}
 		m.Comment("animal image")
 		m.A(`<img src="`, imgUrl, `" `, clickArg)
@@ -131,6 +153,8 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 				m.Escape(CurrencyToString(animal.CampaignBalance()) + ` raised of ` + CurrencyToString(animal.CampaignTarget()) + ` goal`)
 			}
 			m.CloseTag()
+
+			// If there's a button, render it
 
 			if ci < cimax {
 				m.Comments("right-justified button")

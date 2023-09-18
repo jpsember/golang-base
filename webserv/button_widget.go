@@ -41,6 +41,7 @@ func RenderButton(s Session, m MarkupBuilder, w_BaseId string, actionId string, 
 
 	Todo("!Can probably get rid of vertPadding if we explicitly add spacing rows somehow")
 
+	Todo("Do buttons have listeners like other widgets?")
 	if w_size == SizeTiny {
 		// For now, interpreting SizeTiny to mean a non-underlined, link-styled button that is very small:
 		m.A(`<div class='`, vertPaddingExpr, `' id='`, w_BaseId, `'>`)
