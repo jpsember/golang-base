@@ -518,27 +518,6 @@ func (s Session) DeleteStateFieldsWithPrefix(prefix string) {
 // Accessing values of widgets other than the widget currently being listened to
 // ------------------------------------------------------------------------------------
 
-// Read widget value; assumed to be an int.
-// Deprecated.
-func (s Session) WidgetIntValue(id string) int {
-	Alert("#50<1deprecated method of reading widget int state")
-	return s.State.OptInt(id, 0)
-}
-
-// Read widget value; assumed to be a boolean.
-// Deprecated.
-func (s Session) WidgetBooleanValue(id string) bool {
-	Alert("#50<1deprecated method of reading widget boolean state")
-	return s.State.OptBool(id, false)
-}
-
-// Read widget value; assumed to be a string.
-// Deprecated.
-func (s Session) WidgetStrValue(id string) string {
-	Alert("#50<1deprecated method of reading widget string state")
-	return s.State.OptString(id, "")
-}
-
 var logSessionData = false && Alert("logging session data")
 
 func (s Session) PutSessionData(key string, value any) {
@@ -599,4 +578,75 @@ func (s Session) ConstructPathFromPage(page Page) string {
 
 func SessionApp(s Session) ServerApp {
 	return s.app.(ServerApp)
+}
+
+// ------------------------------------------------------------------------------------
+// Accessing widget values
+// ------------------------------------------------------------------------------------
+
+type WidgetStateProviderStruct struct {
+	Prefix string // A prefix to insert before an id to determine the map key
+	State  JSMap  // The map containing the state
+}
+
+type WidgetStateProvider = *WidgetStateProviderStruct
+
+func NewStateProvider(prefix string, state JSMap) WidgetStateProvider {
+	return &WidgetStateProviderStruct{Prefix: prefix, State: state}
+}
+
+// Extract the prefix and state map from a WidgetStateProvider, or return the default values if none is given.
+func extractStateProvider(s Session, p WidgetStateProvider) (string, JSMap) {
+	if p == nil {
+		return "", s.State
+	}
+	return p.Prefix, p.State
+}
+
+// Read widget value; assumed to be an int.
+func ReadInt(prefix string, state JSMap, id string) int {
+	return state.OptInt(prefix+id, 0)
+}
+
+// Read widget value; assumed to be a bool.
+func ReadBool(prefix string, state JSMap, id string) bool {
+	return state.OptBool(prefix+id, false)
+}
+
+// Read widget value; assumed to be a string.
+func ReadString(prefix string, state JSMap, id string) string {
+	return state.OptString(prefix+id, "")
+}
+
+// Read widget value; assumed to be an int.
+func (s Session) WidgetIntValue(id string) int {
+	return ReadInt("", s.State, id)
+}
+
+// Read widget value; assumed to be a boolean.
+func (s Session) WidgetBooleanValue(id string) bool {
+	return ReadBool("", s.State, id)
+}
+
+// Read widget value; assumed to be a string.
+func (s Session) WidgetStrValue(id string) string {
+	return ReadString("", s.State, id)
+}
+
+// Read widget value; assumed to be an int.
+func ReadWidgetInt(w Widget, s Session) int {
+	prefix, state := extractStateProvider(s, w.StateProvider())
+	return ReadInt(prefix, state, w.Id())
+}
+
+// Read widget value; assumed to be a bool.
+func ReadWidgetBool(w Widget, s Session) bool {
+	prefix, state := extractStateProvider(s, w.StateProvider())
+	return ReadBool(prefix, state, w.Id())
+}
+
+// Read widget value; assumed to be a string.
+func ReadWidgetString(w Widget, s Session) string {
+	prefix, state := extractStateProvider(s, w.StateProvider())
+	return ReadString(prefix, state, w.Id())
 }

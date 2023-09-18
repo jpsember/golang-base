@@ -60,11 +60,8 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	m.DoIndent()
 
-	Todo("Have a separate 'problem' widget here, that is invisible when empty?  Or that is a complication.")
 	problemId := WidgetIdWithProblem(w.BaseId)
-	problemText :=
-		ReadStateStringForId(s, w, problemId)
-	//s.WidgetStrValue(problemId)
+	problemText := s.WidgetStrValue(problemId)
 	if false && Alert("always problem") {
 		problemText = "sample problem information"
 	}
@@ -85,7 +82,7 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 	}
 
 	m.A(`" type="`, Ternary(w.Password, "password", "text"), `" id="`, w.BaseId, `.aux" value="`)
-	value := ReadStateString(s, w)
+	value := s.WidgetStrValue(w.Id())
 	m.Escape(value)
 	m.A(`" onchange='jsVal("`, w.BaseId, `")'>`).Cr()
 

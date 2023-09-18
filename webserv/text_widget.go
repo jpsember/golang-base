@@ -21,7 +21,7 @@ func NewTextWidget(id string, size WidgetSize) TextWidget {
 
 func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 	Alert("!Refactoring how the widgets get the state to render")
-	textContent := ReadStateString(s, w)
+	textContent := ReadWidgetString(w, s)
 
 	h := NewHtmlString(textContent)
 

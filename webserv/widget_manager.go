@@ -32,7 +32,7 @@ func NewWidgetManager(session Session) WidgetManager {
 	w.SetName("WidgetManager")
 	w.resetPendingColumns()
 	w.LogCols("Constructed")
-	w.PushStateProvider(DefaultWidgetStateProvider)
+	w.PushStateProvider("", session.State)
 	return &w
 }
 
@@ -494,8 +494,8 @@ func (m WidgetManager) PopContainer() WidgetManager {
 	return m
 }
 
-func (m WidgetManager) PushStateProvider(provider WidgetStateProvider) {
-	m.providerStack = append(m.providerStack, provider)
+func (m WidgetManager) PushStateProvider(prefix string, stateMap JSMap) {
+	m.providerStack = append(m.providerStack, NewStateProvider(prefix, stateMap))
 }
 
 func (m WidgetManager) PopStateProvider() {

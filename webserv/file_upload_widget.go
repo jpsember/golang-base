@@ -1,9 +1,5 @@
 package webserv
 
-import (
-	. "github.com/jpsember/golang-base/base"
-)
-
 type FileUploadWidgetListener func(sess Session, widget FileUpload, value []byte) error
 
 type FileUploadObj struct {
@@ -51,9 +47,8 @@ func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 
 		m.VoidTag(`input class="form-control" type="file" name="`, inputName, `" id="`, inputId, `" onchange='jsUpload("`, w.Id(), `")'`)
 
-		Todo("Have a separate text field widget, one that is not visible when its value is empty?  But that is a complication.")
 		problemId := WidgetIdWithProblem(w.BaseId)
-		problemText := ReadStateStringForId(s, w, problemId)
+		problemText := s.WidgetStrValue(problemId)
 
 		hasProblem := problemText != ""
 

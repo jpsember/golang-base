@@ -24,7 +24,7 @@ type AnimalDetailPageStruct struct {
 	editing  bool
 	name     string
 	// This will have the fields of the animal we are editing, as a JSMap
-	anim JSMap // AnimalBuilder
+	anim2 JSMap
 }
 
 type AnimalDetailPage = *AnimalDetailPageStruct
@@ -37,7 +37,6 @@ func NewCreateAnimalPage(sess Session) AnimalDetailPage {
 	t := &AnimalDetailPageStruct{
 		editing: true,
 		name:    "new",
-		anim:    NewJSMap(),
 	}
 	t.generateWidgets(sess)
 	return t
@@ -82,8 +81,8 @@ func (p AnimalDetailPage) prepareAnimal() {
 	if ReportIfError(err, "NewEditAnimalPage") {
 		BadState(err)
 	}
-	p.anim = anim.ToJson().AsJSMap()
-	Alert("prepared animal:", INDENT, p.anim)
+	p.anim2 = anim.ToJson().AsJSMap()
+	Alert("prepared animal:", INDENT, p.anim2)
 }
 
 func (p AnimalDetailPage) ConstructPage(s Session, args PageArgs) Page {
@@ -134,21 +133,21 @@ func (p AnimalDetailPage) viewing() bool {
 	return p.name == "view"
 }
 
-//func (p AnimalDetailPage) readStateFromAnimal(sess Session) {
-//	a := DefaultAnimal
-//	if p.animalId != 0 {
-//		var err error
-//		a, err = ReadActualAnimal(p.animalId)
-//		if ReportIfError(err, "AnimalDetailPage readStateFromAnimal") {
-//			return
-//		}
-//	}
-//	s := sess.State
-//	s.Put(id_animal_name, a.Name())
-//	s.Put(id_animal_summary, a.Summary())
-//	s.Put(id_animal_details, a.Details())
-//	s.Put(id_animal_display_pic, a.PhotoThumbnail())
-//}
+func (p AnimalDetailPage) readStateFromAnimal(sess Session) {
+	a := DefaultAnimal
+	if p.animalId != 0 {
+		var err error
+		a, err = ReadActualAnimal(p.animalId)
+		if ReportIfError(err, "AnimalDetailPage readStateFromAnimal") {
+			return
+		}
+	}
+	s := sess.State
+	s.Put(id_animal_name, a.Name())
+	s.Put(id_animal_summary, a.Summary())
+	s.Put(id_animal_details, a.Details())
+	s.Put(id_animal_display_pic, a.PhotoThumbnail())
+}
 
 func (p AnimalDetailPage) generateWidgets(s Session) {
 	if s == nil {
@@ -162,31 +161,17 @@ func (p AnimalDetailPage) generateWidgets(s Session) {
 		m.AddUserHeader()
 	}
 
-	Alert("No longer calling readStateFromAnimal")
-
-	//p.readStateFromAnimal(s)
+	p.readStateFromAnimal(s)
 
 	Todo("!Have ajax listener that can show advice without an actual error, e.g., if user left some fields blank")
 
-	s.WidgetManager().PushStateProvider(p.stateProvider)
+	s.WidgetManager().PushStateProvider(anim_state_prefix, p.anim2)
 	if p.editing {
 		p.generateForEditing(s)
 	} else {
 		p.generateForViewing(s)
 	}
 	s.WidgetManager().PopStateProvider()
-}
-
-func (p AnimalDetailPage) stateProvider(s Session, widgetId string) any {
-	pr := PrIf(true)
-	pr("stateProvider, widgetId:", widgetId)
-	if id, ok := TrimIfPrefix(widgetId, anim_state_prefix); ok {
-		value := p.anim.OptUnsafe(id)
-		Pr("...read from map", id, "=>", value)
-		return value
-	}
-	Alert("#50Unexpected id:", widgetId)
-	return nil
 }
 
 func (p AnimalDetailPage) generateForEditing(s Session) {
@@ -466,8 +451,11 @@ func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by [
 func (p AnimalDetailPage) provideURL(s Session) string {
 	pr := PrIf(false)
 	url := ""
+
+	// We need to access the state directly, without a widget.
+
 	Todo("Should we have a hidden widget, or a widget that isn't added to the hierarchy? Might simplify things")
-	imageId := ReadIntFromProvider(s, id_animal_display_pic, p.stateProvider)
+	imageId := ReadInt("", s.State, id_animal_display_pic)
 
 	if imageId == 0 {
 		imageId = 1 // This is the default placeholder blob id
