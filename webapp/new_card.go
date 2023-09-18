@@ -19,6 +19,7 @@ type NewCardObj struct {
 type NewCard = *NewCardObj
 
 func NewNewCard(widgetId string, animal Animal, viewButtonListener ButtonWidgetListener, buttonLabel string, cardActionPrefix string) NewCard {
+	Todo("Add explicit listener for the card action (somehow)")
 	Pr("constructing new card")
 	CheckArg(animal.Id() != 0, "no animal")
 	w := NewCardObj{
@@ -71,11 +72,8 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 	animal := w.animal
 
 	m.Comments("Animal Card")
-	clickArg := ""
-	if w.cardActionPrefix != "" {
-		clickArg = ` onclick="jsButton('` + w.cardActionPrefix + IntToString(animal.Id()) + `')"`
-	}
-	m.OpenTag(`div class="card bg-light mb-3" style="width:14em"`, clickArg)
+
+	m.OpenTag(`div class="card bg-light mb-3" style="width:14em"`)
 	{
 		imgUrl := "unknown"
 		photoId := animal.PhotoThumbnail()
@@ -85,8 +83,12 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 			imgUrl = SharedWebCache.GetBlobURL(photoId)
 		}
 
+		clickArg := ""
+		if w.cardActionPrefix != "" {
+			clickArg = ` onclick="jsButton('` + w.cardActionPrefix + IntToString(animal.Id()) + `')"`
+		}
 		m.Comment("animal image")
-		m.A(`<img src="`, imgUrl, `"`)
+		m.A(`<img src="`, imgUrl, `" `, clickArg)
 
 		PlotImageSizeMarkup(s, m, IPointZero) //AnimalPicSizeNormal.ScaledBy(0.4))
 

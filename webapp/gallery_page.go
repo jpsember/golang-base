@@ -49,9 +49,11 @@ const sampleImageId = "sample_image"
 var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
 
+const gallery_card_prefix = "gallery_card."
+
 func (p GalleryPage) generateWidgets(sess Session) {
 
-	sess.SetClickListener(ProcessUserHeaderClick)
+	sess.SetClickListener(p.clickListener) //ProcessUserHeaderClick)
 
 	m := GenerateHeader(sess, p)
 
@@ -66,7 +68,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.Col(6)
 		cardButtonListener := func(sess Session, widget Widget) { Pr("card button listener") }
 		// Create a new card that will contain other widgets
-		m.Add(NewNewCard("gallery_card", ReadAnimalIgnoreError(1), cardButtonListener, "Hello", "card_action."))
+		m.Add(NewNewCard("gallery_card", ReadAnimalIgnoreError(3), cardButtonListener, "Hello", gallery_card_prefix))
 		m.Label("spacer").AddText()
 	}
 
@@ -232,4 +234,17 @@ func (p GalleryPage) provideURL(s Session) string {
 		pr("read into cache, url:", url)
 	}
 	return url
+}
+
+func (p GalleryPage) clickListener(sess Session, message string) bool {
+	if ProcessUserHeaderClick(sess, message) {
+		return true
+	}
+
+	if arg, f := TrimIfPrefix(message, gallery_card_prefix); f {
+		Pr("card click, remaining arg:", arg)
+		return true
+
+	}
+	return false
 }
