@@ -31,9 +31,6 @@ func (c NewCard) Animal() Animal {
 }
 
 func NewNewCard(widgetId string, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) NewCard {
-	Todo("Add explicit listener for the card action (somehow)")
-	Pr("constructing new card")
-
 	CheckArg(animal.Id() != 0, "no animal")
 	CheckArg((buttonLabel == "") == (buttonListener == nil))
 	w := NewCardObj{
@@ -56,25 +53,21 @@ func (w NewCard) ourButtonListener(sess Session, widget Widget) {
 func (w NewCard) AddChildren(m WidgetManager) {
 	pr := PrIf(false)
 	pr("adding children to new card")
-
-	// Construct a WidgetStateProvider to access this particular animal's data
-
-	Todo("WidgetMAnager generate unique id")
-	unique_card_prefix := m.AllocateAnonymousId() + "_card_"
+	unique_card_prefix := m.AllocateAnonymousId("card")
 	jsmap := w.animal.ToJson().AsJSMap()
 	m.PushStateProvider(unique_card_prefix, jsmap)
 	pr("pushing state provider, prefix:", unique_card_prefix, "map:", jsmap)
 
-	Todo("ability to push id prefix for subsequent id() calls")
-
+	m.PushIdPrefix(unique_card_prefix)
 	m.OpenContainer(w)
-	m.Id(unique_card_prefix + "name").Size(SizeTiny).AddHeading()
-	m.Id(unique_card_prefix + "summary").AddText()
+	m.Id("name").Size(SizeTiny).AddHeading()
+	m.Id("summary").AddText()
 	if w.buttonLabel != "" {
 
 		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.ourButtonListener)
 	}
 	m.Close()
+	m.PopIdPrefix()
 
 	m.PopStateProvider()
 
@@ -89,12 +82,10 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 	ci := 0
 	cimax := len(w.children)
 
-	Todo("I think the button vs card presses are getting jumbled up.  Maybe move the card press to the image only")
 	// Open a bootstrap card
 
 	animal := w.animal
 
-	Todo("How to assign a listener to the card?")
 	m.Comments("Animal Card")
 
 	m.OpenTag(`div class="card bg-light mb-3" style="width:14em"`)

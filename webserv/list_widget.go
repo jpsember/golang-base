@@ -17,6 +17,7 @@ type ListWidgetListener func(sess Session, widget ListWidget) error
 type ListWidget = *ListWidgetStruct
 
 func NewListWidget(id string, list ListInterface, renderer ListItemRenderer, listener ListWidgetListener) ListWidget {
+	Todo("Maybe pass in a widget as the item to be rendered")
 	if renderer == nil {
 		Alert("<1No renderer for list, using default")
 		renderer = defaultRenderer

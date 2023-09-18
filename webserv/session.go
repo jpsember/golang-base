@@ -639,27 +639,28 @@ func (s Session) WidgetBooleanValue(id string) bool {
 
 // Read widget value; assumed to be a string.
 func (s Session) WidgetStrValue(id string) string {
+	Todo("rename this to StrValue")
 	return ReadString("", s.State, id)
 }
 
 // Read widget value; assumed to be an int.
 func ReadWidgetInt(w Widget, s Session) int {
+	Todo("make this a session func")
 	prefix, state := extractStateProvider(s, w.StateProvider())
 	return ReadInt(prefix, state, w.Id())
 }
 
 // Read widget value; assumed to be a bool.
 func ReadWidgetBool(w Widget, s Session) bool {
+	Todo("make this a session func")
 	prefix, state := extractStateProvider(s, w.StateProvider())
 	return ReadBool(prefix, state, w.Id())
 }
 
 // Read widget value; assumed to be a string.
 func ReadWidgetString(w Widget, s Session) string {
-	Pr("read widget string, id:", w.Id())
+	Todo("make this a session func")
 	prefix, state := extractStateProvider(s, w.StateProvider())
-	Pr("prefix:", prefix, "state:", state)
 	result := ReadString(prefix, state, w.Id())
-	Pr("returning:", result)
 	return result
 }

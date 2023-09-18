@@ -125,8 +125,6 @@ func (p ManagerPage) renderItem(session Session, widget ListWidget, elementId in
 		return
 	}
 
-	//<div class="card bg-light mb-3 animal-card">
-
 	m.OpenTag(`div class="col-sm-3"`)
 	RenderAnimalCard(session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
 	m.CloseTag()

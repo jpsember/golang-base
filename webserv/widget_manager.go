@@ -22,6 +22,7 @@ type WidgetManagerObj struct {
 	anonymousIdCounter          int
 	pendingChildColumns         int
 	providerStack               []WidgetStateProvider
+	idPrefixStack               []string
 }
 
 func NewWidgetManager(session Session) WidgetManager {
@@ -70,7 +71,7 @@ func (m WidgetManager) find(id string) Widget {
 // ------------------------------------------------------------------------------------
 
 func (m WidgetManager) Id(id string) WidgetManager {
-	m.pendingId = id
+	m.pendingId = m.IdPrefix() + id
 	return m
 }
 
@@ -85,7 +86,7 @@ func (m WidgetManager) consumeOptionalPendingId() string {
 	if id != "" {
 		m.pendingId = ""
 	} else {
-		id = m.AllocateAnonymousId()
+		id = m.AllocateAnonymousId("")
 	}
 	return id
 }
@@ -431,10 +432,14 @@ func (m WidgetManager) checkboxHelper(listener CheckboxWidgetListener, switchFla
 	return w
 }
 
-func (m WidgetManager) AllocateAnonymousId() string {
+func (m WidgetManager) AllocateAnonymousId(debugInfo string) string {
 	Todo("Have optional suffix to be wrapped in _xxxx_. for help in debugging")
 	m.anonymousIdCounter++
-	return "." + IntToString(m.anonymousIdCounter)
+	result := "." + IntToString(m.anonymousIdCounter)
+	if debugInfo != "" {
+		result += "_" + debugInfo + "_"
+	}
+	return result
 }
 
 func (m WidgetManager) removeWidgets(widgets []Widget) {
@@ -484,6 +489,7 @@ func (s Session) RepaintIds(ids ...string) WidgetManager {
 }
 
 func (m WidgetManager) PushContainer(container Widget) WidgetManager {
+	Todo("all these state stacks can be rolled into one")
 	Todo("!this is a lot like OpenContainer, but without the adding")
 	// Push a container widget onto the stack
 	m.parentStack.Add(container)
@@ -510,4 +516,18 @@ func (m WidgetManager) PopStateProvider() {
 
 func (m WidgetManager) StateProvider() WidgetStateProvider {
 	return Last(m.providerStack)
+}
+
+func (m WidgetManager) PushIdPrefix(prefix string) {
+	m.idPrefixStack = append(m.idPrefixStack, prefix)
+
+}
+func (m WidgetManager) PopIdPrefix() {
+	_, m.idPrefixStack = PopLast(m.idPrefixStack)
+}
+func (m WidgetManager) IdPrefix() string {
+	if len(m.idPrefixStack) == 0 {
+		return ""
+	}
+	return Last(m.idPrefixStack)
 }
