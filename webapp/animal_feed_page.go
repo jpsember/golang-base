@@ -50,8 +50,27 @@ func (p FeedPage) generateWidgets(s Session) {
 	m := GenerateHeader(s, p)
 	m.AddUserHeader()
 
+	// Construct widget to use in list
+	listItemWidget := p.constructListItemWidget(s)
+
 	al := p.animalList(s)
-	p.listWidget = m.Id(id_feed_list).AddList(al, nil, nil, p.renderItem, p.listListener)
+	p.listWidget = m.Id(id_feed_list).AddList(al, listItemWidget, p.listItemStateProvider, p.listListener)
+}
+
+func (p FeedPage) constructListItemWidget(s Session) Widget {
+	m := s.WidgetManager()
+	Todo("We need a way to construct a widget that isn't attached to a container")
+	m.DetachedMode = true
+	w2 := m.Open()
+	m.Id("foo_text").AddText()
+	m.Close()
+	return w2
+}
+
+func (p FeedPage) listItemStateProvider(sess Session, widget *ListWidgetStruct, elementId int) (string, JSMap) {
+	json := NewJSMap()
+	json.Put("foo_text", ToString("Item #", elementId))
+	return "", json
 }
 
 func (p FeedPage) animalList(s Session) AnimalList {

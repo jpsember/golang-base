@@ -62,8 +62,27 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	// Set click listener for the card list
 	sess.SetClickListener(p.clickListener)
 
+	// Construct widget to use in list
+	listItemWidget := p.constructListItemWidget(sess)
+
 	al := p.animalList(sess)
-	p.listWidget = m.Id(id_manager_list).AddList(al, nil, nil, p.renderItem, p.listListener)
+	p.listWidget = m.Id(id_manager_list).AddList(al, listItemWidget, p.listItemStateProvider, p.listListener)
+}
+
+func (p ManagerPage) constructListItemWidget(s Session) Widget {
+	m := s.WidgetManager()
+	Todo("We need a way to construct a widget that isn't attached to a container")
+	m.DetachedMode = true
+	w2 := m.Open()
+	m.Id("foo_text").AddText()
+	m.Close()
+	return w2
+}
+
+func (p ManagerPage) listItemStateProvider(sess Session, widget *ListWidgetStruct, elementId int) (string, JSMap) {
+	json := NewJSMap()
+	json.Put("foo_text", ToString("Item #", elementId))
+	return "", json
 }
 
 func (p ManagerPage) animalList(s Session) AnimalList {

@@ -8,7 +8,6 @@ import (
 type ListWidgetStruct struct {
 	BaseWidgetObj
 	list              ListInterface
-	renderer          ListItemRenderer
 	itemStateProvider ListItemStateProvider
 	itemWidget        Widget
 	pagePrefix        string
@@ -21,22 +20,16 @@ type ListWidgetListener func(sess Session, widget ListWidget) error
 
 type ListWidget = *ListWidgetStruct
 
-func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStateProvider ListItemStateProvider, renderer ListItemRenderer, listener ListWidgetListener) ListWidget {
+func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStateProvider ListItemStateProvider, listener ListWidgetListener) ListWidget {
 
+	Todo("The ListWidgetListener isn't used")
 	Todo("Document the fact that widgets that have their own explicit state providers won't use the one for this list, so items might not render as expected")
 
-	Todo("Maybe pass in a widget as the item to be rendered")
-	if itemWidget == nil {
-		Alert("!lists will require widets instead of renderers soon.")
+	Todo("If no item widget has been supplied, construct a default one")
+	CheckArg(itemWidget != nil, "No itemWidget given")
 
-		if renderer == nil {
-			Alert("<1No renderer for list, using default")
-			renderer = defaultRenderer
-		}
-	}
 	w := ListWidgetStruct{
 		list:              list,
-		renderer:          renderer,
 		itemWidget:        itemWidget,
 		itemStateProvider: itemStateProvider,
 		WithPageControls:  true,
@@ -97,7 +90,6 @@ func (w ListWidget) renderPagePiece(m MarkupBuilder, label string, targetPage in
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	pr := PrIf(false)
 
-	oldStyle := w.renderer != nil
 	m.Comment("ListWidget")
 
 	m.OpenTag(`div id="`, w.BaseId, `"`)
@@ -119,17 +111,13 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			for _, id := range elementIds {
 				m.Comment("--------------------------- rendering id:", id)
 
-				if oldStyle {
-					w.renderer(s, w, id, m)
-					continue
-				}
 				// Get the client to return a state provider
 				prefix, jsmap := w.itemStateProvider(s, w, id)
 				Pr("got list item state provider, map:", jsmap)
+				Todo("Have client supply a state provider struct")
 				// Make it the default state provider.
 				sp := NewStateProvider(prefix, jsmap)
 				s.DefaultStateProvider = sp
-				Todo("the state provider struct could be built earlier and initialized here each time")
 
 				w.itemWidget.RenderTo(s, m)
 			}

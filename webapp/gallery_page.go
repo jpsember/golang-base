@@ -82,7 +82,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			return "", json
 		}
 
-		p.list = m.AddList(x, w2, listProvider, nil, x.listWidgetListener)
+		p.list = m.AddList(x, w2, listProvider, x.listWidgetListener)
 		if trim {
 			p.list.WithPageControls = false
 		}

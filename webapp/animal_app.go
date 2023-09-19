@@ -69,7 +69,7 @@ func (oper AnimalOper) UserForSession(s Session) AbstractUser {
 }
 
 func (oper AnimalOper) DefaultPageForUser(abstractUser AbstractUser) Page {
-	if true && Alert("gallery") {
+	if false && Alert("gallery") {
 		return GalleryPageTemplate
 	}
 	user := abstractUser.(User)
