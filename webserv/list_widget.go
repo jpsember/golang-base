@@ -41,6 +41,10 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStatePr
 	return &w
 }
 
+func (w ListWidget) ItemWidget() Widget {
+	return w.itemWidget
+}
+
 func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 	np := w.list.TotalPages()
 
@@ -96,7 +100,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	m.OpenTag(`div id="`, w.BaseId, `"`)
 
-  // Make the item widget visible while rendering these items
+	// Make the item widget visible while rendering these items
 	w.itemWidget.SetVisible(true)
 	if w.WithPageControls {
 		w.renderPagination(s, m)
@@ -117,9 +121,8 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 				// Get the client to return a state provider
 				prefix, jsmap := w.itemStateProvider(s, w, id)
-				Pr("got list item state provider, map:", jsmap)
 				Todo("Have client supply a state provider struct")
-				pr("elementId:", id, "prefix:", prefix, "map:", INDENT, jsmap)
+				pr("elementId:", id, "prefix:", prefix, "name:", jsmap.OptString("name", "<none!>"))
 				// Make it the default state provider.
 				sp := NewStateProvider(prefix, jsmap)
 				s.DefaultStateProvider = sp
@@ -135,7 +138,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	if w.WithPageControls {
 		w.renderPagination(s, m)
 	}
-  // Restore the item widget's invisible status
+	// Restore the item widget's invisible status
 	w.itemWidget.SetVisible(false)
 
 	m.CloseTag()

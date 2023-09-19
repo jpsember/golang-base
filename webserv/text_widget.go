@@ -24,6 +24,7 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 	if w.staticContent != nil {
 		textContent = w.staticContent.(string)
 	} else {
+		Pr("text widget:", w.Id(), "getting WidgetStringValue")
 		textContent = s.WidgetStringValue(w)
 	}
 

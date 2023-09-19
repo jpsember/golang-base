@@ -90,7 +90,7 @@ func (p ManagerPage) constructListItemWidget(s Session) Widget {
 
 	// Add the list item widget to the page.  We will make it invisible, so it won't be rendered via the normal means.
 	// We will temporarily make it visible when using it to render items.
-  Todo("The list constructer will make the list item invisible")
+	Todo("The list constructer will make the list item invisible")
 
 	w := NewNewCard(m.AllocateAnonymousId("manager_item"), anim,
 		cardListener, "hey", cardListener)
@@ -99,8 +99,18 @@ func (p ManagerPage) constructListItemWidget(s Session) Widget {
 }
 
 func (p ManagerPage) listItemStateProvider(sess Session, widget *ListWidgetStruct, elementId int) (string, JSMap) {
-	json := NewJSMap()
-	json.Put("foo_text", ToString("Item #", elementId))
+	Pr("list item state provider, element id:", elementId)
+	anim := ReadAnimalIgnoreError(elementId)
+
+	itemWidget := widget.ItemWidget().(NewCard)
+	Todo("do we need to update the list item widget provider, or?", itemWidget.Id())
+
+	// Change the list item's animal
+	itemWidget.SetAnimal(anim)
+
+	json := anim.ToJson().AsJSMap()
+	//json := NewJSMap()
+	//json.Put("foo_text", ToString("Item #", elementId))
 	return "", json
 }
 

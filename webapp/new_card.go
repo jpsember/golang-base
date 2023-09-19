@@ -51,6 +51,7 @@ func (w NewCard) ourButtonListener(sess Session, widget Widget) {
 	Pr("ourButtonListener called...")
 	w.buttonListener(sess, w)
 }
+
 func (w NewCard) AddChildren(m WidgetManager) {
 	pr := PrIf(false)
 	pr("adding children to new card")
@@ -79,14 +80,17 @@ func (w NewCard) AddChild(c Widget, manager WidgetManager) {
 	w.children = append(w.children, c)
 }
 
+func (w NewCard) SetAnimal(anim Animal) {
+	w.animal = anim
+}
+
 func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 	ci := 0
 	cimax := len(w.children)
-
 	// Open a bootstrap card
 
 	animal := w.animal
-
+	Pr("NewCard RenderTo, # children:", cimax, "animal id:", animal.Id())
 	m.Comments("Animal Card")
 
 	m.OpenTag(`div class="card bg-light mb-3" style="width:14em"`)
