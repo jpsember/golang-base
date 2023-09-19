@@ -157,8 +157,6 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		widget.SetStateProvider(m.StateProvider())
 	}
 
-	Todo("deprecate detached mode")
-
 	m.Log("addWidget, id:", id, "panel stack size:", m.parentStack.Size())
 	if !m.parentStack.IsEmpty() {
 		parent := m.parentStack.Last()
@@ -181,7 +179,7 @@ func (m WidgetManager) Detach(widget Widget) Widget {
 	container.RemoveChild(widget)
 
 	delete(m.widgetMap, widget.Id())
-
+	Todo("but this doesn't delete child widgets from the widgetmap; is the widgetmap even needed?")
 	return result
 }
 

@@ -69,10 +69,8 @@ func (p ManagerPage) generateWidgets(sess Session) {
 
 func (p ManagerPage) constructListItemWidget(s Session) NewCard {
 	m := s.WidgetManager()
-	Todo("We need a way to construct a widget that isn't attached to a container")
 
 	cardListener := func(sess Session, widget NewCard) {
-		Pr("card listener, animal id:", widget.Animal().Id())
 		p.attemptSelectAnimal(sess, widget.Animal().Id())
 	}
 
@@ -157,6 +155,7 @@ func (p ManagerPage) clickListener(sess Session, message string) bool {
 			break
 		}
 
+		Alert("Do we still need this code?")
 		if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
 			id, err := ParseAsPositiveInt(id_str)
 			if ReportIfError(err) {

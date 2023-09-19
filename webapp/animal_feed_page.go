@@ -50,26 +50,27 @@ func (p FeedPage) generateWidgets(s Session) {
 	m := GenerateHeader(s, p)
 	m.AddUserHeader()
 
+	// Set click listener for the card list
+	s.SetClickListener(p.clickListener)
+
 	// Construct widget to use in list
-	listItemWidget := p.constructListItemWidget(s)
-
-	al := p.animalList(s)
-	p.listWidget = m.Id(id_feed_list).AddList(al, listItemWidget, p.listItemStateProvider, p.listListener)
+	cardWidget := p.constructListItemWidget(s)
+	p.listWidget = m.Id(id_feed_list).AddList(p.animalList(s), cardWidget, cardWidget.StateProviderFunc(), p.listListener)
 }
 
-func (p FeedPage) constructListItemWidget(s Session) Widget {
+func (p FeedPage) constructListItemWidget(s Session) NewCard {
 	m := s.WidgetManager()
-	Todo("We need a way to construct a widget that isn't attached to a container")
-	w := m.Open()
-	m.Id("foo_text").AddText()
-	m.Close()
-	return m.Detach(w)
-}
 
-func (p FeedPage) listItemStateProvider(sess Session, widget *ListWidgetStruct, elementId int) (string, JSMap) {
-	json := NewJSMap()
-	json.Put("foo_text", ToString("Item #", elementId))
-	return "", json
+	cardListener := func(sess Session, widget NewCard) {
+		p.attemptSelectAnimal(sess, widget.Animal().Id())
+	}
+
+	// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
+	w := NewNewCard(m.AllocateAnonymousId("donor_item"), DefaultAnimal,
+		cardListener, "hey", cardListener)
+	m.Add(w)
+	m.Detach(w)
+	return w
 }
 
 func (p FeedPage) animalList(s Session) AnimalList {
@@ -127,17 +128,31 @@ func (p FeedPage) clickListener(sess Session, message string) bool {
 		if ReportIfError(err1, "AnimalFeedPage parsing", message) {
 			return true
 		}
-		anim, err := ReadActualAnimal(id)
-		if ReportIfError(err, "AnimalFeed message", message) {
-			return true
-		}
-		sess.SetClickListener(nil)
-		sess.SwitchToPage(NewViewAnimalPage(sess, anim.Id()))
+		p.attemptSelectAnimal(sess, id)
 		return true
+		//anim, err := ReadActualAnimal(id)
+		//if ReportIfError(err, "AnimalFeed message", message) {
+		//	return true
+		//}
+		//sess.SetClickListener(nil)
+		//sess.SwitchToPage(NewViewAnimalPage(sess, anim.Id()))
+		//return true
 	}
 
 	if p.listWidget.HandleClick(sess, message) {
 		return true
 	}
 	return false
+}
+
+func (p FeedPage) attemptSelectAnimal(s Session, id int) bool {
+	animal, err := ReadActualAnimal(id)
+	if err != nil || animal.Id() == 0 {
+		Alert("#50trouble reading animal:", id)
+		return false
+	}
+	Todo("clear click listener on switch page?")
+	s.SetClickListener(nil)
+	s.SwitchToPage(NewViewAnimalPage(s, animal.Id()))
+	return true
 }

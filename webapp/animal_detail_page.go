@@ -333,7 +333,13 @@ func (p AnimalDetailPage) writeStateToAnimal(s Session, b AnimalBuilder) {
 
 func (p AnimalDetailPage) exit(s Session) {
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
-	s.SwitchToPage(NewManagerPage(s))
+	var page Page
+	if SessionUser(s).UserClass() == UserClassDonor {
+		page = NewFeedPage(s)
+	} else {
+		page = NewManagerPage(s)
+	}
+	s.SwitchToPage(page)
 }
 
 func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (string, error) {
