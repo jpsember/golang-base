@@ -158,12 +158,15 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		widget.SetStateProvider(m.StateProvider())
 	}
 
+  Todo("deprecate detached mode")
+
 	if m.DetachedMode {
 		m.DetachedMode = false
 	} else {
 		m.Log("addWidget, id:", id, "panel stack size:", m.parentStack.Size())
 		if !m.parentStack.IsEmpty() {
-			m.parentStack.Last().AddChild(widget, m)
+			parent := m.parentStack.Last()
+			parent.AddChild(widget, m)
 		}
 	}
 	m.clearPendingComponentFields()

@@ -72,11 +72,30 @@ func (p ManagerPage) generateWidgets(sess Session) {
 func (p ManagerPage) constructListItemWidget(s Session) Widget {
 	m := s.WidgetManager()
 	Todo("We need a way to construct a widget that isn't attached to a container")
-	m.DetachedMode = true
-	w2 := m.Open()
-	m.Id("foo_text").AddText()
-	m.Close()
-	return w2
+
+	cardListener := func(sess Session, widget NewCard) {
+		Pr("card listener, animal id:", widget.Animal().Id())
+		p.attemptSelectAnimal(sess, widget.Animal().Id())
+	}
+	//cardButtonListener := func(sess Session, widget NewCard) { Pr("card button listener, name:", widget.Animal().Name()) }
+
+	//// Create a new card that will contain other widgets
+	//m.Add(
+	//	NewNewCard("gallery_card", ReadAnimalIgnoreError(3), cardListener, "Hello", cardButtonListener))
+
+	anim := DefaultAnimal
+	if false && Alert("using existing animal") {
+		anim = ReadAnimalIgnoreError(36)
+	}
+
+	// Add the list item widget to the page.  We will make it invisible, so it won't be rendered via the normal means.
+	// We will temporarily make it visible when using it to render items.
+  Todo("The list constructer will make the list item invisible")
+
+	w := NewNewCard(m.AllocateAnonymousId("manager_item"), anim,
+		cardListener, "hey", cardListener)
+	m.Add(w)
+	return w
 }
 
 func (p ManagerPage) listItemStateProvider(sess Session, widget *ListWidgetStruct, elementId int) (string, JSMap) {
@@ -97,6 +116,7 @@ func (p ManagerPage) animalList(s Session) AnimalList {
 func (p ManagerPage) constructAnimalList(s Session) AnimalList {
 	managerId := SessionUser(s).Id()
 	animalList := NewAnimalList(getManagerAnimals(managerId))
+	Pr("constructed animal list:", animalList.ElementIds)
 	return animalList
 }
 
@@ -163,18 +183,20 @@ func (p ManagerPage) clickListener(sess Session, message string) bool {
 			if ReportIfError(err) {
 				break
 			}
-			animal, err := ReadActualAnimal(id)
-			if err != nil || animal.Id() == 0 {
-				Alert("#50trouble reading animal for clickListener message", message)
-				break
-			}
-			if animal.ManagerId() != p.manager.Id() {
-				Alert("#50wrong manager for animal", message, animal)
-				break
-			}
-			sess.SetClickListener(nil)
-			sess.SwitchToPage(NewEditAnimalPage(sess, animal.Id()))
+			p.attemptSelectAnimal(sess, id)
 			break
+			//animal, err := ReadActualAnimal(id)
+			//if err != nil || animal.Id() == 0 {
+			//	Alert("#50trouble reading animal for clickListener message", message)
+			//	break
+			//}
+			//if animal.ManagerId() != p.manager.Id() {
+			//	Alert("#50wrong manager for animal", message, animal)
+			//	break
+			//}
+			//sess.SetClickListener(nil)
+			//sess.SwitchToPage(NewEditAnimalPage(sess, animal.Id()))
+			//break
 		}
 
 		if p.listWidget.HandleClick(sess, message) {
@@ -184,4 +206,20 @@ func (p ManagerPage) clickListener(sess Session, message string) bool {
 	}
 	return true
 
+}
+
+func (p ManagerPage) attemptSelectAnimal(s Session, id int) bool {
+	animal, err := ReadActualAnimal(id)
+	if err != nil || animal.Id() == 0 {
+		Alert("#50trouble reading animal:", id)
+		return false
+	}
+	if animal.ManagerId() != p.manager.Id() {
+		Alert("#50wrong manager for animal", animal)
+		return false
+	}
+	Todo("clear click listener on switch page?")
+	s.SetClickListener(nil)
+	s.SwitchToPage(NewEditAnimalPage(s, animal.Id()))
+	return true
 }

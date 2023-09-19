@@ -23,6 +23,7 @@ type Widget interface {
 	Columns() int                      // Get the number of columns the widget occupies in its row
 	StateProvider() WidgetStateProvider
 	SetStateProvider(p WidgetStateProvider)
+	SetVisible(bool)
 	fmt.Stringer
 }
 

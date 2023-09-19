@@ -28,6 +28,8 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStatePr
 	Todo("If no item widget has been supplied, construct a default one")
 	CheckArg(itemWidget != nil, "No itemWidget given")
 
+	// Make the item widget invisible as the default state (in case it is attached to some container, e.g. the page containing the list)
+	itemWidget.SetVisible(false)
 	w := ListWidgetStruct{
 		list:              list,
 		itemWidget:        itemWidget,
@@ -88,12 +90,14 @@ func (w ListWidget) renderPagePiece(m MarkupBuilder, label string, targetPage in
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf(false)
-
+	pr := PrIf(true)
+	pr("ListWidget.RenderTo")
 	m.Comment("ListWidget")
 
 	m.OpenTag(`div id="`, w.BaseId, `"`)
 
+  // Make the item widget visible while rendering these items
+	w.itemWidget.SetVisible(true)
 	if w.WithPageControls {
 		w.renderPagination(s, m)
 	}
@@ -115,6 +119,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				prefix, jsmap := w.itemStateProvider(s, w, id)
 				Pr("got list item state provider, map:", jsmap)
 				Todo("Have client supply a state provider struct")
+				pr("elementId:", id, "prefix:", prefix, "map:", INDENT, jsmap)
 				// Make it the default state provider.
 				sp := NewStateProvider(prefix, jsmap)
 				s.DefaultStateProvider = sp
@@ -130,6 +135,8 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	if w.WithPageControls {
 		w.renderPagination(s, m)
 	}
+  // Restore the item widget's invisible status
+	w.itemWidget.SetVisible(false)
 
 	m.CloseTag()
 }

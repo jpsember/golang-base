@@ -31,7 +31,8 @@ func (c NewCard) Animal() Animal {
 }
 
 func NewNewCard(widgetId string, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) NewCard {
-	CheckArg(animal.Id() != 0, "no animal")
+	// An id of zero can be used for constructing a template (e.g., list item widget)
+	//	CheckArg(animal.Id() != 0, "no animal")
 	CheckArg((buttonLabel == "") == (buttonListener == nil))
 	w := NewCardObj{
 		animal:         animal,
