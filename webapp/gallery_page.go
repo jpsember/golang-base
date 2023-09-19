@@ -81,7 +81,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			return "", json
 		}
 
-		p.list = m.AddList(x, listItemWidget, listProvider, x.listWidgetListener)
+		p.list = m.AddList(x, listItemWidget, listProvider)
 		if trim {
 			p.list.WithPageControls = false
 		}
@@ -110,7 +110,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 		m.Open()
 
-		m.PushStateProvider("", p.fooMap)
+		m.PushStateProvider(NewStateProvider("", p.fooMap))
 		m.PushIdPrefix("")
 		{
 
@@ -342,9 +342,4 @@ func (g GalleryListImplementation) listItemRenderer(session Session, widget List
 	m.OpenTag(`div class="col-sm-4"`)
 	m.Escape(ToString("#", elementId, g.names[elementId]))
 	m.CloseTag()
-}
-func (g GalleryListImplementation) listWidgetListener(sess Session, widget ListWidget) error {
-	Todo("Can list listener be same as other listeners, e.g. a general listener?")
-	Pr("gallery list listener:", widget.Id())
-	return nil
 }

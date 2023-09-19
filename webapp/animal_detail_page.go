@@ -165,7 +165,7 @@ func (p AnimalDetailPage) generateWidgets(s Session) {
 
 	Todo("!Have ajax listener that can show advice without an actual error, e.g., if user left some fields blank")
 
-	s.WidgetManager().PushStateProvider(anim_state_prefix, p.anim2)
+	s.WidgetManager().PushStateProvider(NewStateProvider(anim_state_prefix, p.anim2))
 	if p.editing {
 		p.generateForEditing(s)
 	} else {

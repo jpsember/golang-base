@@ -584,7 +584,7 @@ func SessionApp(s Session) ServerApp {
 // ------------------------------------------------------------------------------------
 
 type WidgetStateProviderStruct struct {
-	Prefix string // A prefix to insert before an id to determine the map key
+	Prefix string // A prefix to remove from the id before constructing its map key
 	State  JSMap  // The map containing the state
 }
 
@@ -596,14 +596,14 @@ func NewStateProvider(prefix string, state JSMap) WidgetStateProvider {
 
 // Extract the prefix and state map from a WidgetStateProvider, or return the default values if none is given.
 func extractStateProvider(s Session, p WidgetStateProvider) (string, JSMap) {
-  Todo("Should we just pass around the struct, not the separate fields?")
+	Todo("Should we just pass around the struct, not the separate fields?")
 	if p == nil {
-    // If there's an explicit default state provider, use it
+		// If there's an explicit default state provider, use it
 		prov := s.DefaultStateProvider
 		if prov != nil {
 			return prov.Prefix, prov.State
 		}
-    // This is the state provider if no other one has been specified 
+		// This is the state provider if no other one has been specified
 		return "", s.State
 	}
 	return p.Prefix, p.State

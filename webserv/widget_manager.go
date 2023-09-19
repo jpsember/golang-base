@@ -265,11 +265,9 @@ func (m WidgetManager) AddPassword(listener InputWidgetListener) WidgetManager {
 	return m.auxAddInput(listener, true)
 }
 
-func (m WidgetManager) AddList(list ListInterface, itemWidget Widget,
-	provider ListItemStateProvider,
-	listener ListWidgetListener) ListWidget {
+func (m WidgetManager) AddList(list ListInterface, itemWidget Widget, provider ListItemStateProvider) ListWidget {
 	id := m.consumeOptionalPendingId()
-	t := NewListWidget(id, list, itemWidget, provider, listener)
+	t := NewListWidget(id, list, itemWidget, provider)
 	m.Add(t)
 	return t
 }
@@ -419,20 +417,11 @@ func (m WidgetManager) PushContainer(container Widget) WidgetManager {
 	Todo("!this is a lot like OpenContainer, but without the adding")
 	// Push a container widget onto the stack
 	m.parentStack.Add(container)
-
-	// Save current state
-	//m.stateStack = append(m.stateStack, m.state)
-	//m.state = newMgrState()
 	return m
 }
 
-func (m WidgetManager) PopContainer() WidgetManager {
-	//m.state, m.stateStack = PopLast(m.stateStack)
-	return m
-}
-
-func (m WidgetManager) PushStateProvider(prefix string, stateMap JSMap) {
-	m.providerStack = append(m.providerStack, NewStateProvider(prefix, stateMap))
+func (m WidgetManager) PushStateProvider(p WidgetStateProvider) {
+	m.providerStack = append(m.providerStack, p)
 }
 
 func (m WidgetManager) PopStateProvider() {

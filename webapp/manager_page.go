@@ -64,7 +64,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 
 	// Construct widget to use in list
 	cardWidget := p.constructListItemWidget(sess)
-	p.listWidget = m.Id(id_manager_list).AddList(p.animalList(sess), cardWidget, cardWidget.StateProviderFunc(), p.listListener)
+	p.listWidget = m.Id(id_manager_list).AddList(p.animalList(sess), cardWidget, cardWidget.StateProviderFunc())
 }
 
 func (p ManagerPage) constructListItemWidget(s Session) NewCard {
@@ -99,11 +99,6 @@ func (p ManagerPage) constructAnimalList(s Session) AnimalList {
 
 func (p ManagerPage) newAnimalListener(sess Session, widget Widget) {
 	sess.SwitchToPage(NewCreateAnimalPage(sess))
-}
-
-func (p ManagerPage) listListener(sess Session, widget ListWidget) error {
-	Pr("listener event:", widget.Id())
-	return nil
 }
 
 func getManagerAnimals(managerId int) []int {

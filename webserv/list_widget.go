@@ -16,20 +16,13 @@ type ListWidgetStruct struct {
 
 type ListItemStateProvider func(sess Session, widget *ListWidgetStruct, elementId int) (string, JSMap)
 
-type ListWidgetListener func(sess Session, widget ListWidget) error
-
 type ListWidget = *ListWidgetStruct
 
-func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStateProvider ListItemStateProvider, listener ListWidgetListener) ListWidget {
-
-	Todo("The ListWidgetListener isn't used")
+func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStateProvider ListItemStateProvider) ListWidget {
 	Todo("Document the fact that widgets that have their own explicit state providers won't use the one for this list, so items might not render as expected")
-
 	Todo("If no item widget has been supplied, construct a default one")
 	CheckArg(itemWidget != nil, "No itemWidget given")
 
-	// Make the item widget invisible as the default state (in case it is attached to some container, e.g. the page containing the list)
-	//itemWidget.SetVisible(false)
 	w := ListWidgetStruct{
 		list:              list,
 		itemWidget:        itemWidget,
@@ -100,8 +93,6 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	m.OpenTag(`div id="`, w.BaseId, `"`)
 
-	// Make the item widget visible while rendering these items
-	//w.itemWidget.SetVisible(true)
 	if w.WithPageControls {
 		w.renderPagination(s, m)
 	}
@@ -137,8 +128,6 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	if w.WithPageControls {
 		w.renderPagination(s, m)
 	}
-	//// Restore the item widget's invisible status
-	//w.itemWidget.SetVisible(false)
 
 	m.CloseTag()
 }
