@@ -18,6 +18,7 @@ type Widget interface {
 	RenderTo(s *SessionStruct, m MarkupBuilder)
 	Children() []Widget
 	AddChild(c Widget, manager WidgetManager)
+	RemoveChild(c Widget)
 	AddChildren(manager WidgetManager) // Add any child widgets
 	SetColumns(columns int)            // Set the number of columns the widget occupies in its row
 	Columns() int                      // Get the number of columns the widget occupies in its row

@@ -97,6 +97,10 @@ func (w BaseWidget) AddChild(c Widget, manager WidgetManager) {
 	NotSupported("AddChild not supported")
 }
 
+func (w BaseWidget) RemoveChild(c Widget) {
+	NotSupported("RemoveChild not supported")
+}
+
 func (w BaseWidget) SetColumns(columns int) {
 	w.columns = columns
 }

@@ -14,6 +14,7 @@ type NewCardObj struct {
 	buttonListener CardWidgetListener
 	buttonLabel    string
 	children       []Widget
+	childIdPrefix  string
 }
 
 type NewCard = *NewCardObj
@@ -56,12 +57,17 @@ func (w NewCard) AddChildren(m WidgetManager) {
 	pr := PrIf(false)
 	pr("adding children to new card")
 
+	// Determine a unique prefix for this card's fields, in case we are rendering multiple cards
+	// (and not in a list)
+	w.childIdPrefix = m.AllocateAnonymousId("card_children.")
 	m.OpenContainer(w)
+	m.PushIdPrefix(w.childIdPrefix)
 	m.Id("name").Size(SizeTiny).AddHeading()
 	m.Id("summary").AddText()
 	if w.buttonLabel != "" {
 		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.ourButtonListener)
 	}
+	m.PopIdPrefix()
 	m.Close()
 	pr("done adding children")
 }
@@ -72,6 +78,17 @@ func (w NewCard) AddChild(c Widget, manager WidgetManager) {
 
 func (w NewCard) SetAnimal(anim Animal) {
 	w.animal = anim
+}
+
+func (w NewCard) StateProviderFunc() ListItemStateProvider {
+	return w.BuildStateProvider
+}
+
+func (w NewCard) BuildStateProvider(sess Session, widget ListWidget, elementId int) (string, JSMap) {
+	anim := ReadAnimalIgnoreError(elementId)
+	CheckState(anim.Id() != 0, "no animal specified")
+	w.animal = anim
+	return w.childIdPrefix, anim.ToJson().AsJSMap()
 }
 
 func (w NewCard) RenderTo(s Session, m MarkupBuilder) {

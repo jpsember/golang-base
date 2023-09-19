@@ -63,13 +63,11 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	sess.SetClickListener(p.clickListener)
 
 	// Construct widget to use in list
-	listItemWidget := p.constructListItemWidget(sess)
-
-	al := p.animalList(sess)
-	p.listWidget = m.Id(id_manager_list).AddList(al, listItemWidget, p.listItemStateProvider, p.listListener)
+	cardWidget := p.constructListItemWidget(sess)
+	p.listWidget = m.Id(id_manager_list).AddList(p.animalList(sess), cardWidget, cardWidget.StateProviderFunc(), p.listListener)
 }
 
-func (p ManagerPage) constructListItemWidget(s Session) Widget {
+func (p ManagerPage) constructListItemWidget(s Session) NewCard {
 	m := s.WidgetManager()
 	Todo("We need a way to construct a widget that isn't attached to a container")
 
@@ -77,28 +75,13 @@ func (p ManagerPage) constructListItemWidget(s Session) Widget {
 		Pr("card listener, animal id:", widget.Animal().Id())
 		p.attemptSelectAnimal(sess, widget.Animal().Id())
 	}
-	//cardButtonListener := func(sess Session, widget NewCard) { Pr("card button listener, name:", widget.Animal().Name()) }
-
-	//// Create a new card that will contain other widgets
-	//m.Add(
-	//	NewNewCard("gallery_card", ReadAnimalIgnoreError(3), cardListener, "Hello", cardButtonListener))
-
-	anim := DefaultAnimal
 
 	// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
-	w := NewNewCard(m.AllocateAnonymousId("manager_item"), anim,
+	w := NewNewCard(m.AllocateAnonymousId("manager_item"), DefaultAnimal,
 		cardListener, "hey", cardListener)
 	m.Add(w)
-	return m.Detach(w)
-}
-
-func (p ManagerPage) listItemStateProvider(sess Session, widget *ListWidgetStruct, elementId int) (string, JSMap) {
-	Todo("Cards can be asked to supply listItemStateProviders")
-	anim := ReadAnimalIgnoreError(elementId)
-	itemWidget := widget.ItemWidget().(NewCard)
-	itemWidget.SetAnimal(anim)
-	json := anim.ToJson().AsJSMap()
-	return "", json
+	m.Detach(w)
+	return w
 }
 
 func (p ManagerPage) animalList(s Session) AnimalList {

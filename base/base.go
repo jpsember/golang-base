@@ -1005,3 +1005,7 @@ func PopLast[T any](slice []T) (T, []T) {
 	i := len(slice)
 	return slice[i-1], slice[:i-1]
 }
+
+func DeleteSliceElements[T any](slice []T, delStart int, delCount int) []T {
+	return append(slice[:delStart], slice[delStart+delCount:]...)
+}

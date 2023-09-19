@@ -41,6 +41,16 @@ func (w GridWidget) AddChild(c Widget, manager WidgetManager) {
 	pr(VERT_SP, "GridWidget", w.BaseId, "adding child", c.Id(), "to container", w.BaseId, "columns:", w.Columns())
 }
 
+func (w GridWidget) RemoveChild(c Widget) {
+	for index, child := range w.children {
+		if child == c {
+			w.children = DeleteSliceElements(w.children, index, 1)
+			return
+		}
+	}
+	BadArg("Child wasn't in container:", c.Id())
+}
+
 func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.

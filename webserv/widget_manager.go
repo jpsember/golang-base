@@ -171,12 +171,17 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	return m
 }
 
+// Detach a widget that has just been constructed from the WidgetManager and its container
 func (m WidgetManager) Detach(widget Widget) Widget {
 	result := m.Opt(widget.Id())
 	if result == nil {
 		BadArg("Cannot detach widget; not in manager set:", widget.Id())
 	}
+	container := m.currentPanel()
+	container.RemoveChild(widget)
+
 	delete(m.widgetMap, widget.Id())
+
 	return result
 }
 
