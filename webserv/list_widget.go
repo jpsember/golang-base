@@ -94,7 +94,7 @@ func (w ListWidget) renderPagePiece(m MarkupBuilder, label string, targetPage in
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("ListWidget.RenderTo")
 	m.Comment("ListWidget")
 
@@ -122,7 +122,6 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				// Get the client to return a state provider
 				prefix, jsmap := w.itemStateProvider(s, w, id)
 				Todo("Have client supply a state provider struct")
-				pr("elementId:", id, "prefix:", prefix, "name:", jsmap.OptString("name", "<none!>"))
 				// Make it the default state provider.
 				sp := NewStateProvider(prefix, jsmap)
 				s.DefaultStateProvider = sp

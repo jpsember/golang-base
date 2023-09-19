@@ -84,33 +84,26 @@ func (p ManagerPage) constructListItemWidget(s Session) Widget {
 	//	NewNewCard("gallery_card", ReadAnimalIgnoreError(3), cardListener, "Hello", cardButtonListener))
 
 	anim := DefaultAnimal
-	if false && Alert("using existing animal") {
-		anim = ReadAnimalIgnoreError(36)
-	}
 
 	// Add the list item widget to the page.  We will make it invisible, so it won't be rendered via the normal means.
 	// We will temporarily make it visible when using it to render items.
-	Todo("The list constructer will make the list item invisible")
-
 	w := NewNewCard(m.AllocateAnonymousId("manager_item"), anim,
 		cardListener, "hey", cardListener)
-	m.Add(w)
+
+	if Todo("can we simply not add it to the current manager?") {
+		w.AddChildren(m)
+	} else {
+		m.Add(w)
+	}
 	return w
 }
 
 func (p ManagerPage) listItemStateProvider(sess Session, widget *ListWidgetStruct, elementId int) (string, JSMap) {
-	Pr("list item state provider, element id:", elementId)
+	Todo("Cards can be asked to supply listItemStateProviders")
 	anim := ReadAnimalIgnoreError(elementId)
-
 	itemWidget := widget.ItemWidget().(NewCard)
-	Todo("do we need to update the list item widget provider, or?", itemWidget.Id())
-
-	// Change the list item's animal
 	itemWidget.SetAnimal(anim)
-
 	json := anim.ToJson().AsJSMap()
-	//json := NewJSMap()
-	//json.Put("foo_text", ToString("Item #", elementId))
 	return "", json
 }
 
@@ -126,7 +119,6 @@ func (p ManagerPage) animalList(s Session) AnimalList {
 func (p ManagerPage) constructAnimalList(s Session) AnimalList {
 	managerId := SessionUser(s).Id()
 	animalList := NewAnimalList(getManagerAnimals(managerId))
-	Pr("constructed animal list:", animalList.ElementIds)
 	return animalList
 }
 

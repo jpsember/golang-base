@@ -24,7 +24,6 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 	if w.staticContent != nil {
 		textContent = w.staticContent.(string)
 	} else {
-		Pr("text widget:", w.Id(), "getting WidgetStringValue")
 		textContent = s.WidgetStringValue(w)
 	}
 
@@ -41,7 +40,6 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.OpenTag(args.Array()...)
 
 	{
-
 		for _, c := range h.Paragraphs() {
 			m.A(`<p>`, c, `</p>`).Cr()
 		}

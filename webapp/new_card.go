@@ -26,8 +26,8 @@ func cardListenWrapper(sess Session, widget Widget, value string) (string, error
 	return "", nil
 }
 
-func (c NewCard) Animal() Animal {
-	return c.animal
+func (w NewCard) Animal() Animal {
+	return w.animal
 }
 
 func NewNewCard(widgetId string, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) NewCard {
@@ -56,13 +56,6 @@ func (w NewCard) AddChildren(m WidgetManager) {
 	pr := PrIf(false)
 	pr("adding children to new card")
 
-	// Let us assume that there will be a state provider already set when the children are rendered.
-	//unique_card_prefix := m.AllocateAnonymousId("card")
-	//jsmap := w.animal.ToJson().AsJSMap()
-	//m.PushStateProvider(unique_card_prefix, jsmap)
-	//pr("pushing state provider, prefix:", unique_card_prefix, "map:", jsmap)
-
-	//m.PushIdPrefix(unique_card_prefix)
 	m.OpenContainer(w)
 	m.Id("name").Size(SizeTiny).AddHeading()
 	m.Id("summary").AddText()
@@ -70,10 +63,6 @@ func (w NewCard) AddChildren(m WidgetManager) {
 		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.ourButtonListener)
 	}
 	m.Close()
-	//m.PopIdPrefix()
-
-	//m.PopStateProvider()
-
 	pr("done adding children")
 }
 
@@ -88,10 +77,9 @@ func (w NewCard) SetAnimal(anim Animal) {
 func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 	ci := 0
 	cimax := len(w.children)
-	// Open a bootstrap card
 
+	// Open a bootstrap card
 	animal := w.animal
-	Pr("NewCard RenderTo, # children:", cimax, "animal id:", animal.Id())
 	m.Comments("Animal Card")
 
 	m.OpenTag(`div class="card bg-light mb-3" style="width:14em"`)
