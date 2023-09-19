@@ -31,6 +31,7 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStatePr
 	}
 	w.InitBase(id)
 	w.pagePrefix = id + ".page_"
+
 	return &w
 }
 
@@ -45,6 +46,7 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 		return
 	}
 
+	Todo("Who is causing a lot of comments here?")
 	windowSize := MinInt(np, 5)
 	windowStart := Clamp(w.list.CurrentPage()-windowSize/2, 0, np-windowSize)
 	windowStop := Clamp(windowStart+windowSize, 0, np-1)

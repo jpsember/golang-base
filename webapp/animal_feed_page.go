@@ -48,7 +48,9 @@ func (p FeedPage) generateWidgets(s Session) {
 	s.SetClickListener(p.clickListener)
 
 	m := GenerateHeader(s, p)
-	m.AddUserHeader()
+	if !Alert("not adding user header for now") {
+		m.AddUserHeader()
+	}
 
 	// Set click listener for the card list
 	s.SetClickListener(p.clickListener)
@@ -56,6 +58,7 @@ func (p FeedPage) generateWidgets(s Session) {
 	// Construct widget to use in list
 	cardWidget := p.constructListItemWidget(s)
 	p.listWidget = m.Id(id_feed_list).AddList(p.animalList(s), cardWidget, cardWidget.StateProviderFunc())
+	p.listWidget.WithPageControls = !Alert("!disabling page controls")
 }
 
 func (p FeedPage) constructListItemWidget(s Session) NewCard {
@@ -96,6 +99,11 @@ func getAnimals() []int {
 		for iter.HasNext() {
 			anim := iter.Next().(Animal)
 			result = append(result, anim.Id())
+		}
+		if Alert("!trimming animal list to a couple of items") {
+			if len(result) > 2 {
+				result = result[0:2]
+			}
 		}
 	}
 	return result

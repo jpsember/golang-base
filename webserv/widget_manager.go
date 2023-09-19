@@ -168,7 +168,7 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	return m
 }
 
-// Detach a widget that has just been constructed from the WidgetManager and its container
+// Detach a widget that has just been constructed from the WidgetManager and its container.
 func (m WidgetManager) Detach(widget Widget) Widget {
 	result := m.Opt(widget.Id())
 	if result == nil {
@@ -177,9 +177,24 @@ func (m WidgetManager) Detach(widget Widget) Widget {
 	container := m.currentPanel()
 	container.RemoveChild(widget)
 
-	delete(m.widgetMap, widget.Id())
-	Todo("but this doesn't delete child widgets from the widgetmap; is the widgetmap even needed?")
+	// Delete all widgets within the detached widget's tree from the widget map
+	idList := getWidgetsInTree(widget)
+	for _, id := range idList {
+		delete(m.widgetMap, id)
+	}
 	return result
+}
+
+func getWidgetsInTree(widget Widget) []string {
+	return auxGetWidgetsInTree(widget, nil)
+}
+
+func auxGetWidgetsInTree(widget Widget, list []string) []string {
+	list = append(list, widget.Id())
+	for _, c := range widget.Children() {
+		list = auxGetWidgetsInTree(c, list)
+	}
+	return list
 }
 
 // Have subsequent WidgetManager operations operate on a particular container widget.
@@ -243,7 +258,7 @@ func (m WidgetManager) currentPanel() Widget {
 	return m.parentStack.Last()
 }
 
-func (m WidgetManager) AddInput(listener InputWidgetListener) WidgetManager {
+func (m WidgetManager) AddInput(listener InputWidgetListener) InputWidget {
 	return m.auxAddInput(listener, false)
 }
 
@@ -254,13 +269,14 @@ func (m WidgetManager) AddUserHeader() UserHeaderWidget {
 	return w
 }
 
-func (m WidgetManager) auxAddInput(listener InputWidgetListener, password bool) WidgetManager {
+func (m WidgetManager) auxAddInput(listener InputWidgetListener, password bool) InputWidget {
 	id := m.consumeOptionalPendingId()
 	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()), listener, password)
-	return m.Add(t)
+	m.Add(t)
+	return t
 }
 
-func (m WidgetManager) AddPassword(listener InputWidgetListener) WidgetManager {
+func (m WidgetManager) AddPassword(listener InputWidgetListener) InputWidget {
 	return m.auxAddInput(listener, true)
 }
 
