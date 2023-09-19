@@ -12,9 +12,10 @@ type ListWidgetStruct struct {
 	itemStateProvider ListItemStateProvider
 	itemWidget        Widget
 	pagePrefix        string
+	WithPageControls  bool
 }
 
-type ListItemStateProvider func(sess Session, widget *ListWidgetStruct) (string, JSMap)
+type ListItemStateProvider func(sess Session, widget *ListWidgetStruct, elementId int) (string, JSMap)
 
 type ListWidgetListener func(sess Session, widget ListWidget) error
 
@@ -35,6 +36,7 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStatePr
 		renderer:          renderer,
 		itemWidget:        itemWidget,
 		itemStateProvider: itemStateProvider,
+		WithPageControls:  true,
 	}
 	w.InitBase(id)
 	w.pagePrefix = id + ".page_"
@@ -96,7 +98,9 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	m.OpenTag(`div id="`, w.BaseId, `"`)
 
-	w.renderPagination(s, m)
+	if w.WithPageControls {
+		w.renderPagination(s, m)
+	}
 
 	{
 		m.OpenTag(`div class="row"`)
@@ -112,7 +116,8 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 					continue
 				}
 				// Call the list's item state provider to assign it to the item widget
-				prefix, jsmap := w.itemStateProvider(s, w)
+				prefix, jsmap := w.itemStateProvider(s, w, id)
+				Pr("got list item state provider, map:", jsmap)
 				sp := NewStateProvider(prefix, jsmap)
 				Todo("the state provider struct could be built earlier and initialized here each time")
 				w.itemWidget.SetStateProvider(sp)
@@ -123,7 +128,9 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 		m.CloseTag()
 	}
 
-	w.renderPagination(s, m)
+	if w.WithPageControls {
+		w.renderPagination(s, m)
+	}
 
 	m.CloseTag()
 }

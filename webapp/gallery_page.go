@@ -55,27 +55,48 @@ const gallery_card_prefix = "gallery_card."
 
 func (p GalleryPage) generateWidgets(sess Session) {
 
+	trim := Alert("removing most widgets")
 	sess.SetClickListener(p.clickListener)
 
 	m := GenerateHeader(sess, p)
 
-	m.AddUserHeader()
-	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
-	alertWidget.SetVisible(false)
-	m.Add(alertWidget)
+	if !trim {
+		m.AddUserHeader()
+		alertWidget = NewAlertWidget("sample_alert", AlertInfo)
+		alertWidget.SetVisible(false)
+		m.Add(alertWidget)
+	}
 
 	{
 		x := NewGalleryListImplementation()
-		p.list = m.AddList(x, nil, nil, x.listItemRenderer, x.listWidgetListener)
+
+		Todo("We need a way to construct a widget that isn't attached to a container")
+		m.DetachedMode = true
+		w2 := m.Open()
+		m.Id("foo_text").AddText()
+		m.Close()
+
+		listProvider := func(sess Session, widget *ListWidgetStruct, itemId int) (string, JSMap) {
+			json := NewJSMap()
+			json.Put("foo_text", ToString("Item #", itemId, x.names[itemId]))
+			return "", json
+		}
+
+		p.list = m.AddList(x, w2, listProvider, nil, x.listWidgetListener)
+		p.list.WithPageControls = false
 		Todo("!Add support for empty list items, to pad out page to full size")
 	}
 
+	if trim {
+		return
+	}
 	m.Open()
 
 	m.Id("fred").Label(`Fred`).AddButton(buttonListener)
 
 	{
 		m.Col(4)
+
 		cardListener := func(sess Session, widget NewCard) { Pr("card listener, animal id:", widget.Animal().Id()) }
 		cardButtonListener := func(sess Session, widget NewCard) { Pr("card button listener, name:", widget.Animal().Name()) }
 

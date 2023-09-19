@@ -16,6 +16,7 @@ type WidgetManagerObj struct {
 	pendingChildColumns int
 	providerStack       []WidgetStateProvider
 	idPrefixStack       []string
+	DetachedMode        bool
 }
 
 func NewWidgetManager(session Session) WidgetManager {
@@ -153,13 +154,18 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		m.widgetMap[id] = widget
 	}
 	// Set its state provider, if it doesn't already have one
+	Alert("Ok, the problem with lists is that the state provider is stored at construction time, and we need to change it at render time for every widget in the list items...")
 	if widget.StateProvider() == nil {
 		widget.SetStateProvider(m.StateProvider())
 	}
 
-	m.Log("addWidget, id:", id, "panel stack size:", m.parentStack.Size())
-	if !m.parentStack.IsEmpty() {
-		m.parentStack.Last().AddChild(widget, m)
+	if m.DetachedMode {
+		m.DetachedMode = false
+	} else {
+		m.Log("addWidget, id:", id, "panel stack size:", m.parentStack.Size())
+		if !m.parentStack.IsEmpty() {
+			m.parentStack.Last().AddChild(widget, m)
+		}
 	}
 	m.clearPendingComponentFields()
 
