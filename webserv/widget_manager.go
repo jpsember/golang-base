@@ -16,7 +16,6 @@ type WidgetManagerObj struct {
 	pendingChildColumns int
 	providerStack       []WidgetStateProvider
 	idPrefixStack       []string
-	DetachedMode        bool
 }
 
 func NewWidgetManager(session Session) WidgetManager {
@@ -158,22 +157,27 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		widget.SetStateProvider(m.StateProvider())
 	}
 
-  Todo("deprecate detached mode")
+	Todo("deprecate detached mode")
 
-	if m.DetachedMode {
-		m.DetachedMode = false
-	} else {
-		m.Log("addWidget, id:", id, "panel stack size:", m.parentStack.Size())
-		if !m.parentStack.IsEmpty() {
-			parent := m.parentStack.Last()
-			parent.AddChild(widget, m)
-		}
+	m.Log("addWidget, id:", id, "panel stack size:", m.parentStack.Size())
+	if !m.parentStack.IsEmpty() {
+		parent := m.parentStack.Last()
+		parent.AddChild(widget, m)
 	}
 	m.clearPendingComponentFields()
 
 	// Ask widget to add any children that it may need
 	widget.AddChildren(m)
 	return m
+}
+
+func (m WidgetManager) Detach(widget Widget) Widget {
+	result := m.Opt(widget.Id())
+	if result == nil {
+		BadArg("Cannot detach widget; not in manager set:", widget.Id())
+	}
+	delete(m.widgetMap, widget.Id())
+	return result
 }
 
 // Have subsequent WidgetManager operations operate on a particular container widget.

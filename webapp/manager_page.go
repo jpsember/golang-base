@@ -85,17 +85,11 @@ func (p ManagerPage) constructListItemWidget(s Session) Widget {
 
 	anim := DefaultAnimal
 
-	// Add the list item widget to the page.  We will make it invisible, so it won't be rendered via the normal means.
-	// We will temporarily make it visible when using it to render items.
+	// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
 	w := NewNewCard(m.AllocateAnonymousId("manager_item"), anim,
 		cardListener, "hey", cardListener)
-
-	if Todo("can we simply not add it to the current manager?") {
-		w.AddChildren(m)
-	} else {
-		m.Add(w)
-	}
-	return w
+	m.Add(w)
+	return m.Detach(w)
 }
 
 func (p ManagerPage) listItemStateProvider(sess Session, widget *ListWidgetStruct, elementId int) (string, JSMap) {

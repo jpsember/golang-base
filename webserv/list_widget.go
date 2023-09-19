@@ -29,7 +29,7 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStatePr
 	CheckArg(itemWidget != nil, "No itemWidget given")
 
 	// Make the item widget invisible as the default state (in case it is attached to some container, e.g. the page containing the list)
-	itemWidget.SetVisible(false)
+	//itemWidget.SetVisible(false)
 	w := ListWidgetStruct{
 		list:              list,
 		itemWidget:        itemWidget,
@@ -101,7 +101,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.OpenTag(`div id="`, w.BaseId, `"`)
 
 	// Make the item widget visible while rendering these items
-	w.itemWidget.SetVisible(true)
+	//w.itemWidget.SetVisible(true)
 	if w.WithPageControls {
 		w.renderPagination(s, m)
 	}
@@ -137,8 +137,8 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	if w.WithPageControls {
 		w.renderPagination(s, m)
 	}
-	// Restore the item widget's invisible status
-	w.itemWidget.SetVisible(false)
+	//// Restore the item widget's invisible status
+	//w.itemWidget.SetVisible(false)
 
 	m.CloseTag()
 }

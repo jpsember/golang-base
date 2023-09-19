@@ -70,11 +70,10 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	{
 		x := NewGalleryListImplementation()
 
-		Todo("We need a way to construct a widget that isn't attached to a container")
-		m.DetachedMode = true
-		w2 := m.Open()
+		listItemWidget := m.Open()
 		m.Id("foo_text").AddText()
 		m.Close()
+		m.Detach(listItemWidget)
 
 		listProvider := func(sess Session, widget *ListWidgetStruct, itemId int) (string, JSMap) {
 			json := NewJSMap()
@@ -82,7 +81,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			return "", json
 		}
 
-		p.list = m.AddList(x, w2, listProvider, x.listWidgetListener)
+		p.list = m.AddList(x, listItemWidget, listProvider, x.listWidgetListener)
 		if trim {
 			p.list.WithPageControls = false
 		}

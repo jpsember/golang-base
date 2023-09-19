@@ -60,11 +60,10 @@ func (p FeedPage) generateWidgets(s Session) {
 func (p FeedPage) constructListItemWidget(s Session) Widget {
 	m := s.WidgetManager()
 	Todo("We need a way to construct a widget that isn't attached to a container")
-	m.DetachedMode = true
-	w2 := m.Open()
+	w := m.Open()
 	m.Id("foo_text").AddText()
 	m.Close()
-	return w2
+	return m.Detach(w)
 }
 
 func (p FeedPage) listItemStateProvider(sess Session, widget *ListWidgetStruct, elementId int) (string, JSMap) {
