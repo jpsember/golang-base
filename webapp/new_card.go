@@ -55,23 +55,24 @@ func (w NewCard) ourButtonListener(sess Session, widget Widget) {
 func (w NewCard) AddChildren(m WidgetManager) {
 	pr := PrIf(false)
 	pr("adding children to new card")
-	unique_card_prefix := m.AllocateAnonymousId("card")
-	jsmap := w.animal.ToJson().AsJSMap()
-	m.PushStateProvider(unique_card_prefix, jsmap)
-	pr("pushing state provider, prefix:", unique_card_prefix, "map:", jsmap)
 
-	m.PushIdPrefix(unique_card_prefix)
+	// Let us assume that there will be a state provider already set when the children are rendered.
+	//unique_card_prefix := m.AllocateAnonymousId("card")
+	//jsmap := w.animal.ToJson().AsJSMap()
+	//m.PushStateProvider(unique_card_prefix, jsmap)
+	//pr("pushing state provider, prefix:", unique_card_prefix, "map:", jsmap)
+
+	//m.PushIdPrefix(unique_card_prefix)
 	m.OpenContainer(w)
 	m.Id("name").Size(SizeTiny).AddHeading()
 	m.Id("summary").AddText()
 	if w.buttonLabel != "" {
-
 		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.ourButtonListener)
 	}
 	m.Close()
-	m.PopIdPrefix()
+	//m.PopIdPrefix()
 
-	m.PopStateProvider()
+	//m.PopStateProvider()
 
 	pr("done adding children")
 }
