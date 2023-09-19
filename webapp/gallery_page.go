@@ -12,6 +12,21 @@ import (
 // Page implementation
 // ------------------------------------------------------------------------------------
 
+type GalleryPageStruct struct {
+	fooMap JSMap
+	list   ListWidget
+}
+
+func NewGalleryPage(sess Session) Page {
+	t := &GalleryPageStruct{
+		fooMap: NewJSMap().Put("bar", "hello"),
+	}
+	if sess != nil {
+		t.generateWidgets(sess)
+	}
+	return t
+}
+
 const GalleryPageName = "gallery"
 
 var GalleryPageTemplate = NewGalleryPage(nil)
@@ -31,22 +46,6 @@ func (p GalleryPage) Args() []string { return EmptyStringSlice }
 
 // ------------------------------------------------------------------------------------
 
-type GalleryPage = *GalleryPageStruct
-
-type GalleryPageStruct struct {
-	fooMap JSMap
-}
-
-func NewGalleryPage(sess Session) Page {
-	t := &GalleryPageStruct{
-		fooMap: NewJSMap().Put("bar", "hello"),
-	}
-	if sess != nil {
-		t.generateWidgets(sess)
-	}
-	return t
-}
-
 const sampleImageId = "sample_image"
 
 var alertWidget AlertWidget
@@ -56,7 +55,7 @@ const gallery_card_prefix = "gallery_card."
 
 func (p GalleryPage) generateWidgets(sess Session) {
 
-	sess.SetClickListener(p.clickListener) //ProcessUserHeaderClick)
+	sess.SetClickListener(p.clickListener)
 
 	m := GenerateHeader(sess, p)
 
@@ -64,6 +63,12 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 	alertWidget.SetVisible(false)
 	m.Add(alertWidget)
+
+	{
+		x := NewGalleryListImplementation()
+		p.list = m.AddList(x, x.listItemRenderer, x.listWidgetListener)
+		Todo("!Add support for empty list items, to pad out page to full size")
+	}
 
 	m.Open()
 
@@ -269,6 +274,10 @@ func (p GalleryPage) clickListener(sess Session, message string) bool {
 		return true
 	}
 
+	if p.list.HandleClick(sess, message) {
+		return true
+	}
+
 	if arg, f := TrimIfPrefix(message, gallery_card_prefix); f {
 		Pr("card click, remaining arg:", arg)
 		return true
@@ -281,4 +290,39 @@ func (p GalleryPage) fooListener(sess Session, widget InputWidget, value string)
 	Todo("Clarify prefix role in provider, widget ids, and resolve confusion about add/subtract prefix")
 	Pr("fooListener, id:", widget.Id(), "value:", value, CR, "current map:", INDENT, p.fooMap)
 	return value, nil
+}
+
+// ------------------------------------------------------------------------------------
+// List
+// ------------------------------------------------------------------------------------
+
+type GalleryListImplementationStruct struct {
+	BasicListStruct
+	names []string
+}
+
+type GalleryListImplementation = *GalleryListImplementationStruct
+
+type GalleryPage = *GalleryPageStruct
+
+func NewGalleryListImplementation() GalleryListImplementation {
+	t := &GalleryListImplementationStruct{}
+	t.ElementsPerPage = 6
+	j := NewJSRand().SetSeed(1965)
+	for i := 0; i < 50; i++ {
+		t.names = append(t.names, RandomText(j, 12, false))
+		t.ElementIds = append(t.ElementIds, i)
+	}
+	return t
+}
+
+func (g GalleryListImplementation) listItemRenderer(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
+	m.OpenTag(`div class="col-sm-4"`)
+	m.Escape(ToString("#", elementId, g.names[elementId]))
+	m.CloseTag()
+}
+func (g GalleryListImplementation) listWidgetListener(sess Session, widget ListWidget) error {
+	Todo("Can list listener be same as other listeners, e.g. a general listener?")
+	Pr("gallery list listener:", widget.Id())
+	return nil
 }

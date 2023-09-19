@@ -50,6 +50,7 @@ func (b BasicList) SetCurrentPage(pageNumber int) {
 }
 
 func (b BasicList) TotalPages() int {
+	CheckState(b.ElementsPerPage > 0, "no ElementsPerPage")
 	numElements := len(b.ElementIds)
 	remainder := numElements % b.ElementsPerPage
 	completePages := numElements / b.ElementsPerPage
