@@ -85,9 +85,9 @@ type SessionStruct struct {
 	app      any  // ServerApp is stored here, will clean up later
 	prepared bool // True once application has been able to initialize the session
 
-	widgetManager WidgetManager
-	clickListener ClickListener
-
+	widgetManager        WidgetManager
+	clickListener        ClickListener
+	DefaultStateProvider *WidgetStateProviderStruct // refactor access to this field
 	// Current request variables
 	ResponseWriter         http.ResponseWriter
 	request                *http.Request
@@ -596,7 +596,14 @@ func NewStateProvider(prefix string, state JSMap) WidgetStateProvider {
 
 // Extract the prefix and state map from a WidgetStateProvider, or return the default values if none is given.
 func extractStateProvider(s Session, p WidgetStateProvider) (string, JSMap) {
+  Todo("Should we just pass around the struct, not the separate fields?")
 	if p == nil {
+    // If there's an explicit default state provider, use it
+		prov := s.DefaultStateProvider
+		if prov != nil {
+			return prov.Prefix, prov.State
+		}
+    // This is the state provider if no other one has been specified 
 		return "", s.State
 	}
 	return p.Prefix, p.State
@@ -668,4 +675,3 @@ func (s Session) SetWidgetValue(w Widget, value any) {
 	prefix, state := extractStateProvider(s, w.StateProvider())
 	state.Put(compileId(prefix, w.Id()), value)
 }
-

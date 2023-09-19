@@ -55,7 +55,7 @@ const gallery_card_prefix = "gallery_card."
 
 func (p GalleryPage) generateWidgets(sess Session) {
 
-	trim := Alert("removing most widgets")
+	trim := false && Alert("removing most widgets")
 	sess.SetClickListener(p.clickListener)
 
 	m := GenerateHeader(sess, p)
@@ -83,7 +83,9 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		}
 
 		p.list = m.AddList(x, w2, listProvider, nil, x.listWidgetListener)
-		p.list.WithPageControls = false
+		if trim {
+			p.list.WithPageControls = false
+		}
 		Todo("!Add support for empty list items, to pad out page to full size")
 	}
 
@@ -328,7 +330,7 @@ type GalleryPage = *GalleryPageStruct
 
 func NewGalleryListImplementation() GalleryListImplementation {
 	t := &GalleryListImplementationStruct{}
-	t.ElementsPerPage = 6
+	t.ElementsPerPage = 3
 	j := NewJSRand().SetSeed(1965)
 	for i := 0; i < 50; i++ {
 		t.names = append(t.names, RandomText(j, 12, false))

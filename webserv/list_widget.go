@@ -22,6 +22,9 @@ type ListWidgetListener func(sess Session, widget ListWidget) error
 type ListWidget = *ListWidgetStruct
 
 func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStateProvider ListItemStateProvider, renderer ListItemRenderer, listener ListWidgetListener) ListWidget {
+
+	Todo("Document the fact that widgets that have their own explicit state providers won't use the one for this list, so items might not render as expected")
+
 	Todo("Maybe pass in a widget as the item to be rendered")
 	if itemWidget == nil {
 		Alert("!lists will require widets instead of renderers soon.")
@@ -94,6 +97,7 @@ func (w ListWidget) renderPagePiece(m MarkupBuilder, label string, targetPage in
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	pr := PrIf(false)
 
+	oldStyle := w.renderer != nil
 	m.Comment("ListWidget")
 
 	m.OpenTag(`div id="`, w.BaseId, `"`)
@@ -108,22 +112,29 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			elementIds := w.list.GetPageElements()
 			pr("rendering page num:", w.list.CurrentPage(), "element ids:", elementIds)
 
+			// While rendering this list's items, we will replace any existing default state provider with
+			// the list's one.  Save the current default state provider here, for later restoration.
+			savedStateProvider := s.DefaultStateProvider
+
 			for _, id := range elementIds {
 				m.Comment("--------------------------- rendering id:", id)
 
-				if w.renderer != nil {
+				if oldStyle {
 					w.renderer(s, w, id, m)
 					continue
 				}
-				// Call the list's item state provider to assign it to the item widget
+				// Get the client to return a state provider
 				prefix, jsmap := w.itemStateProvider(s, w, id)
 				Pr("got list item state provider, map:", jsmap)
+				// Make it the default state provider.
 				sp := NewStateProvider(prefix, jsmap)
+				s.DefaultStateProvider = sp
 				Todo("the state provider struct could be built earlier and initialized here each time")
-				w.itemWidget.SetStateProvider(sp)
-				Todo("Will the item widgets use the item's state provider properly?")
+
 				w.itemWidget.RenderTo(s, m)
 			}
+			// Restore the default state provider to what it was before we rendered the items.
+			s.DefaultStateProvider = savedStateProvider
 		}
 		m.CloseTag()
 	}

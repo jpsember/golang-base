@@ -27,7 +27,6 @@ func NewWidgetManager(session Session) WidgetManager {
 	w.SetName("WidgetManager")
 	w.resetPendingColumns()
 	w.LogCols("Constructed")
-	w.PushStateProvider("", session.State)
 	return &w
 }
 
@@ -429,10 +428,12 @@ func (m WidgetManager) PushStateProvider(prefix string, stateMap JSMap) {
 
 func (m WidgetManager) PopStateProvider() {
 	_, m.providerStack = PopLast(m.providerStack)
-	CheckState(len(m.providerStack) != 0)
 }
 
 func (m WidgetManager) StateProvider() WidgetStateProvider {
+	if len(m.providerStack) == 0 {
+		return nil
+	}
 	return Last(m.providerStack)
 }
 
