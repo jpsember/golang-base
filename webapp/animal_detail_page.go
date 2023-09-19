@@ -43,7 +43,6 @@ func NewCreateAnimalPage(sess Session) AnimalDetailPage {
 }
 
 func NewEditAnimalPage(sess Session, animalId int) AnimalDetailPage {
-	Todo("Maybe pass in an actual animal here")
 	t := &AnimalDetailPageStruct{
 		animalId: animalId,
 		editing:  true,

@@ -152,7 +152,6 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		m.widgetMap[id] = widget
 	}
 	// Set its state provider, if it doesn't already have one
-	Alert("Ok, the problem with lists is that the state provider is stored at construction time, and we need to change it at render time for every widget in the list items...")
 	if widget.StateProvider() == nil {
 		widget.SetStateProvider(m.StateProvider())
 	}
