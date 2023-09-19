@@ -85,9 +85,9 @@ type SessionStruct struct {
 	app      any  // ServerApp is stored here, will clean up later
 	prepared bool // True once application has been able to initialize the session
 
-	widgetManager        WidgetManager
-	clickListener        ClickListener
-	DefaultStateProvider *WidgetStateProviderStruct // refactor access to this field
+	widgetManager     WidgetManager
+	clickListener     ClickListener
+	baseStateProvider *WidgetStateProviderStruct
 	// Current request variables
 	ResponseWriter         http.ResponseWriter
 	request                *http.Request
@@ -106,6 +106,7 @@ func NewSession() Session {
 		BrowserInfo: webserv_data.DefaultClientInfo,
 		appData:     make(map[string]any),
 	}
+	s.baseStateProvider = NewStateProvider("", s.State)
 	Todo("!Restore user session from filesystem/database")
 	Todo("?ClientInfo (browser info) not sent soon enough")
 	Todo("?The Session should have WidgetManager embedded within it, so we can call through to its methods")
@@ -594,19 +595,13 @@ func NewStateProvider(prefix string, state JSMap) WidgetStateProvider {
 	return &WidgetStateProviderStruct{Prefix: prefix, State: state}
 }
 
-// Extract the prefix and state map from a WidgetStateProvider, or return the default values if none is given.
-func extractStateProvider(s Session, p WidgetStateProvider) (string, JSMap) {
-	Todo("Should we just pass around the struct, not the separate fields?")
+// If state provider is nil, use default one
+func orBaseProvider(s Session, p WidgetStateProvider) WidgetStateProvider {
 	if p == nil {
-		// If there's an explicit default state provider, use it
-		prov := s.DefaultStateProvider
-		if prov != nil {
-			return prov.Prefix, prov.State
-		}
 		// This is the state provider if no other one has been specified
-		return "", s.State
+		p = s.baseStateProvider
 	}
-	return p.Prefix, p.State
+	return p
 }
 
 func compileId(prefix string, id string) string {
@@ -623,55 +618,54 @@ func compileId(prefix string, id string) string {
 // ------------------------------------------------------------------------------------
 
 // Read widget value; assumed to be an int.
-func readStateIntValue(prefix string, state JSMap, id string) int {
-	return state.OptInt(compileId(prefix, id), 0)
+func readStateIntValue(p WidgetStateProvider, id string) int {
+	return p.State.OptInt(compileId(p.Prefix, id), 0)
 }
 
 // Read widget value; assumed to be a bool.
-func readStateBoolValue(prefix string, state JSMap, id string) bool {
-	return state.OptBool(compileId(prefix, id), false)
+func readStateBoolValue(p WidgetStateProvider, id string) bool {
+	return p.State.OptBool(compileId(p.Prefix, id), false)
 }
 
 // Read widget value; assumed to be a string.
-func readStateStringValue(prefix string, state JSMap, id string) string {
-	return state.OptString(compileId(prefix, id), "")
+func readStateStringValue(p WidgetStateProvider, id string) string {
+	return p.State.OptString(compileId(p.Prefix, id), "")
 }
 
 // Read widget value; assumed to be an int.
 func (s Session) IntValue(id string) int {
-	return readStateIntValue("", s.State, id)
+	return readStateIntValue(s.baseStateProvider, id)
 }
 
 // Read widget value; assumed to be a boolean.
 func (s Session) BoolValue(id string) bool {
-	return readStateBoolValue("", s.State, id)
+	return readStateBoolValue(s.baseStateProvider, id)
 }
 
 // Read widget value; assumed to be a string.
 func (s Session) StringValue(id string) string {
-	return readStateStringValue("", s.State, id)
+	return readStateStringValue(s.baseStateProvider, id)
 }
 
 // Read widget value; assumed to be an int.
 func (s Session) WidgetIntValue(w Widget) int {
-	prefix, state := extractStateProvider(s, w.StateProvider())
-	return readStateIntValue(prefix, state, w.Id())
+	p := orBaseProvider(s, w.StateProvider())
+	return readStateIntValue(p, w.Id())
 }
 
 // Read widget value; assumed to be a bool.
 func (s Session) WidgetBoolValue(w Widget) bool {
-	prefix, state := extractStateProvider(s, w.StateProvider())
-	return readStateBoolValue(prefix, state, w.Id())
+	p := orBaseProvider(s, w.StateProvider())
+	return readStateBoolValue(p, w.Id())
 }
 
 // Read widget value; assumed to be a string.
 func (s Session) WidgetStringValue(w Widget) string {
-	prefix, state := extractStateProvider(s, w.StateProvider())
-	result := readStateStringValue(prefix, state, w.Id())
-	return result
+	p := orBaseProvider(s, w.StateProvider())
+	return readStateStringValue(p, w.Id())
 }
 
 func (s Session) SetWidgetValue(w Widget, value any) {
-	prefix, state := extractStateProvider(s, w.StateProvider())
-	state.Put(compileId(prefix, w.Id()), value)
+	p := orBaseProvider(s, w.StateProvider())
+	p.State.Put(compileId(p.Prefix, w.Id()), value)
 }

@@ -107,8 +107,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 			// While rendering this list's items, we will replace any existing default state provider with
 			// the list's one.  Save the current default state provider here, for later restoration.
-			savedStateProvider := s.DefaultStateProvider
-
+			savedStateProvider := s.baseStateProvider //s.DefaultStateProvider
 			for _, id := range elementIds {
 				m.Comment("--------------------------- rendering id:", id)
 
@@ -117,12 +116,12 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				Todo("Have client supply a state provider struct")
 				// Make it the default state provider.
 				sp := NewStateProvider(prefix, jsmap)
-				s.DefaultStateProvider = sp
+				s.baseStateProvider = sp
 
 				w.itemWidget.RenderTo(s, m)
 			}
 			// Restore the default state provider to what it was before we rendered the items.
-			s.DefaultStateProvider = savedStateProvider
+			s.baseStateProvider = savedStateProvider
 		}
 		m.CloseTag()
 	}
