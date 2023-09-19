@@ -51,7 +51,7 @@ func (p FeedPage) generateWidgets(s Session) {
 	m.AddUserHeader()
 
 	al := p.animalList(s)
-	p.listWidget = m.Id(id_feed_list).AddList(al, p.renderItem, p.listListener)
+	p.listWidget = m.Id(id_feed_list).AddList(al, nil, nil, p.renderItem, p.listListener)
 }
 
 func (p FeedPage) animalList(s Session) AnimalList {

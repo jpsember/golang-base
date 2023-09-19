@@ -250,9 +250,12 @@ func (m WidgetManager) AddPassword(listener InputWidgetListener) WidgetManager {
 	return m.auxAddInput(listener, true)
 }
 
-func (m WidgetManager) AddList(list ListInterface, renderer ListItemRenderer, listener ListWidgetListener) ListWidget {
+func (m WidgetManager) AddList(list ListInterface, itemWidget Widget,
+	provider ListItemStateProvider,
+	renderer ListItemRenderer,
+	listener ListWidgetListener) ListWidget {
 	id := m.consumeOptionalPendingId()
-	t := NewListWidget(id, list, renderer, listener)
+	t := NewListWidget(id, list, itemWidget, provider, renderer, listener)
 	m.Add(t)
 	return t
 }

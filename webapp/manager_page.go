@@ -63,7 +63,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	sess.SetClickListener(p.clickListener)
 
 	al := p.animalList(sess)
-	p.listWidget = m.Id(id_manager_list).AddList(al, p.renderItem, p.listListener)
+	p.listWidget = m.Id(id_manager_list).AddList(al, nil, nil, p.renderItem, p.listListener)
 }
 
 func (p ManagerPage) animalList(s Session) AnimalList {

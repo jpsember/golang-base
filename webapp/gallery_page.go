@@ -66,7 +66,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	{
 		x := NewGalleryListImplementation()
-		p.list = m.AddList(x, x.listItemRenderer, x.listWidgetListener)
+		p.list = m.AddList(x, nil, nil, x.listItemRenderer, x.listWidgetListener)
 		Todo("!Add support for empty list items, to pad out page to full size")
 	}
 

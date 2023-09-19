@@ -7,24 +7,34 @@ import (
 // A Widget that displays editable text
 type ListWidgetStruct struct {
 	BaseWidgetObj
-	list       ListInterface
-	renderer   ListItemRenderer
-	pagePrefix string
+	list              ListInterface
+	renderer          ListItemRenderer
+	itemStateProvider ListItemStateProvider
+	itemWidget        Widget
+	pagePrefix        string
 }
+
+type ListItemStateProvider func(sess Session, widget *ListWidgetStruct) (string, JSMap)
 
 type ListWidgetListener func(sess Session, widget ListWidget) error
 
 type ListWidget = *ListWidgetStruct
 
-func NewListWidget(id string, list ListInterface, renderer ListItemRenderer, listener ListWidgetListener) ListWidget {
+func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStateProvider ListItemStateProvider, renderer ListItemRenderer, listener ListWidgetListener) ListWidget {
 	Todo("Maybe pass in a widget as the item to be rendered")
-	if renderer == nil {
-		Alert("<1No renderer for list, using default")
-		renderer = defaultRenderer
+	if itemWidget == nil {
+		Alert("!lists will require widets instead of renderers soon.")
+
+		if renderer == nil {
+			Alert("<1No renderer for list, using default")
+			renderer = defaultRenderer
+		}
 	}
 	w := ListWidgetStruct{
-		list:     list,
-		renderer: renderer,
+		list:              list,
+		renderer:          renderer,
+		itemWidget:        itemWidget,
+		itemStateProvider: itemStateProvider,
 	}
 	w.InitBase(id)
 	w.pagePrefix = id + ".page_"
@@ -93,9 +103,21 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 		{
 			elementIds := w.list.GetPageElements()
 			pr("rendering page num:", w.list.CurrentPage(), "element ids:", elementIds)
+
 			for _, id := range elementIds {
 				m.Comment("--------------------------- rendering id:", id)
-				w.renderer(s, w, id, m)
+
+				if w.renderer != nil {
+					w.renderer(s, w, id, m)
+					continue
+				}
+				// Call the list's item state provider to assign it to the item widget
+				prefix, jsmap := w.itemStateProvider(s, w)
+				sp := NewStateProvider(prefix, jsmap)
+				Todo("the state provider struct could be built earlier and initialized here each time")
+				w.itemWidget.SetStateProvider(sp)
+				Todo("Will the item widgets use the item's state provider properly?")
+				w.itemWidget.RenderTo(s, m)
 			}
 		}
 		m.CloseTag()
