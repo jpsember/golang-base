@@ -19,13 +19,13 @@ type ListWidgetStruct struct {
 type ListWidgetListener func(sess Session, widget *ListWidgetStruct, itemId int, args string)
 
 func listListenWrapper(sess Session, widget Widget, value string) (string, error) {
-	b := widget.(ListWidget)
-
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("listListenWrapper, value:", value)
 
+	b := widget.(ListWidget)
+
 	// See if this is an event from the page controls
-	if b.handleClick(sess, value) {
+	if b.handlePagerClick(sess, value) {
 		pr("...page controls handled it")
 		return "", ListenerShortcutError
 	}
@@ -74,8 +74,6 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStatePr
 	w.InitBase(id)
 	w.LowListen = listListenWrapper
 	w.pagePrefix = id + ".page_"
-	Alert("Not setting explicit click listener")
-	//w.SetClickListener(w.HandleClick)
 	return &w
 }
 
@@ -133,7 +131,6 @@ func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, ta
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-	Todo("The page controls ought to be handled as a widget handler")
 	pr := PrIf(false)
 	pr("ListWidget.RenderTo")
 	m.Comment("ListWidget")
@@ -181,12 +178,10 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.CloseTag()
 }
 
-// Parse a click event, and if it is aimed at us, process it and return true.  This is used by the
-// pagination controls.  **Clicks on the list items are still handled by the client.**
-// This
-func (w ListWidget) handleClick(sess Session, message string) bool {
-	pr := PrIf(true)
-	pr("handleClick, message:", message, "pagePrefix:", w.pagePrefix)
+// Process a possible pagniation control event.
+func (w ListWidget) handlePagerClick(sess Session, message string) bool {
+	pr := PrIf(false)
+	pr("handlePagerClick, message:", message, "pagePrefix:", w.pagePrefix)
 	if page_str, f := TrimIfPrefix(message, "page_"); f {
 		pr("page_str:", page_str)
 		for {

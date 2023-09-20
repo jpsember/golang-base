@@ -296,7 +296,7 @@ func extractId(expr string) (string, string) {
 }
 
 func (s Session) processClientMessage() {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("processClientMessage")
 
 	didSomething := false
@@ -367,16 +367,8 @@ func (s Session) processClientMessage() {
 }
 
 func (s Session) processClickEvent(sourceId string) bool {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	pr("session, process click event:", sourceId)
-	//listener := s.clickListener
-	//if listener != nil {
-	//	pr("...trying session listener")
-	//	if listener(s, sourceId) {
-	//		pr("......handled")
-	//		break
-	//	}
-	//}
 
 	// Examine widgets, for any having a click event handler
 	m := s.WidgetManager()
@@ -384,15 +376,12 @@ func (s Session) processClickEvent(sourceId string) bool {
 		listener := widget.GetClickListener()
 		if listener != nil {
 			pr("...trying widget", key)
-
 			if listener(s, sourceId) {
 				pr("......handled")
 				return true
 			}
 		}
 	}
-
-	//Alert("#50Nobody handled click:", sourceId)
 	return false
 }
 
@@ -605,7 +594,7 @@ func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
 // ------------------------------------------------------------------------------------
 
 func (s Session) SwitchToPage(page Page) {
-	Pr("SwitchToPage:", page.Name(), "from:", Caller())
+	//Pr("SwitchToPage:", page.Name(), "from:", Caller())
 	s.Repaint(s.PageWidget)
 	s.browserURLExpr = s.ConstructPathFromPage(page)
 	s.DebugPage = page

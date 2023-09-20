@@ -40,10 +40,6 @@ func (p FeedPage) Name() string { return FeedPageName }
 var fewWidgets = false && Alert("Rendering only a few of the usual widgets")
 
 func (p FeedPage) generateWidgets(s Session) {
-	Todo("Clicking on 'sign out' doesn't have any effect")
-	// Set click listener for this page
-	//s.SetClickListener(p.clickListener)
-
 	m := GenerateHeader(s, p)
 	debug := m.StartConstruction()
 
