@@ -209,7 +209,6 @@ func (p AnimalDetailPage) generateForViewing(s Session) {
 	m.Col(6).Open()
 	{
 		Todo("!Flesh this out some")
-		Todo("!Rename the create_animal_page to animal_detail_page")
 		m.Col(12)
 		m.Id(id_animal_name).AddText()
 

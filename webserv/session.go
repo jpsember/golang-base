@@ -577,6 +577,7 @@ func (s Session) SetClickListener(listener ClickListener) {
 // ------------------------------------------------------------------------------------
 
 func (s Session) SwitchToPage(page Page) {
+	s.SetClickListener(nil)
 	s.Repaint(s.PageWidget)
 	s.browserURLExpr = s.ConstructPathFromPage(page)
 	s.DebugPage = page

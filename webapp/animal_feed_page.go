@@ -22,8 +22,7 @@ func (p FeedPage) ConstructPage(s Session, args PageArgs) Page {
 func (p FeedPage) Args() []string { return EmptyStringSlice }
 
 type FeedPageStruct struct {
-	listWidget ListWidget
-	animList   AnimalList
+	animList AnimalList
 }
 
 type FeedPage = *FeedPageStruct
@@ -41,6 +40,7 @@ func (p FeedPage) Name() string { return FeedPageName }
 var fewWidgets = false && Alert("Rendering only a few of the usual widgets")
 
 func (p FeedPage) generateWidgets(s Session) {
+	Todo("Clicking on 'sign out' doesn't have any effect")
 	// Set click listener for this page
 	s.SetClickListener(p.clickListener)
 
@@ -51,14 +51,13 @@ func (p FeedPage) generateWidgets(s Session) {
 		m.AddUserHeader()
 	}
 
-	// Set click listener for the card list
-	s.SetClickListener(p.clickListener)
-
 	// Construct widget to use in list
 	cardWidget := p.constructListItemWidget(s)
-	p.listWidget = m. /*.Id(id_feed_list)*/ AddList(p.animalList(s), cardWidget, cardWidget.StateProviderFunc())
-	p.listWidget.WithPageControls = !Alert("!disabling page controls")
-	p.listWidget.Listener = p.listListener
+	listWidget := m.AddList(p.animalList(s), cardWidget, cardWidget.StateProviderFunc())
+	if fewWidgets {
+		listWidget.WithPageControls = false
+	}
+	listWidget.Listener = p.listListener
 	m.EndConstruction(debug)
 }
 
@@ -119,23 +118,8 @@ func (p FeedPage) listListener(sess Session, widget *ListWidgetStruct, itemId in
 }
 
 func (p FeedPage) clickListener(sess Session, message string) bool {
-
+	Pr("clickListener:", message)
 	if ProcessUserHeaderClick(sess, message) {
-		return true
-	}
-
-	Todo("Is this code required?")
-	if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
-		id, err1 := ParseAsPositiveInt(id_str)
-		if ReportIfError(err1, "AnimalFeedPage parsing", message) {
-			return true
-		}
-		p.attemptSelectAnimal(sess, id)
-		return true
-	}
-
-	Todo("or this code?")
-	if p.listWidget.HandleClick(sess, message) {
 		return true
 	}
 	return false
@@ -147,8 +131,6 @@ func (p FeedPage) attemptSelectAnimal(s Session, id int) bool {
 		Alert("#50trouble reading animal:", id)
 		return false
 	}
-	Todo("clear click listener on switch page?  Maybe put click listener within the page?")
-	s.SetClickListener(nil)
 	s.SwitchToPage(NewViewAnimalPage(s, animal.Id()))
 	return true
 }

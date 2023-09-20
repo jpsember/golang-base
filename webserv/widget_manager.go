@@ -477,7 +477,6 @@ func (s Session) RepaintIds(ids ...string) WidgetManager {
 }
 
 func (m WidgetManager) PushContainer(container Widget) WidgetManager {
-	Todo("!this is a lot like OpenContainer, but without the adding")
 	// Push a container widget onto the stack
 	itm := *m.stackedState()
 	itm.Parent = container

@@ -24,6 +24,7 @@ const (
 )
 
 func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
+	Todo("!Use new embedded widgets technique")
 	app := SessionApp(s)
 	user := app.UserForSession(s)
 	signedIn := user.Id() != 0

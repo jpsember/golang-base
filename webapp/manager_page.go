@@ -191,8 +191,6 @@ func (p ManagerPage) attemptSelectAnimal(s Session, id int) bool {
 		Alert("#50wrong manager for animal", animal)
 		return false
 	}
-	Todo("clear click listener on switch page?")
-	s.SetClickListener(nil)
 	s.SwitchToPage(NewEditAnimalPage(s, animal.Id()))
 	return true
 }
