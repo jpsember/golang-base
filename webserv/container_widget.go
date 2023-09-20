@@ -54,8 +54,9 @@ func (w GridWidget) RemoveChild(c Widget) {
 func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
-	m.Comments(`GridWidget`, w.IdSummary())
+	Todo("!Don't add markup that is outside of the div<widget id>, else it will pile up due to ajax refreshes")
 	m.OpenTag(`div id='` + w.BaseId + `'`)
+	m.Comments(`GridWidget`, w.IdSummary())
 	if len(w.children) != 0 {
 		m.OpenTag(`div class='row'`)
 		for _, child := range w.children {

@@ -20,8 +20,6 @@ type ListWidgetListener func(sess Session, widget *ListWidgetStruct, itemId int,
 
 func listListenWrapper(sess Session, widget Widget, value string) (string, error) {
 	b := widget.(ListWidget)
-	Pr("listListenWrapper, value:", value)
-	Todo("parse args")
 
 	// This is presumably something like <element id> '.' <remainder>
 	itemId := -1
@@ -49,9 +47,12 @@ type ListItemStateProvider func(sess Session, widget *ListWidgetStruct, elementI
 
 type ListWidget = *ListWidgetStruct
 
+// Construct a ListWidget.
+// itemWidget : this is a widget that will be rendered for each displayed item.  Widgets within this widget
+// that do not have explicit state providers will use the one provided by the list renderer.
 func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStateProvider ListItemStateProvider) ListWidget {
-	Todo("Document the fact that widgets that have their own explicit state providers won't use the one for this list, so items might not render as expected")
-	Todo("If no item widget has been supplied, construct a default one")
+	Todo("!If no item widget has been supplied, construct a default one")
+	Todo("!Have option to wrap list items in a clickable div")
 	CheckArg(itemWidget != nil, "No itemWidget given")
 
 	w := ListWidgetStruct{
@@ -63,7 +64,6 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStatePr
 	w.InitBase(id)
 	w.LowListen = listListenWrapper
 	w.pagePrefix = id + ".page_"
-
 	return &w
 }
 

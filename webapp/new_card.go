@@ -99,7 +99,6 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 	animal := w.animal
 	m.Comments("Animal Card")
 
-	Todo("When recycled for list items, the clicks aren't reaching the client; the widget id is the same for each item")
 	m.OpenTag(`div class="card bg-light mb-3" style="width:14em"`)
 	{
 		imgUrl := "unknown"

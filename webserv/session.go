@@ -308,7 +308,6 @@ func (s Session) processClientMessage() {
 
 	// We can now assume that the request consists of a single widget id, and perhaps a single value
 	// for that widget
-	//
 
 	widgetIdExpr := s.ajaxWidgetId
 	if widgetIdExpr == "" {
@@ -318,12 +317,12 @@ func (s Session) processClientMessage() {
 		return
 	}
 
-	Pr("processClientMessage; widgetId:", widgetIdExpr)
-	Todo("see if we can parse the widget id as <id>['.' < additional stuff ...>]")
+	// See if the id expression has the form <widget id> '.' <remainder>
+	//
 
 	id, remainder := extractId(widgetIdExpr)
-	Pr("extracted id:", Quoted(id), "Remainder:", Quoted(remainder))
-	// If there was no widget value, and there was a parsed widget id expression, send the remainder as the value
+
+	// If there was no widget value, and there was a parsed widget id remainder, send that remainder as the value
 	if s.ajaxWidgetValue == "" && remainder != "" {
 		s.ajaxWidgetValue = remainder
 	}
@@ -332,11 +331,6 @@ func (s Session) processClientMessage() {
 	// If there is no widget with this id, inform the default listener (clarify the terminology later)
 	if widget == nil {
 		s.processClickEvent(widgetIdExpr)
-		return
-	}
-
-	if widget == nil {
-		s.SetRequestProblem("no widget found", widget)
 		return
 	}
 

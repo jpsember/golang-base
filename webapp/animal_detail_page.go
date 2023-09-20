@@ -73,14 +73,11 @@ func NewViewAnimalPage(sess Session, animalId int) AnimalDetailPage {
 }
 
 func (p AnimalDetailPage) prepareAnimal() {
-	Pr("attempting to prepare animal")
-	Pr("animalId:", p.animalId)
 	anim, err := ReadAnimal(p.animalId)
 	if ReportIfError(err, "NewEditAnimalPage") {
 		BadState(err)
 	}
 	p.anim2 = anim.ToJson().AsJSMap()
-	Alert("prepared animal:", INDENT, p.anim2)
 }
 
 func (p AnimalDetailPage) ConstructPage(s Session, args PageArgs) Page {
@@ -457,8 +454,6 @@ func (p AnimalDetailPage) provideURL(s Session) string {
 	url := ""
 
 	// We need to access the state directly, without a widget.
-
-	Todo("Should we have a hidden widget, or a widget that isn't added to the hierarchy? Might simplify things")
 	imageId := s.IntValue(id_animal_display_pic)
 
 	if imageId == 0 {

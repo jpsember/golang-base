@@ -36,12 +36,9 @@ func NewFeedPage(s Session) FeedPage {
 	return t
 }
 
-const feed_id_prefix = FeedPageName + "."
-const (
-	id_feed_list = feed_id_prefix + "list"
-)
-
 func (p FeedPage) Name() string { return FeedPageName }
+
+var fewWidgets = false && Alert("Rendering only a few of the usual widgets")
 
 func (p FeedPage) generateWidgets(s Session) {
 	// Set click listener for this page
@@ -50,7 +47,7 @@ func (p FeedPage) generateWidgets(s Session) {
 	m := GenerateHeader(s, p)
 	debug := m.StartConstruction()
 
-	if !Alert("not adding user header for now") {
+	if !fewWidgets {
 		m.AddUserHeader()
 	}
 
@@ -78,7 +75,6 @@ func (p FeedPage) constructListItemWidget(s Session) NewCard {
 	w := NewNewCard(m.AllocateAnonymousId("feed_card"), DefaultAnimal,
 		cardListener, //
 		"", nil)      //
-	// // "hey", cardListener)
 	m.Add(w)
 	m.Detach(w)
 	return w
@@ -108,26 +104,15 @@ func getAnimals() []int {
 			anim := iter.Next().(Animal)
 			result = append(result, anim.Id())
 		}
-		if Alert("!trimming animal list to a couple of items") {
+		if fewWidgets {
 			if len(result) > 2 {
 				result = result[0:2]
 			}
+
 		}
 	}
 	return result
 }
-
-//
-//func (p FeedPage) renderItem(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
-//	anim, err := ReadActualAnimal(elementId)
-//	if ReportIfError(err, "renderItem in animal feed page:", elementId) {
-//		return
-//	}
-//	Todo("How do we render a card widget as a list item though?")
-//	m.OpenTag(`div class="col-sm-3"`)
-//	RenderAnimalCard(session, anim, m, "View", action_prefix_animal_card, action_prefix_animal_card)
-//	m.CloseTag()
-//}
 
 func (p FeedPage) listListener(sess Session, widget *ListWidgetStruct, itemId int, args string) {
 	p.attemptSelectAnimal(sess, itemId)
@@ -139,6 +124,7 @@ func (p FeedPage) clickListener(sess Session, message string) bool {
 		return true
 	}
 
+	Todo("Is this code required?")
 	if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
 		id, err1 := ParseAsPositiveInt(id_str)
 		if ReportIfError(err1, "AnimalFeedPage parsing", message) {
@@ -146,15 +132,9 @@ func (p FeedPage) clickListener(sess Session, message string) bool {
 		}
 		p.attemptSelectAnimal(sess, id)
 		return true
-		//anim, err := ReadActualAnimal(id)
-		//if ReportIfError(err, "AnimalFeed message", message) {
-		//	return true
-		//}
-		//sess.SetClickListener(nil)
-		//sess.SwitchToPage(NewViewAnimalPage(sess, anim.Id()))
-		//return true
 	}
 
+	Todo("or this code?")
 	if p.listWidget.HandleClick(sess, message) {
 		return true
 	}
@@ -167,7 +147,7 @@ func (p FeedPage) attemptSelectAnimal(s Session, id int) bool {
 		Alert("#50trouble reading animal:", id)
 		return false
 	}
-	Todo("clear click listener on switch page?")
+	Todo("clear click listener on switch page?  Maybe put click listener within the page?")
 	s.SetClickListener(nil)
 	s.SwitchToPage(NewViewAnimalPage(s, animal.Id()))
 	return true
