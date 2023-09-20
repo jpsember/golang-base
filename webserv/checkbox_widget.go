@@ -36,7 +36,7 @@ func NewCheckboxWidget(switchFlag bool, id string, label HtmlString, listener Ch
 	return &w
 }
 
-func checkboxListenWrapper(sess Session, widget Widget, value string) (string, error) {
+func checkboxListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	highLevelListener := widget.(CheckboxWidget)
 	boolValue := false
 	if b, err := strconv.ParseBool(value); err != nil {
@@ -44,9 +44,7 @@ func checkboxListenWrapper(sess Session, widget Widget, value string) (string, e
 	} else {
 		boolValue = b
 	}
-
-	result, err := highLevelListener.listener(sess, highLevelListener, boolValue)
-	return strconv.FormatBool(result), err
+	return highLevelListener.listener(sess, highLevelListener, boolValue)
 }
 
 func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {

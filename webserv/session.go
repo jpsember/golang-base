@@ -352,14 +352,11 @@ func (s Session) processClientMessage() {
 		return
 	}
 	updatedValue, err := widget.LowListener()(s, widget, s.ajaxWidgetValue)
-	Todo("!Refactor low level listener to return a value that could have a sentinel value meaning 'no change', not the error")
-	if err == ListenerShortcutError {
-		// The widget handled the click event, but has no new value to update.
-		err = nil
-	} else {
-		s.SetWidgetValue(widget, updatedValue)
+	{
 		if err != nil {
 			Pr("got error from widget listener:", widget.Id(), INDENT, err)
+		} else if updatedValue != nil {
+			s.SetWidgetValue(widget, updatedValue)
 		}
 	}
 	// Always update the problem, in case we are clearing a previous error

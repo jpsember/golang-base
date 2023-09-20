@@ -24,10 +24,10 @@ func NewButtonWidget(id string, listener ButtonWidgetListener) ButtonWidget {
 	return b
 }
 
-func buttonListenWrapper(sess Session, widget Widget, value string) (string, error) {
+func buttonListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	b := widget.(ButtonWidget)
 	b.listener(sess, widget)
-	return "", nil
+	return nil, nil
 }
 
 func doNothingButtonListener(sess Session, widget Widget) {

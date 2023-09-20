@@ -31,10 +31,7 @@ type Widget interface {
 
 const WidgetIdPage = "page"
 
-// Can return an error "ListenerShortcutError" to indicate that the value should *not* be stored.
-type LowLevelWidgetListener func(sess Session, widget Widget, value string) (string, error)
-
-var ListenerShortcutError = Error("listener shortcut")
+type LowLevelWidgetListener func(sess Session, widget Widget, value string) (optNewWidgetValue any, err error)
 
 type WidgetMap = map[string]Widget
 

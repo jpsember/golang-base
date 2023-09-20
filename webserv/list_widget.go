@@ -18,7 +18,7 @@ type ListWidgetStruct struct {
 
 type ListWidgetListener func(sess Session, widget *ListWidgetStruct, itemId int, args string)
 
-func listListenWrapper(sess Session, widget Widget, value string) (string, error) {
+func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	pr := PrIf(false)
 	pr("listListenWrapper, value:", value)
 
@@ -27,7 +27,7 @@ func listListenWrapper(sess Session, widget Widget, value string) (string, error
 	// See if this is an event from the page controls
 	if b.handlePagerClick(sess, value) {
 		pr("...page controls handled it")
-		return "", ListenerShortcutError
+		return nil, nil
 	}
 
 	// This is presumably something like <element id> '.' <remainder>

@@ -204,7 +204,7 @@ func buttonListener(s Session, widget Widget) {
 }
 
 func (p GalleryPage) checkboxListener(s Session, widget CheckboxWidget, state bool) (bool, error) {
-	Pr("new state:", state)
+	Pr("gallery, id", widget.Id(), "new state:", state)
 	return state, nil
 }
 

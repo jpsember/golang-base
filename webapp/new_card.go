@@ -21,10 +21,10 @@ type NewCard = *NewCardObj
 
 type CardWidgetListener func(sess Session, widget NewCard)
 
-func cardListenWrapper(sess Session, widget Widget, value string) (string, error) {
+func cardListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	b := widget.(NewCard)
 	b.cardListener(sess, b)
-	return "", nil
+	return nil, nil
 }
 
 func (w NewCard) Animal() Animal {

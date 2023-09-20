@@ -33,7 +33,7 @@ func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, p
 	return &w
 }
 
-func inputListenWrapper(sess Session, widget Widget, value string) (string, error) {
+func inputListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	inp := widget.(InputWidget)
 	value = strings.TrimSpace(value)
 	result, err := inp.listener(sess, inp, value)
