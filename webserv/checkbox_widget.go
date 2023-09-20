@@ -70,7 +70,7 @@ func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 			m.VoidTag(
 				`input class="form-check-input" type="checkbox" id="`, auxId, `"`, role,
 				Ternary(s.WidgetBoolValue(w), ` checked`, ``),
-				` onclick='jsCheckboxClicked("`, w.BaseId, `")'`)
+				` onclick='jsCheckboxClicked("`, s.baseIdPrefix+w.BaseId, `")'`)
 
 			{
 				m.Comment("Label").OpenTag(`label class="form-check-label" for="`, auxId, `"`).Escape(w.Label).CloseTag() //.A(`</label>`).Cr()

@@ -88,6 +88,7 @@ type SessionStruct struct {
 	widgetManager     WidgetManager
 	clickListener     ClickListener
 	baseStateProvider *WidgetStateProviderStruct
+	baseIdPrefix      string
 	// Current request variables
 	ResponseWriter         http.ResponseWriter
 	request                *http.Request
@@ -111,6 +112,10 @@ func NewSession() Session {
 	Todo("?ClientInfo (browser info) not sent soon enough")
 	Todo("?The Session should have WidgetManager embedded within it, so we can call through to its methods")
 	return &s
+}
+
+func (s Session) PrependId(id string) string {
+	return s.baseIdPrefix + id
 }
 
 func (s Session) PrepareForHandlingRequest(w http.ResponseWriter, req *http.Request) {
@@ -283,6 +288,14 @@ func (s Session) parseAjaxRequest() {
 
 }
 
+func extractId(expr string) (string, string) {
+	dotPos := strings.IndexByte(expr, '.')
+	if dotPos >= 0 {
+		return expr[0:dotPos], expr[dotPos+1:]
+	}
+	return expr, ""
+}
+
 func (s Session) processClientMessage() {
 
 	didSomething := false
@@ -297,18 +310,28 @@ func (s Session) processClientMessage() {
 	// for that widget
 	//
 
-	widgetId := s.ajaxWidgetId
-	if widgetId == "" {
+	widgetIdExpr := s.ajaxWidgetId
+	if widgetIdExpr == "" {
 		if !didSomething {
 			s.SetRequestProblem("widget id was empty")
 		}
 		return
 	}
 
-	widget := s.widgetManager.Opt(widgetId)
+	Pr("processClientMessage; widgetId:", widgetIdExpr)
+	Todo("see if we can parse the widget id as <id>['.' < additional stuff ...>]")
+
+	id, remainder := extractId(widgetIdExpr)
+	Pr("extracted id:", Quoted(id), "Remainder:", Quoted(remainder))
+	// If there was no widget value, and there was a parsed widget id expression, send the remainder as the value
+	if s.ajaxWidgetValue == "" && remainder != "" {
+		s.ajaxWidgetValue = remainder
+	}
+
+	widget := s.widgetManager.Opt(id)
 	// If there is no widget with this id, inform the default listener (clarify the terminology later)
 	if widget == nil {
-		s.processClickEvent(widgetId)
+		s.processClickEvent(widgetIdExpr)
 		return
 	}
 

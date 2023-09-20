@@ -14,8 +14,8 @@ type mgrState struct {
 
 type WidgetManagerObj struct {
 	BaseObject
-	widgetMap WidgetMap
-	stack     []mgrState
+	widgetMap           WidgetMap
+	stack               []mgrState
 	pendingSize         WidgetSize
 	pendingAlign        WidgetAlign
 	pendingId           string
@@ -423,7 +423,7 @@ func (m WidgetManager) checkboxHelper(listener CheckboxWidgetListener, switchFla
 
 func (m WidgetManager) AllocateAnonymousId(debugInfo string) string {
 	m.anonymousIdCounter++
-	result := "." + IntToString(m.anonymousIdCounter)
+	result := "z" + IntToString(m.anonymousIdCounter)
 	if debugInfo != "" {
 		result += "_" + debugInfo + "_"
 	}

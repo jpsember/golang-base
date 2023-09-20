@@ -113,8 +113,10 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 		// If there's a card listener, treat the image as a big button returning the card's id
 		clickArg := ""
 		if w.cardListener != nil {
-			clickArg = ` onclick="jsButton('` + w.Id() + `')"`
+			clickId := s.PrependId(w.Id())
+			clickArg = ` onclick="jsButton('` + clickId + `')"`
 		}
+
 		m.Comment("animal image")
 		m.A(`<img src="`, imgUrl, `" `, clickArg)
 

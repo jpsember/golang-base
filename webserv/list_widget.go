@@ -2,6 +2,7 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"strings"
 )
 
 // A Widget that displays editable text
@@ -12,6 +13,36 @@ type ListWidgetStruct struct {
 	itemWidget        Widget
 	pagePrefix        string
 	WithPageControls  bool
+	Listener          ListWidgetListener
+}
+
+type ListWidgetListener func(sess Session, widget *ListWidgetStruct, itemId int, args string)
+
+func listListenWrapper(sess Session, widget Widget, value string) (string, error) {
+	b := widget.(ListWidget)
+	Pr("listListenWrapper, value:", value)
+	Todo("parse args")
+
+	// This is presumably something like <element id> '.' <remainder>
+	itemId := -1
+	c := strings.IndexByte(value, '.')
+	remainder := ""
+	if c > 0 {
+		remainder = value[c+1:]
+		val, err := ParseInt(value[0:c])
+		if err != nil {
+			Alert("#50 trouble parsing int from:", value)
+		} else {
+			itemId = int(val)
+		}
+	}
+
+	if b.Listener == nil {
+		Alert("#50No ListListener registered; itemId:", itemId, "args:", remainder)
+	} else {
+		b.Listener(sess, b, itemId, remainder)
+	}
+	return "", nil
 }
 
 type ListItemStateProvider func(sess Session, widget *ListWidgetStruct, elementId int) WidgetStateProvider
@@ -30,6 +61,7 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStatePr
 		WithPageControls:  true,
 	}
 	w.InitBase(id)
+	w.LowListen = listListenWrapper
 	w.pagePrefix = id + ".page_"
 
 	return &w
@@ -57,14 +89,14 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 		{
 			m.OpenTag(`ul class="pagination d-flex justify-content-center"`)
 			{
-				w.renderPagePiece(m, `&lt;&lt;`, 0, true)
-				w.renderPagePiece(m, `&lt;`, w.list.CurrentPage()-1, true)
+				w.renderPagePiece(s, m, `&lt;&lt;`, 0, true)
+				w.renderPagePiece(s, m, `&lt;`, w.list.CurrentPage()-1, true)
 
 				for i := windowStart; i <= windowStop; i++ {
-					w.renderPagePiece(m, IntToString(i+1), i, false)
+					w.renderPagePiece(s, m, IntToString(i+1), i, false)
 				}
-				w.renderPagePiece(m, `&gt;`, w.list.CurrentPage()+1, true)
-				w.renderPagePiece(m, `&gt;&gt;`, np-1, true)
+				w.renderPagePiece(s, m, `&gt;`, w.list.CurrentPage()+1, true)
+				w.renderPagePiece(s, m, `&gt;&gt;`, np-1, true)
 			}
 			m.CloseTag()
 		}
@@ -73,7 +105,8 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 	m.CloseTag()
 }
 
-func (w ListWidget) renderPagePiece(m MarkupBuilder, label string, targetPage int, edges bool) {
+func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, targetPage int, edges bool) {
+
 	m.A(`<li class="page-item"><a class="page-link`)
 	targetPage = Clamp(targetPage, 0, w.list.TotalPages()-1)
 	if w.list.CurrentPage() == targetPage {
@@ -83,7 +116,7 @@ func (w ListWidget) renderPagePiece(m MarkupBuilder, label string, targetPage in
 			m.A(` active`)
 		}
 	} else {
-		m.A(`" onclick="jsButton('`, w.pagePrefix, targetPage, `')`)
+		m.A(`" onclick="jsButton('`, s.baseIdPrefix+w.pagePrefix, targetPage, `')`)
 	}
 	m.A(`">`, label, `</a></li>`, CR)
 }
@@ -108,17 +141,22 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			// While rendering this list's items, we will replace any existing default state provider with
 			// the list's one.  Save the current default state provider here, for later restoration.
 			savedStateProvider := s.baseStateProvider
+			savedBaseIdPrefix := s.baseIdPrefix
 			for _, id := range elementIds {
-				m.Comment("--------------------------- rendering id:", id)
-				// Experiment: wrap what is to be plotted within a div with some logging to show what clicks look like.
-				// This screws up the layout of the card items... each card is on a separate line suddenly.
-				//m.OpenTag(`div class='col' onclick='console.log(` + `"` + IntToString(id) + `")'`)
+				m.Comment("----------------- rendering list item with id:", id)
+
 				// Get the client to return a state provider
 				s.baseStateProvider = w.itemStateProvider(s, w, id)
+
+				// When rendering list items, any ids should be mangled in such a way that
+				//  a) ids remain distinct, even if we are rendering the same widget for each row; and
+				//  b) when responding to click events and the like, we can figure out which list, and
+				//      element within the list, generated the event.
+				s.baseIdPrefix = w.Id() + "." + IntToString(id) + "." + savedBaseIdPrefix
 				w.itemWidget.RenderTo(s, m)
-				//m.CloseTag()
 			}
 			// Restore the default state provider to what it was before we rendered the items.
+			s.baseIdPrefix = savedBaseIdPrefix
 			s.baseStateProvider = savedStateProvider
 		}
 		m.CloseTag()

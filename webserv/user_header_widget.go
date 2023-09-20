@@ -62,7 +62,7 @@ func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
 			actionId := Ternary(signedIn, BUTTON_ID_SIGN_OUT, BUTTON_ID_SIGN_IN)
 
 			m.OpenTag(`button class="m-2 btn btn-outline-primary btn-sm"`, fontSizeExpr,
-				` onclick='jsButton("`, actionId, `")'`)
+				` onclick='jsButton("`, s.baseIdPrefix+actionId, `")'`)
 
 			if signedIn {
 				m.A(`Sign Out`)

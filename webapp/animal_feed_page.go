@@ -59,9 +59,9 @@ func (p FeedPage) generateWidgets(s Session) {
 
 	// Construct widget to use in list
 	cardWidget := p.constructListItemWidget(s)
-	p.listWidget = m.Id(id_feed_list).AddList(p.animalList(s), cardWidget, cardWidget.StateProviderFunc())
+	p.listWidget = m. /*.Id(id_feed_list)*/ AddList(p.animalList(s), cardWidget, cardWidget.StateProviderFunc())
 	p.listWidget.WithPageControls = !Alert("!disabling page controls")
-
+	p.listWidget.Listener = p.listListener
 	m.EndConstruction(debug)
 }
 
@@ -73,8 +73,12 @@ func (p FeedPage) constructListItemWidget(s Session) NewCard {
 	}
 
 	// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
-	w := NewNewCard(m.AllocateAnonymousId("donor_item"), DefaultAnimal,
-		cardListener, "hey", cardListener)
+	//
+	// These list cards have no buttons.
+	w := NewNewCard(m.AllocateAnonymousId("feed_card"), DefaultAnimal,
+		cardListener, //
+		"", nil)      //
+	// // "hey", cardListener)
 	m.Add(w)
 	m.Detach(w)
 	return w
@@ -113,15 +117,20 @@ func getAnimals() []int {
 	return result
 }
 
-func (p FeedPage) renderItem(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
-	anim, err := ReadActualAnimal(elementId)
-	if ReportIfError(err, "renderItem in animal feed page:", elementId) {
-		return
-	}
-	Todo("How do we render a card widget as a list item though?")
-	m.OpenTag(`div class="col-sm-3"`)
-	RenderAnimalCard(session, anim, m, "View", action_prefix_animal_card, action_prefix_animal_card)
-	m.CloseTag()
+//
+//func (p FeedPage) renderItem(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
+//	anim, err := ReadActualAnimal(elementId)
+//	if ReportIfError(err, "renderItem in animal feed page:", elementId) {
+//		return
+//	}
+//	Todo("How do we render a card widget as a list item though?")
+//	m.OpenTag(`div class="col-sm-3"`)
+//	RenderAnimalCard(session, anim, m, "View", action_prefix_animal_card, action_prefix_animal_card)
+//	m.CloseTag()
+//}
+
+func (p FeedPage) listListener(sess Session, widget *ListWidgetStruct, itemId int, args string) {
+	p.attemptSelectAnimal(sess, itemId)
 }
 
 func (p FeedPage) clickListener(sess Session, message string) bool {
