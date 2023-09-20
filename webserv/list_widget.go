@@ -110,9 +110,13 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			savedStateProvider := s.baseStateProvider
 			for _, id := range elementIds {
 				m.Comment("--------------------------- rendering id:", id)
+				// Experiment: wrap what is to be plotted within a div with some logging to show what clicks look like.
+				// This screws up the layout of the card items... each card is on a separate line suddenly.
+				//m.OpenTag(`div class='col' onclick='console.log(` + `"` + IntToString(id) + `")'`)
 				// Get the client to return a state provider
 				s.baseStateProvider = w.itemStateProvider(s, w, id)
 				w.itemWidget.RenderTo(s, m)
+				//m.CloseTag()
 			}
 			// Restore the default state provider to what it was before we rendered the items.
 			s.baseStateProvider = savedStateProvider
