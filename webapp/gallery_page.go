@@ -292,7 +292,7 @@ func (p GalleryPage) provideURL(s Session) string {
 }
 
 func (p GalleryPage) clickListener(sess Session, message string) bool {
-zzz	Todo("This explicit handler probably not required")
+	Todo("This explicit handler probably not required")
 	//
 	//if p.list.HandleClick(sess, message) {
 	//	return true

@@ -17,7 +17,7 @@ func ourProcessUserHeaderClick(sess Session, message string) bool {
 	pr := PrIf(true)
 	pr("UserHeaderClick? Message:", message)
 	if _, f := TrimIfPrefix(message, HEADER_WIDGET_BUTTON_PREFIX); f {
-		user := SessionUser(sess)
+		user := OptSessionUser(sess)
 		if user.Id() > 0 {
 			LogOut(sess)
 			sess.SwitchToPage(NewLandingPage(sess))
@@ -28,4 +28,3 @@ func ourProcessUserHeaderClick(sess Session, message string) bool {
 	}
 	return false
 }
-

@@ -31,9 +31,10 @@ type Widget interface {
 
 const WidgetIdPage = "page"
 
-// This general type of listener can serve as a validator as well
-// type WidgetListener func(sess Session, widget Widget)
+// Can return an error "ListenerShortcutError" to indicate that the value should *not* be stored.
 type LowLevelWidgetListener func(sess Session, widget Widget, value string) (string, error)
+
+var ListenerShortcutError = Error("listener shortcut")
 
 type WidgetMap = map[string]Widget
 

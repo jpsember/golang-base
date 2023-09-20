@@ -21,6 +21,15 @@ type ListWidgetListener func(sess Session, widget *ListWidgetStruct, itemId int,
 func listListenWrapper(sess Session, widget Widget, value string) (string, error) {
 	b := widget.(ListWidget)
 
+	pr := PrIf(true)
+	pr("listListenWrapper, value:", value)
+
+	// See if this is an event from the page controls
+	if b.handleClick(sess, value) {
+		pr("...page controls handled it")
+		return "", ListenerShortcutError
+	}
+
 	// This is presumably something like <element id> '.' <remainder>
 	itemId := -1
 	c := strings.IndexByte(value, '.')
@@ -28,6 +37,7 @@ func listListenWrapper(sess Session, widget Widget, value string) (string, error
 	if c > 0 {
 		remainder = value[c+1:]
 		val, err := ParseInt(value[0:c])
+		pr("remainder:", remainder, "value:", val, "err:", err)
 		if err != nil {
 			Alert("#50 trouble parsing int from:", value)
 		} else {
@@ -64,7 +74,8 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStatePr
 	w.InitBase(id)
 	w.LowListen = listListenWrapper
 	w.pagePrefix = id + ".page_"
-	w.SetClickListener(w.HandleClick)
+	Alert("Not setting explicit click listener")
+	//w.SetClickListener(w.HandleClick)
 	return &w
 }
 
@@ -173,9 +184,11 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 // Parse a click event, and if it is aimed at us, process it and return true.  This is used by the
 // pagination controls.  **Clicks on the list items are still handled by the client.**
 // This
-func (w ListWidget) HandleClick(sess Session, message string) bool {
-	Todo("This can be private to the list_widget")
-	if page_str, f := TrimIfPrefix(message, w.pagePrefix); f {
+func (w ListWidget) handleClick(sess Session, message string) bool {
+	pr := PrIf(true)
+	pr("handleClick, message:", message, "pagePrefix:", w.pagePrefix)
+	if page_str, f := TrimIfPrefix(message, "page_"); f {
+		pr("page_str:", page_str)
 		for {
 			i, err := ParseInt(page_str)
 			if ReportIfError(err, "handling click:", message) {

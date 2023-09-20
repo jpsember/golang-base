@@ -331,21 +331,16 @@ func (s Session) processClientMessage() {
 		s.ajaxWidgetValue = remainder
 	}
 
-	// Give session handler an opportunity to process the click, before falling back on widget id?
+	// Give session handler an opportunity to process the click, before trying the widget id
 	if s.processClickEvent(widgetIdExpr) {
 		pr("...session click handler processed it")
 		return
 	}
+
 	widget := s.widgetManager.Opt(id)
 	if widget != nil {
 		pr("found widget with id:", id)
 	}
-
-	//// If there is no widget with this id, inform the default listener (clarify the terminology later)
-	//if widget == nil {
-	//	s.processClickEvent(widgetIdExpr)
-	//	return
-	//}
 
 	if !widget.Enabled() {
 		s.SetRequestProblem("widget is disabled", widget)
@@ -357,9 +352,15 @@ func (s Session) processClientMessage() {
 		return
 	}
 	updatedValue, err := widget.LowListener()(s, widget, s.ajaxWidgetValue)
-	s.SetWidgetValue(widget, updatedValue)
-	if err != nil {
-		Pr("got error from widget listener:", widget.Id(), INDENT, err)
+	Todo("!Refactor low level listener to return a value that could have a sentinel value meaning 'no change', not the error")
+	if err == ListenerShortcutError {
+		// The widget handled the click event, but has no new value to update.
+		err = nil
+	} else {
+		s.SetWidgetValue(widget, updatedValue)
+		if err != nil {
+			Pr("got error from widget listener:", widget.Id(), INDENT, err)
+		}
 	}
 	// Always update the problem, in case we are clearing a previous error
 	s.SetWidgetProblem(widget.Id(), err)
@@ -391,7 +392,7 @@ func (s Session) processClickEvent(sourceId string) bool {
 		}
 	}
 
-	Alert("#50Nobody handled click:", sourceId)
+	//Alert("#50Nobody handled click:", sourceId)
 	return false
 }
 
