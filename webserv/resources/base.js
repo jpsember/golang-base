@@ -2,7 +2,7 @@ const request_key_widget = 'w'
 const request_key_value = 'v'
 const request_key_info = 'i'
 
-const _db = false && warning("db is true")
+const _db = true && warning("db is true")
 
 function pr() {
     const args = arguments
@@ -60,13 +60,17 @@ function where(skip) {
     return x
 }
 
+const respKeyWidgetsToRefresh = 'w'
+const respKeyURLExpr = 'u'
+
+
 function processServerResponse(text) {
     if (text.length == 0) {
         return
     }
-    pr("processServerResponse, text:",text)
     const obj = JSON.parse(text)
-    if ('w' in obj) {
+    //pr("procesServerResponse:",obj)
+    if (respKeyWidgetsToRefresh in obj) {
         const widgetMap = obj.w
         for (const [id, markup] of Object.entries(widgetMap)) {
             const elem = document.getElementById(id);
@@ -77,11 +81,19 @@ function processServerResponse(text) {
             elem.outerHTML = markup;
         }
     }
+
+    if (respKeyURLExpr in obj) {
+        const url = window.origin + obj.u
+        //pr("calling history.pushState with:",url,"because key was in the server response:",response_key_url_expr)
+        history.pushState(null, null, url);
+        // I think it is ok to call pushState() here because this never happens as a result of
+        // the user hitting the back button.
+    }
 }
 
 function makeAjaxCall(...args) {
-    const addr = window.location.href.split('?')[0];
-    const url = new URL(addr + 'ajax');
+    const addr = location.origin
+    const url = new URL(addr + '/ajax');
     for (let i = 0; i < args.length; i+=2) {
         url.searchParams.set(args[i],args[i+1])
     }
@@ -108,7 +120,25 @@ function jsVal(id) {
     makeAjaxCall(request_key_widget,id,request_key_value,x.value)
 }
 
-// An onClick event has occurred within a button
+// An onchange event has occurred within a file upload
+function jsUpload(id) {
+    db("jsUpload",id)
+    const addr = window.origin;
+    const url = new URL(addr + '/upload/' + id);
+    const xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+            processServerResponse(this.responseText)
+        }
+    };
+    xhttp.open('POST', url);
+    formElem = document.getElementById(id+'.form')
+    const data = new FormData(formElem);
+    xhttp.send(data);
+}
+
+
+// An onclick event has occurred within a button
 function jsButton(id) {
     db("jsButton",id)
     makeAjaxCall(request_key_widget, id)
@@ -130,4 +160,13 @@ function jsGetDisplayProperties() {
     makeAjaxCall(request_key_info, JSON.stringify(info))
 }
 
+function jsPopStateEventHandler(e) {
+    pr("jsPopStateEventHandler, e:",e)
+    var rel_path = window.location.pathname;
+    pr("redirecting user to page:",rel_path)
+    window.location.href = window.origin + rel_path
+}
+window.addEventListener('popstate', jsPopStateEventHandler);
+
 pr("...base.js has loaded")
+

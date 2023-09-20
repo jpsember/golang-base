@@ -12,7 +12,7 @@ type BlobId string
 
 const blobIdLength = 10
 
-var AllowTestInputs = Alert("!Allowing test inputs (user name, password, etc)")
+var AllowTestInputs = DevDatabase //Alert("!Allowing test inputs (user name, password, etc)")
 
 func (b BlobId) String() string {
 	return string(b)
@@ -45,7 +45,7 @@ func CurrencyToString(amount Currency) string {
 	return result
 }
 
-func GenerateBlobId() BlobId {
+func GenerateBlobName() BlobId {
 	alph := "0123456789abcdef"
 	sb := strings.Builder{}
 	lock.Lock()
@@ -77,7 +77,8 @@ const USER_NAME_MAX_LENGTH = 20
 
 var ErrorEmptyUserName = Error("Please enter your name")
 var ErrorUserNameTooLong = Error("Your name is too long")
-var ErrorUserNameIllegalCharacters = Error("Your name has illegal characters")
+var ErrorUserNameIllegalCharacters = Error("Name has illegal characters")
+var ErrorEmptyAnimalName = Error("Please enter a name")
 
 var ErrorEmptyUserPassword = Error("Please enter a password")
 var ErrorEmptyUserEmail = Error("Please enter an email address")
@@ -92,8 +93,37 @@ const USER_PASSWORD_MIN_LENGTH = 8
 const USER_PASSWORD_MAX_LENGTH = 20
 const USER_EMAIL_MAX_LENGTH = 40
 
+const ANIMAL_NAME_MAX_LENGTH = 16
+const ANIMAL_NAME_MIN_LENGTH = 2
+
+var ErrorAnimalNameTooShort = Error("The name is too short")
+var ErrorAnimalNameTooLong = Error("The name is too long")
+var ErrorAnimalNameIllegalCharacters = Error("Your name has illegal characters")
+
 var UserNameValidatorRegExp = Regexp(`^[a-zA-Z0-9_]+(?: [a-zA-Z0-9_]+)*$`)
 var UserPasswordValidatorRegExp = Regexp(`^[^ ]+$`)
+var AnimalNameValidatorRegExp = Regexp(`^[a-zA-Z]+(?: [a-zA-Z]+)*$`)
+
+func ValidateAnimalName(name string, flag ValidateFlag) (string, error) {
+	name = strings.TrimSpace(name)
+	Todo("?Replace two or more spaces by a single space")
+	validatedName := name
+	var err error
+
+	if name == "" {
+		if !flag.Has(VALIDATE_EMPTYOK) {
+			err = ErrorEmptyAnimalName
+		}
+	} else if len(name) > ANIMAL_NAME_MAX_LENGTH {
+		err = ErrorAnimalNameTooLong
+	} else if len(name) < ANIMAL_NAME_MIN_LENGTH {
+		err = ErrorAnimalNameTooShort
+	} else if !AnimalNameValidatorRegExp.MatchString(name) {
+		err = ErrorAnimalNameIllegalCharacters
+	}
+
+	return validatedName, err
+}
 
 func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 	userName = strings.TrimSpace(userName)
@@ -110,7 +140,6 @@ func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 	} else if !UserNameValidatorRegExp.MatchString(userName) {
 		err = ErrorUserNameIllegalCharacters
 	}
-	err, validatedName = replaceWithTestInput(err, validatedName, "a", "joeuser42")
 	return validatedName, err
 }
 
@@ -180,44 +209,17 @@ func replaceWithTestInput(err error, value string, shortcutForTest string, fullV
 	return err, value
 }
 
-var contentTypeNames = []string{
-	"image/jpeg", //
-	"image/png",  //
+func RandomEmailAddress(r JSRand) string {
+	r = NullToRand(r)
+	return RandomWord(r) + "@" + RandomWord(r) + ".net"
 }
 
-var contentTypeSignatures = []byte{
-	3, 0xff, 0xd8, 0xff, // jpeg
-	8, 137, 80, 78, 71, 13, 10, 26, 10, // png
+func BlobSummary(blob Blob) JSMap {
+	b := blob.Build().ToBuilder()
+	b.SetData(nil)
+	r := b.ToJson().AsJSMap()
+	r.Put("data", HexDumpWithASCII(ByteSlice(blob.Data(), 0, 16)))
+	return r
 }
 
-func InferContentTypeFromBlob(blob Blob) string {
-	result := ""
-	data := blob.Data()
-
-	sig := contentTypeSignatures
-
-	i := 0
-	for fn := 0; i < len(sig); fn++ {
-		recSize := int(sig[i])
-		j := i + 1
-		i += recSize + 1
-		match := true
-		for k := 0; k < recSize; k++ {
-			if sig[j+k] != data[k] {
-				match = false
-				break
-			}
-		}
-		if match {
-			result = contentTypeNames[fn]
-			break
-		}
-	}
-
-	if result == "" {
-		Alert("#50<1Failed to determine content-type from bytes:", CR,
-			HexDumpWithASCII(ByteSlice(blob.Data(), 0, 16)))
-		result = "application/octet-stream"
-	}
-	return result
-}
+var AnimalPicSizeNormal = IPointWith(600, 800)

@@ -45,6 +45,7 @@ func IPointWithFloat(x float64, y float64) IPoint {
 }
 
 var IPointZero = IPoint{}
+var DefaultIPoint = IPointZero
 
 func (p IPoint) IsPositive() bool {
 	return p.X > 0 && p.Y > 0
@@ -58,7 +59,19 @@ func (p IPoint) AssertPositive() IPoint {
 }
 
 func (p IPoint) AspectRatio() float64 {
-	return float64(p.Y) / float64(p.X)
+	return p.Yf() / p.Xf()
+}
+
+func (p IPoint) Xf() float64 {
+	return float64(p.X)
+}
+
+func (p IPoint) Yf() float64 {
+	return float64(p.Y)
+}
+
+func (p IPoint) ScaledBy(factor float64) IPoint {
+	return IPointWithFloat(p.Xf()*factor, p.Yf()*factor)
 }
 
 // ------------------------------------------------------------------------------------
@@ -170,24 +183,17 @@ func FitRectToRect(srcSize IPoint, targSize IPoint, padVsCropBias float64, horzB
 	targSize.AssertPositive()
 
 	Todo("!Have an FPoint class for this")
-	srcWidth := float64(srcSize.X)
-	srcHeight := float64(srcSize.Y)
-	targWidth := float64(targSize.X)
-	targHeight := float64(targSize.Y)
+	srcWidth := srcSize.Xf()
+	srcHeight := srcSize.Yf()
+	targWidth := targSize.Xf()
+	targHeight := targSize.Yf()
 
 	srcAspect := srcSize.AspectRatio()
 	targAspect := targSize.AspectRatio()
 	scaleMin := targWidth / srcWidth
 	scaleMax := targHeight / srcHeight
-	Pr("srcAsp:", srcAspect, "targAsp:", targAspect, "padvcrop:", padVsCropBias)
 	if targAspect < srcAspect {
 		padVsCropBias = 1 - padVsCropBias
-		Pr("new padvcrop:", padVsCropBias)
-		if false { // Maybe I need to flip the horz/vert bias too?
-			tmp := horzBias
-			horzBias = vertBias
-			vertBias = tmp
-		}
 	}
 
 	scale := (1-padVsCropBias)*scaleMin + padVsCropBias*scaleMax
@@ -208,8 +214,6 @@ func FitRectToRect(srcSize IPoint, targSize IPoint, padVsCropBias float64, horzB
 	if cropHeight > 0 {
 		cropBiasVertValue = vertBias
 	}
-
-	Pr("cropWidth:", cropWidth, "cropHeight:", cropHeight, "croipBiasH:", cropBiasHorzValue, "v:", cropBiasVertValue)
 
 	resultRect := RectWithFloat(
 		-cropWidth*((cropBiasHorzValue*.5)+.5),

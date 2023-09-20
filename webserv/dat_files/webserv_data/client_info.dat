@@ -1,0 +1,4 @@
+class {
+    float device_pixel_ratio = 1;
+    IPoint screen_size = [2000,1200];
+}

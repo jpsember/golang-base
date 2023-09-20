@@ -34,6 +34,10 @@ func CallerLocation(skipCount int) string {
 	return "<no location available!>"
 }
 
+func Caller() string {
+	return CallerLocation(2)
+}
+
 func Panic(message ...any) {
 	auxAbort(1, "Panic", message...)
 }
@@ -56,13 +60,6 @@ func NotImplemented(message ...any) {
 
 func isNil(value any) bool {
 	return value == nil
-}
-
-func CheckNotNil[T any](value T, message ...any) T {
-	if isNil(value) {
-		auxAbort(1, "Argument is nil", message...)
-	}
-	return value
 }
 
 func CheckNonEmpty(s string, message ...any) string {
@@ -254,9 +251,13 @@ func Todo(key string, message ...any) bool {
 }
 
 // Deprecated.  So references show up in editor for easy deletion.
-func ClearAlertHistory() {
-	Alert("<1 clearing alert history")
-	clearAlertHistoryFlag = true
+func ClearAlertHistory(flag bool) {
+	if flag {
+		Alert("<1 clearing alert history")
+		clearAlertHistoryFlag = flag
+	} else {
+		Alert("<1 not clearing alert history")
+	}
 }
 
 func processClearAlertHistoryFlag() {
@@ -400,7 +401,9 @@ func JoinLists(list1 []any, list2 []any) []any {
 
 // Move this to some other package later
 func CopyOfBytes(array []byte) []byte {
-	CheckNotNil(array)
+	if array == nil {
+		BadArg("nil array")
+	}
 	result := make([]byte, len(array))
 	copy(result, array)
 	return result
@@ -414,6 +417,16 @@ func ParseInt(str string) (int64, error) {
 func ParseIntM(str string) int {
 	result, err := ParseInt(str)
 	return int(CheckOkWith(result, err, "Failed to parse int from:", str))
+}
+
+func ParseInt2(str string) (int, error) {
+	result, err := strconv.ParseInt(str, 10, 64)
+	return int(result), err
+}
+
+func ParseInt2M(str string) int {
+	result := ParseIntM(str)
+	return int(result)
 }
 
 func IntToString(value int) string {
@@ -519,11 +532,18 @@ func processAlertForMultipleSessions(info alertInfo) bool {
 			}
 		}
 		priorityAlertPersistPath = d.JoinM(".go_flags.json")
+		priorityAlertMap = NewJSMap()
 		if clearPriorityAlertMapFlag {
-			priorityAlertMap = NewJSMap()
-			clearPriorityAlertMapFlag = false
 		} else {
-			priorityAlertMap = JSMapFromFileIfExistsM(priorityAlertPersistPath)
+			restored, err := JSMapFromFileIfExists(priorityAlertPersistPath)
+			if err != nil {
+				Pr("Problem parsing:", priorityAlertPersistPath, ", error:", err)
+				priorityAlertMap = NewJSMap()
+				// Discard old file
+				priorityAlertPersistPath.DeleteFile()
+			} else {
+				priorityAlertMap = restored
+			}
 		}
 		const expectedVersion = 2
 		if priorityAlertMap.OptInt("version", 0) != expectedVersion {
@@ -839,9 +859,7 @@ func ByteSlice(bytes []byte, start int, length int) []byte {
 	if start < 0 {
 		start = ln + start
 	}
-	start = Clamp(start, 0, ln)
-	end := Clamp(start+length, start, ln)
-	return bytes[start:end]
+	return ClampedSlice(bytes, start, start+length)
 }
 
 func appendHex(sb *strings.Builder, value uint64, ndigits int) {
@@ -926,4 +944,72 @@ func hexDump(byteArray []byte, withASCII bool) string {
 	}
 	return sb.String()
 
+}
+
+func StringFromOptError(err error) string {
+	if err != nil {
+		return err.Error()
+	} else {
+		return ""
+	}
+}
+
+func UpdateErrorWithString(err error, message string) error {
+	if err == nil && message != "" {
+		err = Error(message)
+	}
+	return err
+}
+
+// If string has a prefix, return string with prefix removed and true; else, original string and false
+func TrimIfPrefix(text string, prefix string) (string, bool) {
+	if strings.HasPrefix(text, prefix) {
+		return text[len(prefix):], true
+	}
+	return text, false
+}
+
+var IntegerOutOfRangeError = Error("integer is out of range")
+
+// Attempt to parse value as positive integer
+func ParseAsPositiveInt(text string) (int, error) {
+	value1, err := ParseInt(text)
+	value := int(value1)
+	if err == nil && value <= 0 {
+		err = IntegerOutOfRangeError
+	}
+	if err != nil {
+		value = 0
+	}
+	return value, err
+}
+
+func ClampedSlice[K any](slice []K, start int, end int) []K {
+	start = Clamp(start, 0, len(slice))
+	end = Clamp(end, start, len(slice))
+	return slice[start:end]
+}
+
+func ReportIfError(err error, msg ...any) bool {
+	if err != nil {
+		Alert("#50<1Error occurred, ignoring!  Error:", err, INDENT, "Message:", ToString(msg...))
+		return true
+	}
+	return false
+}
+
+var EmptyStringSlice = []string{}
+
+func Last[T any](slice []T) T {
+	i := len(slice)
+	return slice[i-1]
+}
+
+func PopLast[T any](slice []T) (T, []T) {
+	i := len(slice)
+	return slice[i-1], slice[:i-1]
+}
+
+func DeleteSliceElements[T any](slice []T, delStart int, delCount int) []T {
+	return append(slice[:delStart], slice[delStart+delCount:]...)
 }

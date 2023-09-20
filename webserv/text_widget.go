@@ -15,27 +15,23 @@ func NewTextWidget(id string, size WidgetSize) TextWidget {
 	t := &TextWidgetObj{
 		size: size,
 	}
-	t.BaseId = id
+	t.InitBase(id)
 	return t
 }
 
-func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	if !w.Visible() {
-		m.RenderInvisible(w)
-		return
+func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
+	var textContent string
+	if w.staticContent != nil {
+		textContent = w.staticContent.(string)
+	} else {
+		textContent = s.WidgetStringValue(w)
 	}
-
-	textContent, wasStatic := GetStaticOrDynamicLabel(w, state)
 
 	h := NewHtmlString(textContent)
 
 	args := NewArray[any]()
-	args.Add(`div`)
 
-	if !wasStatic {
-		args.Add(`div id='` + w.BaseId + `'`)
-		m.OpenTag(`div id='` + w.BaseId + `'`)
-	}
+	args.Add(`div id='` + w.BaseId + `'`)
 	if w.size != SizeDefault {
 		Todo("?A better way to do this, no doubt")
 		args.Add(textSize[w.size])
@@ -43,8 +39,11 @@ func (w TextWidget) RenderTo(m MarkupBuilder, state JSMap) {
 
 	m.OpenTag(args.Array()...)
 
-	for _, c := range h.Paragraphs() {
-		m.A(`<p>`, c, `</p>`).Cr()
+	{
+		for _, c := range h.Paragraphs() {
+			m.A(`<p>`, c, `</p>`).Cr()
+		}
+
 	}
 	m.CloseTag()
 }

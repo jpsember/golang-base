@@ -2,31 +2,52 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"strconv"
 )
+
+type CheckboxWidgetListener func(sess Session, widget CheckboxWidget, state bool) (bool, error)
 
 // A Widget that displays a checkbox
 type CheckboxWidgetObj struct {
 	BaseWidgetObj
 	Label      HtmlString
+	listener   CheckboxWidgetListener
 	switchFlag bool
 }
 
 type CheckboxWidget = *CheckboxWidgetObj
 
-func NewCheckboxWidget(switchFlag bool, id string, label HtmlString) CheckboxWidget {
-	w := CheckboxWidgetObj{}
-	w.Base().BaseId = id
-	w.Label = label
-	w.switchFlag = switchFlag
+func doNothingCheckboxListener(sess Session, widget CheckboxWidget, state bool) (bool, error) {
+	Pr("'do nothing' doNothingCheckboxListener called")
+	return state, nil
+}
+
+func NewCheckboxWidget(switchFlag bool, id string, label HtmlString, listener CheckboxWidgetListener) CheckboxWidget {
+	if listener == nil {
+		listener = doNothingCheckboxListener
+	}
+	w := CheckboxWidgetObj{
+		Label:      label,
+		switchFlag: switchFlag,
+		listener:   listener,
+	}
+	w.InitBase(id)
+	w.LowListen = checkboxListenWrapper
 	return &w
 }
 
-func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	if !w.Visible() {
-		m.RenderInvisible(w)
-		return
+func checkboxListenWrapper(sess Session, widget Widget, value string) (any, error) {
+	highLevelListener := widget.(CheckboxWidget)
+	boolValue := false
+	if b, err := strconv.ParseBool(value); err != nil {
+		Alert("trouble parsing bool from:", Quoted(value))
+	} else {
+		boolValue = b
 	}
+	return highLevelListener.listener(sess, highLevelListener, boolValue)
+}
 
+func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 	auxId := w.AuxId()
 
 	m.Comment("CheckboxWidget")
@@ -46,8 +67,8 @@ func (w CheckboxWidget) RenderTo(m MarkupBuilder, state JSMap) {
 		{
 			m.VoidTag(
 				`input class="form-check-input" type="checkbox" id="`, auxId, `"`, role,
-				Ternary(WidgetBooleanValue(state, w.BaseId), ` checked`, ``),
-				` onclick='jsCheckboxClicked("`, w.BaseId, `")'`)
+				Ternary(s.WidgetBoolValue(w), ` checked`, ``),
+				` onclick='jsCheckboxClicked("`, s.baseIdPrefix+w.BaseId, `")'`)
 
 			{
 				m.Comment("Label").OpenTag(`label class="form-check-label" for="`, auxId, `"`).Escape(w.Label).CloseTag() //.A(`</label>`).Cr()

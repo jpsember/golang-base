@@ -2,7 +2,8 @@
            "BadInput2" : 4511,
            "BadInput3" : 4592,
              "Escapes" : 2266,
-         "GenerateDir" : 4425,
+         "GenerateDir" : 7989,
     "JSMapPrettyPrint" : 1227,
+        "ParseUnicode" : 2883,
   "PrintJSMapToString" : 1227
 }

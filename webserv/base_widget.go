@@ -6,23 +6,35 @@ import (
 
 // The simplest concrete Widget implementation
 type BaseWidgetObj struct {
-	BaseId        string
-	Bounds        Rect
-	listener      WidgetListener
+	BaseId string
+	Bounds Rect
+
+	LowListen     LowLevelWidgetListener
 	hidden        bool
 	disabled      bool
 	staticContent any
 	idHashcode    int
 	size          WidgetSize
 	align         WidgetAlign
+	columns       int
+	stateProvider WidgetStateProvider
+	clickListener ClickListener
 }
 
 type BaseWidget = *BaseWidgetObj
 
+func (w BaseWidget) InitBase(id string) {
+	w.BaseId = id
+}
+
 func NewBaseWidget(id string) BaseWidget {
 	t := &BaseWidgetObj{}
-	t.BaseId = id
+	t.InitBase(id)
 	return t
+}
+
+func (w BaseWidget) LowListener() LowLevelWidgetListener {
+	return w.LowListen
 }
 
 func (w BaseWidget) String() string {
@@ -46,33 +58,16 @@ func (w BaseWidget) Align() WidgetAlign {
 }
 
 func (w BaseWidget) Size() WidgetSize {
-	Todo("we can directly access embedded structs' fields (if they are public)")
 	return w.size
 }
 
-func (w BaseWidget) Listener() WidgetListener {
-	return w.listener
+// Base widgets have no children
+func (w BaseWidget) Children() []Widget {
+	return nil
 }
 
-func (w BaseWidget) SetListener(listener WidgetListener) {
-	if w.listener != nil {
-		BadState("Widget", w.Id(), "already has a listener")
-	}
-	w.listener = listener
-}
-
-func (w BaseWidget) ClearChildren() {
-	NotImplemented()
-}
-
-func (w BaseWidget) Base() BaseWidget {
-	return w
-}
-
-var emptyChildrenList = NewArray[Widget]().Lock()
-
-func (w BaseWidget) Children() *Array[Widget] {
-	return emptyChildrenList
+// Base widgets don't add any children
+func (w BaseWidget) AddChildren(m WidgetManager) {
 }
 
 func (w BaseWidget) SetStaticContent(content any) {
@@ -103,15 +98,15 @@ func (w BaseWidget) AddChild(c Widget, manager WidgetManager) {
 	NotSupported("AddChild not supported")
 }
 
-func (w BaseWidget) ReceiveValue(sess Session, value string) {
-	Pr("Ignoring ReceiveValue for widget:", w.BaseId, "value:", Quoted(value))
+func (w BaseWidget) RemoveChild(c Widget) {
+	NotSupported("RemoveChild not supported")
 }
 
-var emptyWidgetList = make([]Widget, 0)
-
-func (w BaseWidget) GetChildren() []Widget {
-	return emptyWidgetList
+func (w BaseWidget) SetColumns(columns int) {
+	w.columns = columns
 }
+
+func (w BaseWidget) Columns() int { return w.columns }
 
 func (w BaseWidget) IdSummary() string {
 	if w.BaseId == "" {
@@ -120,10 +115,29 @@ func (w BaseWidget) IdSummary() string {
 	return `Id: ` + w.BaseId
 }
 
-func (w BaseWidget) RenderTo(m MarkupBuilder, state JSMap) {
+func (w BaseWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.A(`<div id='`, w.BaseId, `'></div>`)
 }
 
 func (w BaseWidget) AuxId() string {
 	return w.BaseId + ".aux"
+}
+
+func (w BaseWidget) SetStateProvider(p WidgetStateProvider) {
+	if p == nil {
+		Todo("!create a default provider")
+	}
+	w.stateProvider = p
+}
+
+func (w BaseWidget) StateProvider() WidgetStateProvider {
+	return w.stateProvider
+}
+
+func (w BaseWidget) GetClickListener() ClickListener {
+	return w.clickListener
+}
+
+func (w BaseWidget) SetClickListener(c ClickListener) {
+	w.clickListener = c
 }

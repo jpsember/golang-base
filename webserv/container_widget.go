@@ -2,144 +2,79 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"reflect"
-	"strings"
 )
 
-type GridCell struct {
-	Location IPoint
-	Width    int
-}
-
-func (g *GridCell) String() string {
-	m := NewJSMap()
-	m.Put("", "GridCell")
-	m.Put("Location", g.Location.String())
-	m.Put("Width", g.Width)
-	return m.AsString()
-}
-
-// A concrete Widget that can contain others
-type ContainerWidgetObj struct {
+// A concrete Widget that can contain others, using Bootstrap's grid system of rows and columns
+type GridWidgetStruct struct {
 	BaseWidgetObj
-	children *Array[Widget]
-	cells    *Array[GridCell]
-	columns  int // The columns to apply to child widgets
+	children []Widget
 }
 
-type ContainerWidget = *ContainerWidgetObj
+type GridWidget = *GridWidgetStruct
 
-func NewContainerWidget(id string) ContainerWidget {
-	Todo("!might simplify a lot of things if widgets had references to their own managers")
-	w := ContainerWidgetObj{
-		children: NewArray[Widget](),
-		cells:    NewArray[GridCell](),
-		columns:  12,
-	}
-	w.BaseId = id
+func NewContainerWidget(id string) GridWidget {
+	w := GridWidgetStruct{}
+	w.InitBase(id)
 	return &w
 }
 
-func (w ContainerWidget) String() string {
-	return "<" + w.BaseId + " ContainerWidget>"
+func (w GridWidget) String() string {
+	return "<" + w.BaseId + " GridWidget>"
 }
 
-func (w ContainerWidget) Children() *Array[Widget] {
+func (w GridWidget) Children() []Widget {
 	return w.children
 }
 
-func (w ContainerWidget) ClearChildren() {
-	w.children.Clear()
-	w.cells.Clear()
-	// Reset the columns to the default (12)
-	w.columns = 12
+func (w GridWidget) ClearChildren() {
+	w.children = nil
 }
 
-func (w ContainerWidget) AddChild(c Widget, manager WidgetManager) {
-	w.children.Add(c)
-	pr := PrIf(false)
-	pr(VERT_SP, "ContainerWidget", w.BaseId, "adding child", c.Id(), "to container", w.BaseId, "columns:", w.columns)
-	cols := w.columns
+func (w GridWidget) AddChild(c Widget, manager WidgetManager) {
+	cols := manager.pendingChildColumns
 	if cols == 0 {
 		BadState("no pending columns for widget:", c.Id())
 	}
-	cell := GridCell{
-		Width: cols,
-	}
-	if w.cells.NonEmpty() {
-		c := w.cells.Last()
-		cell.Location = IPointWith(c.Location.X+c.Width, c.Location.Y)
-	}
-	if cell.Location.X+cell.Width > MaxColumns {
-		cell.Location = IPointWith(0, cell.Location.Y+1)
-		Todo("!add support for cell heights > 1")
-	}
-	pr("added cell, now:", w.cells)
-	w.cells.Add(cell)
+	c.SetColumns(cols)
+	w.children = append(w.children, c)
+	pr := PrIf(false)
+	pr(VERT_SP, "GridWidget", w.BaseId, "adding child", c.Id(), "to container", w.BaseId, "columns:", w.Columns())
 }
 
-func (w ContainerWidget) SetColumns(columns int) {
-	w.columns = columns
+func (w GridWidget) RemoveChild(c Widget) {
+	for index, child := range w.children {
+		if child == c {
+			w.children = DeleteSliceElements(w.children, index, 1)
+			return
+		}
+	}
+	BadArg("Child wasn't in container:", c.Id())
 }
 
-func (w ContainerWidget) RenderTo(m MarkupBuilder, state JSMap) {
-	CheckState(w.cells.Size() == w.children.Size())
+func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
-	m.Comments(`ContainerWidget`, w.IdSummary()).OpenTag(`div id='` + w.BaseId + `'`)
-	if w.Visible() {
-		prevPoint := IPointWith(0, -1)
-		for index, child := range w.children.Array() {
-			cell := w.cells.Get(index)
-			// If this cell lies in a row below the current, Close the current and start a new one
-			if cell.Location.Y > prevPoint.Y {
-				if prevPoint.Y >= 0 {
-					m.CloseTag() // row
-				}
-				m.OpenTag(`div class='row'`)
-				prevPoint = IPointWith(0, cell.Location.Y)
-			}
-
-			s := `div class="col-sm-` + IntToString(cell.Width) + `"`
+	Todo("!Don't add markup that is outside of the div<widget id>, else it will pile up due to ajax refreshes")
+	m.OpenTag(`div id='` + w.BaseId + `'`)
+	m.Comments(`GridWidget`, w.IdSummary())
+	if len(w.children) != 0 {
+		m.OpenTag(`div class='row'`)
+		for _, child := range w.children {
+			str := `div class="col-sm-` + IntToString(child.Columns()) + `"`
 			if WidgetDebugRenderingFlag {
-				s += ` style="background-color:` + DebugColorForString(child.Id()) + `;`
-				s += `border-style:double;`
-				s += `"`
+				str += ` style="background-color:` + DebugColorForString(child.Id()) + `;`
+				str += `border-style:double;`
+				str += `"`
 			}
-			m.Comments(`child`).OpenTag(s)
-			if WidgetDebugRenderingFlag {
-				// Render a div that contains some information
-				{
-					m.A(`<div id='`, w.BaseId, `'`, ` style="font-size:50%; font-family:monospace;">`)
-				}
-
-				id := child.Id()
-				if id[0] != '.' /* || Alert("Including anon ids" )*/ {
-					m.A(`Id:`, id, ` `)
-				}
-				m.A(`Cols:`, cell.Width, ` `)
-				{
-					widgetType := reflect.TypeOf(child).String()
-					i := strings.LastIndex(widgetType, ".")
-					widgetType = widgetType[i+1:]
-					widgetType = strings.TrimSuffix(widgetType, "Obj")
-					m.A(widgetType, ` `)
-				}
-
-				m.A(`</div>`).Cr()
+			m.Comments(`child`).OpenTag(str)
+			{
+				verify := m.VerifyBegin()
+				RenderWidget(child, s, m)
+				m.VerifyEnd(verify, child)
 			}
-
-			verify := m.VerifyBegin()
-			child.RenderTo(m, state)
-			m.VerifyEnd(verify, child)
-
-			m.CloseTag() // child
-			prevPoint = IPointWith(cell.Location.X+cell.Width, cell.Location.Y)
+			m.CloseTag()
 		}
-		if prevPoint.Y >= 0 {
-			m.CloseTag() // row
-			m.Br()
-		}
+		m.CloseTag().Br()
 	}
-	m.CloseTag() // ContainerWidget
+	m.CloseTag() // GridWidget
 }

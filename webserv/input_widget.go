@@ -2,37 +2,52 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"strings"
 )
+
+var DummyError = Error("Example error message")
 
 // A Widget that displays editable text
 type InputWidgetObj struct {
 	BaseWidgetObj
 	Label    HtmlString
 	Password bool
+	listener InputWidgetListener
 }
 
 type InputWidget = *InputWidgetObj
+type InputWidgetListener func(sess Session, widget InputWidget, value string) (string, error)
 
-func NewInputWidget(id string, label HtmlString, password bool) InputWidget {
+func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, password bool) InputWidget {
+	Todo("?Add multi-line input fields, different font sizes")
+	if listener == nil {
+		listener = dummyInputWidgetListener
+	}
 	w := InputWidgetObj{
-		BaseWidgetObj: BaseWidgetObj{
-			BaseId: id,
-		},
 		Label:    label,
 		Password: password,
+		listener: listener,
 	}
+	w.InitBase(id)
+	w.LowListen = inputListenWrapper
 	return &w
+}
+
+func inputListenWrapper(sess Session, widget Widget, value string) (any, error) {
+	inp := widget.(InputWidget)
+	value = strings.TrimSpace(value)
+	result, err := inp.listener(sess, inp, value)
+	return result, err
 }
 
 var HtmlStringNbsp = NewHtmlStringEscaped("&nbsp;")
 
-func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
+func dummyInputWidgetListener(sess Session, widget InputWidget, value string) (string, error) {
+	Alert("#50No InputWidgetListener implemented for id:", widget.Id())
+	return "garbage", DummyError
+}
 
-	if !w.Visible() {
-		m.RenderInvisible(w)
-		return
-	}
-
+func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 	// While <input> are span tags, our widget should be considered a block element
 
 	// The outermost element must have id "foo", since we will be replacing that id's outerhtml
@@ -46,7 +61,7 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	m.DoIndent()
 
 	problemId := WidgetIdWithProblem(w.BaseId)
-	problemText := state.OptString(problemId, "")
+	problemText := s.StringValue(problemId)
 	if false && Alert("always problem") {
 		problemText = "sample problem information"
 	}
@@ -67,7 +82,7 @@ func (w InputWidget) RenderTo(m MarkupBuilder, state JSMap) {
 	}
 
 	m.A(`" type="`, Ternary(w.Password, "password", "text"), `" id="`, w.BaseId, `.aux" value="`)
-	value := WidgetStringValue(state, w.BaseId)
+	value := s.WidgetStringValue(w)
 	m.Escape(value)
 	m.A(`" onchange='jsVal("`, w.BaseId, `")'>`).Cr()
 

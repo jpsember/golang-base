@@ -13,6 +13,20 @@ type jsRandStruct struct {
 
 type JSRand = *jsRandStruct
 
+func NullToRand(r JSRand) JSRand {
+	if r == nil {
+		r = NewJSRand()
+	}
+	return r
+}
+
+//func NullToRand(r *rand.Rand) *rand.Rand {
+//	if r == nil {
+//		r = NewJSRand().Rand()
+//	}
+//	return r
+//}
+
 func NewJSRand() JSRand {
 	return &jsRandStruct{}
 }
@@ -21,6 +35,10 @@ func (r JSRand) SetSeed(seed int) JSRand {
 	r.seed = int64(seed)
 	r.built = false
 	return r
+}
+
+func (r JSRand) Intn(bound int) int {
+	return r.Rand().Intn(bound)
 }
 
 func (r JSRand) Rand() *rand.Rand {

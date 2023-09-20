@@ -1,4 +1,4 @@
 enum {
-    unknown,
-    active,
+    animal_state_unknown,
+    animal_state_active,
 }

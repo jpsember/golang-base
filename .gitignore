@@ -21,3 +21,7 @@ gen
 # The database
 #
 webapp/sqlite
+
+playground/playground.html
+
+datagen

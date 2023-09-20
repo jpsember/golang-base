@@ -128,7 +128,7 @@ func TestEscapes(t *testing.T) {
 }
 
 func TestGenerateDir(t *testing.T) {
-	j := jt.New(t)
+	j := jt.Newz(t)
 
 	const tree1 = `
 {"a.txt" : "",
@@ -141,6 +141,21 @@ func TestGenerateDir(t *testing.T) {
 	j.GenerateSubdirs("source", jsmap)
 
 	j.AssertGenerated()
+}
+
+func TestParseUnicode(t *testing.T) {
+	if true {
+		return
+	}
+	j := jt.Newz(t)
+
+	str := "a’b"
+	m := NewJSMap()
+	m.Put("", str)
+
+	s := m.String()
+	m2 := JSMapFromStringM(s)
+	j.AssertMessage(m2)
 }
 
 func TestEncodeBase64(t *testing.T) {

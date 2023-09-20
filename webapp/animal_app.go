@@ -3,23 +3,19 @@ package webapp
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/jimg"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
-	"log"
-	"net/http"
-	"net/url"
-	"strings"
 )
 
-var AutoActivateUser = Alert("?Automatically activating user")
+const AutoLogInName = "donor1"
+
+var DevDatabase = Alert("!Using development database")
 
 type AnimalOperStruct struct {
-	sessionManager SessionManager
-	appRoot        Path
-	resources      Path
-	headerMarkup   string
-	FullWidth      bool // If true, page occupies full width of screen
-	TopPadding     int  // If nonzero, adds padding to top of page
+	appRoot      Path
+	autoLoggedIn bool
+	resources    Path
 }
 
 type AnimalOper = *AnimalOperStruct
@@ -36,252 +32,178 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AnimalOper) Perform(app *App) {
-	//ClearAlertHistory()
+	ClearAlertHistory(false)
+	ExitOnPanic()
 
+	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
+	oper.resources = oper.appRoot.JoinM("resources")
+	oper.prepareDatabase()
+
+	DebugUIFlag = true
+
+	s := NewJServer(oper)
+	s.SessionManager = BuildSessionMap()
+	s.BaseURL = "jeff.org"
+	s.KeyDir = oper.appRoot.JoinM("https_keys")
+	SharedWebCache = ConstructSharedWebCache()
+	s.BlobCache = SharedWebCache
+	s.StartServing()
+}
+
+// ------------------------------------------------------------------------------------
+// ServerApp interface
+// ------------------------------------------------------------------------------------
+
+func (oper AnimalOper) PageTemplates() []Page {
+	return []Page{
+		LandingPageTemplate, GalleryPageTemplate, NewSignUpPage(nil), FeedPageTemplate, ManagerPageTemplate,
+		ViewAnimalPageTemplate, CreateAnimalPageTemplate, EditAnimalPageTemplate,
+	}
+}
+
+func (oper AnimalOper) Resources() Path {
+	return oper.resources
+}
+func (oper AnimalOper) UserForSession(s Session) AbstractUser {
+	return OptSessionUser(s)
+}
+
+func (oper AnimalOper) DefaultPageForUser(abstractUser AbstractUser) Page {
+	if false && Alert("gallery") {
+		return GalleryPageTemplate
+	}
+	user := abstractUser.(User)
+	userId := 0
+	if user != nil {
+		userId = user.Id()
+	}
+	var result Page
+	if userId == 0 || !IsUserLoggedIn(user.Id()) {
+		result = LandingPageTemplate
+	} else {
+		switch user.UserClass() {
+		case UserClassDonor:
+			result = FeedPageTemplate
+		case UserClassManager:
+			result = ManagerPageTemplate
+		default:
+			NotSupported("page for", user.UserClass())
+		}
+	}
+	return result
+}
+
+// JServer callback to perform any optional additional initialization for a new session.
+func (oper AnimalOper) PrepareSession(sess Session) {
+
+	// Perform a once-only attempt to do an auto login
+	for {
+		nm := AutoLogInName
+		if nm == "" {
+			break
+		}
+		Todo("!Auto logging in:", nm)
+		if oper.autoLoggedIn {
+			break
+		}
+		oper.autoLoggedIn = true
+
+		user2, _ := ReadUserWithName(nm)
+		if user2.Id() == 0 {
+			Alert("Can't find auto login user:", nm)
+			break
+		}
+		if !TryLoggingIn(sess, user2) {
+			break
+		}
+
+		break
+	}
+}
+
+// ------------------------------------------------------------------------------------
+
+func (oper AnimalOper) prepareDatabase() {
 	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 
-	if false && Alert("Deleting database:", dataSourcePath) {
+	if false && DevDatabase && Alert("Deleting database:", dataSourcePath) {
 		DeleteDatabase(dataSourcePath)
 	}
 	CreateDatabase(dataSourcePath.String())
 
-	if false && Alert("scale experiment") {
-		Pr("scaled photos:", SharedDemoPhotos.ScaledPhotoNames())
-		SharedDemoPhotos.ReadSamples()
-		Halt()
-	}
-	if false && Alert("creating a number of users") {
-		mr := NewJSRand().SetSeed(1965).Rand()
-		for i := 0; i < 30; i++ {
-			u := NewUser()
-			u.SetName(RandomText(mr, 3, false))
-			Pr("random name:", u.Name())
-			Pr("i:", i, "attempting to create user with name:", u.Name())
-			result, err := CreateUserWithName(u)
-			Pr("create user result:", result.Id(), "err:", err)
-			CheckOk(err)
-			if result.Id() == 0 {
-				Pr("failed to create user, must already exist?", u.Name())
-				continue
-			}
-			Pr("created user:", result.Id(), result.Name(), result)
-		}
-		Pr("sleeping then quitting")
-		SleepMs(2000)
-	}
+	if b, _ := ReadBlob(1); b.Id() == 0 {
 
-	if false && Alert("creating a number of animals") {
-		GenerateRandomAnimals()
-		SleepMs(2000)
-		Halt()
-	}
-
-	if false && Alert("experimenting with iter") {
-
-		for pass := 0; pass < 2; pass++ {
-			var iter DbIter
-			if pass == 0 {
-				iter = UserIterator(17)
-				Pr(VERT_SP, "iterating by id")
-			} else {
-				iter = UserNameIterator("marcy")
-				Pr(VERT_SP, "iterating by name")
-			}
-
-			//the iterator is not doing anything
-
-			i := -1
-			for iter.HasNext() {
-				i++
-				user := iter.Next().(User)
-				CheckState(!iter.HasError())
-				Pr("i:", i, "id:", user.Id(), "name:", user.Name())
-			}
-		}
-		Halt("done iteration experiment")
-	}
-
-	if false && Alert("experiment") {
-		b1 := NewBlob().SetName("bravo")
-		b, err := CreateBlobWithName(b1)
+		// Generate default images as blobs
+		animalPicPlaceholderPath := oper.Resources().JoinM("placeholder.jpg")
+		img := CheckOkWith(jimg.DecodeImage(animalPicPlaceholderPath.ReadBytesM()))
+		img = img.ScaleToSize(AnimalPicSizeNormal)
+		jpeg := CheckOkWith(img.ToJPEG())
+		Todo("?Later, keep the original image around for crop adjustments; but for now, scale and store immediately")
+		b := NewBlob()
+		b.SetData(jpeg)
+		AssignBlobName(b)
+		created, err := CreateBlob(b)
 		CheckOk(err)
-
-		if b.Id() == 0 {
-			Pr("failed to create blob:", INDENT, b1)
-			Pr("assuming one already exists:")
-			b2, err1 := ReadBlobWithName(b1.Name())
-			Pr("err:", err1)
-			Pr("Existing blob:", INDENT, b2)
-		} else {
-			var x []byte
-			for i := 0; i < 2000; i++ {
-				x = append(x, byte(i))
-			}
-
-			b = b.ToBuilder().SetData(x)
-			Pr("Attempting to write blob:", INDENT, b)
-			err2 := UpdateBlob(b)
-			Pr("err?", err2)
-		}
-		Pr("sleeping to allow db flush")
-		SleepMs(2000)
-		Halt("done experiment")
+		CheckState(created.Id() == 1, "unexpected id for placeholder:", created.Id())
 	}
 
-	oper.sessionManager = BuildSessionMap()
-	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
-	oper.resources = oper.appRoot.JoinM("resources")
-
-	{
-		s := strings.Builder{}
-		s.WriteString(oper.resources.JoinM("header.html").ReadStringM())
-		oper.headerMarkup = s.String()
-	}
-
-	var ourUrl = "jeff.org"
-
-	var keyDir = oper.appRoot.JoinM("https_keys")
-	var certPath = keyDir.JoinM(ourUrl + ".crt")
-	var keyPath = keyDir.JoinM(ourUrl + ".key")
-	Pr("URL:", INDENT, `https://`+ourUrl)
-
-	ExitOnPanic()
-
-	http.HandleFunc("/",
-		func(w http.ResponseWriter, req *http.Request) {
-			defer func() {
-				if r := recover(); r != nil {
-					BadState("<1Panic during http.HandleFunc:", r)
-				}
-			}()
-			oper.handle(w, req)
-		})
-
-	err := http.ListenAndServeTLS(":443", certPath.String(), keyPath.String(), nil)
-
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
+	if DevDatabase {
+		PopulateDatabase()
 	}
 }
 
-// A handler such as this must be thread safe!
-func (oper AnimalOper) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(false)
-	pr("handler, request:", req.RequestURI)
+// ------------------------------------------------------------------------------------
+// Data stored with session
+// ------------------------------------------------------------------------------------
 
-	if false && Alert("!If full page requested, discarding sessions") {
-		url, err := url.Parse(req.RequestURI)
-		if err == nil && url.Path == "/" {
-			sess := DetermineSession(oper.sessionManager, w, req, false)
-			if sess != nil {
-				DiscardAllSessions(oper.sessionManager)
-			}
-		}
+const (
+	SessionKey_User = "user"
+)
+
+// Get session's User, or default user if there isn't one.
+func OptSessionUser(sess Session) User {
+	u := DefaultUser
+	data := sess.OptSessionData(SessionKey_User)
+	if data != nil {
+		u = data.(User)
 	}
-
-	sess := DetermineSession(oper.sessionManager, w, req, true)
-	if sess.AppData == nil {
-		oper.AssignUserToSession(sess)
-		oper.constructPageWidget(sess)
-
-		user, ok := sess.AppData.(User)
-		CheckState(ok, "no User found in sess AppData:", INDENT, sess.AppData)
-		Todo("!have convention of prefixing enums with e.g. 'UserState_'")
-		CheckState(
-			user.Id() == 0)
-		NewLandingPage(sess, sess.PageWidget).Generate()
-	}
-
-	url, err := url.Parse(req.RequestURI)
-	if err == nil {
-		path := url.Path
-		pr("url path:", path)
-		if path == "/ajax" {
-			sess.HandleAjaxRequest(w, req)
-		} else if path == "/" {
-			oper.processFullPageRequest(sess, w, req)
-		} else if strings.HasPrefix(path, "/r/") {
-			err = HandleBlobRequest(w, req, path[3:])
-		} else {
-			pr("handling resource request for:", path)
-			err = sess.HandleResourceRequest(w, req, oper.resources)
-		}
-	}
-
-	if err != nil {
-		sess.SetRequestProblem(err)
-	}
-
-	if p := sess.GetRequestProblem(); p != "" {
-		Pr("...problem with request, URL:", req.RequestURI, INDENT, p)
-	}
+	return u
 }
 
-func HandleBlobRequest(w http.ResponseWriter, req *http.Request, blobId string) error {
-	blob := SharedWebCache.GetBlobWithName(blobId)
-	if blob.Id() == 0 {
-		Alert("#50Can't find blob with name:", Quoted(blobId))
+func SessionUserIs(sess Session, class UserClass) bool {
+	user := OptSessionUser(sess)
+	return user.UserClass() == class
+}
+
+// Get session's User.
+func SessionUser(sess Session) User {
+	user := OptSessionUser(sess)
+	if user.Id() == 0 {
+		BadState("session user has id zero")
 	}
-
-	err := WriteResponse(w, InferContentTypeFromBlob(blob), blob.Data())
-	Todo("?Detect someone requesting huge numbers of items that don't exist?")
-	return err
+	return user
 }
 
-func (oper AnimalOper) processFullPageRequest(sess Session, w http.ResponseWriter, req *http.Request) {
-	// Construct a session if none found, and a widget for a full webpage
-	//sess := DetermineSession(oper.sessionManager, w, req, true)
-	sess.Mutex.Lock()
-	defer sess.Mutex.Unlock()
-
-	sb := NewMarkupBuilder()
-	oper.writeHeader(sb)
-	CheckState(sess.PageWidget != nil, "no PageWidget!")
-	sess.PageWidget.RenderTo(sb, sess.State)
-	sess.RequestClientInfo(sb)
-	oper.writeFooter(w, sb)
-}
-
-// Generate the biolerplate header and scripts markup
-func (oper AnimalOper) writeHeader(bp MarkupBuilder) {
-	bp.A(oper.headerMarkup)
-	bp.OpenTag("body")
-	containerClass := "container"
-	if oper.FullWidth {
-		containerClass = "container-fluid"
+// Attempt to make the user logged in.  Return true if successful.
+func TryLoggingIn(s Session, user User) bool {
+	success := TryRegisteringUserAsLoggedIn(user.Id(), true)
+	if success {
+		s.PutSessionData(SessionKey_User, user)
 	}
-	if oper.TopPadding != 0 {
-		containerClass += "  pt-" + IntToString(oper.TopPadding)
+	return success
+}
+
+// Attempt to log the user out. Return true if successful.
+func LogOut(s Session) bool {
+	user := SessionUser(s)
+	if user.Id() == 0 {
+		Alert("#50Attempt to log out user that is not logged in:", INDENT, user)
+		return false
 	}
-	bp.Comments("page container").OpenTag(`div class='` + containerClass + `'`)
-}
-
-// Generate the boilerplate footer markup, then write the page to the response
-func (oper AnimalOper) writeFooter(w http.ResponseWriter, bp MarkupBuilder) {
-	bp.CloseTag() // page container
-	bp.CloseTag() // body
-	bp.A(`</html>`).Cr()
-	WriteResponse(w, "text/html", bp.Bytes())
-}
-
-const WidgetIdPage = "main_page"
-
-var alertWidget AlertWidget
-var myRand = NewJSRand().SetSeed(1234)
-
-// Assign a widget heirarchy to a session
-func (oper AnimalOper) constructPageWidget(sess Session) {
-	m := sess.WidgetManager()
-	//m.AlertVerbose()
-
-	Todo("?Clarify when we need to *remove* old widgets")
-	m.Id(WidgetIdPage)
-	widget := m.Open()
-	sess.PageWidget = widget
-	m.Close()
-}
-
-// A new session was created; assign an 'unknown' user to it
-func (oper AnimalOper) AssignUserToSession(sess Session) {
-	sess.AppData = NewUser().Build()
+	wasLoggedIn := LogUserOut(user.Id())
+	if !wasLoggedIn {
+		Alert("#50LogUserOut returned false:", INDENT, user)
+	}
+	s.PutSessionData(SessionKey_User, nil)
+	return true
 }

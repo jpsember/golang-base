@@ -200,12 +200,15 @@ func (m JSMap) GetMap(key string) *JSMapStruct {
 }
 
 func (m JSMap) OptMap(key string) *JSMapStruct {
-	CheckNotNil(key, "nil key for OptMap")
 	var val = m.wrappedMap[key]
 	if val == nil {
 		return nil
 	}
 	return val.(*JSMapStruct)
+}
+
+func (m JSMap) OptUnsafe(key string) any {
+	return m.wrappedMap[key]
 }
 
 func (m JSMap) OptMapOrEmpty(key string) *JSMapStruct {
@@ -269,15 +272,6 @@ func (m JSMap) OptInt32(key string, defaultValue int32) int32 {
 
 func (m JSMap) OptInt(key string, defaultValue int) int {
 	return int(m.OptInt64(key, defaultValue))
-}
-
-// Deprecated.. Use OptByte instead.
-func (m JSMap) OptInt8(key string, defaultValue int8) int8 {
-	var val = m.wrappedMap[key]
-	if val == nil {
-		return defaultValue
-	}
-	return int8((val.(JSEntity)).AsInteger())
 }
 
 func (m JSMap) OptByte(key string, defaultValue byte) byte {

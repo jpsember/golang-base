@@ -5,26 +5,33 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
-// The interface that all widgets must support
+var DebugUIFlag = false
+
+// The interface that all widgets must support.  Widgets can embed the BaseWidget struct to
+// supply default implementations.
 type Widget interface {
 	Id() string
-	Listener() WidgetListener
-	SetListener(WidgetListener)
-
+	LowListener() LowLevelWidgetListener
 	Enabled() bool
-	RenderTo(m MarkupBuilder, state JSMap)
-	Children() *Array[Widget]
+	Visible() bool
+	// This should not be called directly; rather, RenderWidget() to handle invisible widgets properly
+	RenderTo(s *SessionStruct, m MarkupBuilder)
+	Children() []Widget
 	AddChild(c Widget, manager WidgetManager)
-	ClearChildren()
-
-	SetStaticContent(content any)
-	StaticContent() any
-
+	RemoveChild(c Widget)
+	AddChildren(manager WidgetManager) // Add any child widgets
+	SetColumns(columns int)            // Set the number of columns the widget occupies in its row
+	Columns() int                      // Get the number of columns the widget occupies in its row
+	StateProvider() WidgetStateProvider
+	SetStateProvider(p WidgetStateProvider)
+	SetVisible(bool)
+	GetClickListener() ClickListener // get optional click listener this widget might have
 	fmt.Stringer
 }
 
-// This general type of listener can serve as a validator as well
-type WidgetListener func(sess Session, widget Widget)
+const WidgetIdPage = "page"
+
+type LowLevelWidgetListener func(sess Session, widget Widget, value string) (optNewWidgetValue any, err error)
 
 type WidgetMap = map[string]Widget
 
@@ -61,7 +68,7 @@ func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
 	if state.OptString(problemId, "") != "" {
 		count++
 	}
-	for _, child := range w.Children().Array() {
+	for _, child := range w.Children() {
 		count = auxWidgetErrorCount(count, child, state)
 	}
 	return count
@@ -70,4 +77,13 @@ func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
 func WidgetIdWithProblem(id string) string {
 	CheckArg(id != "")
 	return id + ".problem"
+}
+
+// Call w.RenderTo(...) iff the widget is visible, otherwise render an empty div with the widget's id.
+func RenderWidget(w Widget, s Session, m MarkupBuilder) {
+	if !w.Visible() {
+		m.A(`<div id='`, w.Id(), `'></div>`).Cr()
+	} else {
+		w.RenderTo(s, m)
+	}
 }

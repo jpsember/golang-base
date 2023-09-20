@@ -42,7 +42,6 @@ var JSTrue = buildKeyword("true", MakeJBool(true))
 var JSFalse = buildKeyword("false", MakeJBool(false))
 
 func (p *JSONParser) WithText(text string) *JSONParser {
-	CheckNotNil(text)
 	p.textBytes = []byte(text)
 	p.cursor = 0
 	// Let's always have the cursor sitting at non-whitespace
@@ -174,6 +173,7 @@ func (p *JSONParser) readString() string {
 		case 't':
 			w.WriteByte('\t')
 		case 'u':
+			// p.readHexInt() will help, once I figure out how to convert the result to utf8
 			p.fail("Unicode not yet supported")
 			//     w.append((char) ((readHex() << 12) | (readHex() << 8) | (readHex() << 4) | readHex()));
 		default:

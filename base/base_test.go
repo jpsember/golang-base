@@ -22,8 +22,6 @@ func TestPanics(t *testing.T) {
 	TestAbortMessageLog.Reset()
 
 	CheckArg(false, s)
-	var str *string
-	CheckNotNil(str, s)
 	NotImplemented(s)
 	NotSupported(s)
 	Halt(s)
@@ -86,8 +84,6 @@ func f1(key string) {
 
 func nestedAssertions(s string) {
 	CheckArg(false, s)
-	var str *string
-	CheckNotNil(str, s)
 	NotImplemented(s)
 	NotSupported(s)
 	Halt(s)
