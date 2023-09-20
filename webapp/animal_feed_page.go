@@ -48,6 +48,8 @@ func (p FeedPage) generateWidgets(s Session) {
 	s.SetClickListener(p.clickListener)
 
 	m := GenerateHeader(s, p)
+	debug := m.StartConstruction()
+
 	if !Alert("not adding user header for now") {
 		m.AddUserHeader()
 	}
@@ -59,6 +61,8 @@ func (p FeedPage) generateWidgets(s Session) {
 	cardWidget := p.constructListItemWidget(s)
 	p.listWidget = m.Id(id_feed_list).AddList(p.animalList(s), cardWidget, cardWidget.StateProviderFunc())
 	p.listWidget.WithPageControls = !Alert("!disabling page controls")
+
+	m.EndConstruction(debug)
 }
 
 func (p FeedPage) constructListItemWidget(s Session) NewCard {

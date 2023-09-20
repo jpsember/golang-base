@@ -2,31 +2,41 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"strings"
 )
+
+type mgrState struct {
+	Parent        Widget
+	StateProvider WidgetStateProvider
+	IdPrefix      string
+	DebugTag      string
+}
 
 type WidgetManagerObj struct {
 	BaseObject
-	widgetMap           WidgetMap
-	parentStack         *Array[Widget]
+	widgetMap WidgetMap
+	stack     []mgrState
 	pendingSize         WidgetSize
 	pendingAlign        WidgetAlign
 	pendingId           string
 	pendingLabel        string
 	anonymousIdCounter  int
 	pendingChildColumns int
-	providerStack       []WidgetStateProvider
-	idPrefixStack       []string
 }
 
 func NewWidgetManager(session Session) WidgetManager {
 	w := WidgetManagerObj{
-		parentStack: NewArray[Widget](),
-		widgetMap:   make(map[string]Widget),
+		widgetMap: make(map[string]Widget),
 	}
+	w.initStateStack()
 	w.SetName("WidgetManager")
 	w.resetPendingColumns()
 	w.LogCols("Constructed")
 	return &w
+}
+
+func (m WidgetManager) initStateStack() {
+	m.stack = []mgrState{{}}
 }
 
 func (m WidgetManager) LogCols(message string) {
@@ -156,9 +166,10 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		widget.SetStateProvider(m.StateProvider())
 	}
 
-	m.Log("addWidget, id:", id, "panel stack size:", m.parentStack.Size())
-	if !m.parentStack.IsEmpty() {
-		parent := m.parentStack.Last()
+	m.Log("addWidget, id:", id, "panel stack size:", len(m.stack))
+	state := m.stackedState()
+	parent := state.Parent
+	if parent != nil {
 		parent.AddChild(widget, m)
 	}
 	m.clearPendingComponentFields()
@@ -168,13 +179,17 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	return m
 }
 
+func (m WidgetManager) stackedState() *mgrState {
+	return &m.stack[len(m.stack)-1]
+}
+
 // Detach a widget that has just been constructed from the WidgetManager and its container.
 func (m WidgetManager) Detach(widget Widget) Widget {
 	result := m.Opt(widget.Id())
 	if result == nil {
 		BadArg("Cannot detach widget; not in manager set:", widget.Id())
 	}
-	container := m.currentPanel()
+	container := m.parentWidget()
 	container.RemoveChild(widget)
 
 	// Delete all widgets within the detached widget's tree from the widget map
@@ -208,9 +223,8 @@ func (m WidgetManager) With(container Widget) WidgetManager {
 	// Discard any existing child widgets
 	m.removeWidgets(cont.Children())
 	cont.ClearChildren()
-
-	m.parentStack.Clear()
-	m.parentStack.Add(container)
+	m.initStateStack()
+	m.PushContainer(container)
 	m.resetPendingColumns()
 	return m
 }
@@ -230,32 +244,67 @@ func (m WidgetManager) Open() Widget {
 // Push a container widget onto the stack as an active container
 func (m WidgetManager) OpenContainer(widget Widget) Widget {
 	m.Log("Adding container widget")
-	m.parentStack.Add(widget)
+	itm := *m.stackedState()
+	itm.Parent = widget
+	m.pushState(itm, tag_container)
 	m.Log("added container to stack")
 	return widget
 }
 
+func (m WidgetManager) pushState(state mgrState, tag string) {
+	state.DebugTag = tag
+	m.stack = append(m.stack, state)
+}
+
+const (
+	tag_container = "container"
+	tag_prefix    = "prefix"
+	tag_provider  = "provider"
+)
+
 // Pop the active container from the stack.
 func (m WidgetManager) Close() WidgetManager {
 	m.Log("Close")
-	m.parentStack.Pop()
+	m.popStack(tag_container)
 	return m
 }
 
-// Verify that no unused 'pending' arguments exist, calls are balanced, etc
-func (m WidgetManager) finish() WidgetManager {
-	m.clearPendingComponentFields()
-	if !m.parentStack.IsEmpty() {
-		BadState("panel stack nonempty; size:", m.parentStack.Size())
+func (m WidgetManager) popStack(tag string) {
+	top := m.stackedState()
+	if top.DebugTag != tag {
+		BadState("attempt to pop state stack, tag is:", top.DebugTag, "but expected:", tag)
 	}
-	return m
+	_, m.stack = PopLast(m.stack)
 }
 
-func (m WidgetManager) currentPanel() Widget {
-	if m.parentStack.IsEmpty() {
-		BadState("no current panel")
+//// Verify that no unused 'pending' arguments exist, calls are balanced, etc
+//func (m WidgetManager) finish() WidgetManager {
+//	m.clearPendingComponentFields()
+//	if len(m.stack) != 1 {
+//		sb := strings.Builder{}
+//		for _, x := range m.stack {
+//			sb.WriteByte(' ')
+//			sb.WriteString(x.DebugTag)
+//		}
+//		BadState("state stack nonempty! Tags:", m.dumpStateStack(-1))
+//	}
+//	return m
+//}
+
+func (m WidgetManager) dumpStateStack(cursor int) string {
+	sb := strings.Builder{}
+	for index, x := range m.stack {
+		sb.WriteByte(' ')
+		if index == cursor {
+			sb.WriteByte('>')
+		}
+		sb.WriteString(x.DebugTag)
 	}
-	return m.parentStack.Last()
+	return sb.String()
+}
+
+func (m WidgetManager) parentWidget() Widget {
+	return m.stackedState().Parent
 }
 
 func (m WidgetManager) AddInput(listener InputWidgetListener) InputWidget {
@@ -428,38 +477,52 @@ func (s Session) RepaintIds(ids ...string) WidgetManager {
 }
 
 func (m WidgetManager) PushContainer(container Widget) WidgetManager {
-	Todo("all these state stacks can be rolled into one")
 	Todo("!this is a lot like OpenContainer, but without the adding")
 	// Push a container widget onto the stack
-	m.parentStack.Add(container)
+	itm := *m.stackedState()
+	itm.Parent = container
+	m.pushState(itm, tag_container)
 	return m
 }
 
 func (m WidgetManager) PushStateProvider(p WidgetStateProvider) {
-	m.providerStack = append(m.providerStack, p)
+	itm := *m.stackedState()
+	itm.StateProvider = p
+	m.pushState(itm, tag_provider)
 }
 
 func (m WidgetManager) PopStateProvider() {
-	_, m.providerStack = PopLast(m.providerStack)
+	m.popStack(tag_provider)
 }
 
 func (m WidgetManager) StateProvider() WidgetStateProvider {
-	if len(m.providerStack) == 0 {
-		return nil
-	}
-	return Last(m.providerStack)
+	return m.stackedState().StateProvider
 }
 
 func (m WidgetManager) PushIdPrefix(prefix string) {
-	m.idPrefixStack = append(m.idPrefixStack, prefix)
+	itm := *m.stackedState()
+	itm.IdPrefix = prefix
+	m.pushState(itm, tag_prefix)
+}
 
-}
 func (m WidgetManager) PopIdPrefix() {
-	_, m.idPrefixStack = PopLast(m.idPrefixStack)
+	m.popStack(tag_prefix)
 }
+
 func (m WidgetManager) IdPrefix() string {
-	if len(m.idPrefixStack) == 0 {
-		return ""
+	return m.stackedState().IdPrefix
+}
+
+// Debug method to verify that various push/pop operations of the state stack are balanced.
+// Call EndConstruction() with the value that this returns to confirm.
+func (m WidgetManager) StartConstruction() int {
+	return len(m.stack)
+}
+
+// Debug method to verify that various push/pop operations of the state stack are balanced.
+// Call EndConstruction() with the value that StartConstruction() returned.
+func (m WidgetManager) EndConstruction(expectedStackSize int) {
+	if len(m.stack) != expectedStackSize {
+		BadState("expected state stack to be at", expectedStackSize, "but is at", len(m.stack), INDENT, m.dumpStateStack(expectedStackSize))
 	}
-	return Last(m.idPrefixStack)
 }

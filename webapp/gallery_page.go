@@ -75,10 +75,10 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.Close()
 		m.Detach(listItemWidget)
 
-		listProvider := func(sess Session, widget *ListWidgetStruct, itemId int) (string, JSMap) {
+		listProvider := func(sess Session, widget *ListWidgetStruct, itemId int) WidgetStateProvider {
 			json := NewJSMap()
 			json.Put("foo_text", ToString("Item #", itemId, x.names[itemId]))
-			return "", json
+			return NewStateProvider("", json)
 		}
 
 		p.list = m.AddList(x, listItemWidget, listProvider)

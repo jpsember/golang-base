@@ -14,7 +14,7 @@ type ListWidgetStruct struct {
 	WithPageControls  bool
 }
 
-type ListItemStateProvider func(sess Session, widget *ListWidgetStruct, elementId int) (string, JSMap)
+type ListItemStateProvider func(sess Session, widget *ListWidgetStruct, elementId int) WidgetStateProvider
 
 type ListWidget = *ListWidgetStruct
 
@@ -107,17 +107,11 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 			// While rendering this list's items, we will replace any existing default state provider with
 			// the list's one.  Save the current default state provider here, for later restoration.
-			savedStateProvider := s.baseStateProvider //s.DefaultStateProvider
+			savedStateProvider := s.baseStateProvider
 			for _, id := range elementIds {
 				m.Comment("--------------------------- rendering id:", id)
-
 				// Get the client to return a state provider
-				prefix, jsmap := w.itemStateProvider(s, w, id)
-				Todo("Have client supply a state provider struct")
-				// Make it the default state provider.
-				sp := NewStateProvider(prefix, jsmap)
-				s.baseStateProvider = sp
-
+				s.baseStateProvider = w.itemStateProvider(s, w, id)
 				w.itemWidget.RenderTo(s, m)
 			}
 			// Restore the default state provider to what it was before we rendered the items.

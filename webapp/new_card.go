@@ -84,11 +84,11 @@ func (w NewCard) StateProviderFunc() ListItemStateProvider {
 	return w.BuildStateProvider
 }
 
-func (w NewCard) BuildStateProvider(sess Session, widget ListWidget, elementId int) (string, JSMap) {
+func (w NewCard) BuildStateProvider(sess Session, widget ListWidget, elementId int) WidgetStateProvider {
 	anim := ReadAnimalIgnoreError(elementId)
 	CheckState(anim.Id() != 0, "no animal specified")
 	w.animal = anim
-	return w.childIdPrefix, anim.ToJson().AsJSMap()
+	return NewStateProvider(w.childIdPrefix, anim.ToJson().AsJSMap())
 }
 
 func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
