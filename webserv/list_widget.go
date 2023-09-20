@@ -64,6 +64,7 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStatePr
 	w.InitBase(id)
 	w.LowListen = listListenWrapper
 	w.pagePrefix = id + ".page_"
+	w.SetClickListener(w.HandleClick)
 	return &w
 }
 
@@ -121,6 +122,7 @@ func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, ta
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
+	Todo("The page controls ought to be handled as a widget handler")
 	pr := PrIf(false)
 	pr("ListWidget.RenderTo")
 	m.Comment("ListWidget")
@@ -172,6 +174,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 // pagination controls.  **Clicks on the list items are still handled by the client.**
 // This
 func (w ListWidget) HandleClick(sess Session, message string) bool {
+	Todo("This can be private to the list_widget")
 	if page_str, f := TrimIfPrefix(message, w.pagePrefix); f {
 		for {
 			i, err := ParseInt(page_str)

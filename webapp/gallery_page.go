@@ -56,7 +56,6 @@ const gallery_card_prefix = "gallery_card."
 func (p GalleryPage) generateWidgets(sess Session) {
 
 	trim := false && Alert("removing most widgets")
-	sess.SetClickListener(p.clickListener)
 
 	m := GenerateHeader(sess, p)
 
@@ -118,6 +117,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			m.Label("Some static text").AddText()
 			m.Id("bar").Label("Bar:").AddInput(p.fooListener)
 		}
+		m.PopIdPrefix()
 		m.PopStateProvider()
 		m.Close()
 
@@ -292,11 +292,11 @@ func (p GalleryPage) provideURL(s Session) string {
 }
 
 func (p GalleryPage) clickListener(sess Session, message string) bool {
-	Todo("This explicit handler probably not required")
-
-	if p.list.HandleClick(sess, message) {
-		return true
-	}
+zzz	Todo("This explicit handler probably not required")
+	//
+	//if p.list.HandleClick(sess, message) {
+	//	return true
+	//}
 
 	if arg, f := TrimIfPrefix(message, gallery_card_prefix); f {
 		Pr("card click, remaining arg:", arg)

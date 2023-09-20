@@ -60,8 +60,8 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	m.Close()
 
 	// Set click listener for the card list
-	Todo("This can be added automatically")
-	sess.SetClickListener(p.clickListener)
+	//Todo("This can be added automatically")
+	//sess.SetClickListener(p.clickListener)
 
 	// Construct widget to use in list
 	cardWidget := p.constructListItemWidget(sess)
@@ -171,9 +171,6 @@ func (p ManagerPage) clickListener(sess Session, message string) bool {
 			//break
 		}
 
-		if p.listWidget.HandleClick(sess, message) {
-			break
-		}
 		return false
 	}
 	return true

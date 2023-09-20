@@ -86,7 +86,6 @@ type SessionStruct struct {
 	prepared bool // True once application has been able to initialize the session
 
 	widgetManager     WidgetManager
-	clickListener     ClickListener
 	baseStateProvider *WidgetStateProviderStruct
 	baseIdPrefix      string
 	// Current request variables
@@ -297,11 +296,14 @@ func extractId(expr string) (string, string) {
 }
 
 func (s Session) processClientMessage() {
+	pr := PrIf(true)
+	pr("processClientMessage")
 
 	didSomething := false
 
 	// Process client info, if it was sent
 	if s.clientInfoString != "" {
+		pr("...processing client info:", s.clientInfoString)
 		s.processClientInfo(s.clientInfoString)
 		didSomething = true
 	}
@@ -310,6 +312,7 @@ func (s Session) processClientMessage() {
 	// for that widget
 
 	widgetIdExpr := s.ajaxWidgetId
+	pr("widgetIdExpr:", widgetIdExpr)
 	if widgetIdExpr == "" {
 		if !didSomething {
 			s.SetRequestProblem("widget id was empty")
@@ -321,18 +324,28 @@ func (s Session) processClientMessage() {
 	//
 
 	id, remainder := extractId(widgetIdExpr)
+	pr("id:", id, "remainder:", remainder)
 
 	// If there was no widget value, and there was a parsed widget id remainder, send that remainder as the value
 	if s.ajaxWidgetValue == "" && remainder != "" {
 		s.ajaxWidgetValue = remainder
 	}
 
-	widget := s.widgetManager.Opt(id)
-	// If there is no widget with this id, inform the default listener (clarify the terminology later)
-	if widget == nil {
-		s.processClickEvent(widgetIdExpr)
+	// Give session handler an opportunity to process the click, before falling back on widget id?
+	if s.processClickEvent(widgetIdExpr) {
+		pr("...session click handler processed it")
 		return
 	}
+	widget := s.widgetManager.Opt(id)
+	if widget != nil {
+		pr("found widget with id:", id)
+	}
+
+	//// If there is no widget with this id, inform the default listener (clarify the terminology later)
+	//if widget == nil {
+	//	s.processClickEvent(widgetIdExpr)
+	//	return
+	//}
 
 	if !widget.Enabled() {
 		s.SetRequestProblem("widget is disabled", widget)
@@ -352,37 +365,34 @@ func (s Session) processClientMessage() {
 	s.SetWidgetProblem(widget.Id(), err)
 }
 
-func (s Session) processClickEvent(sourceId string) {
+func (s Session) processClickEvent(sourceId string) bool {
 	pr := PrIf(true)
 	pr("session, process click event:", sourceId)
-	listener := s.clickListener
-outer:
-	for {
+	//listener := s.clickListener
+	//if listener != nil {
+	//	pr("...trying session listener")
+	//	if listener(s, sourceId) {
+	//		pr("......handled")
+	//		break
+	//	}
+	//}
+
+	// Examine widgets, for any having a click event handler
+	m := s.WidgetManager()
+	for key, widget := range m.widgetMap {
+		listener := widget.GetClickListener()
 		if listener != nil {
-			pr("...trying session listener")
+			pr("...trying widget", key)
+
 			if listener(s, sourceId) {
 				pr("......handled")
-				break
+				return true
 			}
 		}
-
-		// Examine widgets, for any having a click event handler
-		m := s.WidgetManager()
-		for key, widget := range m.widgetMap {
-			listener = widget.GetClickListener()
-			if listener != nil {
-				pr("...trying widget", key)
-
-				if listener(s, sourceId) {
-					pr("......handled")
-					break outer
-				}
-			}
-		}
-
-		Alert("#50Nobody handled click:", sourceId)
-		break
 	}
+
+	Alert("#50Nobody handled click:", sourceId)
+	return false
 }
 
 func (s Session) processClientInfo(infoString string) {
@@ -589,19 +599,12 @@ func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
 	return s.WidgetStringValue(widget), false
 }
 
-func (s Session) SetClickListener(listener ClickListener) {
-	Pr("set click listener to:", listener, "from:", CallerLocation(1))
-	s.clickListener = listener
-}
-
 // ------------------------------------------------------------------------------------
 // Page url and arguments
 // ------------------------------------------------------------------------------------
 
 func (s Session) SwitchToPage(page Page) {
-	Todo("Issue #73: SwitchToPage is killing the click listener")
 	Pr("SwitchToPage:", page.Name(), "from:", Caller())
-	s.SetClickListener(nil)
 	s.Repaint(s.PageWidget)
 	s.browserURLExpr = s.ConstructPathFromPage(page)
 	s.DebugPage = page
