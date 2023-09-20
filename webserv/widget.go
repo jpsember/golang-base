@@ -25,6 +25,7 @@ type Widget interface {
 	StateProvider() WidgetStateProvider
 	SetStateProvider(p WidgetStateProvider)
 	SetVisible(bool)
+	GetClickListener() ClickListener // get optional click listener this widget might have
 	fmt.Stringer
 }
 

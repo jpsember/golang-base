@@ -79,3 +79,4 @@ func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
 	}
 	m.CloseTag()
 }
+

@@ -42,13 +42,13 @@ var fewWidgets = false && Alert("Rendering only a few of the usual widgets")
 func (p FeedPage) generateWidgets(s Session) {
 	Todo("Clicking on 'sign out' doesn't have any effect")
 	// Set click listener for this page
-	s.SetClickListener(p.clickListener)
+	//s.SetClickListener(p.clickListener)
 
 	m := GenerateHeader(s, p)
 	debug := m.StartConstruction()
 
 	if !fewWidgets {
-		m.AddUserHeader()
+		AddUserHeaderWidget(s)
 	}
 
 	// Construct widget to use in list
@@ -115,14 +115,6 @@ func getAnimals() []int {
 
 func (p FeedPage) listListener(sess Session, widget *ListWidgetStruct, itemId int, args string) {
 	p.attemptSelectAnimal(sess, itemId)
-}
-
-func (p FeedPage) clickListener(sess Session, message string) bool {
-	Pr("clickListener:", message)
-	if ProcessUserHeaderClick(sess, message) {
-		return true
-	}
-	return false
 }
 
 func (p FeedPage) attemptSelectAnimal(s Session, id int) bool {

@@ -353,14 +353,35 @@ func (s Session) processClientMessage() {
 }
 
 func (s Session) processClickEvent(sourceId string) {
+	pr := PrIf(true)
+	pr("session, process click event:", sourceId)
 	listener := s.clickListener
-	if listener == nil {
-		Alert("#50No ClickListener for id:" + sourceId)
-		return
-	}
-	result := listener(s, sourceId)
-	if !result {
+outer:
+	for {
+		if listener != nil {
+			pr("...trying session listener")
+			if listener(s, sourceId) {
+				pr("......handled")
+				break
+			}
+		}
+
+		// Examine widgets, for any having a click event handler
+		m := s.WidgetManager()
+		for key, widget := range m.widgetMap {
+			listener = widget.GetClickListener()
+			if listener != nil {
+				pr("...trying widget", key)
+
+				if listener(s, sourceId) {
+					pr("......handled")
+					break outer
+				}
+			}
+		}
+
 		Alert("#50Nobody handled click:", sourceId)
+		break
 	}
 }
 

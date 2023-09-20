@@ -149,11 +149,11 @@ func (p AnimalDetailPage) generateWidgets(s Session) {
 		return
 	}
 	// Until more are needed, the user header (assuming one is present) is the only listener, so forward it
-	s.SetClickListener(ProcessUserHeaderClick)
+	//s.SetClickListener(ProcessUserHeaderClick)
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
-	m := GenerateHeader(s, p)
+	GenerateHeader(s, p)
 	if p.viewing() {
-		m.AddUserHeader()
+		AddUserHeaderWidget(s)
 	}
 
 	p.readStateFromAnimal(s)

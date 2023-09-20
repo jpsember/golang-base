@@ -50,7 +50,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	Todo("?Think about ways of cleaning up the click listener which is not tied to a widget")
 	m := GenerateHeader(sess, p)
 
-	m.AddUserHeader()
+	AddUserHeaderWidget(sess)
 
 	// Row of buttons at top.
 	m.Open()
@@ -60,6 +60,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	m.Close()
 
 	// Set click listener for the card list
+	Todo("This can be added automatically")
 	sess.SetClickListener(p.clickListener)
 
 	// Construct widget to use in list
@@ -144,11 +145,9 @@ func (p ManagerPage) renderItem(session Session, widget ListWidget, elementId in
 const action_prefix_animal_card = "animal_id_"
 
 func (p ManagerPage) clickListener(sess Session, message string) bool {
+	Todo("This explicit handler probably not required")
 
 	for {
-		if ProcessUserHeaderClick(sess, message) {
-			break
-		}
 
 		Alert("Do we still need this code?")
 		if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {

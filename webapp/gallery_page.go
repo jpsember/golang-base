@@ -61,7 +61,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)
 
 	if !trim {
-		m.AddUserHeader()
+		AddUserHeaderWidget(sess)
 		alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 		alertWidget.SetVisible(false)
 		m.Add(alertWidget)
@@ -292,9 +292,7 @@ func (p GalleryPage) provideURL(s Session) string {
 }
 
 func (p GalleryPage) clickListener(sess Session, message string) bool {
-	if ProcessUserHeaderClick(sess, message) {
-		return true
-	}
+	Todo("This explicit handler probably not required")
 
 	if p.list.HandleClick(sess, message) {
 		return true
