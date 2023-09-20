@@ -569,6 +569,7 @@ func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
 }
 
 func (s Session) SetClickListener(listener ClickListener) {
+	Pr("set click listener to:", listener, "from:", CallerLocation(1))
 	s.clickListener = listener
 }
 
@@ -577,6 +578,8 @@ func (s Session) SetClickListener(listener ClickListener) {
 // ------------------------------------------------------------------------------------
 
 func (s Session) SwitchToPage(page Page) {
+	Todo("Issue #73: SwitchToPage is killing the click listener")
+	Pr("SwitchToPage:", page.Name(), "from:", Caller())
 	s.SetClickListener(nil)
 	s.Repaint(s.PageWidget)
 	s.browserURLExpr = s.ConstructPathFromPage(page)

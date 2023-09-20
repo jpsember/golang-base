@@ -34,6 +34,10 @@ func CallerLocation(skipCount int) string {
 	return "<no location available!>"
 }
 
+func Caller() string {
+	return CallerLocation(2)
+}
+
 func Panic(message ...any) {
 	auxAbort(1, "Panic", message...)
 }
