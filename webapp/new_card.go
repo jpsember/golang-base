@@ -127,21 +127,21 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 		m.Comments("title and summary")
 		m.TgOpen(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`).TgContent()
 		{
-			m.OpenTag(`h6 class="card-title"`)
+			m.TgOpen(`h6 class="card-title"`).TgContent()
 			{
 				// Render the name as the first child
 				RenderWidget(w.children[ci], s, m)
 				ci++
 			}
-			m.CloseTag()
+			m.TgClose()
 
 			// Render the second child
-			m.OpenTag(`p class="card-text" style="font-size:75%;"`)
+			m.TgOpen(`p class="card-text"`).Style(`font-size:75%;`).TgContent()
 			{
 				RenderWidget(w.children[ci], s, m)
 				ci++
 			}
-			m.CloseTag()
+			m.TgClose()
 		}
 		m.TgClose()
 

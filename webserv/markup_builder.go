@@ -30,6 +30,7 @@ type MarkupBuilderObj struct {
 	nested          bool
 	currentMode     int
 	pendingMode     int
+	pendingQuotes   bool
 }
 
 type MarkupBuilder = *MarkupBuilderObj
@@ -97,6 +98,12 @@ func (b MarkupBuilder) switchToMode(mode int) {
 	}
 }
 
+// Set flag so that next argument is "quoted"
+func (b MarkupBuilder) Quote() MarkupBuilder {
+	b.pendingQuotes = true
+	return b
+}
+
 // Append markup, generating a linefeed if one is pending.  No escaping is performed.
 func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 	if b.nested {
@@ -119,12 +126,12 @@ func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 
 		switch v := arg.(type) {
 		case string:
-			b.WriteString(v)
+			b.appendStr(v)
 		case int: // We aren't sure if it's 32 or 64, so choose 64
-			b.WriteString(IntToString(v))
+			b.appendStr(IntToString(v))
 			break
 		case bool:
-			b.WriteString(boolToHtmlString(v))
+			b.appendStr(boolToHtmlString(v))
 		case PrintEffect:
 			b.processPrintEffect(v)
 		default:
@@ -133,6 +140,17 @@ func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 	}
 	b.nested = false
 	return b
+}
+
+func (b MarkupBuilder) appendStr(text string) {
+	if b.pendingQuotes {
+		b.WriteByte('"')
+		b.WriteString(text)
+		b.WriteByte('"')
+		b.pendingQuotes = false
+	} else {
+		b.WriteString(text)
+	}
 }
 
 func (b MarkupBuilder) StyleOff() MarkupBuilder {
@@ -165,6 +183,8 @@ func (b MarkupBuilder) processPrintEffect(v PrintEffect) {
 		b.DoIndent()
 	case OUTDENT:
 		b.DoOutdent()
+	case QUOTED:
+		b.pendingQuotes = true
 	default:
 		BadArg("Unsupported PrintEffect:", v)
 	}

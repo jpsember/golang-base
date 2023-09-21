@@ -78,7 +78,8 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	if trim {
 		return
 	}
-	if !Alert("disabled list") {
+	//if !Alert("disabled list")
+	{
 		x := NewGalleryListImplementation()
 
 		listItemWidget := m.Open()
@@ -349,7 +350,7 @@ func NewGalleryListImplementation() GalleryListImplementation {
 }
 
 func (g GalleryListImplementation) listItemRenderer(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
-	m.OpenTag(`div class="col-sm-4"`)
+	m.TgOpen(`div class="col-sm-4"`).TgContent()
 	m.Escape(ToString("#", elementId, g.names[elementId]))
-	m.CloseTag()
+	m.TgClose()
 }

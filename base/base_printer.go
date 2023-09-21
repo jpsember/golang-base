@@ -370,6 +370,7 @@ var INDENT = makeEffect(3)
 var OUTDENT = makeEffect(4)
 var VERT_SP = makeEffect(5)
 var RESET = makeEffect(6)
+var QUOTED = makeEffect(7)
 
 func processPrintEffect(v PrintEffect, b *BasePrinter) {
 	switch v {

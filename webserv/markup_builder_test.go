@@ -76,3 +76,21 @@ func TestTagWithoutContent2(t *testing.T) {
 
 	j.AssertMessage(m.String())
 }
+
+func TestTag3(t *testing.T) {
+	j := jt.Newz(t)
+
+	m := webserv.NewMarkupBuilder()
+
+	m.Comment("checkbox").TgOpen(`div class=`).A(QUOTED, `abc`).TgContent()
+	{
+		m.TgOpen(`input class="form-check-input" type="checkbox" id=`).A(QUOTED, "auxid").TgClose()
+		{
+			m.Comment("Label").TgOpen(`label class="form-check-label" for=`)
+			m.A(QUOTED, "auxid").TgContent().Escape("fox & hound").TgClose()
+		}
+	}
+	m.TgClose()
+
+	j.AssertMessage(m.String())
+}

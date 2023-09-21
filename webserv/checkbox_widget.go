@@ -50,8 +50,7 @@ func checkboxListenWrapper(sess Session, widget Widget, value string) (any, erro
 func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 	auxId := w.AuxId()
 
-	m.Comment("CheckboxWidget")
-	m.OpenTag(`div id="`, w.BaseId, `"`)
+	m.TgOpen(`div id="`).A(w.BaseId, `"`).TgContent()
 	{
 		var cbClass string
 		var role string
@@ -63,20 +62,18 @@ func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 			role = ``
 		}
 
-		m.Comment("checkbox").OpenTag(`div class=`, cbClass)
+		m.Comment("checkbox").TgOpen(`div class=`).Quote().A(cbClass).TgContent()
 		{
-			m.VoidTag(
-				`input class="form-check-input" type="checkbox" id="`, auxId, `"`, role,
+			m.TgOpen(`input class="form-check-input" type="checkbox" id=`).A(QUOTED, auxId, role,
 				Ternary(s.WidgetBoolValue(w), ` checked`, ``),
-				` onclick='jsCheckboxClicked("`, s.baseIdPrefix+w.BaseId, `")'`)
-
+				` onclick='jsCheckboxClicked("`, s.baseIdPrefix, w.BaseId, `")'`).TgClose()
 			{
-				m.Comment("Label").OpenTag(`label class="form-check-label" for="`, auxId, `"`).Escape(w.Label).CloseTag() //.A(`</label>`).Cr()
+				m.Comment("Label").TgOpen(`label class="form-check-label" for=`).A(QUOTED, auxId).TgContent().Escape(w.Label).TgClose()
 			}
 		}
-		m.CloseTag()
+		m.TgClose()
 	}
-	m.CloseTag()
+	m.TgClose()
 }
 
 func boolToHtmlString(value bool) string {
