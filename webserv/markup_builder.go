@@ -222,11 +222,22 @@ func (b MarkupBuilder) OpenTag(args ...any) MarkupBuilder {
 }
 
 func (b MarkupBuilder) TgOpen(name string) MarkupBuilder {
-	if strings.IndexByte(name, ' ') >= 0 {
-		BadArg("Unexpected space in tag name:", name)
+	// If there is a space, the user has added some attributes, e.g. `div xxxx="yyyy"...`;
+	// treat this as if he did TgOpen(`div`).A(` xxxx....`)
+
+	i := strings.IndexByte(name, ' ')
+	tagName := name
+	remainder := ""
+	if i >= 0 {
+		if i == 0 {
+			BadArg("leading space in tag name:", Quoted(name))
+		}
+		tagName = name[0:i]
+		remainder = name[i:]
 	}
+
 	entry := tagEntry{
-		tag: name,
+		tag: tagName,
 	}
 	comments := b.pendingComments
 	b.pendingComments = nil
@@ -237,10 +248,16 @@ func (b MarkupBuilder) TgOpen(name string) MarkupBuilder {
 		b.Br()
 		b.A(entry.comment).Cr()
 	}
-	b.A(`<`, name)
+	b.A(`<`, tagName)
 
 	CheckState(b.tagStack.Size() < 50, "tags are nested too deeply")
 	b.tagStack.Add(entry)
+
+	if remainder != "" {
+		b.A(remainder)
+	}
+
+	Todo("This indent might get us in trouble")
 	b.DoIndent()
 	return b
 }
@@ -260,16 +277,20 @@ func (b MarkupBuilder) TgContent() MarkupBuilder {
 }
 
 func (b MarkupBuilder) TgClose() MarkupBuilder {
+	Todo("who is generating the linefeed?")
 	entry := b.tagStack.Pop()
 	if entry.hasContent {
 		b.DoOutdent()
 		b.A("</", entry.tag, ">")
-		if entry.comment != "" {
-			b.A(`  `, entry.comment)
-		}
 	} else {
 		b.A(` />`)
 	}
+
+	//b.A("</", entry.tag, ">")
+	if entry.comment != "" {
+		b.A(`  `, entry.comment)
+	}
+
 	return b.Br()
 }
 

@@ -149,12 +149,13 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 		m.OpenTag(`div class="card-body"`)
 		{
 			m.Comments("progress-container")
-			m.OpenTag(`div class="progress-container"`)
+			m.TgOpen(`div class="progress-container"`).TgContent()
 			{
-				m.Comment("Plot grey in background, full width").OpenCloseTag(`div class="progress-bar-bgnd"`)
+				m.Comment("Plot grey in background, full width").TgOpen(`div class="progress-bar-bgnd"`).TgClose()
+				//Halt(m.String())
 				m.Comment("Plot bar graph in foreground, partial width").OpenCloseTag(`div class="progress-bar" style="width: 35%;"`)
 			}
-			m.CloseTag()
+			m.TgClose()
 			m.OpenTag(`div class="progress-text"`)
 			{
 				m.Escape(CurrencyToString(animal.CampaignBalance()) + ` raised of ` + CurrencyToString(animal.CampaignTarget()) + ` goal`)
