@@ -29,18 +29,18 @@ func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
 	user := app.UserForSession(s)
 	signedIn := user.Id() != 0
 
-	fontSizeExpr := ` style="font-size:0.6em"`
 	m.TgOpen(`div id=`).A(QUOTED, w.BaseId).TgContent()
 	//m.OpenTag(`div id="`, w.BaseId, `"`)
 
 	// Adding a background image; I read this post: https://mdbootstrap.com/docs/standard/navigation/headers/
 	img := w.BgndImageMarkup
 	if img != "" {
-		m.OpenTag(`div class="bg-image" `, img)
+		m.TgOpen(`div class="bg-image" `).A(img).TgContent()
+		//m.OpenTag(`div class="bg-image" `, img)
 	}
 
 	{
-		m.OpenTag(`div class="text-end"`)
+		m.TgOpen(`div class="text-end"`).TgContent()
 		{
 			if DebugUIFlag {
 				pg := s.DebugPage
@@ -48,35 +48,35 @@ func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
 				if pg != nil {
 					nm = pg.Name()
 				}
-				m.OpenTag(`span class="text-success"`, fontSizeExpr)
+				m.TgOpen(`span class="text-success"`).Style(`font-size:0.6em`).TgContent()
 				m.A(`Page:`, nm)
-				m.CloseTag()
-				m.OpenTag(`span class="m-2"`)
-				m.CloseTag()
+				m.TgClose()
+				m.TgOpen(`span class="m-2"`).TgContent().TgClose()
 			}
 
 			if signedIn {
-				m.OpenTag(`span`, fontSizeExpr)
+				m.TgOpen(`span`).Style(`font-size:0.6em`).TgContent()
 				m.A(`Welcome, `).Escape(user.Name())
-				m.CloseTag()
+				m.TgClose()
 			}
 
 			actionId := Ternary(signedIn, BUTTON_ID_SIGN_OUT, BUTTON_ID_SIGN_IN)
 
-			m.OpenTag(`button class="m-2 btn btn-outline-primary btn-sm"`, fontSizeExpr,
-				` onclick='jsButton("`, s.baseIdPrefix+actionId, `")'`)
+			m.TgOpen(`button class="m-2 btn btn-outline-primary btn-sm"`).A(
+				` onclick='jsButton(`, QUOTED, s.baseIdPrefix+actionId, `)'`).Style(`font-size:0.6em`).TgContent()
 
 			if signedIn {
 				m.A(`Sign Out`)
 			} else {
 				m.A(`Sign In`)
 			}
-			m.CloseTag()
+			m.TgClose()
 		}
-		m.CloseTag()
+		m.TgClose()
 	}
 	if img != "" {
-		m.CloseTag()
+		m.TgClose()
+		//m.CloseTag()
 	}
 	m.TgClose()
 }
