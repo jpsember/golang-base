@@ -56,9 +56,7 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 	// The HTML input element has id "foo.aux"
 	// If there is a problem with the input, its text will have id "foo.problem"
 
-	m.A(`<div id="`, w.BaseId, `">`)
-
-	m.DoIndent()
+	m.TgOpen(`div id=`).A(QUOTED, w.BaseId).TgContent()
 
 	problemId := WidgetIdWithProblem(w.BaseId)
 	problemText := s.StringValue(problemId)
@@ -77,7 +75,6 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	m.Comment("Input")
 	m.TgOpen(`input class="form-control`)
-	//m.A(`<input class="form-control`)
 	if hasProblem {
 		m.A(` border-danger border-3`) // Adding border-3 makes the text shift a bit on error, maybe not desirable
 	}
@@ -88,12 +85,8 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	if hasProblem {
 		m.Comment("Problem")
-		m.A(`<div class="form-text text-danger" style="font-size:  70%">`)
-		m.Escape(problemText).A(`</div>`)
+		m.TgOpen(`div class="form-text text-danger"`).Style(`font-size:70%;`).TgContent().A(ESCAPED, problemText).TgClose()
 	}
 
-	m.DoOutdent()
-
-	m.A(`</div>`)
-	m.Cr()
+	m.TgClose()
 }

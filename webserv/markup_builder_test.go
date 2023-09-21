@@ -78,7 +78,7 @@ func TestTagWithoutContent2(t *testing.T) {
 }
 
 func TestTag3(t *testing.T) {
-	j := jt.Newz(t)
+	j := jt.New(t)
 
 	m := webserv.NewMarkupBuilder()
 
@@ -87,7 +87,7 @@ func TestTag3(t *testing.T) {
 		m.TgOpen(`input class="form-check-input" type="checkbox" id=`).A(QUOTED, "auxid").TgClose()
 		{
 			m.Comment("Label").TgOpen(`label class="form-check-label" for=`)
-			m.A(QUOTED, "auxid").TgContent().Escape("fox & hound").TgClose()
+			m.A(QUOTED, "auxid").TgContent().A(ESCAPED, "fox & hound").TgClose()
 		}
 	}
 	m.TgClose()
