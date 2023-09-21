@@ -35,7 +35,7 @@ func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 	m.TgOpen(`div id=`).A(QUOTED, id, ` class="mb-3"`).TgContent()
 	{
 
-		m.OpenTag(`form id="`, formId, `" enctype="multipart/form-data" method="post" `)
+		m.TgOpen(`form id=`).A(QUOTED, formId, ` enctype="multipart/form-data" method="post" `).TgContent()
 
 		// I suspect the multipart/form-data has nothing to do with file uploads, but is for forms in general
 
@@ -62,7 +62,7 @@ func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 			m.Escape(problemText).A(`</div>`)
 		}
 
-		m.CloseTag()
+		m.TgClose()
 	}
 
 	m.TgClose()
