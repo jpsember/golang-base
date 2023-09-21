@@ -6,13 +6,6 @@ import (
 )
 
 // A builder for constructing html markup
-
-type tagEntry struct {
-	tag        string // e.g. div, p (no '<' or '>')
-	comment    string
-	hasContent bool
-}
-
 const (
 	mode_html = iota
 	mode_style
@@ -24,7 +17,7 @@ type MarkupBuilderObj struct {
 	indented        bool
 	crRequest       int
 	omitComments    bool
-	tagStack        *Array[tagEntry]
+	tagStack        []*tagEntry
 	pendingComments []any
 	nested          bool
 	currentMode     int
@@ -32,11 +25,16 @@ type MarkupBuilderObj struct {
 	pendingQuotes   bool
 }
 
+type tagEntry struct {
+	tag        string // e.g. div, p (no '<' or '>')
+	comment    string
+	hasContent bool
+}
+
 type MarkupBuilder = *MarkupBuilderObj
 
 func NewMarkupBuilder() MarkupBuilder {
 	v := MarkupBuilderObj{}
-	v.tagStack = NewArray[tagEntry]()
 	return &v
 }
 
@@ -242,8 +240,10 @@ func (b MarkupBuilder) TgOpen(name string) MarkupBuilder {
 	}
 	b.A(`<`, tagName)
 
-	CheckState(b.tagStack.Size() < 50, "tags are nested too deeply")
-	b.tagStack.Add(entry)
+	if len(b.tagStack) >= 50 {
+		BadState("tags are nested too deeply")
+	}
+	b.tagStack = append(b.tagStack, &entry)
 
 	if remainder != "" {
 		b.A(remainder)
@@ -252,13 +252,9 @@ func (b MarkupBuilder) TgOpen(name string) MarkupBuilder {
 }
 
 func (b MarkupBuilder) TgContent() MarkupBuilder {
-	// We must point to the entry, not copy it, as we are modifying it
-	entry := &b.tagStack.Array()[b.tagStack.Size()-1]
+	entry := Last(b.tagStack)
 	CheckState(!entry.hasContent)
 	entry.hasContent = true
-	//if b.pendingMode != mode_html {
-	//	Alert("#50<1missing StyleOff")
-	//}
 	b.StyleOff()
 	b.A(`>`)
 	b.DoIndent()
@@ -266,7 +262,8 @@ func (b MarkupBuilder) TgContent() MarkupBuilder {
 }
 
 func (b MarkupBuilder) TgClose() MarkupBuilder {
-	entry := b.tagStack.Pop()
+	var entry *tagEntry
+	entry, b.tagStack = PopLast(b.tagStack)
 	if entry.hasContent {
 		b.DoOutdent()
 		b.A("</", entry.tag, ">")
@@ -281,25 +278,16 @@ func (b MarkupBuilder) TgClose() MarkupBuilder {
 	return b.Br()
 }
 
-func (b MarkupBuilder) tagStackInfo() string {
-	jl := NewJSList()
-
-	for _, ent := range b.tagStack.Array() {
-		jl.Add(NewJSList().Add(ent.tag).Add(ent.comment))
-	}
-	return jl.String()
-}
-
 // Verify that the tag stack size *does not change* before and after some code.  Call this before the code,
 // and balance this call with a call to VerifyEnd(), supplying the stack size that VerifyBegin() returned.
 func (b MarkupBuilder) VerifyBegin() int {
-	return b.tagStack.Size()
+	return len(b.tagStack)
 }
 
 // Verify that the tag stack size *does not change* before and after some code.  Call this before the code,
 // and balance this call with a call to VerifyEnd(), supplying the stack size that VerifyBegin() returned.
 func (b MarkupBuilder) VerifyEnd(expectedStackSize int, widget Widget) {
-	s := b.tagStack.Size()
+	s := len(b.tagStack)
 	if s != expectedStackSize {
 		BadState("<1tag stack size", s, "!=", expectedStackSize, INDENT,
 			"after widget:", widget.Id(), Info(widget))
