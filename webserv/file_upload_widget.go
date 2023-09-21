@@ -1,7 +1,7 @@
 package webserv
 
 import (
-	_ "github.com/jpsember/golang-base/base"
+	. "github.com/jpsember/golang-base/base"
 )
 
 type FileUploadWidgetListener func(sess Session, widget FileUpload, value []byte) error
@@ -32,7 +32,7 @@ func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 
 	// The outermost element must have the widget's id!  Or chaos happens during repainting.
 
-	m.OpenTag(`div id="`, id, `" class="mb-3"`)
+	m.TgOpen(`div id=`).A(QUOTED, id, ` class="mb-3"`).TgContent()
 	{
 
 		m.OpenTag(`form id="`, formId, `" enctype="multipart/form-data" method="post" `)
@@ -65,5 +65,5 @@ func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 		m.CloseTag()
 	}
 
-	m.CloseTag()
+	m.TgClose()
 }
