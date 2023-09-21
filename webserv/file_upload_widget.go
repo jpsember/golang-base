@@ -43,13 +43,15 @@ func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 			labelHtml := w.Label
 			if labelHtml != nil {
 				m.Comment("Label")
-				m.OpenTag(`label for="`, inputId, `" class="form-label" style="font-size:70%"`)
+				m.TgOpen(`label for=`).A(QUOTED, inputId, ` class="form-label"`).Style(`font-size:70%`).TgContent()
 				m.Escape(labelHtml)
-				m.CloseTag()
+				m.TgClose()
 			}
 		}
 
-		m.VoidTag(`input class="form-control" type="file" name="`, inputName, `" id="`, inputId, `" onchange='jsUpload("`, w.Id(), `")'`)
+		m.TgOpen(`input class="form-control" type="file" name=`)
+		m.A(QUOTED, inputName, ` id=`, QUOTED, inputId, ` onchange='jsUpload(`, QUOTED, w.Id(), `)'`)
+		m.TgClose()
 
 		problemId := WidgetIdWithProblem(w.BaseId)
 		problemText := s.StringValue(problemId)
