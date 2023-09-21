@@ -76,24 +76,24 @@ func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel str
 		m.CloseTag()
 
 		m.Comments(`Progress towards goal, controls`)
-		m.OpenTag(`div class="card-body"`)
+		m.TgOpen(`div class="card-body"`)
 		{
 			m.Comments("progress-container")
-			m.OpenTag(`div class="progress-container"`)
+			m.TgOpen(`div class="progress-container"`).TgContent()
 			{
 				m.Comment("Plot grey in background, full width").OpenCloseTag(`div class="progress-bar-bgnd"`)
 				m.Comment("Plot bar graph in foreground, partial width").OpenCloseTag(`div class="progress-bar" style="width: 35%;"`)
 			}
-			m.CloseTag()
-			m.OpenTag(`div class="progress-text"`)
+			m.TgClose()
+			m.TgOpen(`div class="progress-text"`).TgContent()
 			{
 				m.Escape(CurrencyToString(animal.CampaignBalance()) + ` raised of ` + CurrencyToString(animal.CampaignTarget()) + ` goal`)
 			}
-			m.CloseTag()
+			m.TgClose()
 
 			if buttonLabel != "" {
 				m.Comments("right-justified button")
-				m.OpenTag(`div class="row"`)
+				m.TgOpen(`div class="row"`).TgContent()
 				{
 					m.TgOpen(`div`)
 					m.A(` class="d-grid justify-content-md-end"`)
@@ -104,10 +104,10 @@ func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel str
 					}
 					m.TgClose()
 				}
-				m.CloseTag()
+				m.TgClose()
 			}
 		}
-		m.CloseTag()
+		m.TgClose()
 	}
 	m.CloseTag()
 }
