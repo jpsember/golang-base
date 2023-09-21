@@ -1,5 +1,9 @@
 package webserv
 
+import (
+	. "github.com/jpsember/golang-base/base"
+)
+
 // A Widget that displays editable text
 type HeadingWidgetStruct struct {
 	BaseWidgetObj
@@ -16,20 +20,20 @@ func NewHeadingWidget(id string) HeadingWidget {
 func (w HeadingWidget) RenderTo(s Session, m MarkupBuilder) {
 	textContent := s.WidgetStringValue(w)
 	tag := wsHeadingSize[w.Size()]
-	m.A(`<`, tag)
+	m.TgOpen(tag)
+	m.A(` id=`, QUOTED, w.BaseId, `>`)
 
 	// Have some special handling for the Micro size; very small text, and right justified
 	if w.size == SizeMicro {
-		m.A(` style="font-size:50%"`)
+		m.Style(`font-size:50%;`)
 	}
 	tx := wsHeadingAlign[w.Align()]
 	if tx != "" {
-		m.A(` class="`, tx, `"`)
+		m.A(` class=`, QUOTED, tx)
 	}
-	m.A(` id='`, w.BaseId, `'>`)
-	m.Escape(textContent)
-	m.A(`</`, tag, `>`)
-	m.Cr()
+	m.TgContent()
+	m.A(ESCAPED, textContent)
+	m.TgClose()
 }
 
 var wsHeadingSize = map[WidgetSize]string{

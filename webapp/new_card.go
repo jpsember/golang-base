@@ -157,7 +157,7 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 			m.TgClose()
 			m.TgOpen(`div class="progress-text"`).TgContent()
 			{
-				m.Escape(CurrencyToString(animal.CampaignBalance()) + ` raised of ` + CurrencyToString(animal.CampaignTarget()) + ` goal`)
+				m.A(ESCAPED, CurrencyToString(animal.CampaignBalance())+` raised of `+CurrencyToString(animal.CampaignTarget())+` goal`)
 			}
 			m.TgClose()
 

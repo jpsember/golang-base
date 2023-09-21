@@ -351,6 +351,6 @@ func NewGalleryListImplementation() GalleryListImplementation {
 
 func (g GalleryListImplementation) listItemRenderer(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
 	m.TgOpen(`div class="col-sm-4"`).TgContent()
-	m.Escape(ToString("#", elementId, g.names[elementId]))
+	m.A(ESCAPED, ToString("#", elementId, g.names[elementId]))
 	m.TgClose()
 }

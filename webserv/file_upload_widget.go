@@ -60,8 +60,8 @@ func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 
 		if hasProblem {
 			m.Comment("Problem")
-			m.A(`<div class="form-text text-danger" style="font-size:  70%">`)
-			m.Escape(problemText).A(`</div>`)
+			m.TgOpen(`div class="form-text text-danger"`).Style(`font-size:  70%`).TgContent()
+			m.A(ESCAPED, problemText).TgClose()
 		}
 
 		m.TgClose()

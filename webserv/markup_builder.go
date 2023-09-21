@@ -5,24 +5,19 @@ import (
 	"strings"
 )
 
-// A builder for constructing html markup
-const (
-	mode_html = iota
-	mode_style
-)
-
 type MarkupBuilderObj struct {
 	strings.Builder
-	indent          int
-	indented        bool
-	crRequest       int
-	omitComments    bool
-	tagStack        []*tagEntry
-	pendingComments []any
-	nested          bool
-	currentMode     int
-	pendingMode     int
-	pendingQuotes   bool
+	indent           int
+	indented         bool
+	crRequest        int
+	omitComments     bool
+	tagStack         []*tagEntry
+	pendingComments  []any
+	nested           bool
+	currentStyleFlag bool
+	pendingStyleFlag bool
+	pendingQuotes    bool
+	pendingEscape    bool
 }
 
 type tagEntry struct {
@@ -73,14 +68,14 @@ func (b MarkupBuilder) Escape(arg any) MarkupBuilder {
 	return b
 }
 
-func (b MarkupBuilder) switchToMode(mode int) {
-	if mode != b.currentMode {
-		if b.currentMode == mode_style {
+func (b MarkupBuilder) switchToMode(mode bool) {
+	if mode != b.currentStyleFlag {
+		if b.currentStyleFlag {
 			b.WriteString(`" `)
 		} else {
 			b.WriteString(` style:"`)
 		}
-		b.currentMode = mode
+		b.currentStyleFlag = mode
 	}
 }
 
@@ -91,7 +86,7 @@ func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 	}
 	b.nested = true
 
-	b.updateMode()
+	b.updateStyleMode()
 
 	for _, arg := range args {
 		if b.crRequest != 0 {
@@ -128,30 +123,34 @@ func (b MarkupBuilder) appendStr(text string) {
 		b.WriteString(text)
 		b.WriteByte('"')
 		b.pendingQuotes = false
+	} else if b.pendingEscape {
+		escaped := NewHtmlString(text).Escaped()
+		b.WriteString(escaped)
+		b.pendingEscape = false
 	} else {
 		b.WriteString(text)
 	}
 }
 
 func (b MarkupBuilder) StyleOff() MarkupBuilder {
-	b.pendingMode = mode_html
+	b.pendingStyleFlag = false
 	return b
 }
 
 func (b MarkupBuilder) Style(args ...any) MarkupBuilder {
-	b.pendingMode = mode_style
+	b.pendingStyleFlag = true
 	b.A(args...)
 	return b
 }
 
-func (b MarkupBuilder) updateMode() {
-	if b.pendingMode != b.currentMode {
-		if b.pendingMode == mode_style {
+func (b MarkupBuilder) updateStyleMode() {
+	if b.pendingStyleFlag != b.currentStyleFlag {
+		if b.pendingStyleFlag {
 			b.WriteString(` style="`)
 		} else {
 			b.WriteString(`"`)
 		}
-		b.currentMode = b.pendingMode
+		b.currentStyleFlag = b.pendingStyleFlag
 	}
 
 }
@@ -165,6 +164,8 @@ func (b MarkupBuilder) processPrintEffect(v PrintEffect) {
 		b.DoOutdent()
 	case QUOTED:
 		b.pendingQuotes = true
+	case ESCAPED:
+		b.pendingEscape = true
 	default:
 		BadArg("Unsupported PrintEffect:", v)
 	}
@@ -214,7 +215,6 @@ func (b MarkupBuilder) Comments(comments ...any) MarkupBuilder {
 func (b MarkupBuilder) TgOpen(name string) MarkupBuilder {
 	// If there is a space, the user has added some attributes, e.g. `div xxxx="yyyy"...`;
 	// treat this as if he did TgOpen(`div`).A(` xxxx....`)
-
 	i := strings.IndexByte(name, ' ')
 	tagName := name
 	remainder := ""
