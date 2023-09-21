@@ -72,11 +72,8 @@ func (b MarkupBuilder) RenderInvisible(w Widget) MarkupBuilder {
 	return b
 }
 
-func (b MarkupBuilder) Quoted(text string) MarkupBuilder {
-	return b.A(Quoted(text))
-}
-
 func (b MarkupBuilder) Escape(arg any) MarkupBuilder {
+	Todo("Use print effect to handle ESCAPE")
 	if escaper, ok := arg.(Escaper); ok {
 		return b.A(escaper.Escaped())
 	}
@@ -96,12 +93,6 @@ func (b MarkupBuilder) switchToMode(mode int) {
 		}
 		b.currentMode = mode
 	}
-}
-
-// Set flag so that next argument is "quoted"
-func (b MarkupBuilder) Quote() MarkupBuilder {
-	b.pendingQuotes = true
-	return b
 }
 
 // Append markup, generating a linefeed if one is pending.  No escaping is performed.

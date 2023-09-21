@@ -55,10 +55,10 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
 	Todo("!Don't add markup that is outside of the div<widget id>, else it will pile up due to ajax refreshes")
-	m.OpenTag(`div id='` + w.BaseId + `'`)
+	m.TgOpen(`div id=`).A(QUOTED, w.BaseId).TgContent()
 	m.Comments(`GridWidget`, w.IdSummary())
 	if len(w.children) != 0 {
-		m.OpenTag(`div class='row'`)
+		m.TgOpen(`div class='row'`).TgContent()
 		for _, child := range w.children {
 			str := `div class="col-sm-` + IntToString(child.Columns()) + `"`
 			if WidgetDebugRenderingFlag {
@@ -74,7 +74,7 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 			}
 			m.CloseTag()
 		}
-		m.CloseTag().Br()
+		m.TgClose().Br()
 	}
-	m.CloseTag() // GridWidget
+	m.TgClose() // GridWidget
 }

@@ -62,7 +62,7 @@ func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 			role = ``
 		}
 
-		m.Comment("checkbox").TgOpen(`div class=`).Quote().A(cbClass).TgContent()
+		m.Comment("checkbox").TgOpen(`div class=`).A(QUOTED, cbClass).TgContent()
 		{
 			m.TgOpen(`input class="form-check-input" type="checkbox" id=`).A(QUOTED, auxId, role,
 				Ternary(s.WidgetBoolValue(w), ` checked`, ``),
