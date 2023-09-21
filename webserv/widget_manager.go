@@ -18,6 +18,7 @@ type WidgetManagerObj struct {
 	stack               []mgrState
 	pendingSize         WidgetSize
 	pendingAlign        WidgetAlign
+	pendingHeight       int
 	pendingId           string
 	pendingLabel        string
 	anonymousIdCounter  int
@@ -99,6 +100,12 @@ func (m WidgetManager) Size(size WidgetSize) WidgetManager {
 	return m
 }
 
+// Set height for next widget (for text, this is e.g. 5em).
+func (m WidgetManager) Height(ems int) WidgetManager {
+	m.pendingHeight = ems
+	return m
+}
+
 // Set horizontal alignment for next widget
 func (m WidgetManager) Align(align WidgetAlign) WidgetManager {
 	m.pendingAlign = align
@@ -122,6 +129,12 @@ func (m WidgetManager) consumePendingLabel() string {
 	lbl := m.pendingLabel
 	m.pendingLabel = ""
 	return lbl
+}
+
+func (m WidgetManager) consumePendingHeight() int {
+	x := m.pendingHeight
+	m.pendingHeight = 0
+	return x
 }
 
 func (m WidgetManager) consumePendingSize() WidgetSize {
@@ -148,6 +161,7 @@ func (m WidgetManager) clearPendingComponentFields() {
 	verifyUsed(m.pendingLabel == "", "pendingLabel")
 	verifyUsed(m.pendingSize == SizeDefault, "pendingSize")
 	verifyUsed(m.pendingAlign == AlignDefault, "pendingAlign")
+	verifyUsed(m.pendingHeight == 0, "pendingHeight")
 }
 
 /**
@@ -364,7 +378,7 @@ func (m WidgetManager) AddHeading() WidgetManager {
 
 func (m WidgetManager) AddText() WidgetManager {
 	staticContent, id := m.getStaticContentAndId()
-	w := NewTextWidget(id, m.consumePendingSize())
+	w := NewTextWidget(id, m.consumePendingSize(), m.consumePendingHeight())
 	w.SetStateProvider(m.StateProvider())
 	if staticContent != "" {
 		w.SetStaticContent(staticContent)

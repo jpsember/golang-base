@@ -6,14 +6,16 @@ import (
 
 type TextWidgetObj struct {
 	BaseWidgetObj
-	size WidgetSize
+	size        WidgetSize
+	fixedHeight int
 }
 
 type TextWidget = *TextWidgetObj
 
-func NewTextWidget(id string, size WidgetSize) TextWidget {
+func NewTextWidget(id string, size WidgetSize, fixedHeight int) TextWidget {
 	t := &TextWidgetObj{
-		size: size,
+		size:        size,
+		fixedHeight: fixedHeight,
 	}
 	t.InitBase(id)
 	return t
@@ -29,15 +31,25 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	h := NewHtmlString(textContent)
 
-	args := NewArray[any]()
+	Pr("id:", w.BaseId, "w.fixedHeight:", w.fixedHeight)
 
-	args.Add(`div id='` + w.BaseId + `'`)
+	m.A(`<div id='`, w.BaseId, `' `)
+
 	if w.size != SizeDefault {
 		Todo("?A better way to do this, no doubt")
-		args.Add(textSize[w.size])
+		m.A(textSize[w.size])
 	}
 
-	m.OpenTag(args.Array()...)
+	Todo("You can't repeat style tags; only the first will be kept")
+	if w.fixedHeight != 0 {
+		Pr("wtf!!!!!")
+		m.A(` style="height:`, w.fixedHeight, `em; background-color:#fcc;"`)
+	}
+
+	Pr(m.String())
+
+	m.A(`>`).DoIndent()
+	m.A("fixed height:", w.fixedHeight)
 
 	{
 		for _, c := range h.Paragraphs() {
@@ -45,7 +57,8 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 		}
 
 	}
-	m.CloseTag()
+	m.DoOutdent()
+	m.A(`</div>`).Cr()
 }
 
 var textSize = map[WidgetSize]string{

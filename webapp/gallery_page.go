@@ -55,7 +55,7 @@ const gallery_card_prefix = "gallery_card."
 
 func (p GalleryPage) generateWidgets(sess Session) {
 
-	trim := false && Alert("removing most widgets")
+	trim := true && Alert("removing most widgets")
 
 	m := GenerateHeader(sess, p)
 
@@ -66,11 +66,23 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.Add(alertWidget)
 	}
 
+	m.Open()
+	{
+		m.Label("In HTML and CSS, background color is denoted by " +
+			"the background-color property. To add or " +
+			"change background color in HTML,").Size(SizeSmall).Height(5).AddText()
+
+	}
+	m.Close()
+
+	if trim {
+		return
+	}
 	{
 		x := NewGalleryListImplementation()
 
 		listItemWidget := m.Open()
-		m.Id("foo_text").AddText()
+		m.Id("foo_text").Height(3).AddText()
 		m.Close()
 		m.Detach(listItemWidget)
 
@@ -114,7 +126,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		{
 
 			m.Col(4)
-			m.Label("Some static text").AddText()
+			m.Label("Static text.").Height(5).AddText()
 			m.Id("bar").Label("Bar:").AddInput(p.fooListener)
 		}
 		m.PopIdPrefix()
