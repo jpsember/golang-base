@@ -8,7 +8,6 @@ import (
 // A builder for constructing html markup
 
 type tagEntry struct {
-	openType   tagOpenType
 	tag        string // e.g. div, p (no '<' or '>')
 	comment    string
 	hasContent bool
@@ -34,14 +33,6 @@ type MarkupBuilderObj struct {
 }
 
 type MarkupBuilder = *MarkupBuilderObj
-
-type tagOpenType int
-
-const (
-	tagTypeOpen tagOpenType = iota
-	tagTypeOpenClose
-	tagTypeVoid
-)
 
 func NewMarkupBuilder() MarkupBuilder {
 	v := MarkupBuilderObj{}
@@ -211,7 +202,7 @@ func (b MarkupBuilder) doIndent() {
 	b.indented = true
 }
 
-// Set pending comments for next OpenTag (or OpenCloseTag) call.
+// Set pending comments for next TgOpen (or TgClose) call.
 func (b MarkupBuilder) Comments(comments ...any) MarkupBuilder {
 	if b.pendingComments != nil {
 		Alert("#20<1Previous comments were not used:", b.pendingComments)
@@ -219,17 +210,6 @@ func (b MarkupBuilder) Comments(comments ...any) MarkupBuilder {
 	if !b.omitComments {
 		b.pendingComments = comments
 	}
-	return b
-}
-
-// Open a tag, e.g.
-//
-//	<div class="card-body" style="max-height:8em;">
-//
-// tagExpression in the above case would be:  div class="card-body" style="max-height:8em;"
-// Deprecated.
-func (b MarkupBuilder) OpenTag(args ...any) MarkupBuilder {
-	b.auxOpenTag(tagTypeOpen, args...)
 	return b
 }
 
@@ -301,66 +281,6 @@ func (b MarkupBuilder) TgClose() MarkupBuilder {
 	return b.Br()
 }
 
-// Deprecated.  Use TgOpen, TgContent, TgClose functions.
-func (b MarkupBuilder) auxOpenTag(openType tagOpenType, args ...any) {
-	b.updateMode()
-
-	var tagExpression string
-	{
-		sb := strings.Builder{}
-
-		for _, arg := range args {
-			s := ""
-			switch v := arg.(type) {
-			case string:
-				s = v
-			case int: // We aren't sure if it's 32 or 64, so choose 64
-				s = IntToString(v)
-			case bool:
-				s = boolToHtmlString(v)
-			default:
-				Die("<1Unsupported argument type:", Info(arg))
-			}
-			sb.WriteString(s)
-		}
-		tagExpression = sb.String()
-	}
-	Todo("!In debug mode, parse the tag expression to make sure quotes are balanced")
-
-	exprLen := len(tagExpression)
-	if tagExpression[0] == '<' || tagExpression[exprLen-1] == '>' {
-		BadArg("<1Tag expression contains <,> delimiters:", tagExpression)
-	}
-	i := strings.IndexByte(tagExpression, ' ')
-	if i < 0 {
-		i = exprLen
-	}
-
-	CheckState(b.tagStack.Size() < 50, "tags are nested too deeply")
-	entry := tagEntry{
-		tag:      tagExpression[0:i],
-		openType: openType,
-	}
-	comments := b.pendingComments
-	b.pendingComments = nil
-
-	if comments != nil {
-		entry.comment = `<!-- ` + ToString(comments...) + " -->"
-	}
-	if entry.comment != "" {
-		b.Br()
-		b.A(entry.comment).Cr()
-	}
-
-	b.A("<", tagExpression, ">")
-	if openType == tagTypeOpen {
-		b.DoIndent()
-	}
-	if openType != tagTypeVoid {
-		b.tagStack.Add(entry)
-	}
-}
-
 func (b MarkupBuilder) tagStackInfo() string {
 	jl := NewJSList()
 
@@ -384,36 +304,6 @@ func (b MarkupBuilder) VerifyEnd(expectedStackSize int, widget Widget) {
 		BadState("<1tag stack size", s, "!=", expectedStackSize, INDENT,
 			"after widget:", widget.Id(), Info(widget))
 	}
-}
-
-// Deprecated.  Use TgOpen, TgContent, TgClose functions.
-func (b MarkupBuilder) CloseTag() MarkupBuilder {
-	if b.tagStack.IsEmpty() {
-		Die("tag stack is empty:", INDENT, b.String())
-	}
-	entry := b.tagStack.Pop()
-	if entry.openType == tagTypeOpen {
-		b.DoOutdent()
-		b.A("</", entry.tag, ">")
-		if entry.comment != "" {
-			b.A(`  `, entry.comment)
-		}
-	} else {
-		b.A("</", entry.tag, ">")
-	}
-	return b.Br()
-}
-
-// Deprecated.  Use TgOpen, TgContent, TgClose functions.
-func (b MarkupBuilder) VoidTag(args ...any) MarkupBuilder {
-	b.auxOpenTag(tagTypeVoid, args...)
-	return b
-}
-
-// Deprecated.  Use TgOpen, TgContent, TgClose functions.
-func (b MarkupBuilder) OpenCloseTag(args ...any) MarkupBuilder {
-	b.auxOpenTag(tagTypeOpenClose, args...)
-	return b.CloseTag()
 }
 
 func (b MarkupBuilder) Cr() MarkupBuilder {
