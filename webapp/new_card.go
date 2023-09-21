@@ -99,7 +99,7 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 	animal := w.animal
 	m.Comments("Animal Card")
 
-	m.TgOpen(`div class="card bg-light mb-3" style="width:14em"`).Style(`width:14em`).TgContent()
+	m.TgOpen(`div class="card bg-light mb-3"`).Style(`width:14em`).TgContent()
 	{
 		imgUrl := "unknown"
 		photoId := animal.PhotoThumbnail()
