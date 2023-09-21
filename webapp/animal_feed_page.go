@@ -57,19 +57,17 @@ func (p FeedPage) generateWidgets(s Session) {
 	m.EndConstruction(debug)
 }
 
-func (p FeedPage) constructListItemWidget(s Session) NewCard {
+func (p FeedPage) constructListItemWidget(s Session) AnimalCard {
 	m := s.WidgetManager()
 
-	cardListener := func(sess Session, widget NewCard) {
+	cardListener := func(sess Session, widget AnimalCard) {
 		p.attemptSelectAnimal(sess, widget.Animal().Id())
 	}
 
 	// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
 	//
 	// These list cards have no buttons.
-	w := NewNewCard(m.AllocateAnonymousId("feed_card"), DefaultAnimal,
-		cardListener, //
-		"", nil)      //
+	w := NewAnimalCard(m.AllocateAnonymousId("feed_card"), DefaultAnimal, cardListener, "", nil)      
 	m.Add(w)
 	m.Detach(w)
 	return w

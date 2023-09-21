@@ -10,6 +10,7 @@ type BaseWidgetObj struct {
 	Bounds Rect
 
 	LowListen     LowLevelWidgetListener
+	trace         bool
 	hidden        bool
 	disabled      bool
 	staticContent any
@@ -22,6 +23,15 @@ type BaseWidgetObj struct {
 }
 
 type BaseWidget = *BaseWidgetObj
+
+func (w BaseWidget) Trace() bool { return w.trace }
+
+func (w BaseWidget) SetTrace(flag bool) {
+	if flag && !w.trace {
+		Alert("#50<1Setting trace on widget:", w.Id())
+	}
+	w.trace = flag
+}
 
 func (w BaseWidget) InitBase(id string) {
 	w.BaseId = id
@@ -124,7 +134,18 @@ func (w BaseWidget) AuxId() string {
 }
 
 func (w BaseWidget) SetStateProvider(p WidgetStateProvider) {
+	if w.trace {
+		if p != nil {
+			w.Log("SetStateProvider:", p, Caller())
+		}
+	}
 	w.stateProvider = p
+}
+
+func (w BaseWidget) Log(args ...any) {
+	if w.trace {
+		Pr("{"+w.Id()+"}: ", ToString(args...))
+	}
 }
 
 func (w BaseWidget) StateProvider() WidgetStateProvider {

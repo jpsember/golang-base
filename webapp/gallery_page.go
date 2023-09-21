@@ -110,15 +110,18 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	{
 		m.Col(4)
 
-		cardListener := func(sess Session, widget NewCard) { Pr("card listener, animal id:", widget.Animal().Id()) }
-		cardButtonListener := func(sess Session, widget NewCard) { Pr("card button listener, name:", widget.Animal().Name()) }
+		cardListener := func(sess Session, widget AnimalCard) { Pr("card listener, animal id:", widget.Animal().Id()) }
+		cardButtonListener := func(sess Session, widget AnimalCard) { Pr("card button listener, name:", widget.Animal().Name()) }
+
+		Todo("We need to create a state provider for cards, when not in list (list handles that already somehow)")
 
 		// Create a new card that will contain other widgets
-		m.Add(
-			NewNewCard("gallery_card", ReadAnimalIgnoreError(3), cardListener, "Hello", cardButtonListener))
+		c1 := NewAnimalCard("gallery_card", ReadAnimalIgnoreError(3), cardListener, "Hello", cardButtonListener)
+		//c1.SetTrace(true)
 
+		m.Add(c1)
 		m.Add(
-			NewNewCard("gallery_card2", ReadAnimalIgnoreError(4), nil, "Bop", cardButtonListener))
+			NewAnimalCard("gallery_card2", ReadAnimalIgnoreError(4), nil, "Bop", cardButtonListener))
 
 		m.Open()
 

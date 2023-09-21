@@ -356,7 +356,7 @@ func (m WidgetManager) getStaticContentAndId() (string, string) {
 	return staticContent, id
 }
 
-func (m WidgetManager) AddHeading() WidgetManager {
+func (m WidgetManager) AddHeading() HeadingWidget {
 	staticContent, id := m.getStaticContentAndId()
 	w := NewHeadingWidget(id)
 	w.SetSize(m.consumePendingSize())
@@ -365,10 +365,11 @@ func (m WidgetManager) AddHeading() WidgetManager {
 	if staticContent != "" {
 		w.SetStaticContent(staticContent)
 	}
-	return m.Add(w)
+	m.Add(w)
+	return w
 }
 
-func (m WidgetManager) AddText() WidgetManager {
+func (m WidgetManager) AddText() TextWidget {
 	staticContent, id := m.getStaticContentAndId()
 	w := NewTextWidget(id, m.consumePendingSize(), m.consumePendingHeight())
 	w.SetStateProvider(m.StateProvider())
@@ -376,7 +377,8 @@ func (m WidgetManager) AddText() WidgetManager {
 		w.SetStaticContent(staticContent)
 	}
 	m.Log("Adding text, id:", w.BaseId)
-	return m.Add(w)
+	m.Add(w)
+	return w
 }
 
 func (m WidgetManager) AddButton(listener ButtonWidgetListener) ButtonWidget {

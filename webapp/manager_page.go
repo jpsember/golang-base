@@ -68,15 +68,15 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	p.listWidget = m.Id(id_manager_list).AddList(p.animalList(sess), cardWidget, cardWidget.StateProviderFunc())
 }
 
-func (p ManagerPage) constructListItemWidget(s Session) NewCard {
+func (p ManagerPage) constructListItemWidget(s Session) AnimalCard {
 	m := s.WidgetManager()
 
-	cardListener := func(sess Session, widget NewCard) {
+	cardListener := func(sess Session, widget AnimalCard) {
 		p.attemptSelectAnimal(sess, widget.Animal().Id())
 	}
 
 	// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
-	w := NewNewCard(m.AllocateAnonymousId("manager_item"), DefaultAnimal,
+	w := NewAnimalCard(m.AllocateAnonymousId("manager_item"), DefaultAnimal,
 		cardListener, "hey", cardListener)
 	m.Add(w)
 	m.Detach(w)

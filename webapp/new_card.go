@@ -7,7 +7,7 @@ import (
 )
 
 // A Widget that displays editable text
-type NewCardObj struct {
+type AnimalCardStruct struct {
 	BaseWidgetObj
 	animal         Animal
 	cardListener   CardWidgetListener
@@ -17,25 +17,27 @@ type NewCardObj struct {
 	childIdPrefix  string
 }
 
-type NewCard = *NewCardObj
+type AnimalCard = *AnimalCardStruct
 
-type CardWidgetListener func(sess Session, widget NewCard)
+type CardWidgetListener func(sess Session, widget AnimalCard)
 
 func cardListenWrapper(sess Session, widget Widget, value string) (any, error) {
-	b := widget.(NewCard)
+	b := widget.(AnimalCard)
 	b.cardListener(sess, b)
 	return nil, nil
 }
 
-func (w NewCard) Animal() Animal {
+func (w AnimalCard) Animal() Animal {
 	return w.animal
 }
 
-func NewNewCard(widgetId string, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) NewCard {
+func NewAnimalCard(widgetId string, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) AnimalCard {
 	// An id of zero can be used for constructing a template (e.g., list item widget)
-	//	CheckArg(animal.Id() != 0, "no animal")
+
+	// If a button is requested, it must have a listener
 	CheckArg((buttonLabel == "") == (buttonListener == nil))
-	w := NewCardObj{
+
+	w := AnimalCardStruct{
 		animal:         animal,
 		cardListener:   cardListener,
 		buttonLabel:    buttonLabel,
@@ -44,54 +46,70 @@ func NewNewCard(widgetId string, animal Animal, cardListener CardWidgetListener,
 	Todo("!any way of simplifying the LowListener boilerplate here and in other widgets? Using templates perhaps?")
 	w.LowListen = cardListenWrapper // Only has an effect if cardListener != nil
 	w.InitBase(widgetId)
+	//w.SetTrace(true)
+
 	Todo("!instead of passing around WidgetManager, maybe pass around Sessions, which contain the wm?")
+
 	return &w
 }
 
-func (w NewCard) ourButtonListener(sess Session, widget Widget) {
+func (w AnimalCard) ourButtonListener(sess Session, widget Widget) {
 	Pr("ourButtonListener called...")
 	w.buttonListener(sess, w)
 }
 
-func (w NewCard) AddChildren(m WidgetManager) {
+func (w AnimalCard) AddChildren(m WidgetManager) {
 	pr := PrIf(false)
 	pr("adding children to new card")
 
-	// Determine a unique prefix for this card's fields, in case we are rendering multiple cards
-	// (and not in a list)
+	// Determine a unique prefix for this card's fields.
+	// Note that we do *don't* set any state providers until we know what this prefix is.  Specifically,
+	// we don't create a state provider at construction time.
 	w.childIdPrefix = m.AllocateAnonymousId("card_children.")
+
+	// If we were given an actual animal, give this card's children a default state provider
+	if w.animal.Id() != 0 {
+		m.PushStateProvider(NewStateProvider(w.childIdPrefix, w.animal.ToJson().AsJSMap()))
+	}
+
 	m.OpenContainer(w)
 	m.PushIdPrefix(w.childIdPrefix)
-	m.Id("name").Size(SizeTiny).AddHeading()
-	m.Id("summary").AddText()
+	c1 := m.Id("name").Size(SizeTiny).AddHeading()
+	c2 := m.Id("summary").AddText()
+	c1.SetTrace(false)
+	c2.SetTrace(false)
 	if w.buttonLabel != "" {
 		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.ourButtonListener)
 	}
 	m.PopIdPrefix()
 	m.Close()
+	if w.animal.Id() != 0 {
+		m.PopStateProvider()
+	}
+
 	pr("done adding children")
 }
 
-func (w NewCard) AddChild(c Widget, manager WidgetManager) {
+func (w AnimalCard) AddChild(c Widget, manager WidgetManager) {
 	w.children = append(w.children, c)
 }
 
-func (w NewCard) SetAnimal(anim Animal) {
+func (w AnimalCard) SetAnimal(anim Animal) {
 	w.animal = anim
 }
 
-func (w NewCard) StateProviderFunc() ListItemStateProvider {
+func (w AnimalCard) StateProviderFunc() ListItemStateProvider {
 	return w.BuildStateProvider
 }
 
-func (w NewCard) BuildStateProvider(sess Session, widget ListWidget, elementId int) WidgetStateProvider {
+func (w AnimalCard) BuildStateProvider(sess Session, widget ListWidget, elementId int) WidgetStateProvider {
 	anim := ReadAnimalIgnoreError(elementId)
 	CheckState(anim.Id() != 0, "no animal specified")
 	w.animal = anim
 	return NewStateProvider(w.childIdPrefix, anim.ToJson().AsJSMap())
 }
 
-func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
+func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 	ci := 0
 	cimax := len(w.children)
 
