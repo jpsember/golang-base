@@ -33,14 +33,6 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 
 func (oper AnimalOper) Perform(app *App) {
 
-	if true && Alert("experiment") {
-		m := NewMarkupBuilder()
-		m.OpenCloseTag(`div "class=foo"`)
-		m.TgOpen(`div "class=foo"`).TgClose()
-		Pr(Quoted(m.String()))
-		Halt()
-	}
-
 	ClearAlertHistory(false)
 	ExitOnPanic()
 

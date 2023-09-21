@@ -151,9 +151,8 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 			m.Comments("progress-container")
 			m.TgOpen(`div class="progress-container"`).TgContent()
 			{
-				m.Comment("Plot grey in background, full width").TgOpen(`div class="progress-bar-bgnd"`).TgClose()
-				//Halt(m.String())
-				m.Comment("Plot bar graph in foreground, partial width").OpenCloseTag(`div class="progress-bar" style="width: 35%;"`)
+				m.Comment("Plot grey in background, full width").TgOpen(`div class="progress-bar-bgnd"`).TgContent().TgClose()
+				m.Comment("Plot bar graph in foreground, partial width").TgOpen(`div class="progress-bar"`).StyleOn().A(`width: 35%;`).StyleOff().TgContent().TgClose()
 			}
 			m.TgClose()
 			m.OpenTag(`div class="progress-text"`)

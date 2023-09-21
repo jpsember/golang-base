@@ -99,14 +99,14 @@ func (b MarkupBuilder) switchToMode(mode int) {
 
 // Append markup, generating a linefeed if one is pending.  No escaping is performed.
 func (b MarkupBuilder) A(args ...any) MarkupBuilder {
-
-	CheckState(!b.nested)
+	if b.nested {
+		BadState("nested")
+	}
 	b.nested = true
 
 	b.updateMode()
 
 	for _, arg := range args {
-
 		if b.crRequest != 0 {
 			if b.crRequest == 1 {
 				b.WriteString("\n")
@@ -150,7 +150,7 @@ func (b MarkupBuilder) updateMode() {
 		if b.pendingMode == mode_style {
 			b.WriteString(` style="`)
 		} else {
-			b.WriteString(`" `)
+			b.WriteString(`"`)
 		}
 		b.currentMode = b.pendingMode
 	}
@@ -256,9 +256,6 @@ func (b MarkupBuilder) TgOpen(name string) MarkupBuilder {
 	if remainder != "" {
 		b.A(remainder)
 	}
-
-	Todo("This indent might get us in trouble")
-	b.DoIndent()
 	return b
 }
 
@@ -271,22 +268,20 @@ func (b MarkupBuilder) TgContent() MarkupBuilder {
 		Alert("#50<1missing StyleOff")
 	}
 	b.StyleOff()
-	b.WriteString(`>`)
-	b.Cr()
+	b.A(`>`)
+	b.DoIndent()
 	return b
 }
 
 func (b MarkupBuilder) TgClose() MarkupBuilder {
-	Todo("who is generating the linefeed?")
 	entry := b.tagStack.Pop()
 	if entry.hasContent {
 		b.DoOutdent()
 		b.A("</", entry.tag, ">")
 	} else {
-		b.A(` />`)
+		b.WriteString(` />`)
 	}
 
-	//b.A("</", entry.tag, ">")
 	if entry.comment != "" {
 		b.A(`  `, entry.comment)
 	}
