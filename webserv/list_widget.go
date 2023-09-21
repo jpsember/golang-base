@@ -92,11 +92,11 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 	windowStart := Clamp(w.list.CurrentPage()-windowSize/2, 0, np-windowSize)
 	windowStop := Clamp(windowStart+windowSize, 0, np-1)
 
-	m.OpenTag(`div class="row"`)
+	m.TgOpen(`div class="row"`).TgContent()
 	{
-		m.OpenTag(`nav aria-label="Page navigation"`)
+		m.TgOpen(`nav aria-label="Page navigation"`).TgContent()
 		{
-			m.OpenTag(`ul class="pagination d-flex justify-content-center"`)
+			m.TgOpen(`ul class="pagination d-flex justify-content-center"`).TgContent()
 			{
 				w.renderPagePiece(s, m, `&lt;&lt;`, 0, true)
 				w.renderPagePiece(s, m, `&lt;`, w.list.CurrentPage()-1, true)
@@ -107,11 +107,11 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 				w.renderPagePiece(s, m, `&gt;`, w.list.CurrentPage()+1, true)
 				w.renderPagePiece(s, m, `&gt;&gt;`, np-1, true)
 			}
-			m.CloseTag()
+			m.TgClose()
 		}
-		m.CloseTag()
+		m.TgClose()
 	}
-	m.CloseTag()
+	m.TgClose()
 }
 
 func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, targetPage int, edges bool) {
@@ -135,14 +135,16 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	pr("ListWidget.RenderTo")
 	m.Comment("ListWidget")
 
-	m.OpenTag(`div id="`, w.BaseId, `"`)
+	m.TgOpen(`div id=`).A(QUOTED, w.BaseId).TgContent()
+
+	//m.OpenTag(`div id="`, w.BaseId, `"`)
 
 	if w.WithPageControls {
 		w.renderPagination(s, m)
 	}
 
 	{
-		m.OpenTag(`div class="row"`)
+		m.TgOpen(`div class="row"`).TgContent()
 		{
 			elementIds := w.list.GetPageElements()
 			pr("rendering page num:", w.list.CurrentPage(), "element ids:", elementIds)
@@ -168,14 +170,14 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			s.baseIdPrefix = savedBaseIdPrefix
 			s.baseStateProvider = savedStateProvider
 		}
-		m.CloseTag()
+		m.TgClose()
 	}
 
 	if w.WithPageControls {
 		w.renderPagination(s, m)
 	}
 
-	m.CloseTag()
+	m.TgClose()
 }
 
 // Process a possible pagniation control event.
@@ -208,7 +210,7 @@ func (w ListWidget) handlePagerClick(sess Session, message string) bool {
 }
 
 func defaultRenderer(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
-	m.OpenTag(`div class="col-sm-16" style="background-color:` + DebugColor(elementId) + `"`)
+	m.TgOpen(`div class="col-sm-16"`).Style(`background-color:` + DebugColor(elementId)).TgContent()
 	m.WriteString("default list render, Id:" + IntToString(elementId))
-	m.CloseTag()
+	m.TgClose()
 }
