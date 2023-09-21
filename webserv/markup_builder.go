@@ -222,9 +222,11 @@ func (b MarkupBuilder) OpenTag(args ...any) MarkupBuilder {
 }
 
 func (b MarkupBuilder) TgOpen(name string) MarkupBuilder {
+	if strings.IndexByte(name, ' ') >= 0 {
+		BadArg("Unexpected space in tag name:", name)
+	}
 	entry := tagEntry{
 		tag: name,
-		//	openType: openType,
 	}
 	comments := b.pendingComments
 	b.pendingComments = nil
@@ -244,9 +246,14 @@ func (b MarkupBuilder) TgOpen(name string) MarkupBuilder {
 }
 
 func (b MarkupBuilder) TgContent() MarkupBuilder {
-	entry := b.tagStack.Last()
+	// We must point to the entry, not copy it, as we are modifying it
+	entry := &b.tagStack.Array()[b.tagStack.Size()-1]
 	CheckState(!entry.hasContent)
 	entry.hasContent = true
+	if b.pendingMode != mode_html {
+		Alert("#50<1missing StyleOff")
+	}
+	b.StyleOff()
 	b.WriteString(`>`)
 	b.Cr()
 	return b
@@ -254,7 +261,6 @@ func (b MarkupBuilder) TgContent() MarkupBuilder {
 
 func (b MarkupBuilder) TgClose() MarkupBuilder {
 	entry := b.tagStack.Pop()
-
 	if entry.hasContent {
 		b.DoOutdent()
 		b.A("</", entry.tag, ">")

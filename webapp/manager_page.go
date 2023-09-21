@@ -125,21 +125,25 @@ func getManagerAnimals(managerId int) []int {
 }
 
 func (p ManagerPage) renderItem(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
-	anim, err := ReadActualAnimal(elementId)
-	if ReportIfError(err, "renderItem in manager page page:", elementId) {
-		return
-	}
+	Alert("finish refactoring for new card")
+	/*
+		anim, err := ReadActualAnimal(elementId)
+		if ReportIfError(err, "renderItem in manager page page:", elementId) {
+			return
+		}
 
-	if false {
-		m.OpenTag(`div class="card bg-light mb-3"`)
-		m.A("animal ", elementId)
+		if false {
+			m.OpenTag(`div class="card bg-light mb-3"`)
+			m.A("animal ", elementId)
+			m.CloseTag()
+			return
+		}
+
+
+		m.OpenTag(`div class="col-sm-3"`)
+		RenderAnimalCard(session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
 		m.CloseTag()
-		return
-	}
-
-	m.OpenTag(`div class="col-sm-3"`)
-	RenderAnimalCard(session, anim, m, "Edit", action_prefix_animal_card, action_prefix_animal_card)
-	m.CloseTag()
+	*/
 }
 
 const action_prefix_animal_card = "animal_id_"

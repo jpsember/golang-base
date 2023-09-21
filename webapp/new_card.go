@@ -165,14 +165,14 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 
 			if ci < cimax {
 				m.Comments("right-justified button")
-				m.OpenTag(`div class="row"`)
+				m.TgOpen(`div`).A(` class="row"`).TgContent()
 				{
-					m.OpenTag(`div class="d-grid justify-content-md-end"`)
+					m.TgOpen(`div`).A(` class="d-grid justify-content-md-end"`).TgContent()
 					RenderWidget(w.children[ci], s, m)
 					ci++
-					m.CloseTag()
+					m.TgClose()
 				}
-				m.CloseTag()
+				m.TgClose()
 				ci++
 			}
 		}
