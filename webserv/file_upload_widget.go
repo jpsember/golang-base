@@ -1,5 +1,9 @@
 package webserv
 
+import (
+	_ "github.com/jpsember/golang-base/base"
+)
+
 type FileUploadWidgetListener func(sess Session, widget FileUpload, value []byte) error
 
 type FileUploadObj struct {
