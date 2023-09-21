@@ -221,7 +221,7 @@ func (b MarkupBuilder) OpenTag(args ...any) MarkupBuilder {
 	return b
 }
 
-func (b MarkupBuilder) OpenTg(name string) MarkupBuilder {
+func (b MarkupBuilder) TgOpen(name string) MarkupBuilder {
 	entry := tagEntry{
 		tag: name,
 		//	openType: openType,
@@ -252,7 +252,7 @@ func (b MarkupBuilder) TgContent() MarkupBuilder {
 	return b
 }
 
-func (b MarkupBuilder) CloseTg() MarkupBuilder {
+func (b MarkupBuilder) TgClose() MarkupBuilder {
 	entry := b.tagStack.Pop()
 
 	if entry.hasContent {
@@ -266,30 +266,8 @@ func (b MarkupBuilder) CloseTg() MarkupBuilder {
 	}
 	return b.Br()
 }
-func (b MarkupBuilder) auxOpenTg(openType tagOpenType, name string) {
-	entry := tagEntry{
-		tag:      name,
-		openType: openType,
-	}
-	comments := b.pendingComments
-	b.pendingComments = nil
-	if comments != nil {
-		entry.comment = `<!-- ` + ToString(comments...) + " -->"
-	}
-	if entry.comment != "" {
-		b.Br()
-		b.A(entry.comment).Cr()
-	}
 
-	b.A(`<`, name)
-
-	if openType == tagTypeOpen {
-		CheckState(b.tagStack.Size() < 50, "tags are nested too deeply")
-		b.DoIndent()
-		b.tagStack.Add(entry)
-	}
-}
-
+// Deprecated.  Use TgOpen, TgContent, TgClose functions.
 func (b MarkupBuilder) auxOpenTag(openType tagOpenType, args ...any) {
 	b.updateMode()
 
@@ -374,6 +352,7 @@ func (b MarkupBuilder) VerifyEnd(expectedStackSize int, widget Widget) {
 	}
 }
 
+// Deprecated.  Use TgOpen, TgContent, TgClose functions.
 func (b MarkupBuilder) CloseTag() MarkupBuilder {
 	if b.tagStack.IsEmpty() {
 		Die("tag stack is empty:", INDENT, b.String())
@@ -391,11 +370,13 @@ func (b MarkupBuilder) CloseTag() MarkupBuilder {
 	return b.Br()
 }
 
+// Deprecated.  Use TgOpen, TgContent, TgClose functions.
 func (b MarkupBuilder) VoidTag(args ...any) MarkupBuilder {
 	b.auxOpenTag(tagTypeVoid, args...)
 	return b
 }
 
+// Deprecated.  Use TgOpen, TgContent, TgClose functions.
 func (b MarkupBuilder) OpenCloseTag(args ...any) MarkupBuilder {
 	b.auxOpenTag(tagTypeOpenClose, args...)
 	return b.CloseTag()

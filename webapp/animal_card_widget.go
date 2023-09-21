@@ -95,12 +95,14 @@ func RenderAnimalCard(s Session, animal Animal, m MarkupBuilder, buttonLabel str
 				m.Comments("right-justified button")
 				m.OpenTag(`div class="row"`)
 				{
-					m.OpenTag(`div class="d-grid justify-content-md-end"`)
+					m.TgOpen(`div`)
+					m.A(` class="d-grid justify-content-md-end"`)
+					m.TgContent()
 					{
 						buttonId := buttonActionPrefix + IntToString(animal.Id())
 						RenderButton(s, m, buttonId, buttonId, true, buttonLabel, SizeSmall, AlignRight, 0)
 					}
-					m.CloseTag()
+					m.TgClose()
 				}
 				m.CloseTag()
 			}
