@@ -76,15 +76,15 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 	}
 
 	m.Comment("Input")
-	m.A(`<input class="form-control`)
+	m.TgOpen(`input class="form-control`)
+	//m.A(`<input class="form-control`)
 	if hasProblem {
 		m.A(` border-danger border-3`) // Adding border-3 makes the text shift a bit on error, maybe not desirable
 	}
 
-	m.A(`" type="`, Ternary(w.Password, "password", "text"), `" id="`, w.BaseId, `.aux" value="`)
-	value := s.WidgetStringValue(w)
-	m.Escape(value)
-	m.A(`" onchange='jsVal("`, w.BaseId, `")'>`).Cr()
+	m.A(`" type=`, QUOTED, Ternary(w.Password, "password", "text"), ` id="`, w.BaseId, `.aux" value="`)
+	m.A(ESCAPED, s.WidgetStringValue(w))
+	m.A(`" onchange='jsVal("`, w.BaseId, `")'`).TgClose()
 
 	if hasProblem {
 		m.Comment("Problem")
