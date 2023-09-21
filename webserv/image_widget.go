@@ -30,11 +30,10 @@ func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 	pr := PrIf(false)
 	pr("rendering:", w.Id())
 
-	m.Comment("image")
-
 	// The outermost element must have the widget's id!  Or chaos happens during repainting.
 
-	m.OpenTag(`div id="`, w.BaseId, `"`)
+	m.TgOpen(`div id=`).A(QUOTED, w.BaseId).TgContent()
+	m.Comment("image")
 
 	{
 		var imageSource string
@@ -66,7 +65,7 @@ func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 		m.A(`>`)
 
 	}
-	m.CloseTag()
+	m.TgClose()
 	pr("done render")
 }
 

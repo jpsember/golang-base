@@ -188,7 +188,7 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 // Generate the boilerplate header and scripts markup
 func (j JServer) writeHeader(bp MarkupBuilder) {
 	bp.A(j.headerMarkup)
-	bp.OpenTag("body")
+	bp.TgOpen(`body`).TgContent()
 	containerClass := "container"
 	if j.FullWidth {
 		containerClass = "container-fluid"
@@ -196,7 +196,7 @@ func (j JServer) writeHeader(bp MarkupBuilder) {
 	if false && j.TopPadding != 0 {
 		containerClass += "  pt-" + IntToString(j.TopPadding)
 	}
-	bp.Comments("page container").OpenTag(`div class='` + containerClass + `'`)
+	bp.Comments("page container").TgOpen(`div class=`).A(QUOTED, containerClass).TgContent()
 }
 
 func (j JServer) sendFullPage(sess Session) {
@@ -211,7 +211,7 @@ func (j JServer) sendFullPage(sess Session) {
 
 // Generate the boilerplate footer markup, then write the page to the response
 func (j JServer) writeFooter(s Session, bp MarkupBuilder) {
-	bp.CloseTag() // page container
+	bp.TgClose() // page container
 
 	// Add a bit of javascript that will change the url to what we want
 	expr := s.NewBrowserPath()
@@ -225,7 +225,7 @@ history.replaceState(null, null, url)
 		// ^^^I suspect we don't want to do pushState if we got here due to user pressing the back button.
 		bp.WriteString(code)
 	}
-	bp.CloseTag() // body
+	bp.TgClose() // body
 
 	bp.A(`</html>`).Cr()
 }

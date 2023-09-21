@@ -70,9 +70,9 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 	labelHtml := w.Label
 	if labelHtml != nil {
 		m.Comment("Label")
-		m.OpenTag(`label class="form-label" style="font-size:70%"`)
+		m.TgOpen(`label class="form-label"`).Style(`font-size:70%`).TgContent()
 		m.Escape(labelHtml)
-		m.CloseTag()
+		m.TgClose()
 	}
 
 	m.Comment("Input")
