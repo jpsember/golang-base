@@ -99,8 +99,7 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 	animal := w.animal
 	m.Comments("Animal Card")
 
-	Todo("Instead of styleOn/styleOff, add Style(...)")
-	m.TgOpen(`div class="card bg-light mb-3" style="width:14em"`).StyleOn().A(`width:14em`).TgContent()
+	m.TgOpen(`div class="card bg-light mb-3" style="width:14em"`).Style(`width:14em`).TgContent()
 	{
 		imgUrl := "unknown"
 		photoId := animal.PhotoThumbnail()
@@ -153,7 +152,7 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 			m.TgOpen(`div class="progress-container"`).TgContent()
 			{
 				m.Comment("Plot grey in background, full width").TgOpen(`div class="progress-bar-bgnd"`).TgContent().TgClose()
-				m.Comment("Plot bar graph in foreground, partial width").TgOpen(`div class="progress-bar"`).StyleOn().A(`width: 35%;`).TgContent().TgClose()
+				m.Comment("Plot bar graph in foreground, partial width").TgOpen(`div class="progress-bar"`).Style(`width: 35%;`).TgContent().TgClose()
 			}
 			m.TgClose()
 			m.TgOpen(`div class="progress-text"`).TgContent()

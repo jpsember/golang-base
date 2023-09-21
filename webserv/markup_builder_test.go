@@ -49,8 +49,7 @@ func TestTagWithStyling(t *testing.T) {
 
 	m := webserv.NewMarkupBuilder()
 	m.TgOpen(`div class="foo"`)
-	m.StyleOn().A(`width=4em;`)
-	m.StyleOff()
+	m.Style(`width=4em;`)
 	m.TgContent()
 	m.A("Hello")
 	m.TgClose()

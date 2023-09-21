@@ -135,13 +135,14 @@ func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 	return b
 }
 
-func (b MarkupBuilder) StyleOn() MarkupBuilder {
-	b.pendingMode = mode_style
+func (b MarkupBuilder) StyleOff() MarkupBuilder {
+	b.pendingMode = mode_html
 	return b
 }
 
-func (b MarkupBuilder) StyleOff() MarkupBuilder {
-	b.pendingMode = mode_html
+func (b MarkupBuilder) Style(args ...any) MarkupBuilder {
+	b.pendingMode = mode_style
+	b.A(args...)
 	return b
 }
 
@@ -264,9 +265,9 @@ func (b MarkupBuilder) TgContent() MarkupBuilder {
 	entry := &b.tagStack.Array()[b.tagStack.Size()-1]
 	CheckState(!entry.hasContent)
 	entry.hasContent = true
-	if b.pendingMode != mode_html {
-		Alert("#50<1missing StyleOff")
-	}
+	//if b.pendingMode != mode_html {
+	//	Alert("#50<1missing StyleOff")
+	//}
 	b.StyleOff()
 	b.A(`>`)
 	b.DoIndent()

@@ -40,25 +40,26 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	h := NewHtmlString(textContent)
 
-	m.A(`<div id='`, w.BaseId, `' `)
+	m.TgOpen(`div id='`)
+	m.A(w.BaseId, `'`)
 
 	if w.size != SizeDefault && w.size != SizeMedium {
-		m.StyleOn().A(`font-size:`, textSize[w.size], `em;`).StyleOff()
+		m.Style(`font-size:`, textSize[w.size], `em;`)
 	}
 
-	Todo("You can't repeat style tags; only the first will be kept")
 	if w.fixedHeight != 0 {
-		m.StyleOn().A(`height:`, w.fixedHeight, `em;`).StyleOff()
-		m.StyleOn().A(`background-color:#fcc;`).StyleOff()
+		m.Style(`height:`, w.fixedHeight, `em;`)
+		if Alert("adding background color") {
+			m.Style(`background-color:#fcc;`)
+		}
 	}
 
-	m.A(`>`).DoIndent()
+	m.TgContent()
 	{
 		for _, c := range h.Paragraphs() {
 			m.A(`<p>`, c, `</p>`).Cr()
 		}
 
 	}
-	m.DoOutdent()
-	m.A(`</div>`).Cr()
+	m.TgClose()
 }
