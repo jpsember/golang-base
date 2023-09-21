@@ -21,6 +21,15 @@ func NewTextWidget(id string, size WidgetSize, fixedHeight int) TextWidget {
 	return t
 }
 
+var textSize = map[WidgetSize]string{
+	SizeMicro:  `.4`,
+	SizeTiny:   `.5`,
+	SizeSmall:  `.7`,
+	SizeMedium: ``,
+	SizeLarge:  ` style='font-size:1.3em'`,
+	SizeHuge:   ` style='font-size:1.8em'`,
+}
+
 func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 	var textContent string
 	if w.staticContent != nil {
@@ -31,26 +40,19 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	h := NewHtmlString(textContent)
 
-	Pr("id:", w.BaseId, "w.fixedHeight:", w.fixedHeight)
-
 	m.A(`<div id='`, w.BaseId, `' `)
 
-	if w.size != SizeDefault {
-		Todo("?A better way to do this, no doubt")
-		m.A(textSize[w.size])
+	if w.size != SizeDefault && w.size != SizeMedium {
+		m.StyleOn().A(`font-size:`, textSize[w.size], `em;`).StyleOff()
 	}
 
 	Todo("You can't repeat style tags; only the first will be kept")
 	if w.fixedHeight != 0 {
-		Pr("wtf!!!!!")
-		m.A(` style="height:`, w.fixedHeight, `em; background-color:#fcc;"`)
+		m.StyleOn().A(`height:`, w.fixedHeight, `em;`).StyleOff()
+		m.StyleOn().A(`background-color:#fcc;`).StyleOff()
 	}
 
-	Pr(m.String())
-
 	m.A(`>`).DoIndent()
-	m.A("fixed height:", w.fixedHeight)
-
 	{
 		for _, c := range h.Paragraphs() {
 			m.A(`<p>`, c, `</p>`).Cr()
@@ -59,13 +61,4 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 	}
 	m.DoOutdent()
 	m.A(`</div>`).Cr()
-}
-
-var textSize = map[WidgetSize]string{
-	SizeMicro:  ` style='font-size:.4em'`,
-	SizeTiny:   ` style='font-size:.5em'`,
-	SizeSmall:  ` style='font-size:.7em'`,
-	SizeMedium: ``,
-	SizeLarge:  ` style='font-size:1.3em'`,
-	SizeHuge:   ` style='font-size:1.8em'`,
 }

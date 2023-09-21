@@ -13,6 +13,11 @@ type tagEntry struct {
 	comment  string
 }
 
+const (
+	mode_html = iota
+	mode_style
+)
+
 type MarkupBuilderObj struct {
 	strings.Builder
 	indent          int
@@ -22,6 +27,8 @@ type MarkupBuilderObj struct {
 	tagStack        *Array[tagEntry]
 	pendingComments []any
 	nested          bool
+	currentMode     int
+	pendingMode     int
 }
 
 type MarkupBuilder = *MarkupBuilderObj
@@ -78,11 +85,24 @@ func (b MarkupBuilder) Escape(arg any) MarkupBuilder {
 	return b
 }
 
+func (b MarkupBuilder) switchToMode(mode int) {
+	if mode != b.currentMode {
+		if b.currentMode == mode_style {
+			b.WriteString(`" `)
+		} else {
+			b.WriteString(` style:"`)
+		}
+		b.currentMode = mode
+	}
+}
+
 // Append markup, generating a linefeed if one is pending.  No escaping is performed.
 func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 
 	CheckState(!b.nested)
 	b.nested = true
+
+	b.updateMode()
 
 	for _, arg := range args {
 
@@ -114,6 +134,27 @@ func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 	return b
 }
 
+func (b MarkupBuilder) StyleOn() MarkupBuilder {
+	b.pendingMode = mode_style
+	return b
+}
+
+func (b MarkupBuilder) StyleOff() MarkupBuilder {
+	b.pendingMode = mode_html
+	return b
+}
+
+func (b MarkupBuilder) updateMode() {
+	if b.pendingMode != b.currentMode {
+		if b.pendingMode == mode_style {
+			b.WriteString(` style="`)
+		} else {
+			b.WriteString(`" `)
+		}
+		b.currentMode = b.pendingMode
+	}
+
+}
 func (b MarkupBuilder) processPrintEffect(v PrintEffect) {
 	switch v {
 	case CR:
@@ -179,6 +220,8 @@ func (b MarkupBuilder) OpenTag(args ...any) MarkupBuilder {
 }
 
 func (b MarkupBuilder) auxOpenTag(openType tagOpenType, args ...any) {
+	b.updateMode()
+
 	var tagExpression string
 	{
 		sb := strings.Builder{}
