@@ -32,18 +32,11 @@ func NewWidgetManager(session Session) WidgetManager {
 	w.initStateStack()
 	w.SetName("WidgetManager")
 	w.resetPendingColumns()
-	w.LogCols("Constructed")
 	return &w
 }
 
 func (m WidgetManager) initStateStack() {
 	m.stack = []mgrState{{}}
-}
-
-func (m WidgetManager) LogCols(message string) {
-	if !Alert("!remove this at some point") {
-		Pr("WidgetManager pending child columns:", m.pendingChildColumns)
-	}
 }
 
 type WidgetManager = *WidgetManagerObj
@@ -115,7 +108,6 @@ func (m WidgetManager) Align(align WidgetAlign) WidgetManager {
 // Set number of Bootstrap columns the next widget will occupy within its container.
 func (m WidgetManager) Col(columns int) WidgetManager {
 	m.pendingChildColumns = columns
-	m.LogCols("Set col;")
 	return m
 }
 

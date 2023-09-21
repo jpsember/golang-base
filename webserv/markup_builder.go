@@ -57,7 +57,6 @@ func (b MarkupBuilder) RenderInvisible(w Widget) MarkupBuilder {
 }
 
 func (b MarkupBuilder) Escape(arg any) MarkupBuilder {
-	Todo("Use print effect to handle ESCAPE")
 	if escaper, ok := arg.(Escaper); ok {
 		return b.A(escaper.Escaped())
 	}
