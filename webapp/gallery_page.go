@@ -55,7 +55,7 @@ const gallery_card_prefix = "gallery_card."
 
 func (p GalleryPage) generateWidgets(sess Session) {
 
-	trim := true && Alert("removing most widgets")
+	trim := false && Alert("removing most widgets")
 
 	m := GenerateHeader(sess, p)
 
@@ -78,7 +78,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	if trim {
 		return
 	}
-	{
+	if !Alert("disabled list") {
 		x := NewGalleryListImplementation()
 
 		listItemWidget := m.Open()

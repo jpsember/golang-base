@@ -8,9 +8,10 @@ import (
 // A builder for constructing html markup
 
 type tagEntry struct {
-	openType tagOpenType
-	tag      string // e.g. div, p (no '<' or '>')
-	comment  string
+	openType   tagOpenType
+	tag        string // e.g. div, p (no '<' or '>')
+	comment    string
+	hasContent bool
 }
 
 const (
@@ -214,9 +215,79 @@ func (b MarkupBuilder) Comments(comments ...any) MarkupBuilder {
 //	<div class="card-body" style="max-height:8em;">
 //
 // tagExpression in the above case would be:  div class="card-body" style="max-height:8em;"
+// Deprecated.
 func (b MarkupBuilder) OpenTag(args ...any) MarkupBuilder {
 	b.auxOpenTag(tagTypeOpen, args...)
 	return b
+}
+
+func (b MarkupBuilder) OpenTg(name string) MarkupBuilder {
+	entry := tagEntry{
+		tag: name,
+		//	openType: openType,
+	}
+	comments := b.pendingComments
+	b.pendingComments = nil
+	if comments != nil {
+		entry.comment = `<!-- ` + ToString(comments...) + " -->"
+	}
+	if entry.comment != "" {
+		b.Br()
+		b.A(entry.comment).Cr()
+	}
+	b.A(`<`, name)
+
+	CheckState(b.tagStack.Size() < 50, "tags are nested too deeply")
+	b.tagStack.Add(entry)
+	b.DoIndent()
+	return b
+}
+
+func (b MarkupBuilder) TgContent() MarkupBuilder {
+	entry := b.tagStack.Last()
+	CheckState(!entry.hasContent)
+	entry.hasContent = true
+	b.WriteString(`>`)
+	b.Cr()
+	return b
+}
+
+func (b MarkupBuilder) CloseTg() MarkupBuilder {
+	entry := b.tagStack.Pop()
+
+	if entry.hasContent {
+		b.DoOutdent()
+		b.A("</", entry.tag, ">")
+		if entry.comment != "" {
+			b.A(`  `, entry.comment)
+		}
+	} else {
+		b.A(` />`)
+	}
+	return b.Br()
+}
+func (b MarkupBuilder) auxOpenTg(openType tagOpenType, name string) {
+	entry := tagEntry{
+		tag:      name,
+		openType: openType,
+	}
+	comments := b.pendingComments
+	b.pendingComments = nil
+	if comments != nil {
+		entry.comment = `<!-- ` + ToString(comments...) + " -->"
+	}
+	if entry.comment != "" {
+		b.Br()
+		b.A(entry.comment).Cr()
+	}
+
+	b.A(`<`, name)
+
+	if openType == tagTypeOpen {
+		CheckState(b.tagStack.Size() < 50, "tags are nested too deeply")
+		b.DoIndent()
+		b.tagStack.Add(entry)
+	}
 }
 
 func (b MarkupBuilder) auxOpenTag(openType tagOpenType, args ...any) {
