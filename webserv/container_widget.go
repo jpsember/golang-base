@@ -60,19 +60,19 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	if len(w.children) != 0 {
 		m.TgOpen(`div class='row'`).TgContent()
 		for _, child := range w.children {
-			str := `div class="col-sm-` + IntToString(child.Columns()) + `"`
+			m.Comments(`child`)
+			m.TgOpen(`div class="col-sm-`).A(child.Columns(), `"`)
 			if WidgetDebugRenderingFlag {
-				str += ` style="background-color:` + DebugColorForString(child.Id()) + `;`
-				str += `border-style:double;`
-				str += `"`
+				m.Style(`background-color:`, DebugColorForString(child.Id()), `;`)
+				m.Style(`border-style:double;`)
 			}
-			m.Comments(`child`).OpenTag(str)
+			m.TgContent()
 			{
 				verify := m.VerifyBegin()
 				RenderWidget(child, s, m)
 				m.VerifyEnd(verify, child)
 			}
-			m.CloseTag()
+			m.TgClose()
 		}
 		m.TgClose().Br()
 	}
