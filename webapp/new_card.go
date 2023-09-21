@@ -99,7 +99,8 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 	animal := w.animal
 	m.Comments("Animal Card")
 
-	m.OpenTag(`div class="card bg-light mb-3" style="width:14em"`)
+	Todo("Instead of styleOn/styleOff, add Style(...)")
+	m.TgOpen(`div class="card bg-light mb-3" style="width:14em"`).StyleOn().A(`width:14em`).TgContent()
 	{
 		imgUrl := "unknown"
 		photoId := animal.PhotoThumbnail()
@@ -125,7 +126,7 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 
 		// Display title and brief summary
 		m.Comments("title and summary")
-		m.OpenTag(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`)
+		m.TgOpen(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`).TgContent()
 		{
 			m.OpenTag(`h6 class="card-title"`)
 			{
@@ -143,23 +144,23 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 			}
 			m.CloseTag()
 		}
-		m.CloseTag()
+		m.TgClose()
 
 		m.Comments(`Progress towards goal, controls`)
-		m.OpenTag(`div class="card-body"`)
+		m.TgOpen(`div class="card-body"`).TgContent()
 		{
 			m.Comments("progress-container")
 			m.TgOpen(`div class="progress-container"`).TgContent()
 			{
 				m.Comment("Plot grey in background, full width").TgOpen(`div class="progress-bar-bgnd"`).TgContent().TgClose()
-				m.Comment("Plot bar graph in foreground, partial width").TgOpen(`div class="progress-bar"`).StyleOn().A(`width: 35%;`).StyleOff().TgContent().TgClose()
+				m.Comment("Plot bar graph in foreground, partial width").TgOpen(`div class="progress-bar"`).StyleOn().A(`width: 35%;`).TgContent().TgClose()
 			}
 			m.TgClose()
-			m.OpenTag(`div class="progress-text"`)
+			m.TgOpen(`div class="progress-text"`).TgContent()
 			{
 				m.Escape(CurrencyToString(animal.CampaignBalance()) + ` raised of ` + CurrencyToString(animal.CampaignTarget()) + ` goal`)
 			}
-			m.CloseTag()
+			m.TgClose()
 
 			// If there's a button, render it
 
@@ -176,7 +177,7 @@ func (w NewCard) RenderTo(s Session, m MarkupBuilder) {
 				ci++
 			}
 		}
-		m.CloseTag()
+		m.TgClose()
 	}
-	m.CloseTag()
+	m.TgClose()
 }
