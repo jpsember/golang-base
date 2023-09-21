@@ -338,9 +338,10 @@ func (s Session) processClientMessage() {
 	}
 
 	widget := s.widgetManager.Opt(id)
-	if widget != nil {
-		pr("found widget with id:", id)
+	if widget == nil {
+		return
 	}
+	pr("found widget with id:", id)
 
 	if !widget.Enabled() {
 		s.SetRequestProblem("widget is disabled", widget)

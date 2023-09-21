@@ -86,7 +86,7 @@ func (p LandingPage) validateUserPwd(s Session, widget InputWidget, content stri
 var AutoActivateUser = DevDatabase && Alert("?Automatically activating user")
 
 func (p LandingPage) signInListener(sess Session, widget Widget) {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	s := sess.State
 	pr("signInListener; state:", INDENT, s)
 	userName := s.OptString(id_user_name, "")
