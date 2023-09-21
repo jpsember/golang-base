@@ -30,7 +30,8 @@ func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
 	signedIn := user.Id() != 0
 
 	fontSizeExpr := ` style="font-size:0.6em"`
-	m.OpenTag(`div id="`, w.BaseId, `"`)
+	m.TgOpen(`div id=`).A(QUOTED, w.BaseId).TgContent()
+	//m.OpenTag(`div id="`, w.BaseId, `"`)
 
 	// Adding a background image; I read this post: https://mdbootstrap.com/docs/standard/navigation/headers/
 	img := w.BgndImageMarkup
@@ -77,6 +78,5 @@ func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
 	if img != "" {
 		m.CloseTag()
 	}
-	m.CloseTag()
+	m.TgClose()
 }
-
