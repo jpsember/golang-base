@@ -523,9 +523,3 @@ func (m WidgetManager) EndConstruction(expectedStackSize int) {
 		BadState("expected state stack to be at", expectedStackSize, "but is at", len(m.stack), INDENT, m.dumpStateStack(expectedStackSize))
 	}
 }
-
-func (m WidgetManager) Comment(arg ...any) WidgetManager {
-	id := m.AllocateAnonymousId("_comment_")
-	m.Add(NewCommentWidget(id, arg...))
-	return m
-}

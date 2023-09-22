@@ -59,9 +59,6 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	m := GenerateHeader(sess, p)
 
-	Todo("Some ability to embed comments in amongst the widgets, at the generation stage? No, this is a dumb idea")
-
-	m.Comment("A widget whose visibility can be toggled, and a button to do the toggling")
 	m.Open()
 	{
 		m.Col(6)
@@ -77,7 +74,6 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		})
 	}
 	m.Close()
-	Pr("columns after closing child:", m.DebugGetCol())
 
 	m.Open()
 	{
