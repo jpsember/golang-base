@@ -8,12 +8,11 @@ import (
 // A Widget that displays editable text
 type ListWidgetStruct struct {
 	BaseWidgetObj
-	list              ListInterface
-	itemStateProvider ListItemStateProvider
-	itemWidget        Widget
-	pagePrefix        string
-	WithPageControls  bool
-	Listener          ListWidgetListener
+	list             ListInterface
+	itemWidget       Widget
+	pagePrefix       string
+	WithPageControls bool
+	Listener         ListWidgetListener
 }
 
 type ListWidgetListener func(sess Session, widget *ListWidgetStruct, itemId int, args string)
@@ -53,40 +52,19 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	return "", nil
 }
 
-type ListItemStateProvider func(sess Session, widget *ListWidgetStruct, elementId int) WidgetStateProvider
-
 type ListWidget = *ListWidgetStruct
 
 // Construct a ListWidget.
 //
 // itemWidget : this is a widget that will be rendered for each displayed item
-// itemStateProvider: a function that constructs a state provider Xi for each item i as it is rendered.  Child widgets
-// within the itemWidget that already have explicit state providers will *not* use Xi.
-//
-// If itemWidget is nil, a default, very bare-bones (for debugging only) widget (and accompanying itemStateProvider)
-// will be constructed.
-func NewListWidget(m WidgetManager, id string, list ListInterface, itemWidget Widget, itemStateProvider ListItemStateProvider) ListWidget {
+func NewListWidget(m WidgetManager, id string, list ListInterface, itemWidget Widget) ListWidget {
 	Todo("!Have option to wrap list items in a clickable div")
-
-	if itemWidget == nil && itemStateProvider == nil {
-		listId := m.AllocateAnonymousId("listwidget")
-		label := m.Id(listId).AddText()
-		itemWidget = m.Detach(label)
-
-		itemStateProvider = func(sess Session, widget ListWidget, elementId int) WidgetStateProvider {
-			js := NewJSMap()
-			js.Put(listId, "Id:"+IntToString(elementId))
-			return NewStateProvider("", js)
-		}
-	}
-
 	CheckArg(itemWidget != nil, "No itemWidget given")
 
 	w := ListWidgetStruct{
-		list:              list,
-		itemWidget:        itemWidget,
-		itemStateProvider: itemStateProvider,
-		WithPageControls:  true,
+		list:             list,
+		itemWidget:       itemWidget,
+		WithPageControls: true,
 	}
 	w.InitBase(id)
 	w.LowListen = listListenWrapper
@@ -173,8 +151,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			for _, id := range elementIds {
 				m.Comment("----------------- rendering list item with id:", id)
 
-				// Get the client to return a state provider
-				s.baseStateProvider = w.itemStateProvider(s, w, id)
+				s.baseStateProvider = w.list.ItemStateProvider(s, id)
 
 				// When rendering list items, any ids should be mangled in such a way that
 				//  a) ids remain distinct, even if we are rendering the same widget for each row; and

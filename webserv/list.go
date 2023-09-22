@@ -12,6 +12,11 @@ type ListInterface interface {
 	CurrentPage() int
 	TotalPages() int
 	SetCurrentPage(pageNumber int)
+
+	// ItemStateProvider constructs a state provider xi for rendering item i.
+	// Child widgets within the item widget that already have explicit state providers
+	// will *not* use Xi.
+	ItemStateProvider(s Session, elementId int) WidgetStateProvider
 }
 
 type ListItemRenderer func(session Session, widget ListWidget, elementId int, m MarkupBuilder)
@@ -58,4 +63,9 @@ func (b BasicList) TotalPages() int {
 		completePages++
 	}
 	return completePages
+}
+
+// A default state provider.
+func (b BasicList) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
+	return NewStateProvider("", NewJSMap().Put("id", elementId))
 }

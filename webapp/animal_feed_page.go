@@ -49,7 +49,7 @@ func (p FeedPage) generateWidgets(s Session) {
 
 	// Construct widget to use in list
 	cardWidget := p.constructListItemWidget(s)
-	listWidget := m.AddList(p.animalList(s), cardWidget, cardWidget.StateProviderFunc())
+	listWidget := m.AddList(p.animalList(s), cardWidget)
 	if fewWidgets {
 		listWidget.WithPageControls = false
 	}
@@ -67,7 +67,8 @@ func (p FeedPage) constructListItemWidget(s Session) AnimalCard {
 	// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
 	//
 	// These list cards have no buttons.
-	w := NewAnimalCard(m.AllocateAnonymousId("feed_card"), DefaultAnimal, cardListener, "", nil)      
+  Todo("Do we need to supply an id?")
+	w := NewAnimalCard(m.AllocateAnonymousId("feed_card"), DefaultAnimal, cardListener, "", nil)
 	m.Add(w)
 	m.Detach(w)
 	return w
@@ -81,7 +82,7 @@ func (p FeedPage) animalList(s Session) AnimalList {
 }
 
 func (p FeedPage) constructAnimalList() AnimalList {
-	animalList := NewAnimalList(getAnimals())
+	animalList := NewAnimalList(getAnimals(), "notfinishedyet")
 	return animalList
 }
 

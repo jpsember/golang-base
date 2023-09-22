@@ -85,25 +85,15 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	m.Close()
 
 	if !trim {
-		x := NewGalleryListImplementation()
+		//x := NewGalleryListImplementation()
 
-		if true && Alert("constructing list with default renderer") {
-			p.list = m.AddList(x, nil, nil)
+		listItemWidget := m.Open()
+		m.Id("foo_text").Height(3).AddText()
+		m.Close()
+		m.Detach(listItemWidget)
 
-		} else {
-			listItemWidget := m.Open()
-			m.Id("foo_text").Height(3).AddText()
-			m.Close()
-			m.Detach(listItemWidget)
+		p.list = m.AddList(NewGalleryListImplementation(), listItemWidget)
 
-			listProvider := func(sess Session, widget *ListWidgetStruct, itemId int) WidgetStateProvider {
-				json := NewJSMap()
-				json.Put("foo_text", ToString("Item #", itemId, x.names[itemId]))
-				return NewStateProvider("", json)
-			}
-
-			p.list = m.AddList(x, listItemWidget, listProvider)
-		}
 		if trim {
 			p.list.WithPageControls = false
 		}
@@ -378,4 +368,10 @@ func (g GalleryListImplementation) listItemRenderer(session Session, widget List
 	m.TgOpen(`div class="col-sm-4"`).TgContent()
 	m.A(ESCAPED, ToString("#", elementId, g.names[elementId]))
 	m.TgClose()
+}
+
+func (g GalleryListImplementation) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
+	json := NewJSMap()
+	json.Put("foo_text", ToString("Item #", elementId, g.names[elementId]))
+	return NewStateProvider("", json)
 }

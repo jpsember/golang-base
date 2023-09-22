@@ -9,12 +9,12 @@ import (
 // A Widget that displays editable text
 type AnimalCardStruct struct {
 	BaseWidgetObj
-	animal         Animal
+	CardAnimal     Animal
 	cardListener   CardWidgetListener
 	buttonListener CardWidgetListener
 	buttonLabel    string
 	children       []Widget
-	childIdPrefix  string
+	ChildIdPrefix  string
 }
 
 type AnimalCard = *AnimalCardStruct
@@ -28,7 +28,7 @@ func cardListenWrapper(sess Session, widget Widget, value string) (any, error) {
 }
 
 func (w AnimalCard) Animal() Animal {
-	return w.animal
+	return w.CardAnimal
 }
 
 func NewAnimalCard(widgetId string, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) AnimalCard {
@@ -38,7 +38,7 @@ func NewAnimalCard(widgetId string, animal Animal, cardListener CardWidgetListen
 	CheckArg((buttonLabel == "") == (buttonListener == nil))
 
 	w := AnimalCardStruct{
-		animal:         animal,
+		CardAnimal:     animal,
 		cardListener:   cardListener,
 		buttonLabel:    buttonLabel,
 		buttonListener: buttonListener,
@@ -65,15 +65,16 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 	// Determine a unique prefix for this card's fields.
 	// Note that we do *don't* set any state providers until we know what this prefix is.  Specifically,
 	// we don't create a state provider at construction time.
-	w.childIdPrefix = m.AllocateAnonymousId("card_children.")
+	w.ChildIdPrefix = m.AllocateAnonymousId("card_children.")
+	Alert("#50animal_card childIdPrefix is:", w.ChildIdPrefix)
 
 	// If we were given an actual animal, give this card's children a default state provider
-	if w.animal.Id() != 0 {
-		m.PushStateProvider(NewStateProvider(w.childIdPrefix, w.animal.ToJson().AsJSMap()))
+	if w.CardAnimal.Id() != 0 {
+		m.PushStateProvider(NewStateProvider(w.ChildIdPrefix, w.CardAnimal.ToJson().AsJSMap()))
 	}
 
 	m.OpenContainer(w)
-	m.PushIdPrefix(w.childIdPrefix)
+	m.PushIdPrefix(w.ChildIdPrefix)
 	c1 := m.Id("name").Size(SizeTiny).AddHeading()
 	c2 := m.Id("summary").AddText()
 	c1.SetTrace(false)
@@ -83,7 +84,7 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 	}
 	m.PopIdPrefix()
 	m.Close()
-	if w.animal.Id() != 0 {
+	if w.CardAnimal.Id() != 0 {
 		m.PopStateProvider()
 	}
 
@@ -95,18 +96,15 @@ func (w AnimalCard) AddChild(c Widget, manager WidgetManager) {
 }
 
 func (w AnimalCard) SetAnimal(anim Animal) {
-	w.animal = anim
-}
-
-func (w AnimalCard) StateProviderFunc() ListItemStateProvider {
-	return w.BuildStateProvider
+  Todo("Maybe make the field 'private'? But do we need to read it?")
+	w.CardAnimal = anim
 }
 
 func (w AnimalCard) BuildStateProvider(sess Session, widget ListWidget, elementId int) WidgetStateProvider {
 	anim := ReadAnimalIgnoreError(elementId)
 	CheckState(anim.Id() != 0, "no animal specified")
-	w.animal = anim
-	return NewStateProvider(w.childIdPrefix, anim.ToJson().AsJSMap())
+	w.CardAnimal = anim
+	return NewStateProvider(w.ChildIdPrefix, anim.ToJson().AsJSMap())
 }
 
 func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
@@ -114,7 +112,7 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 	cimax := len(w.children)
 
 	// Open a bootstrap card
-	animal := w.animal
+	animal := w.CardAnimal
 	m.Comments("Animal Card")
 
 	m.TgOpen(`div class="card bg-light mb-3"`).Style(`width:14em`).TgContent()
@@ -122,7 +120,7 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 		imgUrl := "unknown"
 		photoId := animal.PhotoThumbnail()
 		if photoId == 0 {
-			Alert("!Animal has no photo")
+			Alert("#50Animal has no photo")
 		} else {
 			imgUrl = SharedWebCache.GetBlobURL(photoId)
 		}

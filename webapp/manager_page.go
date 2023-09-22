@@ -9,7 +9,6 @@ import (
 type ManagerPageStruct struct {
 	manager    User
 	listWidget ListWidget
-	animList   AnimalList
 }
 
 type ManagerPage = *ManagerPageStruct
@@ -45,6 +44,7 @@ const manager_id_prefix = managerPageName + "."
 const (
 	id_manager_list = manager_id_prefix + "list"
 )
+const manager_card_id = manager_id_prefix + "card"
 
 func (p ManagerPage) generateWidgets(sess Session) {
 	Todo("?Think about ways of cleaning up the click listener which is not tied to a widget")
@@ -59,43 +59,29 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	}
 	m.Close()
 
-	// Set click listener for the card list
-	//Todo("This can be added automatically")
-	//sess.SetClickListener(p.clickListener)
+	// Construct a list, and a card to use as the list item widget
 
-	// Construct widget to use in list
-	cardWidget := p.constructListItemWidget(sess)
-	p.listWidget = m.Id(id_manager_list).AddList(p.animalList(sess), cardWidget, cardWidget.StateProviderFunc())
-}
+	// For now, write the code as one big function; split up later once structure is more apparent.
+	var cardWidget AnimalCard
+	{
+		cardListener := func(sess Session, widget AnimalCard) {
+			p.attemptSelectAnimal(sess, widget.Animal().Id())
+		}
 
-func (p ManagerPage) constructListItemWidget(s Session) AnimalCard {
-	m := s.WidgetManager()
-
-	cardListener := func(sess Session, widget AnimalCard) {
-		p.attemptSelectAnimal(sess, widget.Animal().Id())
+		// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
+		w := NewAnimalCard(manager_card_id, DefaultAnimal,
+			cardListener, "hey", cardListener)
+		cardWidget = w
+		m.Add(w)
+		m.Detach(w)
 	}
 
-	// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
-	w := NewAnimalCard(m.AllocateAnonymousId("manager_item"), DefaultAnimal,
-		cardListener, "hey", cardListener)
-	m.Add(w)
-	m.Detach(w)
-	return w
-}
-
-func (p ManagerPage) animalList(s Session) AnimalList {
-	alist := p.animList
-	if alist == nil {
-		alist = p.constructAnimalList(s)
-		p.animList = alist
+	managerId := SessionUser(sess).Id()
+	animalList := NewAnimalList(getManagerAnimals(managerId), cardWidget.ChildIdPrefix)
+	animalList.PrepareState = func(s Session, animal Animal) {
+		cardWidget.CardAnimal = animal
 	}
-	return alist
-}
-
-func (p ManagerPage) constructAnimalList(s Session) AnimalList {
-	managerId := SessionUser(s).Id()
-	animalList := NewAnimalList(getManagerAnimals(managerId))
-	return animalList
+	p.listWidget = m.Id(id_manager_list).AddList(animalList, cardWidget)
 }
 
 func (p ManagerPage) newAnimalListener(sess Session, widget Widget) {

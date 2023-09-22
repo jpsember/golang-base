@@ -8,7 +8,7 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-const AutoLogInName = "donor1"
+const AutoLogInName = "manager1"
 
 var DevDatabase = Alert("!Using development database")
 
@@ -70,7 +70,7 @@ func (oper AnimalOper) UserForSession(s Session) AbstractUser {
 }
 
 func (oper AnimalOper) DefaultPageForUser(abstractUser AbstractUser) Page {
-	if true && Alert("gallery") {
+	if false && Alert("gallery") {
 		return GalleryPageTemplate
 	}
 	user := abstractUser.(User)
