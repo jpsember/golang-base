@@ -87,18 +87,23 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	if !trim {
 		x := NewGalleryListImplementation()
 
-		listItemWidget := m.Open()
-		m.Id("foo_text").Height(3).AddText()
-		m.Close()
-		m.Detach(listItemWidget)
+		if true && Alert("constructing list with default renderer") {
+			p.list = m.AddList(x, nil, nil)
 
-		listProvider := func(sess Session, widget *ListWidgetStruct, itemId int) WidgetStateProvider {
-			json := NewJSMap()
-			json.Put("foo_text", ToString("Item #", itemId, x.names[itemId]))
-			return NewStateProvider("", json)
+		} else {
+			listItemWidget := m.Open()
+			m.Id("foo_text").Height(3).AddText()
+			m.Close()
+			m.Detach(listItemWidget)
+
+			listProvider := func(sess Session, widget *ListWidgetStruct, itemId int) WidgetStateProvider {
+				json := NewJSMap()
+				json.Put("foo_text", ToString("Item #", itemId, x.names[itemId]))
+				return NewStateProvider("", json)
+			}
+
+			p.list = m.AddList(x, listItemWidget, listProvider)
 		}
-
-		p.list = m.AddList(x, listItemWidget, listProvider)
 		if trim {
 			p.list.WithPageControls = false
 		}
@@ -311,7 +316,7 @@ func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, valu
 }
 
 func (p GalleryPage) provideURL(s Session) string {
-	pr := PrIf(true)
+	pr := PrIf(false)
 	url := ""
 	imageId := s.State.OptInt(sampleImageId, 0)
 

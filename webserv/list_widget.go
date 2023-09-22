@@ -58,11 +58,28 @@ type ListItemStateProvider func(sess Session, widget *ListWidgetStruct, elementI
 type ListWidget = *ListWidgetStruct
 
 // Construct a ListWidget.
-// itemWidget : this is a widget that will be rendered for each displayed item.  Widgets within this widget
-// that do not have explicit state providers will use the one provided by the list renderer.
-func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStateProvider ListItemStateProvider) ListWidget {
-	Todo("!If no item widget has been supplied, construct a default one")
+//
+// itemWidget : this is a widget that will be rendered for each displayed item
+// itemStateProvider: a function that constructs a state provider Xi for each item i as it is rendered.  Child widgets
+// within the itemWidget that already have explicit state providers will *not* use Xi.
+//
+// If itemWidget is nil, a default, very bare-bones (for debugging only) widget (and accompanying itemStateProvider)
+// will be constructed.
+func NewListWidget(m WidgetManager, id string, list ListInterface, itemWidget Widget, itemStateProvider ListItemStateProvider) ListWidget {
 	Todo("!Have option to wrap list items in a clickable div")
+
+	if itemWidget == nil && itemStateProvider == nil {
+		listId := m.AllocateAnonymousId("listwidget")
+		label := m.Id(listId).AddText()
+		itemWidget = m.Detach(label)
+
+		itemStateProvider = func(sess Session, widget ListWidget, elementId int) WidgetStateProvider {
+			js := NewJSMap()
+			js.Put(listId, "Id:"+IntToString(elementId))
+			return NewStateProvider("", js)
+		}
+	}
+
 	CheckArg(itemWidget != nil, "No itemWidget given")
 
 	w := ListWidgetStruct{
@@ -207,10 +224,4 @@ func (w ListWidget) handlePagerClick(sess Session, message string) bool {
 		return true
 	}
 	return false
-}
-
-func defaultRenderer(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
-	m.TgOpen(`div class="col-sm-16"`).Style(`background-color:` + DebugColor(elementId)).TgContent()
-	m.WriteString("default list render, Id:" + IntToString(elementId))
-	m.TgClose()
 }
