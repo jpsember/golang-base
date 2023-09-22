@@ -12,7 +12,7 @@ type ListWidgetStruct struct {
 	itemWidget       Widget
 	pagePrefix       string
 	WithPageControls bool
-	Listener         ListWidgetListener
+	listener         ListWidgetListener
 }
 
 type ListWidgetListener func(sess Session, widget *ListWidgetStruct, itemId int, args string)
@@ -48,10 +48,10 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 		}
 	}
 
-	if b.Listener == nil {
+	if b.listener == nil {
 		Alert("#50No ListListener registered; itemId:", itemId, "args:", remainder)
 	} else {
-		b.Listener(sess, b, itemId, remainder)
+		b.listener(sess, b, itemId, remainder)
 	}
 	return "", nil
 }
@@ -61,7 +61,7 @@ type ListWidget = *ListWidgetStruct
 // Construct a ListWidget.
 //
 // itemWidget : this is a widget that will be rendered for each displayed item
-func NewListWidget(m WidgetManager, id string, list ListInterface, itemWidget Widget) ListWidget {
+func NewListWidget(m WidgetManager, id string, list ListInterface, itemWidget Widget, listener ListWidgetListener) ListWidget {
 	Todo("!Have option to wrap list items in a clickable div")
 	CheckArg(itemWidget != nil, "No itemWidget given")
 
@@ -69,6 +69,7 @@ func NewListWidget(m WidgetManager, id string, list ListInterface, itemWidget Wi
 		list:             list,
 		itemWidget:       itemWidget,
 		WithPageControls: true,
+		listener:         listener,
 	}
 	w.InitBase(id)
 	w.LowListen = listListenWrapper

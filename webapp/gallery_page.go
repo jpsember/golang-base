@@ -92,7 +92,8 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.Close()
 		m.Detach(listItemWidget)
 
-		p.list = m.AddList(NewGalleryListImplementation(), listItemWidget)
+		// No listener for now
+		p.list = m.AddList(NewGalleryListImplementation(), listItemWidget, nil)
 
 		if trim {
 			p.list.WithPageControls = false

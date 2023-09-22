@@ -78,10 +78,8 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	if Experiment {
 		m.Id("experiment")
 	}
-	Todo("Consider *requiring* a listener (at least a nil one) for AddList")
 	Todo("document how the list forwards clicks related to items on to the list listener")
-	listWidget := m.AddList(animalList, cardWidget)
-	listWidget.Listener = p.listListener
+	m.AddList(animalList, cardWidget, p.listListener)
 }
 
 func (p ManagerPage) listListener(sess Session, widget *ListWidgetStruct, itemId int, args string) {

@@ -49,11 +49,10 @@ func (p FeedPage) generateWidgets(s Session) {
 
 	// Construct widget to use in list
 	cardWidget := p.constructListItemWidget(s)
-	listWidget := m.AddList(p.animalList(s), cardWidget)
+	listWidget := m.AddList(p.animalList(s), cardWidget, p.listListener)
 	if fewWidgets {
 		listWidget.WithPageControls = false
 	}
-	listWidget.Listener = p.listListener
 	m.EndConstruction(debug)
 }
 
