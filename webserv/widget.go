@@ -10,6 +10,7 @@ var DebugUIFlag = false
 // The interface that all widgets must support.  Widgets can embed the BaseWidget struct to
 // supply default implementations.
 type Widget interface {
+	fmt.Stringer
 	Id() string
 	LowListener() LowLevelWidgetListener
 	Enabled() bool
@@ -28,7 +29,7 @@ type Widget interface {
 	GetClickListener() ClickListener // get optional click listener this widget might have
 	SetTrace(bool)
 	Trace() bool
-	fmt.Stringer
+	Log(args ...any) // Logs messages if tracing is set for this widget
 }
 
 const WidgetIdPage = "page"
@@ -84,7 +85,12 @@ func WidgetIdWithProblem(id string) string {
 // Call w.RenderTo(...) iff the widget is visible, otherwise render an empty div with the widget's id.
 func RenderWidget(w Widget, s Session, m MarkupBuilder) {
 	if !w.Visible() {
-		m.A(`<div id='`, w.Id(), `'></div>`).Cr()
+		Todo("is it ok to render this as a void tag? Apparently not")
+		w.Log("RenderWidget, not visible;")
+		i := m.Len()
+		m.TgOpen(`div id=`).A(QUOTED, w.Id()).TgContent().TgClose()
+		w.Log("Markup:", INDENT, m.String()[i:])
+		//m.A(`<div id=`,QUOTED, w.Id(), `></div>`).Cr()
 	} else {
 		w.RenderTo(s, m)
 	}

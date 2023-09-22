@@ -31,7 +31,7 @@ func (w GridWidget) ClearChildren() {
 }
 
 func (w GridWidget) AddChild(c Widget, manager WidgetManager) {
-	cols := manager.pendingChildColumns
+	cols := manager.stackedState().pendingChildColumns
 	if cols == 0 {
 		BadState("no pending columns for widget:", c.Id())
 	}

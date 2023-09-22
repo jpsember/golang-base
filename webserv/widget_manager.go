@@ -6,26 +6,26 @@ import (
 )
 
 type mgrState struct {
-	Parent        Widget
-	StateProvider WidgetStateProvider
-	IdPrefix      string
-	DebugTag      string
+	Parent              Widget
+	StateProvider       WidgetStateProvider
+	IdPrefix            string
+	DebugTag            string
+	pendingChildColumns int
 }
 
 type WidgetManagerObj struct {
 	BaseObject
-	widgetMap           WidgetMap
-	stack               []mgrState
-	pendingSize         WidgetSize
-	pendingAlign        WidgetAlign
-	pendingHeight       int
-	pendingId           string
-	pendingLabel        string
-	anonymousIdCounter  int
-	pendingChildColumns int
+	widgetMap          WidgetMap
+	stack              []mgrState
+	pendingSize        WidgetSize
+	pendingAlign       WidgetAlign
+	pendingHeight      int
+	pendingId          string
+	pendingLabel       string
+	anonymousIdCounter int
 }
 
-func NewWidgetManager(session Session) WidgetManager {
+func NewWidgetManager() WidgetManager {
 	w := WidgetManagerObj{
 		widgetMap: make(map[string]Widget),
 	}
@@ -107,8 +107,12 @@ func (m WidgetManager) Align(align WidgetAlign) WidgetManager {
 
 // Set number of Bootstrap columns the next widget will occupy within its container.
 func (m WidgetManager) Col(columns int) WidgetManager {
-	m.pendingChildColumns = columns
+	m.stackedState().pendingChildColumns = columns
 	return m
+}
+
+func (m WidgetManager) DebugGetCol() int {
+	return m.stackedState().pendingChildColumns
 }
 
 func (m WidgetManager) Label(value string) WidgetManager {
@@ -236,7 +240,7 @@ func (m WidgetManager) With(container Widget) WidgetManager {
 }
 
 func (m WidgetManager) resetPendingColumns() {
-	m.pendingChildColumns = MaxColumns
+	m.stackedState().pendingChildColumns = MaxColumns
 }
 
 // Add a child GridContainerWidget, and push onto stack as active container
@@ -282,20 +286,6 @@ func (m WidgetManager) popStack(tag string) {
 	}
 	_, m.stack = PopLast(m.stack)
 }
-
-//// Verify that no unused 'pending' arguments exist, calls are balanced, etc
-//func (m WidgetManager) finish() WidgetManager {
-//	m.clearPendingComponentFields()
-//	if len(m.stack) != 1 {
-//		sb := strings.Builder{}
-//		for _, x := range m.stack {
-//			sb.WriteByte(' ')
-//			sb.WriteString(x.DebugTag)
-//		}
-//		BadState("state stack nonempty! Tags:", m.dumpStateStack(-1))
-//	}
-//	return m
-//}
 
 func (m WidgetManager) dumpStateStack(cursor int) string {
 	sb := strings.Builder{}
@@ -532,4 +522,10 @@ func (m WidgetManager) EndConstruction(expectedStackSize int) {
 	if len(m.stack) != expectedStackSize {
 		BadState("expected state stack to be at", expectedStackSize, "but is at", len(m.stack), INDENT, m.dumpStateStack(expectedStackSize))
 	}
+}
+
+func (m WidgetManager) Comment(arg ...any) WidgetManager {
+	id := m.AllocateAnonymousId("_comment_")
+	m.Add(NewCommentWidget(id, arg...))
+	return m
 }

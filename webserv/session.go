@@ -126,14 +126,9 @@ func (s Session) PrepareForHandlingRequest(w http.ResponseWriter, req *http.Requ
 // Get WidgetManager for this session, creating one if necessary
 func (s Session) WidgetManager() WidgetManager {
 	if s.widgetManager == nil {
-		s.widgetManager = NewWidgetManager(s)
+		s.widgetManager = NewWidgetManager()
 	}
 	return s.widgetManager
-}
-
-// Get widget map from the WidgetManager.
-func (s Session) widgetMap() WidgetMap {
-	return s.WidgetManager().widgetMap
 }
 
 func (s Session) ToJson() *JSMapStruct {

@@ -59,12 +59,25 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	m := GenerateHeader(sess, p)
 
-	if !trim {
-		AddUserHeaderWidget(sess)
-		alertWidget = NewAlertWidget("sample_alert", AlertInfo)
-		alertWidget.SetVisible(false)
-		m.Add(alertWidget)
+	Todo("Some ability to embed comments in amongst the widgets, at the generation stage? No, this is a dumb idea")
+
+	m.Comment("A widget whose visibility can be toggled, and a button to do the toggling")
+	m.Open()
+	{
+		m.Col(6)
+
+		x := m.Label("hello").AddText()
+		x.SetTrace(true)
+		x.SetVisible(false)
+		m.Label("Toggle Visibility").AddButton(func(s Session, w Widget) {
+			newState := !x.Visible()
+			Pr("setting x visible:", newState)
+			x.SetVisible(newState)
+			s.Repaint(x)
+		})
 	}
+	m.Close()
+	Pr("columns after closing child:", m.DebugGetCol())
 
 	m.Open()
 	{
@@ -75,11 +88,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	}
 	m.Close()
 
-	if trim {
-		return
-	}
-	//if !Alert("disabled list")
-	{
+	if !trim {
 		x := NewGalleryListImplementation()
 
 		listItemWidget := m.Open()
@@ -100,87 +109,99 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		Todo("!Add support for empty list items, to pad out page to full size")
 	}
 
-	if trim {
-		return
-	}
-	m.Open()
-
-	m.Id("fred").Label(`Fred`).AddButton(buttonListener)
-
-	{
-		m.Col(4)
-
-		cardListener := func(sess Session, widget AnimalCard) { Pr("card listener, animal id:", widget.Animal().Id()) }
-		cardButtonListener := func(sess Session, widget AnimalCard) { Pr("card button listener, name:", widget.Animal().Name()) }
-
-		Todo("We need to create a state provider for cards, when not in list (list handles that already somehow)")
-
-		// Create a new card that will contain other widgets
-		c1 := NewAnimalCard("gallery_card", ReadAnimalIgnoreError(3), cardListener, "Hello", cardButtonListener)
-		//c1.SetTrace(true)
-
-		m.Add(c1)
-		m.Add(
-			NewAnimalCard("gallery_card2", ReadAnimalIgnoreError(4), nil, "Bop", cardButtonListener))
-
+	if !trim {
 		m.Open()
 
-		m.PushStateProvider(NewStateProvider("", p.fooMap))
-		m.PushIdPrefix("")
+		m.Id("fred").Label(`Fred`).AddButton(buttonListener)
+
 		{
-
 			m.Col(4)
-			m.Label("Static text.").Height(5).AddText()
-			m.Id("bar").Label("Bar:").AddInput(p.fooListener)
-		}
-		m.PopIdPrefix()
-		m.PopStateProvider()
-		m.Close()
 
+			cardListener := func(sess Session, widget AnimalCard) { Pr("card listener, animal id:", widget.Animal().Id()) }
+			cardButtonListener := func(sess Session, widget AnimalCard) { Pr("card button listener, name:", widget.Animal().Name()) }
+
+			Todo("We need to create a state provider for cards, when not in list (list handles that already somehow)")
+
+			// Create a new card that will contain other widgets
+			c1 := NewAnimalCard("gallery_card", ReadAnimalIgnoreError(3), cardListener, "Hello", cardButtonListener)
+			//c1.SetTrace(true)
+
+			m.Add(c1)
+			m.Add(
+				NewAnimalCard("gallery_card2", ReadAnimalIgnoreError(4), nil, "Bop", cardButtonListener))
+
+			m.Open()
+
+			m.PushStateProvider(NewStateProvider("", p.fooMap))
+			m.PushIdPrefix("")
+			{
+
+				m.Col(4)
+				m.Label("Static text.").Height(5).AddText()
+				m.Id("bar").Label("Bar:").AddInput(p.fooListener)
+			}
+			m.PopIdPrefix()
+			m.PopStateProvider()
+			m.Close()
+
+		}
+
+		m.Id("sample_upload").Label("Photo").AddFileUpload(p.uploadListener)
+		imgWidget := m.Id("sample_image").AddImage()
+		Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
+		Todo("!give widgets values (state) in this way wherever appropriate")
+		imgWidget.URLProvider = p.provideURL
+		m.Close()
 	}
 
-	m.Id("sample_upload").Label("Photo").AddFileUpload(p.uploadListener)
-	imgWidget := m.Id("sample_image").AddImage()
-	Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
-	Todo("!give widgets values (state) in this way wherever appropriate")
-	imgWidget.URLProvider = p.provideURL
-	m.Close()
-
-	m.Col(4)
-	m.Label("uniform delta").AddText()
-	m.Col(8)
-	m.Id("x58").Label(`Disabled`).AddButton(buttonListener).SetEnabled(false)
-
-	m.Col(2).AddSpace()
-	m.Col(3).Id("yz").Label(`Enabled`).AddButton(buttonListener)
-
-	m.Col(3).AddSpace()
-	m.Col(4).AddSpace()
-
-	m.Col(6)
-	m.Label("Bird").Id("bird")
-	m.AddInput(birdListener)
-
-	m.Col(6)
+	// Open a container for all these various columns so we restore the default when it closes
 	m.Open()
-	m.Id("x59").Label(`Label for X59`).AddCheckbox(p.checkboxListener)
-	m.Id("x60").Label(`With fruit`).AddSwitch(p.checkboxListener)
-	m.Close()
+	{
+		m.Col(4)
+		m.Label("uniform delta").AddText()
+		m.Col(8)
+		m.Id("x58").Label(`Disabled`).AddButton(buttonListener).SetEnabled(false)
 
-	m.Col(4)
-	m.Id("launch").Label(`Launch`).AddButton(buttonListener)
+		m.Col(2).AddSpace()
+		m.Col(3).Id("yz").Label(`Enabled`).AddButton(buttonListener)
 
-	m.Col(8)
-	m.Label(`Sample text; is 5 < 26? A line feed
+		m.Col(3).AddSpace()
+		m.Col(4).AddSpace()
+
+		m.Col(6)
+		m.Label("Bird").Id("bird")
+		m.AddInput(birdListener)
+
+		m.Col(6)
+		m.Open()
+		m.Id("x59").Label(`Label for X59`).AddCheckbox(p.checkboxListener)
+		m.Id("x60").Label(`With fruit`).AddSwitch(p.checkboxListener)
+		m.Close()
+
+		m.Col(4)
+		m.Id("launch").Label(`Launch`).AddButton(buttonListener)
+
+		m.Col(8)
+		m.Label(`Sample text; is 5 < 26? A line feed
 "Quoted string"
 Multiple line feeds:
 
 
    an indented final line`)
-	m.AddText()
+		m.AddText()
 
-	m.Col(4)
-	m.Label("Animal").Id("zebra").AddInput(zebraListener)
+		m.Col(4)
+		m.Label("Animal").Id("zebra").AddInput(zebraListener)
+	}
+	m.Close()
+
+	if !trim {
+		AddUserHeaderWidget(sess)
+		alertWidget = NewAlertWidget("sample_alert", AlertInfo)
+		alertWidget.SetVisible(false)
+		m.Add(alertWidget)
+	}
+
 }
 
 func birdListener(s Session, widget InputWidget, newVal string) (string, error) {

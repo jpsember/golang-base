@@ -121,7 +121,7 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 	if !sess.prepared {
 		sess.prepared = true
 		{
-			// Assign a widget heirarchy to the session
+			// Open a container for the entire page
 			m := sess.WidgetManager()
 			m.Id(WidgetIdPage)
 			widget := m.Open()

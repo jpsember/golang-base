@@ -37,6 +37,10 @@ func (b MarkupBuilder) Bytes() []byte {
 	return []byte(b.String())
 }
 
+func (b MarkupBuilder) ContentSize() int {
+	return b.Len()
+}
+
 func (b MarkupBuilder) DoIndent() MarkupBuilder {
 	b.Cr()
 	b.indent += 2
@@ -78,6 +82,18 @@ func (b MarkupBuilder) switchToMode(mode bool) {
 	}
 }
 
+func (b MarkupBuilder) handlePendingCr() {
+	if b.crRequest != 0 {
+		if b.crRequest == 1 {
+			b.WriteString("\n")
+		} else {
+			b.WriteString("\n\n")
+		}
+		b.crRequest = 0
+		b.doIndent()
+	}
+}
+
 // Append markup, generating a linefeed if one is pending.  No escaping is performed.
 func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 	if b.nested {
@@ -88,15 +104,7 @@ func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 	b.updateStyleMode()
 
 	for _, arg := range args {
-		if b.crRequest != 0 {
-			if b.crRequest == 1 {
-				b.WriteString("\n")
-			} else {
-				b.WriteString("\n\n")
-			}
-			b.crRequest = 0
-			b.doIndent()
-		}
+		b.handlePendingCr()
 
 		switch v := arg.(type) {
 		case string:
