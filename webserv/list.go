@@ -29,11 +29,6 @@ type BasicListStruct struct {
 
 type BasicList = *BasicListStruct
 
-func NewBasicList() BasicList {
-	t := &BasicListStruct{}
-	return t
-}
-
 func (b BasicList) GetPageElements() []int {
 	k := b.ElementsPerPage
 	pgStart := b.CurrentPage() * k
@@ -43,7 +38,6 @@ func (b BasicList) GetPageElements() []int {
 
 func (b BasicList) CurrentPage() int {
 	return b.currentPage
-
 }
 
 func (b BasicList) SetCurrentPage(pageNumber int) {
@@ -67,5 +61,6 @@ func (b BasicList) TotalPages() int {
 
 // A default state provider.
 func (b BasicList) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
-	return NewStateProvider("", NewJSMap().Put("id", elementId))
+	BadState("No ItemStateProvider available")
+	return nil
 }

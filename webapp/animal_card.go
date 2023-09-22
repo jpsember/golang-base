@@ -70,7 +70,7 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 
 	// If we were given an actual animal, give this card's children a default state provider
 	if w.CardAnimal.Id() != 0 {
-		m.PushStateProvider(NewStateProvider(w.ChildIdPrefix, w.CardAnimal.ToJson().AsJSMap()))
+		m.PushStateProvider(NewStateProvider(w.ChildIdPrefix, w.CardAnimal.ToJson()))
 	}
 
 	m.OpenContainer(w)
@@ -96,7 +96,7 @@ func (w AnimalCard) AddChild(c Widget, manager WidgetManager) {
 }
 
 func (w AnimalCard) SetAnimal(anim Animal) {
-  Todo("Maybe make the field 'private'? But do we need to read it?")
+	Todo("Maybe make the field 'private'? But do we need to read it?")
 	w.CardAnimal = anim
 }
 
@@ -104,7 +104,7 @@ func (w AnimalCard) BuildStateProvider(sess Session, widget ListWidget, elementI
 	anim := ReadAnimalIgnoreError(elementId)
 	CheckState(anim.Id() != 0, "no animal specified")
 	w.CardAnimal = anim
-	return NewStateProvider(w.ChildIdPrefix, anim.ToJson().AsJSMap())
+	return NewStateProvider(w.ChildIdPrefix, anim.ToJson())
 }
 
 func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {

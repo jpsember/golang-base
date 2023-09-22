@@ -77,10 +77,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	}
 
 	managerId := SessionUser(sess).Id()
-	animalList := NewAnimalList(getManagerAnimals(managerId), cardWidget.ChildIdPrefix)
-	animalList.PrepareState = func(s Session, animal Animal) {
-		cardWidget.CardAnimal = animal
-	}
+	animalList := NewAnimalList(getManagerAnimals(managerId), cardWidget)
 	p.listWidget = m.Id(id_manager_list).AddList(animalList, cardWidget)
 }
 

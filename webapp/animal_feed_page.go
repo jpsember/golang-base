@@ -67,7 +67,7 @@ func (p FeedPage) constructListItemWidget(s Session) AnimalCard {
 	// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
 	//
 	// These list cards have no buttons.
-  Todo("Do we need to supply an id?")
+	Todo("Do we need to supply an id?")
 	w := NewAnimalCard(m.AllocateAnonymousId("feed_card"), DefaultAnimal, cardListener, "", nil)
 	m.Add(w)
 	m.Detach(w)
@@ -82,7 +82,7 @@ func (p FeedPage) animalList(s Session) AnimalList {
 }
 
 func (p FeedPage) constructAnimalList() AnimalList {
-	animalList := NewAnimalList(getAnimals(), "notfinishedyet")
+	animalList := NewAnimalList(getAnimals(), nil)
 	return animalList
 }
 

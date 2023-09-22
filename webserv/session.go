@@ -619,8 +619,8 @@ type WidgetStateProviderStruct struct {
 
 type WidgetStateProvider = *WidgetStateProviderStruct
 
-func NewStateProvider(prefix string, state JSMap) WidgetStateProvider {
-	return &WidgetStateProviderStruct{Prefix: prefix, State: state}
+func NewStateProvider(prefix string, state JSEntity) WidgetStateProvider {
+	return &WidgetStateProviderStruct{Prefix: prefix, State: state.AsJSMap()}
 }
 
 // If state provider is nil, use default one
