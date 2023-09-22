@@ -273,12 +273,10 @@ func (b MarkupBuilder) TgClose() MarkupBuilder {
 	} else {
 		b.WriteString(` />`)
 	}
-
 	if entry.comment != "" {
 		b.A(`  `, entry.comment)
 	}
-
-	return b.Br()
+	return b.Cr()
 }
 
 // Verify that the tag stack size *does not change* before and after some code.  Call this before the code,

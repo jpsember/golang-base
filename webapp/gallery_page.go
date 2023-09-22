@@ -64,7 +64,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.Col(6)
 
 		x := m.Label("hello").AddText()
-		x.SetTrace(true)
+		//x.SetTrace(true)
 		x.SetVisible(false)
 		m.Label("Toggle Visibility").AddButton(func(s Session, w Widget) {
 			newState := !x.Visible()

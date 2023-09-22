@@ -60,7 +60,6 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	if len(w.children) != 0 {
 		m.TgOpen(`div class='row'`).TgContent()
 		for _, child := range w.children {
-			m.Comments(`child`)
 			m.TgOpen(`div class="col-sm-`).A(child.Columns(), `"`)
 			if WidgetDebugRenderingFlag {
 				m.Style(`background-color:`, DebugColorForString(child.Id()), `;`)
@@ -76,5 +75,5 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 		}
 		m.TgClose().Br()
 	}
-	m.TgClose() // GridWidget
+	m.TgClose()
 }

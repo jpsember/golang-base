@@ -33,7 +33,7 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 
 func (oper AnimalOper) Perform(app *App) {
 
-	ClearAlertHistory(false)
+	ClearAlertHistory(true)
 	ExitOnPanic()
 
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
