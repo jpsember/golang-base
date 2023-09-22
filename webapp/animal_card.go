@@ -9,7 +9,7 @@ import (
 // A Widget that displays editable text
 type AnimalCardStruct struct {
 	BaseWidgetObj
-	CardAnimal     Animal
+	cardAnimal     Animal
 	cardListener   CardWidgetListener
 	buttonListener CardWidgetListener
 	buttonLabel    string
@@ -29,7 +29,7 @@ func cardListenWrapper(sess Session, widget Widget, value string) (any, error) {
 }
 
 func (w AnimalCard) Animal() Animal {
-	return w.CardAnimal
+	return w.cardAnimal
 }
 
 func NewAnimalCard(widgetId string, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) AnimalCard {
@@ -39,7 +39,7 @@ func NewAnimalCard(widgetId string, animal Animal, cardListener CardWidgetListen
 	CheckArg((buttonLabel == "") == (buttonListener == nil))
 
 	w := AnimalCardStruct{
-		CardAnimal:     animal,
+		cardAnimal:     animal,
 		cardListener:   cardListener,
 		buttonLabel:    buttonLabel,
 		buttonListener: buttonListener,
@@ -67,11 +67,10 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 	// Note that we do *don't* set any state providers until we know what this prefix is.  Specifically,
 	// we don't create a state provider at construction time.
 	w.ChildIdPrefix = m.AllocateAnonymousId("card_children.")
-	Alert("#50animal_card childIdPrefix is:", w.ChildIdPrefix)
 
 	// If we were given an actual animal, give this card's children a default state provider
-	if w.CardAnimal.Id() != 0 {
-		m.PushStateProvider(NewStateProvider(w.ChildIdPrefix, w.CardAnimal.ToJson()))
+	if w.cardAnimal.Id() != 0 {
+		m.PushStateProvider(NewStateProvider(w.ChildIdPrefix, w.cardAnimal.ToJson()))
 	}
 
 	m.OpenContainer(w)
@@ -87,7 +86,7 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 	}
 	m.PopIdPrefix()
 	m.Close()
-	if w.CardAnimal.Id() != 0 {
+	if w.cardAnimal.Id() != 0 {
 		m.PopStateProvider()
 	}
 
@@ -99,15 +98,7 @@ func (w AnimalCard) AddChild(c Widget, manager WidgetManager) {
 }
 
 func (w AnimalCard) SetAnimal(anim Animal) {
-	Todo("Maybe make the field 'private'? But do we need to read it?")
-	w.CardAnimal = anim
-}
-
-func (w AnimalCard) BuildStateProvider(sess Session, widget ListWidget, elementId int) WidgetStateProvider {
-	anim := ReadAnimalIgnoreError(elementId)
-	CheckState(anim.Id() != 0, "no animal specified")
-	w.CardAnimal = anim
-	return NewStateProvider(w.ChildIdPrefix, anim.ToJson())
+	w.cardAnimal = anim
 }
 
 func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
@@ -115,7 +106,7 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 	cimax := len(w.children)
 
 	// Open a bootstrap card
-	animal := w.CardAnimal
+	animal := w.cardAnimal
 	m.Comments("Animal Card")
 
 	m.TgOpen(`div class="card bg-light mb-3"`).Style(`width:14em`).TgContent()

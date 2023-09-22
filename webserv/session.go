@@ -291,7 +291,6 @@ func extractId(expr string) (string, string) {
 }
 
 func (s Session) processClientMessage() {
-	Todo("Prefer single quotes over doubles, as they don't produce &quot; when escaping for html/javascript")
 	pr := PrIf(true)
 	pr("Session.processClientMessage")
 
