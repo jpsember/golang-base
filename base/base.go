@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+var Experiment = true && Alert("experiment is in effect")
+
 var exitOnPanic = false
 
 func ExitOnPanic() {

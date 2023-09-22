@@ -7,8 +7,7 @@ import (
 )
 
 type ManagerPageStruct struct {
-	manager    User
-	listWidget ListWidget
+	manager User
 }
 
 type ManagerPage = *ManagerPageStruct
@@ -41,36 +40,33 @@ func (p ManagerPage) Args() []string { return EmptyStringSlice }
 
 const managerPageName = "manager"
 const manager_id_prefix = managerPageName + "."
-const (
-	id_manager_list = manager_id_prefix + "list"
-)
 const manager_card_id = manager_id_prefix + "card"
 
 func (p ManagerPage) generateWidgets(sess Session) {
-	Todo("?Think about ways of cleaning up the click listener which is not tied to a widget")
 	m := GenerateHeader(sess, p)
 
-	AddUserHeaderWidget(sess)
+	if !Experiment {
+		AddUserHeaderWidget(sess)
 
-	// Row of buttons at top.
-	m.Open()
-	{
-		m.Label("New Animal").AddButton(p.newAnimalListener)
+		// Row of buttons at top.
+		m.Open()
+		{
+			m.Label("New Animal").AddButton(p.newAnimalListener)
+		}
+		m.Close()
 	}
-	m.Close()
-
 	// Construct a list, and a card to use as the list item widget
 
 	// For now, write the code as one big function; split up later once structure is more apparent.
 	var cardWidget AnimalCard
 	{
 		cardListener := func(sess Session, widget AnimalCard) {
+			Pr("listener for card, id:", widget.Id())
 			p.attemptSelectAnimal(sess, widget.Animal().Id())
 		}
 
 		// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
-		w := NewAnimalCard(manager_card_id, DefaultAnimal,
-			cardListener, "hey", cardListener)
+		w := NewAnimalCard(manager_card_id, DefaultAnimal, cardListener, "hey", cardListener)
 		cardWidget = w
 		m.Add(w)
 		m.Detach(w)
@@ -78,7 +74,20 @@ func (p ManagerPage) generateWidgets(sess Session) {
 
 	managerId := SessionUser(sess).Id()
 	animalList := NewAnimalList(getManagerAnimals(managerId), cardWidget)
-	p.listWidget = m.Id(id_manager_list).AddList(animalList, cardWidget)
+
+	if Experiment {
+		m.Id("experiment")
+	}
+	Todo("Consider *requiring* a listener (at least a nil one) for AddList")
+	Todo("document how the list forwards clicks related to items on to the list listener")
+	listWidget := m.AddList(animalList, cardWidget)
+	listWidget.Listener = p.listListener
+}
+
+func (p ManagerPage) listListener(sess Session, widget *ListWidgetStruct, itemId int, args string) {
+	pr := PrIf(Experiment)
+	pr("ManagerPage listListener, itemId:", itemId, "args:", args)
+	p.attemptSelectAnimal(sess, itemId)
 }
 
 func (p ManagerPage) newAnimalListener(sess Session, widget Widget) {

@@ -24,6 +24,7 @@ type CardWidgetListener func(sess Session, widget AnimalCard)
 func cardListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	b := widget.(AnimalCard)
 	b.cardListener(sess, b)
+	Alert("#50cardListenWrapper, calling AnimalCard", b.Id())
 	return nil, nil
 }
 
@@ -75,10 +76,12 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 
 	m.OpenContainer(w)
 	m.PushIdPrefix(w.ChildIdPrefix)
-	c1 := m.Id("name").Size(SizeTiny).AddHeading()
-	c2 := m.Id("summary").AddText()
-	c1.SetTrace(false)
-	c2.SetTrace(false)
+	if !Experiment {
+		c1 := m.Id("name").Size(SizeTiny).AddHeading()
+		c2 := m.Id("summary").AddText()
+		c1.SetTrace(false)
+		c2.SetTrace(false)
+	}
 	if w.buttonLabel != "" {
 		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.ourButtonListener)
 	}
@@ -142,7 +145,7 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 		// Display title and brief summary
 		m.Comments("title and summary")
 		m.TgOpen(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`).TgContent()
-		{
+		if !Experiment {
 			m.TgOpen(`h6 class="card-title"`).TgContent()
 			{
 				// Render the name as the first child

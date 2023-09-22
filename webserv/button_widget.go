@@ -72,7 +72,7 @@ func RenderButton(s Session, m MarkupBuilder, w_BaseId string, actionId string, 
 		m.A(` disabled`)
 	}
 
-	m.A(` onclick='jsButton("`, s.baseIdPrefix+actionId, `")'`, `>`)
+	m.A(` onclick="jsButton('`, s.baseIdPrefix+actionId, `')"`, `>`)
 	m.Escape(w_Label)
 	m.A(`</button>`)
 	m.Cr()

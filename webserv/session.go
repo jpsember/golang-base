@@ -291,8 +291,9 @@ func extractId(expr string) (string, string) {
 }
 
 func (s Session) processClientMessage() {
-	pr := PrIf(false)
-	pr("processClientMessage")
+	Todo("Prefer single quotes over doubles, as they don't produce &quot; when escaping for html/javascript")
+	pr := PrIf(true)
+	pr("Session.processClientMessage")
 
 	didSomething := false
 
@@ -336,7 +337,7 @@ func (s Session) processClientMessage() {
 	if widget == nil {
 		return
 	}
-	pr("found widget with id:", id)
+	pr("found widget with id:", id, Info(widget))
 
 	if !widget.Enabled() {
 		s.SetRequestProblem("widget is disabled", widget)
@@ -347,6 +348,8 @@ func (s Session) processClientMessage() {
 		Alert("#50Widget has no low-level listener:", Info(widget))
 		return
 	}
+
+	pr("calling LowListener")
 	updatedValue, err := widget.LowListener()(s, widget, s.ajaxWidgetValue)
 	{
 		if err != nil {

@@ -18,8 +18,9 @@ type ListWidgetStruct struct {
 type ListWidgetListener func(sess Session, widget *ListWidgetStruct, itemId int, args string)
 
 func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
-	pr := PrIf(false)
+	pr := PrIf(true)
 	pr("listListenWrapper, value:", value)
+	pr("caller:", Caller())
 
 	b := widget.(ListWidget)
 
@@ -36,6 +37,9 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	if c > 0 {
 		remainder = value[c+1:]
 		val, err := ParseInt(value[0:c])
+		if err == nil {
+			Todo("Verify that the parsed value matches an id in the list")
+		}
 		pr("remainder:", remainder, "value:", val, "err:", err)
 		if err != nil {
 			Alert("#50 trouble parsing int from:", value)
@@ -131,8 +135,6 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.Comment("ListWidget")
 
 	m.TgOpen(`div id=`).A(QUOTED, w.BaseId).TgContent()
-
-	//m.OpenTag(`div id="`, w.BaseId, `"`)
 
 	if w.WithPageControls {
 		w.renderPagination(s, m)

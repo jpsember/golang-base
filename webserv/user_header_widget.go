@@ -63,7 +63,7 @@ func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
 			actionId := Ternary(signedIn, BUTTON_ID_SIGN_OUT, BUTTON_ID_SIGN_IN)
 
 			m.TgOpen(`button class="m-2 btn btn-outline-primary btn-sm"`).A(
-				` onclick='jsButton(`, QUOTED, s.baseIdPrefix+actionId, `)'`).Style(`font-size:0.6em`).TgContent()
+				` onclick="jsButton('`, s.baseIdPrefix+actionId, `')"`).Style(`font-size:0.6em`).TgContent()
 
 			if signedIn {
 				m.A(`Sign Out`)
