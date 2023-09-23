@@ -44,6 +44,26 @@ func (p LandingPage) ConstructPage(s Session, args PageArgs) Page {
 }
 func (p LandingPage) Args() []string { return nil }
 
+type ExpStruct struct {
+	BasicListStruct
+}
+
+type Exp = *ExpStruct
+
+func NewExp() Exp {
+	t := &ExpStruct{}
+	t.ElementIds = []int{17, 42, 93, 61, 18, 29, 70}
+	t.ElementsPerPage = 3
+	return t
+}
+
+// ItemStateProvider constructs a state provider xi for rendering item i.
+// Child widgets within the item widget that already have explicit state providers
+// will *not* use Xi.
+func (x Exp) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
+	return NewStateProvider("", NewJSMap().Put("alpha", elementId))
+}
+
 func (p LandingPage) generateWidgets(sess Session) {
 	CheckState(sess != nil, "There is no session!")
 	s := sess.State
@@ -51,6 +71,25 @@ func (p LandingPage) generateWidgets(sess Session) {
 	s.DeleteEach(id_user_name, id_user_pwd, id_user_pwd_verify, id_user_email)
 
 	m := GenerateHeader(sess, p)
+
+	if Alert("!Doing an experiment with lists") {
+
+		// Construct a widget to serve as the item widget
+
+		itemWidget := m.Open()
+		{
+			m.Id("alpha").AddText()
+		}
+		m.Close()
+		itemWidget.SetTrace(true)
+
+		Todo("Instead of detaching list item widgets, make them invisible")
+		m.Detach(itemWidget)
+
+		m.AddList(NewExp(), itemWidget, func(sess Session, widget *ListWidgetStruct, itemId int, message string) {
+			Pr("Experiment item listener, itemId:", itemId, "message:", Quoted(message))
+		})
+	}
 
 	m.Label("gallery").Align(AlignRight).Size(SizeTiny).AddButton(p.galleryListener)
 	m.Col(6)

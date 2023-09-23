@@ -8,7 +8,7 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-const AutoLogInName = "donor1"
+const AutoLogInName = "" //"donor1"
 
 var DevDatabase = Alert("!Using development database")
 
