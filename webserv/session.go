@@ -82,12 +82,12 @@ type SessionStruct struct {
 	BrowserInfo webserv_data.ClientInfo
 	DebugPage   Page
 
-	app      any  // ServerApp is stored here, will clean up later
-	prepared bool // True once application has been able to initialize the session
+	app any // ServerApp is stored here, will clean up later
 
 	widgetManager     WidgetManager
 	baseStateProvider *WidgetStateProviderStruct
-	baseIdPrefix      string // I suspect this isn't used for anything
+	baseIdPrefix      string // This is modified for special rendering operations, such as list items
+
 	// Current request variables
 	ResponseWriter         http.ResponseWriter
 	request                *http.Request

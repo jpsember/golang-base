@@ -24,7 +24,6 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 
 	b := widget.(ListWidget)
 
-	Todo("Do pager controls use the list id as a prefix?")
 	// See if this is an event from the page controls
 	if b.handlePagerClick(sess, value) {
 		pr("...page controls handled it")

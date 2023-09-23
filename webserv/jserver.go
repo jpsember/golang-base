@@ -46,7 +46,7 @@ func NewJServer(app ServerApp) JServer {
 	t.registerPages()
 	t.headerMarkup = t.resources.JoinM("header.html").ReadStringM()
 
-  // Every several runs, remind to discard tabs
+	// Every several runs, remind to discard tabs
 	{
 		k := ProjectDirM().JoinM("._SKIP_counter")
 		m := JSMapFromFileIfExistsM(k)
@@ -131,16 +131,14 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 
 	sess.PrepareForHandlingRequest(w, req)
 
-	if !sess.prepared {
-		sess.prepared = true
-		{
-			// Open a container for the entire page
-			m := sess.WidgetManager()
-			m.Id(WidgetIdPage)
-			widget := m.Open()
-			sess.PageWidget = widget
-			m.Close()
-		}
+	// If session hasn't been prepared yet, do so.
+	if sess.PageWidget == nil {
+		// Open a container for the entire page
+		m := sess.WidgetManager()
+		m.Id(WidgetIdPage)
+		widget := m.Open()
+		sess.PageWidget = widget
+		m.Close()
 		j.App.PrepareSession(sess)
 	}
 
