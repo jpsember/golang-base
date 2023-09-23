@@ -29,12 +29,12 @@ func (b ButtonWidget) buttonListenWrapper(sess Session, widget Widget, value str
 	return nil, nil
 }
 
-func doNothingButtonListener(sess Session, widget Widget, arg string) {
-	Alert("<1#50Button has no listener yet:", widget.Id(), "arg:", arg)
+func doNothingButtonListener(sess Session, widget Widget, message string) {
+	Alert("<1#50Button has no listener yet:", widget.Id(), "message:", message)
 }
 
 // Add 'arg' in which additional info can be passed
-type ButtonWidgetListener func(sess Session, widget Widget, arg string)
+type ButtonWidgetListener func(sess Session, widget Widget, message string)
 
 func RenderButton(s Session, m MarkupBuilder, w_BaseId string, actionId string, enabled bool, w_Label any, w_size WidgetSize, w_align WidgetAlign, vertPadding int) {
 	vertPaddingExpr := `py-` + IntToString(vertPadding)

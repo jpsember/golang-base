@@ -307,6 +307,7 @@ func (m WidgetManager) AddInput(listener InputWidgetListener) InputWidget {
 	return m.auxAddInput(listener, false)
 }
 
+// The ButtonWidgetListener will receive message USER_HEADER_ACTION_xxxx.
 func (m WidgetManager) AddUserHeader(listener ButtonWidgetListener) UserHeaderWidget {
 	w := NewUserHeaderWidget(m.consumeOptionalPendingId(), listener)
 	w.BgndImageMarkup = `style=" height:50px; background-image:url('app_header.jpg'); background-repeat: no-repeat;"`

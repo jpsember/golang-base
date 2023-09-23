@@ -12,7 +12,6 @@ type UserHeaderWidgetStruct struct {
 
 type UserHeaderWidget = *UserHeaderWidgetStruct
 
-// The ButtonWidgetListener will receive an arg 'sign_out', 'sign_in', etc.
 func NewUserHeaderWidget(id string, listener ButtonWidgetListener) UserHeaderWidget {
 	t := &UserHeaderWidgetStruct{}
 	t.InitBase(id)
@@ -27,9 +26,8 @@ func (w UserHeaderWidget) buttonListenWrapper(sess Session, widget Widget, value
 }
 
 const (
-	HEADER_WIDGET_BUTTON_PREFIX = "uhdr."
-	BUTTON_ID_SIGN_OUT          = HEADER_WIDGET_BUTTON_PREFIX + "sign_out"
-	BUTTON_ID_SIGN_IN           = HEADER_WIDGET_BUTTON_PREFIX + "sign_in"
+	USER_HEADER_ACTION_SIGN_OUT = "sign_out"
+	USER_HEADER_ACTION_SIGN_IN  = "sign_in"
 )
 
 func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
@@ -69,7 +67,7 @@ func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
 				m.TgClose()
 			}
 
-			actionId := Ternary(signedIn, BUTTON_ID_SIGN_OUT, BUTTON_ID_SIGN_IN)
+			actionId := Ternary(signedIn, USER_HEADER_ACTION_SIGN_OUT, USER_HEADER_ACTION_SIGN_IN)
 
 			m.TgOpen(`button class="m-2 btn btn-outline-primary btn-sm"`).A(
 				` onclick="jsButton('`, w.Id(), `.`, actionId, `')"`).Style(`font-size:0.6em`).TgContent()
