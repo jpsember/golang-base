@@ -9,7 +9,8 @@ import (
 func AddUserHeaderWidget(s Session) {
 	m := s.WidgetManager()
 	hw := m.AddUserHeader()
-	hw.SetClickListener(ourProcessUserHeaderClick)
+	Todo("register a click listener with the user header", hw)
+	//hw.SetClickListener(ourProcessUserHeaderClick)
 }
 
 func ourProcessUserHeaderClick(sess Session, message string) bool {

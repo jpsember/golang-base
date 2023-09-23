@@ -62,7 +62,7 @@ func DiscardAllSessions(sessionManager SessionManager) {
 	loggedInUsersSet.Clear()
 }
 
-type ClickListener func(sess *SessionStruct, id string) bool
+//type ClickListener func(sess *SessionStruct, id string) bool
 
 type Session = *SessionStruct
 
@@ -150,7 +150,7 @@ func (s Session) HandleAjaxRequest() {
 	if false && Alert("dumping") {
 		Pr("Query:", INDENT, s.request.URL.Query())
 	}
-	s.processClientMessage()
+	s.auxHandleAjax()
 	s.sendAjaxResponse()
 }
 
@@ -290,9 +290,9 @@ func extractId(expr string) (string, string) {
 	return expr, ""
 }
 
-func (s Session) processClientMessage() {
+func (s Session) auxHandleAjax() {
 	pr := PrIf(true)
-	pr("Session.processClientMessage")
+	pr("Session.auxHandleAjax")
 
 	didSomething := false
 
@@ -328,11 +328,11 @@ func (s Session) processClientMessage() {
 
 	Todo("!Clarify difference between a widget 'low level listener' and its possible clickListener")
 
-	// Give individual widget click handlers an opportunity to process the click, before trying the widget id
-	if s.processClickEvent(widgetIdExpr) {
-		pr("...a widget click handler processed it")
-		return
-	}
+	//	// Give individual widget click handlers an opportunity to process the click, before trying the widget id
+	//	if s.processClickEvent(widgetIdExpr) {
+	//		pr("...a widget click handler processed it")
+	//		return
+	//	}
 
 	widget := s.widgetManager.Opt(id)
 	if widget == nil {
@@ -363,24 +363,24 @@ func (s Session) processClientMessage() {
 	s.SetWidgetProblem(widget.Id(), err)
 }
 
-func (s Session) processClickEvent(sourceId string) bool {
-	pr := PrIf(false)
-	pr("session, process click event:", sourceId)
-
-	// Examine widgets, for any having a click event handler
-	m := s.WidgetManager()
-	for key, widget := range m.widgetMap {
-		listener := widget.GetClickListener()
-		if listener != nil {
-			pr("...trying widget", key)
-			if listener(s, sourceId) {
-				pr("......handled")
-				return true
-			}
-		}
-	}
-	return false
-}
+//func (s Session) processClickEvent(sourceId string) bool {
+//	pr := PrIf(false)
+//	pr("session, process click event:", sourceId)
+//
+//	// Examine widgets, for any having a click event handler
+//	m := s.WidgetManager()
+//	for key, widget := range m.widgetMap {
+//		listener := widget.GetClickListener()
+//		if listener != nil {
+//			pr("...trying widget", key)
+//			if listener(s, sourceId) {
+//				pr("......handled")
+//				return true
+//			}
+//		}
+//	}
+//	return false
+//}
 
 func (s Session) processClientInfo(infoString string) {
 	json, err := JSMapFromString(infoString)

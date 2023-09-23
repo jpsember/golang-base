@@ -19,7 +19,7 @@ type BaseWidgetObj struct {
 	align         WidgetAlign
 	columns       int
 	stateProvider WidgetStateProvider
-	clickListener ClickListener
+	//clickListener ClickListener
 }
 
 type BaseWidget = *BaseWidgetObj
@@ -152,10 +152,10 @@ func (w BaseWidget) StateProvider() WidgetStateProvider {
 	return w.stateProvider
 }
 
-func (w BaseWidget) GetClickListener() ClickListener {
-	return w.clickListener
-}
-
-func (w BaseWidget) SetClickListener(c ClickListener) {
-	w.clickListener = c
-}
+//func (w BaseWidget) GetClickListener() ClickListener {
+//	return w.clickListener
+//}
+//
+//func (w BaseWidget) SetClickListener(c ClickListener) {
+//	w.clickListener = c
+//}
