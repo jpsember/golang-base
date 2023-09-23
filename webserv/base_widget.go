@@ -13,7 +13,6 @@ type BaseWidgetObj struct {
 	hidden        bool
 	disabled      bool
 	staticContent any
-	idHashcode    int
 	size          WidgetSize
 	align         WidgetAlign
 	columns       int
