@@ -49,7 +49,6 @@ func (w BaseWidget) String() string {
 }
 
 func (w BaseWidget) Id() string {
-	Todo("What is BaseId used for again?")
 	return w.baseId
 }
 

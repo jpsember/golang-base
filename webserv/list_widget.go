@@ -149,12 +149,16 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 			// While rendering this list's items, we will replace any existing default state provider with
 			// the list's one.  Save the current default state provider here, for later restoration.
-			savedStateProvider := s.baseStateProvider
+
+			savedStateProvider := s.BaseStateProvider()
+
+			Todo("What is savedBaseIdPrefix used for?  Can't this just be the BaseStateProvider?")
 			savedBaseIdPrefix := s.baseIdPrefix
+
 			for _, id := range elementIds {
 				m.Comment("----------------- rendering list item with id:", id)
 
-				s.baseStateProvider = w.list.ItemStateProvider(s, id)
+				s.SetBaseStateProvider(w.list.ItemStateProvider(s, id))
 
 				// When rendering list items, any ids should be mangled in such a way that
 				//  a) ids remain distinct, even if we are rendering the same widget for each row; and
@@ -170,7 +174,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			}
 			// Restore the default state provider to what it was before we rendered the items.
 			s.baseIdPrefix = savedBaseIdPrefix
-			s.baseStateProvider = savedStateProvider
+			s.SetBaseStateProvider(savedStateProvider)
 		}
 		m.TgClose()
 	}

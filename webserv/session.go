@@ -82,9 +82,9 @@ type SessionStruct struct {
 
 	app any // ServerApp is stored here, will clean up later
 
-	widgetManager     WidgetManager
-	baseStateProvider *WidgetStateProviderStruct
-	baseIdPrefix      string // This is modified for special rendering operations, such as list items
+	widgetManager WidgetManager
+	stateProvider *WidgetStateProviderStruct
+	baseIdPrefix  string // This is modified for special rendering operations, such as list items
 
 	// Current request variables
 	ResponseWriter         http.ResponseWriter
@@ -104,7 +104,7 @@ func NewSession() Session {
 		BrowserInfo: webserv_data.DefaultClientInfo,
 		appData:     make(map[string]any),
 	}
-	s.baseStateProvider = NewStateProvider("", s.State)
+	s.SetBaseStateProvider(NewStateProvider("", s.State))
 	Todo("!Restore user session from filesystem/database")
 	Todo("?ClientInfo (browser info) not sent soon enough")
 	Todo("?The Session should have WidgetManager embedded within it, so we can call through to its methods")
@@ -605,7 +605,7 @@ func NewStateProvider(prefix string, state JSEntity) WidgetStateProvider {
 func orBaseProvider(s Session, p WidgetStateProvider) WidgetStateProvider {
 	if p == nil {
 		// This is the state provider if no other one has been specified
-		p = s.baseStateProvider
+		p = s.BaseStateProvider()
 	}
 	return p
 }
@@ -617,6 +617,14 @@ func compileId(prefix string, id string) string {
 		return result
 	}
 	return prefix + id
+}
+
+func (s Session) BaseStateProvider() WidgetStateProvider {
+	return s.stateProvider
+}
+
+func (s Session) SetBaseStateProvider(p WidgetStateProvider) {
+	s.stateProvider = p
 }
 
 // ------------------------------------------------------------------------------------
@@ -640,17 +648,17 @@ func readStateStringValue(p WidgetStateProvider, id string) string {
 
 // Read widget value; assumed to be an int.
 func (s Session) IntValue(id string) int {
-	return readStateIntValue(s.baseStateProvider, id)
+	return readStateIntValue(s.BaseStateProvider(), id)
 }
 
 // Read widget value; assumed to be a boolean.
 func (s Session) BoolValue(id string) bool {
-	return readStateBoolValue(s.baseStateProvider, id)
+	return readStateBoolValue(s.BaseStateProvider(), id)
 }
 
 // Read widget value; assumed to be a string.
 func (s Session) StringValue(id string) string {
-	return readStateStringValue(s.baseStateProvider, id)
+	return readStateStringValue(s.BaseStateProvider(), id)
 }
 
 // Read widget value; assumed to be an int.
