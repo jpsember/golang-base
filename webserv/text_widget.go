@@ -18,6 +18,7 @@ func NewTextWidget(id string, size WidgetSize, fixedHeight int) TextWidget {
 		fixedHeight: fixedHeight,
 	}
 	t.InitBase(id)
+	t.SetTrace(true)
 	return t
 }
 
@@ -36,15 +37,14 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 		textContent = w.staticContent.(string)
 		w.Log("RenderTo, staticContent:", w.staticContent)
 	} else {
-		w.Log("RenderTo, reading widget string value; state provider:", w.stateProvider)
+		w.Log("RenderTo, reading widget string value; state provider:", w.stateProvider, "id:", w.Id())
 		textContent = s.WidgetStringValue(w)
 	}
 	w.Log("...text value:", Quoted(textContent))
 
 	h := NewHtmlString(textContent)
 
-	m.TgOpen(`div id=`)
-	m.A(QUOTED, w.Id())
+	m.TgOpen(`div id=`).A(QUOTED, s.PrependId(w.Id()))
 
 	if w.size != SizeDefault && w.size != SizeMedium {
 		m.Style(`font-size:`, textSize[w.size], `em;`)

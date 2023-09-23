@@ -145,7 +145,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 		m.TgOpen(`div class="row"`).TgContent()
 		{
 			elementIds := w.list.GetPageElements()
-			pr("rendering page num:", w.list.CurrentPage(), "element ids:", elementIds)
+			pr("rendering page #:", w.list.CurrentPage(), "element ids:", elementIds)
 
 			// While rendering this list's items, we will replace any existing default state provider with
 			// the list's one.  Save the current default state provider here, for later restoration.

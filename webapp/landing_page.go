@@ -61,7 +61,7 @@ func NewExp() Exp {
 // Child widgets within the item widget that already have explicit state providers
 // will *not* use Xi.
 func (x Exp) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
-	return NewStateProvider("", NewJSMap().Put("alpha", elementId))
+	return NewStateProvider("", NewJSMap().Put("alpha", "#"+IntToString(elementId)))
 }
 
 func (p LandingPage) generateWidgets(sess Session) {
@@ -73,6 +73,8 @@ func (p LandingPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)
 
 	if Alert("!Doing an experiment with lists") {
+
+		Alert("List item widgets have to have distinct ids for each item")
 
 		// Construct a widget to serve as the item widget
 
@@ -86,9 +88,10 @@ func (p LandingPage) generateWidgets(sess Session) {
 		Todo("Instead of detaching list item widgets, make them invisible")
 		m.Detach(itemWidget)
 
-		m.AddList(NewExp(), itemWidget, func(sess Session, widget *ListWidgetStruct, itemId int, message string) {
+		y := m.AddList(NewExp(), itemWidget, func(sess Session, widget *ListWidgetStruct, itemId int, message string) {
 			Pr("Experiment item listener, itemId:", itemId, "message:", Quoted(message))
 		})
+		y.WithPageControls = false
 	}
 
 	m.Label("gallery").Align(AlignRight).Size(SizeTiny).AddButton(p.galleryListener)
