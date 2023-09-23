@@ -155,18 +155,22 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			Todo("What is savedBaseIdPrefix used for?  Can't this just be the BaseStateProvider?")
 			//savedBaseIdPrefix := s.baseIdPrefix
 
+			pr(VERT_SP, "saved pv:", INDENT, savedStateProvider)
+
+			Todo("I think we want to send list *item* messages to the list item widget's handler, with message to include the list item id")
+
 			for _, id := range elementIds {
 				m.Comment("----------------- rendering list item with id:", id)
 
 				pv := w.list.ItemStateProvider(s, id)
-				pr("state provider from list item is:", INDENT, pv)
+				pr("itm pv:", INDENT, pv)
 				Todo("what is the prefix returned by the list item state provider?")
-				//np := NewStateProvider(w.Id()+"."+IntToString(id)+"."+pv.Prefix, pv.State)
-				//pr("replacing with:", INDENT, np)
+				np := NewStateProvider(w.Id()+"."+IntToString(id)+"."+savedStateProvider.Prefix, pv.State)
+				pr("replacing with:", INDENT, np)
 
 				// This doesn't quite work... clicking on the image is not having any effect.
 				// The heading and summary strings appear ok though.
-				s.SetBaseStateProvider(pv)
+				s.SetBaseStateProvider(np)
 
 				// When rendering list items, any ids should be mangled in such a way that
 				//  a) ids remain distinct, even if we are rendering the same widget for each row; and

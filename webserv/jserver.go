@@ -55,7 +55,8 @@ func NewJServer(app ServerApp) JServer {
 		k.WriteStringM(m.CompactString())
 		if count >= 10 {
 			k.DeleteFileM()
-			Die("Discard all the tabs")
+			Pr(VERT_SP, DASHES, CR, "Take a moment and discard all the tabs")
+			SleepMs(4000)
 		}
 	}
 	return t
