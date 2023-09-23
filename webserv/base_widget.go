@@ -6,8 +6,7 @@ import (
 
 // The simplest concrete Widget implementation
 type BaseWidgetObj struct {
-	BaseId string
-	Bounds Rect
+	baseId string
 
 	LowListen     LowLevelWidgetListener
 	trace         bool
@@ -19,7 +18,6 @@ type BaseWidgetObj struct {
 	align         WidgetAlign
 	columns       int
 	stateProvider WidgetStateProvider
-	//clickListener ClickListener
 }
 
 type BaseWidget = *BaseWidgetObj
@@ -34,7 +32,7 @@ func (w BaseWidget) SetTrace(flag bool) {
 }
 
 func (w BaseWidget) InitBase(id string) {
-	w.BaseId = id
+	w.baseId = id
 }
 
 func NewBaseWidget(id string) BaseWidget {
@@ -48,11 +46,12 @@ func (w BaseWidget) LowListener() LowLevelWidgetListener {
 }
 
 func (w BaseWidget) String() string {
-	return "<" + w.BaseId + ">"
+	return "<" + w.Id() + ">"
 }
 
 func (w BaseWidget) Id() string {
-	return w.BaseId
+	Todo("What is BaseId used for again?")
+	return w.baseId
 }
 
 func (w BaseWidget) SetSize(size WidgetSize) {
@@ -119,18 +118,18 @@ func (w BaseWidget) SetColumns(columns int) {
 func (w BaseWidget) Columns() int { return w.columns }
 
 func (w BaseWidget) IdSummary() string {
-	if w.BaseId == "" {
+	if w.Id() == "" {
 		return `(no id)`
 	}
-	return `Id: ` + w.BaseId
+	return `Id: ` + w.Id()
 }
 
 func (w BaseWidget) RenderTo(s Session, m MarkupBuilder) {
-	m.A(`<div id='`, w.BaseId, `'></div>`)
+	m.A(`<div id='`, w.Id(), `'></div>`)
 }
 
 func (w BaseWidget) AuxId() string {
-	return w.BaseId + ".aux"
+	return w.Id() + ".aux"
 }
 
 func (w BaseWidget) SetStateProvider(p WidgetStateProvider) {
@@ -151,11 +150,3 @@ func (w BaseWidget) Log(args ...any) {
 func (w BaseWidget) StateProvider() WidgetStateProvider {
 	return w.stateProvider
 }
-
-//func (w BaseWidget) GetClickListener() ClickListener {
-//	return w.clickListener
-//}
-//
-//func (w BaseWidget) SetClickListener(c ClickListener) {
-//	w.clickListener = c
-//}

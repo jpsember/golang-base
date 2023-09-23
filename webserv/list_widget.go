@@ -135,7 +135,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	pr("ListWidget.RenderTo")
 	m.Comment("ListWidget")
 
-	m.TgOpen(`div id=`).A(QUOTED, w.BaseId).TgContent()
+	m.TgOpen(`div id=`).A(QUOTED, w.Id()).TgContent()
 
 	if w.WithPageControls {
 		w.renderPagination(s, m)

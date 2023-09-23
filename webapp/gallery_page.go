@@ -215,7 +215,7 @@ func zebraListener(s Session, widget InputWidget, newVal string) (string, error)
 	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
 	alertWidget.SetVisible(newVal != "")
 
-	s.State.Put(alertWidget.BaseId,
+	s.State.Put(alertWidget.Id(),
 		strings.TrimSpace(newVal+" "+
 			RandomText(myRand, 55, false)))
 	s.Repaint(alertWidget)
@@ -231,7 +231,7 @@ func buttonListener(s Session, widget Widget, arg string) {
 	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
 	alertWidget.SetVisible(true)
 
-	s.State.Put(alertWidget.BaseId,
+	s.State.Put(alertWidget.Id(),
 		strings.TrimSpace(newVal))
 	s.Repaint(alertWidget)
 }

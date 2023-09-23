@@ -33,7 +33,6 @@ func doNothingButtonListener(sess Session, widget Widget, message string) {
 	Alert("<1#50Button has no listener yet:", widget.Id(), "message:", message)
 }
 
-// Add 'arg' in which additional info can be passed
 type ButtonWidgetListener func(sess Session, widget Widget, message string)
 
 func RenderButton(s Session, m MarkupBuilder, w_BaseId string, actionId string, enabled bool, w_Label any, w_size WidgetSize, w_align WidgetAlign, vertPadding int) {
@@ -84,7 +83,7 @@ func RenderButton(s Session, m MarkupBuilder, w_BaseId string, actionId string, 
 }
 
 func (w ButtonWidget) RenderTo(s Session, m MarkupBuilder) {
-	RenderButton(s, m, w.BaseId, w.BaseId, w.Enabled(), w.Label, w.size, w.align, 1)
+	RenderButton(s, m, w.Id(), w.Id(), w.Enabled(), w.Label, w.size, w.align, 1)
 }
 
 var btnTextSize = map[WidgetSize]string{

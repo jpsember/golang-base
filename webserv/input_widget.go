@@ -56,9 +56,9 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 	// The HTML input element has id "foo.aux"
 	// If there is a problem with the input, its text will have id "foo.problem"
 
-	m.TgOpen(`div id=`).A(QUOTED, w.BaseId).TgContent()
+	m.TgOpen(`div id=`).A(QUOTED, w.Id()).TgContent()
 
-	problemId := WidgetIdWithProblem(w.BaseId)
+	problemId := WidgetIdWithProblem(w.Id())
 	problemText := s.StringValue(problemId)
 	if false && Alert("always problem") {
 		problemText = "sample problem information"
@@ -79,9 +79,9 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 		m.A(` border-danger border-3`) // Adding border-3 makes the text shift a bit on error, maybe not desirable
 	}
 
-	m.A(`" type=`, QUOTED, Ternary(w.Password, "password", "text"), ` id="`, w.BaseId, `.aux" value="`)
+	m.A(`" type=`, QUOTED, Ternary(w.Password, "password", "text"), ` id="`, w.Id(), `.aux" value="`)
 	m.A(ESCAPED, s.WidgetStringValue(w))
-	m.A(`" onchange='jsVal("`, w.BaseId, `")'`).TgClose()
+	m.A(`" onchange='jsVal("`, w.Id(), `")'`).TgClose()
 
 	if hasProblem {
 		m.Comment("Problem")

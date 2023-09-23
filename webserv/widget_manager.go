@@ -368,7 +368,7 @@ func (m WidgetManager) AddText() TextWidget {
 	if staticContent != "" {
 		w.SetStaticContent(staticContent)
 	}
-	m.Log("Adding text, id:", w.BaseId)
+	m.Log("Adding text, id:", w.Id())
 	m.Add(w)
 	return w
 }
@@ -377,7 +377,7 @@ func (m WidgetManager) AddButton(listener ButtonWidgetListener) ButtonWidget {
 	w := NewButtonWidget(m.consumeOptionalPendingId(), listener)
 	w.SetSize(m.consumePendingSize())
 	w.SetAlign(m.consumePendingAlign())
-	m.Log("Adding button, id:", w.BaseId)
+	m.Log("Adding button, id:", w.Id())
 	w.Label = NewHtmlString(m.consumePendingLabel())
 	m.Add(w)
 	return w

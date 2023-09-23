@@ -62,8 +62,6 @@ func DiscardAllSessions(sessionManager SessionManager) {
 	loggedInUsersSet.Clear()
 }
 
-//type ClickListener func(sess *SessionStruct, id string) bool
-
 type Session = *SessionStruct
 
 type SessionStruct struct {
@@ -328,12 +326,6 @@ func (s Session) auxHandleAjax() {
 
 	Todo("!Clarify difference between a widget 'low level listener' and its possible clickListener")
 
-	//	// Give individual widget click handlers an opportunity to process the click, before trying the widget id
-	//	if s.processClickEvent(widgetIdExpr) {
-	//		pr("...a widget click handler processed it")
-	//		return
-	//	}
-
 	widget := s.widgetManager.Opt(id)
 	if widget == nil {
 		pr("no widget with id", Quoted(id), "found to handle value", Quoted(s.ajaxWidgetValue))
@@ -363,25 +355,6 @@ func (s Session) auxHandleAjax() {
 	// Always update the problem, in case we are clearing a previous error
 	s.SetWidgetProblem(widget.Id(), err)
 }
-
-//func (s Session) processClickEvent(sourceId string) bool {
-//	pr := PrIf(false)
-//	pr("session, process click event:", sourceId)
-//
-//	// Examine widgets, for any having a click event handler
-//	m := s.WidgetManager()
-//	for key, widget := range m.widgetMap {
-//		listener := widget.GetClickListener()
-//		if listener != nil {
-//			pr("...trying widget", key)
-//			if listener(s, sourceId) {
-//				pr("......handled")
-//				return true
-//			}
-//		}
-//	}
-//	return false
-//}
 
 func (s Session) processClientInfo(infoString string) {
 	json, err := JSMapFromString(infoString)

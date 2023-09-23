@@ -26,7 +26,6 @@ type Widget interface {
 	StateProvider() WidgetStateProvider
 	SetStateProvider(p WidgetStateProvider)
 	SetVisible(bool)
-	//GetClickListener() ClickListener // get optional click listener this widget might have
 	SetTrace(bool)
 	Trace() bool
 	Log(args ...any) // Logs messages if tracing is set for this widget

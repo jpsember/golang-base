@@ -50,7 +50,7 @@ func checkboxListenWrapper(sess Session, widget Widget, value string) (any, erro
 func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 	auxId := w.AuxId()
 
-	m.TgOpen(`div id="`).A(w.BaseId, `"`).TgContent()
+	m.TgOpen(`div id="`).A(w.Id(), `"`).TgContent()
 	{
 		var cbClass string
 		var role string
@@ -66,7 +66,7 @@ func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 		{
 			m.TgOpen(`input class="form-check-input" type="checkbox" id=`).A(QUOTED, auxId, role,
 				Ternary(s.WidgetBoolValue(w), ` checked`, ``),
-				` onclick='jsCheckboxClicked("`, s.baseIdPrefix, w.BaseId, `")'`).TgClose()
+				` onclick='jsCheckboxClicked("`, s.baseIdPrefix, w.baseId, `")'`).TgClose()
 			{
 				m.Comment("Label").TgOpen(`label class="form-check-label" for=`).A(QUOTED, auxId).TgContent().Escape(w.Label).TgClose()
 			}

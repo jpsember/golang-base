@@ -32,7 +32,7 @@ func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	// The outermost element must have the widget's id!  Or chaos happens during repainting.
 
-	m.TgOpen(`div id=`).A(QUOTED, w.BaseId).TgContent()
+	m.TgOpen(`div id=`).A(QUOTED, w.Id()).TgContent()
 	m.Comment("image")
 
 	{

@@ -23,7 +23,7 @@ func NewFileUpload(id string, label HtmlString, listener FileUploadWidgetListene
 }
 
 func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
-	id := w.BaseId
+	id := w.Id()
 	inputId := id + ".input"
 	formId := id + ".form"
 	inputName := id + ".input"
@@ -53,7 +53,7 @@ func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 		m.A(QUOTED, inputName, ` id=`, QUOTED, inputId, ` onchange='jsUpload(`, QUOTED, w.Id(), `)'`)
 		m.TgClose()
 
-		problemId := WidgetIdWithProblem(w.BaseId)
+		problemId := WidgetIdWithProblem(w.Id())
 		problemText := s.StringValue(problemId)
 
 		hasProblem := problemText != ""

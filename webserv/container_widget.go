@@ -19,7 +19,7 @@ func NewContainerWidget(id string) GridWidget {
 }
 
 func (w GridWidget) String() string {
-	return "<" + w.BaseId + " GridWidget>"
+	return "<" + w.Id() + " GridWidget>"
 }
 
 func (w GridWidget) Children() []Widget {
@@ -38,7 +38,7 @@ func (w GridWidget) AddChild(c Widget, manager WidgetManager) {
 	c.SetColumns(cols)
 	w.children = append(w.children, c)
 	pr := PrIf("", false)
-	pr(VERT_SP, "GridWidget", w.BaseId, "adding child", c.Id(), "to container", w.BaseId, "columns:", w.Columns())
+	pr(VERT_SP, "GridWidget", w.Id(), "adding child", c.Id(), "to container", w.Id(), "columns:", w.Columns())
 }
 
 func (w GridWidget) RemoveChild(c Widget) {
@@ -55,7 +55,7 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
 	Todo("!Don't add markup that is outside of the div<widget id>, else it will pile up due to ajax refreshes")
-	m.TgOpen(`div id=`).A(QUOTED, w.BaseId).TgContent()
+	m.TgOpen(`div id=`).A(QUOTED, w.Id()).TgContent()
 	m.Comments(`GridWidget`, w.IdSummary())
 	if len(w.children) != 0 {
 		m.TgOpen(`div class='row'`).TgContent()

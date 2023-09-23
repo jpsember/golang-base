@@ -21,7 +21,7 @@ func (w HeadingWidget) RenderTo(s Session, m MarkupBuilder) {
 	textContent := s.WidgetStringValue(w)
 	tag := wsHeadingSize[w.Size()]
 	m.TgOpen(tag)
-	m.A(` id=`, QUOTED, w.BaseId)
+	m.A(` id=`, QUOTED, w.Id())
 
 	// Have some special handling for the Micro size; very small text, and right justified
 	if w.size == SizeMicro {
