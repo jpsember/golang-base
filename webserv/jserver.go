@@ -45,6 +45,19 @@ func NewJServer(app ServerApp) JServer {
 	t.resources = app.Resources().AssertNonEmpty()
 	t.registerPages()
 	t.headerMarkup = t.resources.JoinM("header.html").ReadStringM()
+
+  // Every several runs, remind to discard tabs
+	{
+		k := ProjectDirM().JoinM("._SKIP_counter")
+		m := JSMapFromFileIfExistsM(k)
+		count := m.OptInt("", 0) + 1
+		m.Put("", count)
+		k.WriteStringM(m.CompactString())
+		if count >= 10 {
+			k.DeleteFileM()
+			Die("Discard all the tabs")
+		}
+	}
 	return t
 }
 

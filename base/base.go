@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-var Experiment = true && Alert("experiment is in effect")
+var Experiment = false && Alert("experiment is in effect")
 
 var exitOnPanic = false
 

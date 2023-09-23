@@ -60,6 +60,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	// For now, write the code as one big function; split up later once structure is more apparent.
 	var cardWidget AnimalCard
 	{
+		Todo("Why a separate card listener?")
 		cardListener := func(sess Session, widget AnimalCard) {
 			Pr("listener for card, id:", widget.Id())
 			p.attemptSelectAnimal(sess, widget.Animal().Id())
@@ -78,7 +79,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	if Experiment {
 		m.Id("experiment")
 	}
-	Todo("document how the list forwards clicks related to items on to the list listener")
+	Todo("!document how the list forwards clicks related to items on to the list listener")
 	m.AddList(animalList, cardWidget, p.listListener)
 }
 

@@ -37,56 +37,37 @@ func NewFeedPage(s Session) FeedPage {
 
 func (p FeedPage) Name() string { return FeedPageName }
 
-var fewWidgets = false && Alert("Rendering only a few of the usual widgets")
-
 func (p FeedPage) generateWidgets(s Session) {
 	m := GenerateHeader(s, p)
 	debug := m.StartConstruction()
 
-	if !fewWidgets {
-		AddUserHeaderWidget(s)
+	AddUserHeaderWidget(s)
+
+	// For now, write the code as one big function; split up later once structure is more apparent.
+	var cardWidget AnimalCard
+	{
+		cardListener := func(sess Session, widget AnimalCard) {
+			Pr("animal feed page listener for card, id:", widget.Id())
+			p.attemptSelectAnimal(sess, widget.Animal().Id())
+		}
+		// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
+		w := NewAnimalCard(m.AllocateAnonymousId("feedcard"), DefaultAnimal, cardListener, "", nil)
+		cardWidget = w
+		m.Add(w)
+		m.Detach(w)
 	}
 
-	// Construct widget to use in list
-	cardWidget := p.constructListItemWidget(s)
-	listWidget := m.AddList(p.animalList(s), cardWidget, p.listListener)
-	if fewWidgets {
+	animalList := NewAnimalList(getAnimals(), cardWidget)
+
+	if Experiment {
+		m.Id("experiment")
+	}
+
+	listWidget := m.AddList(animalList, cardWidget, p.listListener)
+	if Experiment {
 		listWidget.WithPageControls = false
 	}
 	m.EndConstruction(debug)
-}
-
-func (p FeedPage) constructListItemWidget(s Session) AnimalCard {
-	m := s.WidgetManager()
-
-	cardListener := func(sess Session, widget AnimalCard) {
-		p.attemptSelectAnimal(sess, widget.Animal().Id())
-	}
-
-	// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
-	//
-	// These list cards have no buttons.
-	Todo("Do we need to supply an id?")
-	w := NewAnimalCard(m.AllocateAnonymousId("feed_card"), DefaultAnimal, cardListener, "", nil)
-	m.Add(w)
-	m.Detach(w)
-	return w
-}
-
-func (p FeedPage) animalList(s Session) AnimalList {
-	if p.animList == nil {
-		p.animList = p.constructAnimalList()
-	}
-	return p.animList
-}
-
-func (p FeedPage) constructAnimalList() AnimalList {
-	animalList := NewAnimalList(getAnimals(), nil)
-	return animalList
-}
-
-func (p FeedPage) newAnimalListener(sess Session, widget Widget) {
-	sess.SwitchToPage(NewCreateAnimalPage(sess))
 }
 
 func getAnimals() []int {
@@ -96,12 +77,6 @@ func getAnimals() []int {
 		for iter.HasNext() {
 			anim := iter.Next().(Animal)
 			result = append(result, anim.Id())
-		}
-		if fewWidgets {
-			if len(result) > 2 {
-				result = result[0:2]
-			}
-
 		}
 	}
 	return result

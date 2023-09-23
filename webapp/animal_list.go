@@ -14,6 +14,7 @@ type AnimalListStruct struct {
 type AnimalList = *AnimalListStruct
 
 func NewAnimalList(animalIds []int, cardWidget AnimalCard) AnimalList {
+	CheckArg(cardWidget != nil)
 	CheckArg(animalIds != nil)
 	t := &AnimalListStruct{
 		cardWidget: cardWidget,

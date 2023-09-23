@@ -87,7 +87,7 @@ type SessionStruct struct {
 
 	widgetManager     WidgetManager
 	baseStateProvider *WidgetStateProviderStruct
-	baseIdPrefix      string
+	baseIdPrefix      string // I suspect this isn't used for anything
 	// Current request variables
 	ResponseWriter         http.ResponseWriter
 	request                *http.Request
@@ -326,9 +326,11 @@ func (s Session) processClientMessage() {
 		s.ajaxWidgetValue = remainder
 	}
 
-	// Give session handler an opportunity to process the click, before trying the widget id
+	Todo("!Clarify difference between a widget 'low level listener' and its possible clickListener")
+
+	// Give individual widget click handlers an opportunity to process the click, before trying the widget id
 	if s.processClickEvent(widgetIdExpr) {
-		pr("...session click handler processed it")
+		pr("...a widget click handler processed it")
 		return
 	}
 
@@ -336,7 +338,7 @@ func (s Session) processClientMessage() {
 	if widget == nil {
 		return
 	}
-	pr("found widget with id:", id, Info(widget))
+	pr("found widget with id:", id, "and type:", TypeOf(widget))
 
 	if !widget.Enabled() {
 		s.SetRequestProblem("widget is disabled", widget)
@@ -348,7 +350,7 @@ func (s Session) processClientMessage() {
 		return
 	}
 
-	pr("calling LowListener")
+	pr("calling LowListener for id:", widget.Id(), "with value:", s.ajaxWidgetValue)
 	updatedValue, err := widget.LowListener()(s, widget, s.ajaxWidgetValue)
 	{
 		if err != nil {

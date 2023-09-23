@@ -24,6 +24,7 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 
 	b := widget.(ListWidget)
 
+	Todo("Do pager controls use the list id as a prefix?")
 	// See if this is an event from the page controls
 	if b.handlePagerClick(sess, value) {
 		pr("...page controls handled it")
@@ -38,7 +39,7 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 		remainder = value[c+1:]
 		val, err := ParseInt(value[0:c])
 		if err == nil {
-			Todo("Verify that the parsed value matches an id in the list")
+			Todo("!Verify that the parsed value matches an id in the list")
 		}
 		pr("remainder:", remainder, "value:", val, "err:", err)
 		if err != nil {
@@ -61,7 +62,7 @@ type ListWidget = *ListWidgetStruct
 // Construct a ListWidget.
 //
 // itemWidget : this is a widget that will be rendered for each displayed item
-func NewListWidget(m WidgetManager, id string, list ListInterface, itemWidget Widget, listener ListWidgetListener) ListWidget {
+func NewListWidget(id string, list ListInterface, itemWidget Widget, listener ListWidgetListener) ListWidget {
 	Todo("!Have option to wrap list items in a clickable div")
 	CheckArg(itemWidget != nil, "No itemWidget given")
 
@@ -160,6 +161,11 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				//  a) ids remain distinct, even if we are rendering the same widget for each row; and
 				//  b) when responding to click events and the like, we can figure out which list, and
 				//      element within the list, generated the event.
+
+				// The item widgets will have this id structure:
+				//
+				// [id of containing ListWidget].[id of item].[session.baseIdPrefix (?what for?)]
+				//
 				s.baseIdPrefix = w.Id() + "." + IntToString(id) + "." + savedBaseIdPrefix
 				w.itemWidget.RenderTo(s, m)
 			}
