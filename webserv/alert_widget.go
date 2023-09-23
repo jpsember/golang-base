@@ -36,7 +36,7 @@ func NewAlertWidget(id string, alertClass AlertClass) AlertWidget {
 var classNames = []string{`success`, `info`, `warning`, `danger`}
 
 func (w AlertWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	desc := `AlertWidget ` + w.IdSummary()
 	pr("rendering AlertWidget, desc:", desc, "class:", w.Class)
 	alertMsg := s.WidgetStringValue(w)

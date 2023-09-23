@@ -78,7 +78,7 @@ func (p SignUpPage) validateUserName(s Session, widget InputWidget, value string
 }
 
 func (p SignUpPage) auxValidateUserName(s Session, widgetId string, value string, flag ValidateFlag) {
-	pr := PrIf(true)
+	pr := PrIf("", true)
 	pr("auxValidateUserName")
 	pr("value:", value)
 	value, err := ValidateUserName(value, flag)
@@ -91,7 +91,7 @@ func (p SignUpPage) validateUserPwd(s Session, widget InputWidget, value string)
 }
 
 func (p SignUpPage) auxValidateUserPwd(s Session, widget Widget, value string, flag ValidateFlag) error {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	pr("auxValidateUserPwd:", value)
 	value, err := ValidateUserPassword(value, flag)
 	pr("afterward:", value, "err:", err)
@@ -123,8 +123,8 @@ func (p SignUpPage) auxValidateEmail(s Session, widget Widget, value string, fla
 	return ValidateEmailAddress(value, flag)
 }
 
-func (p SignUpPage) signUpListener(s Session, widget Widget) {
-	pr := PrIf(false)
+func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
+	pr := PrIf("", false)
 	pr("signUpListener, state:", INDENT, s.State)
 
 	p.auxValidateUserName(s, id_user_name, s.State.OptString(id_user_name, ""), 0)

@@ -27,7 +27,7 @@ func (w ImageWidget) SetSize(originalSize IPoint, scaleFactor float64) {
 }
 
 func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	pr("rendering:", w.Id())
 
 	// The outermost element must have the widget's id!  Or chaos happens during repainting.

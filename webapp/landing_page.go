@@ -85,8 +85,8 @@ func (p LandingPage) validateUserPwd(s Session, widget InputWidget, content stri
 
 var AutoActivateUser = DevDatabase && Alert("?Automatically activating user")
 
-func (p LandingPage) signInListener(sess Session, widget Widget) {
-	pr := PrIf(false)
+func (p LandingPage) signInListener(sess Session, widget Widget, arg string) {
+	pr := PrIf("", false)
 	s := sess.State
 	pr("signInListener; state:", INDENT, s)
 	userName := s.OptString(id_user_name, "")
@@ -178,15 +178,15 @@ func (p LandingPage) signInListener(sess Session, widget Widget) {
 	}
 }
 
-func (p LandingPage) signUpListener(s Session, widget Widget) {
+func (p LandingPage) signUpListener(s Session, widget Widget, arg string) {
 	s.SwitchToPage(NewSignUpPage(s))
 }
 
-func (p LandingPage) galleryListener(sess Session, widget Widget) {
+func (p LandingPage) galleryListener(sess Session, widget Widget, arg string) {
 	sess.SwitchToPage(NewGalleryPage(sess))
 }
 
-func (p LandingPage) forgotPwdListener(sess Session, widget Widget) {
+func (p LandingPage) forgotPwdListener(sess Session, widget Widget, arg string) {
 
 	for {
 

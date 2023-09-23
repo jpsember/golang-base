@@ -61,8 +61,8 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	var cardWidget AnimalCard
 	{
 		Todo("Why a separate card listener?")
-		cardListener := func(sess Session, widget AnimalCard) {
-			Pr("listener for card, id:", widget.Id())
+		cardListener := func(sess Session, widget AnimalCard, arg string) {
+			Pr("listener for card, id:", widget.Id(), "arg:", arg)
 			p.attemptSelectAnimal(sess, widget.Animal().Id())
 		}
 
@@ -84,12 +84,12 @@ func (p ManagerPage) generateWidgets(sess Session) {
 }
 
 func (p ManagerPage) listListener(sess Session, widget *ListWidgetStruct, itemId int, args string) {
-	pr := PrIf(Experiment)
+	pr := PrIf("", Experiment)
 	pr("ManagerPage listListener, itemId:", itemId, "args:", args)
 	p.attemptSelectAnimal(sess, itemId)
 }
 
-func (p ManagerPage) newAnimalListener(sess Session, widget Widget) {
+func (p ManagerPage) newAnimalListener(sess Session, widget Widget, arg string) {
 	sess.SwitchToPage(NewCreateAnimalPage(sess))
 }
 

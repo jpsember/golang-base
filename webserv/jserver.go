@@ -117,7 +117,7 @@ func (j JServer) handleBlobRequest(s Session, blobId string) {
 
 // A handler such as this must be thread safe!
 func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	pr("JServer handler, request:", req.RequestURI)
 
 	// We don't know what the session is yet, so we don't have a lock on it...

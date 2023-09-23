@@ -30,7 +30,7 @@ type Currency = int
 const DollarsToCurrency = 100
 
 func CurrencyToString(amount Currency) string {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	pr("currency to string, amount:", amount)
 	j := IntToString(amount)
 	h := len(j)
@@ -144,7 +144,7 @@ func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 }
 
 func ValidateUserPassword(password string, flag ValidateFlag) (string, error) {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	pr("ValidateUserPassword:", Quoted(password), flag)
 
 	text := password

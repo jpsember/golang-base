@@ -10,7 +10,7 @@ func AscendToFileOrDirM(startDir Path, seekFile string) Path {
 }
 
 func AscendToFileOrDir(startDir Path, seekFile string) (Path, error) {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	CheckArg(NonEmpty(seekFile))
 
 	if startDir.Empty() {

@@ -20,21 +20,21 @@ func NewButtonWidget(id string, listener ButtonWidgetListener) ButtonWidget {
 		listener: listener,
 	}
 	b.InitBase(id)
-	b.LowListen = buttonListenWrapper
+	b.LowListen = b.buttonListenWrapper
 	return b
 }
 
-func buttonListenWrapper(sess Session, widget Widget, value string) (any, error) {
-	b := widget.(ButtonWidget)
-	b.listener(sess, widget)
+func (b ButtonWidget) buttonListenWrapper(sess Session, widget Widget, value string) (any, error) {
+	b.listener(sess, widget, value)
 	return nil, nil
 }
 
-func doNothingButtonListener(sess Session, widget Widget) {
-	Alert("<1#50Button has no listener yet:", widget.Id())
+func doNothingButtonListener(sess Session, widget Widget, arg string) {
+	Alert("<1#50Button has no listener yet:", widget.Id(), "arg:", arg)
 }
 
-type ButtonWidgetListener func(sess Session, widget Widget)
+// Add 'arg' in which additional info can be passed
+type ButtonWidgetListener func(sess Session, widget Widget, arg string)
 
 func RenderButton(s Session, m MarkupBuilder, w_BaseId string, actionId string, enabled bool, w_Label any, w_size WidgetSize, w_align WidgetAlign, vertPadding int) {
 	vertPaddingExpr := `py-` + IntToString(vertPadding)

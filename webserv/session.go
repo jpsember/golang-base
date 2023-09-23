@@ -10,7 +10,7 @@ import (
 	"sync"
 )
 
-var dbPr = PrIf(false)
+var dbPr = PrIf("", false)
 
 var loggedInUsersSet = NewSet[int]()
 var loggedInUsersSetLock sync.RWMutex
@@ -291,7 +291,7 @@ func extractId(expr string) (string, string) {
 }
 
 func (s Session) auxHandleAjax() {
-	pr := PrIf(true)
+	pr := PrIf("auxHandleAjax", true)
 	pr("Session.auxHandleAjax")
 
 	didSomething := false
@@ -336,6 +336,7 @@ func (s Session) auxHandleAjax() {
 
 	widget := s.widgetManager.Opt(id)
 	if widget == nil {
+		pr("no widget with id", Quoted(id), "found to handle value", Quoted(s.ajaxWidgetValue))
 		return
 	}
 	pr("found widget with id:", id, "and type:", TypeOf(widget))
@@ -396,7 +397,7 @@ func (s Session) processClientInfo(infoString string) {
 
 // Mark a widget for repainting
 func (s Session) Repaint(w Widget) Session {
-	pr := PrIf(debRepaint)
+	pr := PrIf("", debRepaint)
 	pr("Repaint:", w)
 	if s.repaintSet.Add(w.Id()) {
 		pr("...adding to set")
@@ -431,7 +432,7 @@ func (s Session) sendAjaxResponse() {
 	if !s.Ok() {
 		return
 	}
-	pr := PrIf(debRepaint)
+	pr := PrIf("", debRepaint)
 
 	jsmap := NewJSMap()
 	s.repaintWidgetMarkupMap = NewJSMap()

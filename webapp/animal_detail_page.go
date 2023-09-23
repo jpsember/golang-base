@@ -244,8 +244,8 @@ func (p AnimalDetailPage) AnimalTextListener(sess Session, widget InputWidget, v
 	}
 }
 
-func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget) {
-	pr := PrIf(true)
+func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget, arg string) {
+	pr := PrIf("", true)
 
 	if !p.validateAll(s) {
 		return
@@ -264,7 +264,7 @@ func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget) {
 }
 
 func (p AnimalDetailPage) validateAll(s Session) bool {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 
 	{
 		text := s.StringValue(id_animal_name)
@@ -286,8 +286,8 @@ func (p AnimalDetailPage) validateAll(s Session) bool {
 	return errcount == 0
 }
 
-func (p AnimalDetailPage) doneEditListener(s Session, widget Widget) {
-	pr := PrIf(false)
+func (p AnimalDetailPage) doneEditListener(s Session, widget Widget, arg string) {
+	pr := PrIf("", false)
 
 	if !p.validateAll(s) {
 		return
@@ -308,11 +308,11 @@ func (p AnimalDetailPage) doneEditListener(s Session, widget Widget) {
 	p.exit(s)
 }
 
-func (p AnimalDetailPage) doneViewListener(s Session, widget Widget) {
+func (p AnimalDetailPage) doneViewListener(s Session, widget Widget, arg string) {
 	p.exit(s)
 }
 
-func (p AnimalDetailPage) abortEditListener(s Session, widget Widget) {
+func (p AnimalDetailPage) abortEditListener(s Session, widget Widget, arg string) {
 	p.exit(s)
 }
 
@@ -371,7 +371,7 @@ func preCreateValidateText(s Session, widgetId string, minLength int, maxLength 
 }
 
 func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by []byte) error {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 
 	var jpeg []byte
 	var imageId int
@@ -448,7 +448,7 @@ func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by [
 }
 
 func (p AnimalDetailPage) provideURL(s Session) string {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	url := ""
 
 	// We need to access the state directly, without a widget.

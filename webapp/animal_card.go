@@ -19,11 +19,12 @@ type AnimalCardStruct struct {
 
 type AnimalCard = *AnimalCardStruct
 
-type CardWidgetListener func(sess Session, widget AnimalCard)
+type CardWidgetListener func(sess Session, widget AnimalCard, arg string)
 
 func cardListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	b := widget.(AnimalCard)
-	b.cardListener(sess, b)
+	Todo("!Is the listener 'arg' necessary?")
+	b.cardListener(sess, b, value)
 	Alert("#50cardListenWrapper, calling AnimalCard", b.Id())
 	return nil, nil
 }
@@ -54,13 +55,13 @@ func NewAnimalCard(widgetId string, animal Animal, cardListener CardWidgetListen
 	return &w
 }
 
-func (w AnimalCard) ourButtonListener(sess Session, widget Widget) {
+func (w AnimalCard) ourButtonListener(sess Session, widget Widget, arg string) {
 	Pr("ourButtonListener called...")
-	w.buttonListener(sess, w)
+	w.buttonListener(sess, w, arg)
 }
 
 func (w AnimalCard) AddChildren(m WidgetManager) {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	pr("adding children to new card")
 
 	// Determine a unique prefix for this card's fields.

@@ -18,7 +18,7 @@ type ListWidgetStruct struct {
 type ListWidgetListener func(sess Session, widget *ListWidgetStruct, itemId int, args string)
 
 func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
-	pr := PrIf(true)
+	pr := PrIf("", true)
 	pr("listListenWrapper, value:", value)
 	pr("caller:", Caller())
 
@@ -131,7 +131,7 @@ func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, ta
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	pr("ListWidget.RenderTo")
 	m.Comment("ListWidget")
 
@@ -184,7 +184,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 // Process a possible pagniation control event.
 func (w ListWidget) handlePagerClick(sess Session, message string) bool {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	pr("handlePagerClick, message:", message, "pagePrefix:", w.pagePrefix)
 	if page_str, f := TrimIfPrefix(message, "page_"); f {
 		pr("page_str:", page_str)

@@ -46,7 +46,7 @@ func (p FeedPage) generateWidgets(s Session) {
 	// For now, write the code as one big function; split up later once structure is more apparent.
 	var cardWidget AnimalCard
 	{
-		cardListener := func(sess Session, widget AnimalCard) {
+		cardListener := func(sess Session, widget AnimalCard, arg string) {
 			Pr("animal feed page listener for card, id:", widget.Id())
 			p.attemptSelectAnimal(sess, widget.Animal().Id())
 		}

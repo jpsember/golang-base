@@ -66,7 +66,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		x := m.Label("hello").AddText()
 		//x.SetTrace(true)
 		x.SetVisible(false)
-		m.Label("Toggle Visibility").AddButton(func(s Session, w Widget) {
+		m.Label("Toggle Visibility").AddButton(func(s Session, w Widget, arg string) {
 			newState := !x.Visible()
 			Pr("setting x visible:", newState)
 			x.SetVisible(newState)
@@ -109,8 +109,12 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		{
 			m.Col(4)
 
-			cardListener := func(sess Session, widget AnimalCard) { Pr("card listener, animal id:", widget.Animal().Id()) }
-			cardButtonListener := func(sess Session, widget AnimalCard) { Pr("card button listener, name:", widget.Animal().Name()) }
+			cardListener := func(sess Session, widget AnimalCard, arg string) {
+				Pr("card listener, animal id:", widget.Animal().Id(), "arg:", arg)
+			}
+			cardButtonListener := func(sess Session, widget AnimalCard, arg string) {
+				Pr("card button listener, name:", widget.Animal().Name(), "arg:", arg)
+			}
 
 			Todo("We need to create a state provider for cards, when not in list (list handles that already somehow)")
 
@@ -218,8 +222,8 @@ func zebraListener(s Session, widget InputWidget, newVal string) (string, error)
 	return newVal, nil
 }
 
-func buttonListener(s Session, widget Widget) {
-	Pr("buttonListener, widget:", widget.Id())
+func buttonListener(s Session, widget Widget, arg string) {
+	Pr("buttonListener, widget:", widget.Id(), "arg:", arg)
 	wid := widget.Id()
 	newVal := "Clicked: " + wid
 
@@ -238,7 +242,7 @@ func (p GalleryPage) checkboxListener(s Session, widget CheckboxWidget, state bo
 }
 
 func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, value []byte) error {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 
 	var jpeg []byte
 	var imageId int
@@ -307,7 +311,7 @@ func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, valu
 }
 
 func (p GalleryPage) provideURL(s Session) string {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	url := ""
 	imageId := s.State.OptInt(sampleImageId, 0)
 

@@ -37,7 +37,7 @@ func (w GridWidget) AddChild(c Widget, manager WidgetManager) {
 	}
 	c.SetColumns(cols)
 	w.children = append(w.children, c)
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	pr(VERT_SP, "GridWidget", w.BaseId, "adding child", c.Id(), "to container", w.BaseId, "columns:", w.Columns())
 }
 

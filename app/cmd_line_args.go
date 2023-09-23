@@ -124,7 +124,7 @@ func (c *CmdLineArgs) Help() {
 // Process the unpacked list of options and values, assigning values to the
 // options
 func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
-	pr := PrIf(c.Verbose())
+	pr := PrIf("", c.Verbose())
 	pr("processing unpacked list of options and values")
 
 	var cursor = 0
