@@ -125,13 +125,13 @@ func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, ta
 			m.A(` active`)
 		}
 	} else {
-		m.A(`" onclick="jsButton('`, s.baseIdPrefix+w.pagePrefix, targetPage, `')`)
+		m.A(`" onclick="jsButton('`, s.PrependId(w.pagePrefix), targetPage, `')`)
 	}
 	m.A(`">`, label, `</a></li>`, CR)
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf("", false)
+	pr := PrIf("ListWidget.RenderTo", true)
 	pr("ListWidget.RenderTo")
 	m.Comment("ListWidget")
 
@@ -153,12 +153,20 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			savedStateProvider := s.BaseStateProvider()
 
 			Todo("What is savedBaseIdPrefix used for?  Can't this just be the BaseStateProvider?")
-			savedBaseIdPrefix := s.baseIdPrefix
+			//savedBaseIdPrefix := s.baseIdPrefix
 
 			for _, id := range elementIds {
 				m.Comment("----------------- rendering list item with id:", id)
 
-				s.SetBaseStateProvider(w.list.ItemStateProvider(s, id))
+				pv := w.list.ItemStateProvider(s, id)
+				pr("state provider from list item is:", INDENT, pv)
+				Todo("what is the prefix returned by the list item state provider?")
+				//np := NewStateProvider(w.Id()+"."+IntToString(id)+"."+pv.Prefix, pv.State)
+				//pr("replacing with:", INDENT, np)
+
+				// This doesn't quite work... clicking on the image is not having any effect.
+				// The heading and summary strings appear ok though.
+				s.SetBaseStateProvider(pv)
 
 				// When rendering list items, any ids should be mangled in such a way that
 				//  a) ids remain distinct, even if we are rendering the same widget for each row; and
@@ -169,11 +177,10 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				//
 				// [id of containing ListWidget].[id of item].[session.baseIdPrefix (?what for?)]
 				//
-				s.baseIdPrefix = w.Id() + "." + IntToString(id) + "." + savedBaseIdPrefix
+				//s.baseIdPrefix = w.Id() + "." + IntToString(id) + "." + savedBaseIdPrefix
 				w.itemWidget.RenderTo(s, m)
 			}
 			// Restore the default state provider to what it was before we rendered the items.
-			s.baseIdPrefix = savedBaseIdPrefix
 			s.SetBaseStateProvider(savedStateProvider)
 		}
 		m.TgClose()

@@ -1013,3 +1013,24 @@ func PopLast[T any](slice []T) (T, []T) {
 func DeleteSliceElements[T any](slice []T, delStart int, delCount int) []T {
 	return append(slice[:delStart], slice[delStart+delCount:]...)
 }
+
+func Truncated(arg any) string {
+	switch v := arg.(type) {
+	case nil:
+		return "<nil>"
+	case string:
+		return trunc(v)
+	case JSMap:
+		return trunc(PrintJSEntity(v, false))
+	case JSList:
+		return trunc(PrintJSEntity(v, false))
+	default:
+		return trunc(ToString(v))
+	}
+}
+func trunc(x string) string {
+	if len(x) > 40 {
+		return x[0:40] + "..."
+	}
+	return x
+}

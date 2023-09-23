@@ -84,7 +84,7 @@ type SessionStruct struct {
 
 	widgetManager WidgetManager
 	stateProvider *WidgetStateProviderStruct
-	baseIdPrefix  string // This is modified for special rendering operations, such as list items
+	//baseIdPrefix  string // This is modified for special rendering operations, such as list items
 
 	// Current request variables
 	ResponseWriter         http.ResponseWriter
@@ -112,7 +112,7 @@ func NewSession() Session {
 }
 
 func (s Session) PrependId(id string) string {
-	return s.baseIdPrefix + id
+	return s.BaseStateProvider().Prefix + id
 }
 
 func (s Session) PrepareForHandlingRequest(w http.ResponseWriter, req *http.Request) {
@@ -596,6 +596,10 @@ type WidgetStateProviderStruct struct {
 }
 
 type WidgetStateProvider = *WidgetStateProviderStruct
+
+func (pv WidgetStateProvider) String() string {
+	return "{SP " + Quoted(pv.Prefix) + " state:" + Truncated(pv.State.CompactString()) + " }"
+}
 
 func NewStateProvider(prefix string, state JSEntity) WidgetStateProvider {
 	return &WidgetStateProviderStruct{Prefix: prefix, State: state.AsJSMap()}

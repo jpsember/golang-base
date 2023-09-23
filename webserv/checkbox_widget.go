@@ -66,7 +66,7 @@ func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 		{
 			m.TgOpen(`input class="form-check-input" type="checkbox" id=`).A(QUOTED, auxId, role,
 				Ternary(s.WidgetBoolValue(w), ` checked`, ``),
-				` onclick='jsCheckboxClicked("`, s.baseIdPrefix, w.baseId, `")'`).TgClose()
+				` onclick='jsCheckboxClicked("`, s.PrependId(w.baseId), `")'`).TgClose()
 			{
 				m.Comment("Label").TgOpen(`label class="form-check-label" for=`).A(QUOTED, auxId).TgContent().Escape(w.Label).TgClose()
 			}

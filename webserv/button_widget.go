@@ -72,7 +72,7 @@ func RenderButton(s Session, m MarkupBuilder, w_BaseId string, actionId string, 
 	}
 
 	Todo("!Prefer single quotes over doubles, as they don't produce &quot; when escaping for html/javascript")
-	m.A(` onclick="jsButton('`, s.baseIdPrefix+actionId, `')"`, `>`)
+	m.A(` onclick="jsButton('`, s.PrependId(actionId), `')"`, `>`)
 	m.Escape(w_Label)
 	m.A(`</button>`)
 	m.Cr()
