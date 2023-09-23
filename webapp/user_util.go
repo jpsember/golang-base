@@ -86,8 +86,3 @@ func PopulateDatabase() {
 		createAnimalsUpTo(rnd, i+1)
 	}
 }
-
-const (
-	UserKeySelectedAnimalId     = "_selected_animal_id"
-	UserKeyEditingAnimalImageId = "_editing_animal_image_id"
-)

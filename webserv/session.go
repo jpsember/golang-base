@@ -80,7 +80,7 @@ type SessionStruct struct {
 	State JSMap
 
 	BrowserInfo webserv_data.ClientInfo
-	DebugPage   Page
+	debugPage   Page // Used only to get the current page's name for rendering in the user header
 
 	app any // ServerApp is stored here, will clean up later
 
@@ -594,7 +594,7 @@ func (s Session) SwitchToPage(page Page) {
 	//Pr("SwitchToPage:", page.Name(), "from:", Caller())
 	s.Repaint(s.PageWidget)
 	s.browserURLExpr = s.ConstructPathFromPage(page)
-	s.DebugPage = page
+	s.debugPage = page
 }
 
 func (s Session) NewBrowserPath() string {

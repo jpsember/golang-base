@@ -1000,8 +1000,6 @@ func ReportIfError(err error, msg ...any) bool {
 	return false
 }
 
-var EmptyStringSlice = []string{}
-
 func Last[T any](slice []T) T {
 	i := len(slice)
 	return slice[i-1]

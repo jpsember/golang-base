@@ -42,7 +42,7 @@ func (p LandingPage) ConstructPage(s Session, args PageArgs) Page {
 	}
 	return nil
 }
-func (p LandingPage) Args() []string { return EmptyStringSlice }
+func (p LandingPage) Args() []string { return nil }
 
 func (p LandingPage) generateWidgets(sess Session) {
 	CheckState(sess != nil, "There is no session!")

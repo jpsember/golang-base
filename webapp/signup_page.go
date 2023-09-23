@@ -35,7 +35,7 @@ func NewSignUpPage(session Session) SignUpPage {
 }
 
 func (p SignUpPage) Name() string   { return "signup" }
-func (p SignUpPage) Args() []string { return EmptyStringSlice }
+func (p SignUpPage) Args() []string { return nil }
 func (p SignUpPage) ConstructPage(s Session, args PageArgs) Page {
 	// Use the PageArgs to verify that the construction parameters are valid.
 	if args.CheckDone() {

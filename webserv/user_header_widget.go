@@ -43,7 +43,7 @@ func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
 		m.TgOpen(`div class="text-end"`).TgContent()
 		{
 			if DebugUIFlag {
-				pg := s.DebugPage
+				pg := s.debugPage
 				nm := `??pagename??`
 				if pg != nil {
 					nm = pg.Name()

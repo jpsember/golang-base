@@ -36,7 +36,7 @@ func (p ManagerPage) ConstructPage(s Session, args PageArgs) Page {
 	}
 	return nil
 }
-func (p ManagerPage) Args() []string { return EmptyStringSlice }
+func (p ManagerPage) Args() []string { return nil }
 
 const managerPageName = "manager"
 const manager_id_prefix = managerPageName + "."

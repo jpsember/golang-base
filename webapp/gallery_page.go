@@ -42,7 +42,7 @@ func (p GalleryPage) Name() string {
 	return GalleryPageName
 }
 
-func (p GalleryPage) Args() []string { return EmptyStringSlice }
+func (p GalleryPage) Args() []string { return nil }
 
 // ------------------------------------------------------------------------------------
 

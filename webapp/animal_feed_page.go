@@ -10,17 +10,6 @@ const FeedPageName = "feed"
 
 var FeedPageTemplate = NewFeedPage(nil)
 
-func (p FeedPage) ConstructPage(s Session, args PageArgs) Page {
-	if args.CheckDone() {
-		if SessionUserIs(s, UserClassDonor) {
-			return NewFeedPage(s)
-		}
-	}
-	return nil
-}
-
-func (p FeedPage) Args() []string { return EmptyStringSlice }
-
 type FeedPageStruct struct {
 	animList AnimalList
 }
@@ -36,6 +25,17 @@ func NewFeedPage(s Session) FeedPage {
 }
 
 func (p FeedPage) Name() string { return FeedPageName }
+
+func (p FeedPage) ConstructPage(s Session, args PageArgs) Page {
+	if args.CheckDone() {
+		if SessionUserIs(s, UserClassDonor) {
+			return NewFeedPage(s)
+		}
+	}
+	return nil
+}
+
+func (p FeedPage) Args() []string { return nil }
 
 func (p FeedPage) generateWidgets(s Session) {
 	m := GenerateHeader(s, p)
