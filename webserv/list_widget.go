@@ -19,8 +19,7 @@ type ListWidgetListener func(sess Session, widget *ListWidgetStruct, itemId int,
 
 func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	pr := PrIf("", true)
-	pr("listListenWrapper, value:", value)
-	pr("caller:", Caller())
+	pr("listListenWrapper, value:", Quoted(value), "caller:", Caller())
 
 	b := widget.(ListWidget)
 
@@ -36,7 +35,8 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	remainder := ""
 	if c > 0 {
 		remainder = value[c+1:]
-		val, err := ParseInt(value[0:c])
+		valStr := value[0:c]
+		val, err := ParseInt(valStr)
 		if err == nil {
 			Todo("!Verify that the parsed value matches an id in the list")
 		}
@@ -45,6 +45,19 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 			Alert("#50 trouble parsing int from:", value)
 		} else {
 			itemId = int(val)
+		}
+
+		// Look for a widget (presumably within the original ListItem widget) with the extracted id
+		sourceId := remainder
+		sourceWidget := sess.WidgetManager().Opt(sourceId)
+		if sourceWidget == nil {
+			Alert("#50Can't find source widget with id", Quoted(sourceId), "; original value:", Quoted(value))
+		} else {
+			// Forward the message to that widget
+			Todo("How do we distinguish between value actions (like text fields) and button presses?")
+			newVal, err := sourceWidget.LowListener()(sess, sourceWidget, valStr)
+			Pr("sourceWidget lowlistener returned:", newVal, err)
+			return newVal, err
 		}
 	}
 

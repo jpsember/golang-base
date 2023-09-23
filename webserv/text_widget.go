@@ -18,7 +18,7 @@ func NewTextWidget(id string, size WidgetSize, fixedHeight int) TextWidget {
 		fixedHeight: fixedHeight,
 	}
 	t.InitBase(id)
-	t.SetTrace(true)
+	//t.SetTrace(true)
 	return t
 }
 

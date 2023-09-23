@@ -73,14 +73,17 @@ func (p LandingPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)
 
 	if Alert("!Doing an experiment with lists") {
-
 		Alert("List item widgets have to have distinct ids for each item")
 
 		// Construct a widget to serve as the item widget
 
 		itemWidget := m.Open()
 		{
-			m.Id("alpha").AddText()
+			Todo("!Lists shouldn't intercept actions from items, instead call the item listener(s)")
+			m.Id("alpha").Col(6).AddText()
+			m.Id("bravo").Col(6).Label("Hello").AddButton(func(sess Session, widget Widget, message string) {
+				Pr("button listener, id:", widget.Id(), "message:", message)
+			})
 		}
 		m.Close()
 		itemWidget.SetTrace(true)
@@ -89,7 +92,7 @@ func (p LandingPage) generateWidgets(sess Session) {
 		m.Detach(itemWidget)
 
 		y := m.AddList(NewExp(), itemWidget, func(sess Session, widget *ListWidgetStruct, itemId int, message string) {
-			Pr("Experiment item listener, itemId:", itemId, "message:", Quoted(message))
+			Pr("!!! We shouldn't need these listeners...!!! Experiment item listener, itemId:", itemId, "message:", Quoted(message))
 		})
 		y.WithPageControls = false
 	}

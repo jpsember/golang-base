@@ -615,17 +615,15 @@ func orBaseProvider(s Session, p WidgetStateProvider) WidgetStateProvider {
 }
 
 func compileId(prefix string, id string) string {
-	// If the id has the prefix, remove it; if it doesn't, add it
-	// ...we may want to make this subtractive only
+	// If the id has the prefix, remove it
 	var out string
 	if result, removed := TrimIfPrefix(id, prefix); removed {
 		out = result
 	} else {
 		Alert("Only SUBTRACTING")
 		out = id
-		//out = prefix + id
 	}
-	Pr("compileId, prefix:", Quoted(prefix), "id:", id, "returning:", out)
+	//Pr("compileId, prefix:", Quoted(prefix), "id:", id, "returning:", out)
 	return out
 }
 
@@ -634,7 +632,7 @@ func (s Session) BaseStateProvider() WidgetStateProvider {
 }
 
 func (s Session) SetBaseStateProvider(p WidgetStateProvider) {
-	Pr(Caller(), "SetBaseStateProvider to:", p)
+//	Pr(Caller(), "SetBaseStateProvider to:", p)
 	s.stateProvider = p
 }
 
@@ -687,7 +685,7 @@ func (s Session) WidgetBoolValue(w Widget) bool {
 // Read widget value; assumed to be a string.
 func (s Session) WidgetStringValue(w Widget) string {
 	p := orBaseProvider(s, w.StateProvider())
-	Pr("WidgetStringValue, id:", w.Id(), " stateProvider:", p)
+//	Pr("WidgetStringValue, id:", w.Id(), " stateProvider:", p)
 	return readStateStringValue(p, w.Id())
 }
 
