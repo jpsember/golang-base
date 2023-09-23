@@ -59,6 +59,7 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.Comments(`GridWidget`, w.IdSummary())
 	if len(w.children) != 0 {
 		m.TgOpen(`div class='row'`).TgContent()
+		Todo("!Have a special flag like invisible, but different, for widgets used for lists; we don't want them to appear in the container...")
 		for _, child := range w.children {
 			m.TgOpen(`div class="col-sm-`).A(child.Columns(), `"`)
 			if WidgetDebugRenderingFlag {

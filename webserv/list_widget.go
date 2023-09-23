@@ -195,6 +195,9 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				// [id of containing ListWidget].[id of item].[session.baseIdPrefix (?what for?)]
 				//
 				//s.baseIdPrefix = w.Id() + "." + IntToString(id) + "." + savedBaseIdPrefix
+
+				// Note that we are not calling RenderWidget(), which would not draw anything since the
+				// list item widget has been marked as invisible
 				w.itemWidget.RenderTo(s, m)
 			}
 			// Restore the default state provider to what it was before we rendered the items.

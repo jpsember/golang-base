@@ -77,6 +77,7 @@ func (p LandingPage) generateWidgets(sess Session) {
 
 		// Construct a widget to serve as the item widget
 
+		itemWidgetContainer := m.CurrentContainer()
 		itemWidget := m.Open()
 		{
 			Todo("!Lists shouldn't intercept actions from items, instead call the item listener(s)")
@@ -89,7 +90,10 @@ func (p LandingPage) generateWidgets(sess Session) {
 		itemWidget.SetTrace(true)
 
 		Todo("Instead of detaching list item widgets, make them invisible")
-		m.Detach(itemWidget)
+		itemWidget.SetVisible(false)
+		// Remove this widget from its container altogether... let us assume that container is the page widget?
+		// But this leaves a memory leak, as removing the children of the container will no longer remove the now orphaned widget...
+		itemWidgetContainer.RemoveChild(itemWidget)
 
 		y := m.AddList(NewExp(), itemWidget, func(sess Session, widget *ListWidgetStruct, itemId int, message string) {
 			Pr("!!! We shouldn't need these listeners...!!! Experiment item listener, itemId:", itemId, "message:", Quoted(message))

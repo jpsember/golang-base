@@ -243,6 +243,10 @@ func (m WidgetManager) resetPendingColumns() {
 	m.stackedState().pendingChildColumns = MaxColumns
 }
 
+func (m WidgetManager) CurrentContainer() Widget {
+	return m.stackedState().Parent
+}
+
 // Add a child GridContainerWidget, and push onto stack as active container
 func (m WidgetManager) Open() Widget {
 	m.Log("open")
@@ -327,6 +331,10 @@ func (m WidgetManager) AddPassword(listener InputWidgetListener) InputWidget {
 }
 
 func (m WidgetManager) AddList(list ListInterface, itemWidget Widget, listener ListWidgetListener) ListWidget {
+	if itemWidget.Visible() {
+		Alert("#50ListItem widget is visible! expected it to be invisible")
+		itemWidget.SetVisible(false)
+	}
 	id := m.consumeOptionalPendingId()
 	Pr("optional pending id:", id)
 	t := NewListWidget(id, list, itemWidget, listener)
