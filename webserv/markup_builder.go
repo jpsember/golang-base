@@ -165,7 +165,7 @@ func (b MarkupBuilder) processPrintEffect(v PrintEffect) {
 		b.DoIndent()
 	case OUTDENT:
 		b.DoOutdent()
-	case QUOTED:
+	case QUO:
 		b.pendingQuotes = true
 	case ESCAPED:
 		b.pendingEscape = true

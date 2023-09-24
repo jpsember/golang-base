@@ -82,9 +82,9 @@ type SessionStruct struct {
 
 	app any // ServerApp is stored here, will clean up later
 
-	widgetManager WidgetManager
-	stateProvider *WidgetStateProviderStruct
-	//baseIdPrefix  string // This is modified for special rendering operations, such as list items
+	widgetManager   WidgetManager
+	stateProvider   *WidgetStateProviderStruct
+	listenerContext any
 
 	// Current request variables
 	ResponseWriter         http.ResponseWriter
@@ -332,18 +332,16 @@ func (s Session) auxHandleAjax() {
 
 	// We are juggling two values:  the remainder from the id, and the ajaxValue.
 	// We will join them together (where they exist) with '.'
-	Todo("?What if some of the arguments have illegal values, e.g. starting with dots?")
 	value := DotJoin(remainder, widgetValueExpr)
-	s.ProcessWidgetValue(widget, value)
+	s.ProcessWidgetValue(widget, value, nil)
 }
 
-func (s Session) ProcessWidgetValue(widget Widget, value string) {
+func (s Session) ProcessWidgetValue(widget Widget, value string, context any) {
 	pr := PrIf("Session.ProcessWidgetValue", false)
+	pr("widget", widget.Id(), "value", QUO, value, "context", context)
+	s.listenerContext = context
 	updatedValue, err := widget.LowListener()(s, widget, value)
-
-	// The trouble is the widget we want to update is not necessarily the one we passed to the low listener.
-	// If it was a list, then that widget might have changed to a list item.
-	// Solution: have list call SetWidgetValue(...) on that widget, and return nil for an updated value.
+	s.listenerContext = nil
 	{
 		pr("LowListener returned updatedValue:", updatedValue, "err:", err)
 		if err != nil {
@@ -690,4 +688,9 @@ func (s Session) WidgetStringValue(w Widget) string {
 func (s Session) SetWidgetValue(w Widget, value any) {
 	p := orBaseProvider(s, w.StateProvider())
 	p.State.Put(compileId(p.Prefix, w.Id()), value)
+}
+
+// Get the context for the current listener.  For list items, this will be the list element id.
+func (s Session) Context() any {
+	return s.listenerContext
 }

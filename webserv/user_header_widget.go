@@ -31,14 +31,14 @@ const (
 )
 
 func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf("UserHeaderWidget", true)
+	pr := PrIf("UserHeaderWidget", false)
 	pr("RenderTo, widget id", w.Id(), "BaseId:", w.Id())
 	Todo("!Use new embedded widgets technique")
 	app := SessionApp(s)
 	user := app.UserForSession(s)
 	signedIn := user.Id() != 0
 
-	m.TgOpen(`div id=`).A(QUOTED, w.Id()).TgContent()
+	m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent()
 
 	// Adding a background image; I read this post: https://mdbootstrap.com/docs/standard/navigation/headers/
 	img := w.BgndImageMarkup

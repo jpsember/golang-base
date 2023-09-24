@@ -352,7 +352,7 @@ var INDENT = makeEffect(3)
 var OUTDENT = makeEffect(4)
 var VERT_SP = makeEffect(5)
 var RESET = makeEffect(6)
-var QUOTED = makeEffect(7)
+var QUO = makeEffect(7)
 var ESCAPED = makeEffect(8)
 
 func processPrintEffect(v PrintEffect, b *BasePrinter) {
@@ -371,7 +371,7 @@ func processPrintEffect(v PrintEffect, b *BasePrinter) {
 		b.contentBuffer.WriteString("\n\n\n\n")
 	case RESET:
 		b.ResetIndentation()
-	case QUOTED:
+	case QUO:
 		b.pendingQuoted = true
 	default:
 		Alert("#50Unsupported print effect, id:", v.value)

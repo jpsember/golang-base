@@ -44,7 +44,7 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	h := NewHtmlString(textContent)
 
-	m.TgOpen(`div id=`).A(QUOTED, s.PrependId(w.Id()))
+	m.TgOpen(`div id=`).A(QUO, s.PrependId(w.Id()))
 
 	if w.size != SizeDefault && w.size != SizeMedium {
 		m.Style(`font-size:`, textSize[w.size], `em;`)

@@ -110,7 +110,7 @@ func ExtractFirstDotArg(expr string) (string, string) {
 	pr("ExtractFirstDotArg")
 	var arg, remainder string
 	for {
-		pr("expression:", QUOTED, expr)
+		pr("expression:", QUO, expr)
 		dotPos := FirstDot(expr)
 		pr("dotPos:", dotPos)
 		if dotPos < 0 {
@@ -126,6 +126,6 @@ func ExtractFirstDotArg(expr string) (string, string) {
 			break
 		}
 	}
-	pr("returning:", QUOTED, arg, QUOTED, remainder)
+	pr("returning:", QUO, arg, QUO, remainder)
 	return arg, remainder
 }

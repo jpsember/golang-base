@@ -58,7 +58,7 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	id := s.PrependId(w.Id())
 
-	m.TgOpen(`div id=`).A(QUOTED, id).TgContent()
+	m.TgOpen(`div id=`).A(QUO, id).TgContent()
 
 	problemId := WidgetIdWithProblem(id)
 	auxId := id + `.aux`
@@ -82,7 +82,7 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 		m.A(` border-danger border-3`) // Adding border-3 makes the text shift a bit on error, maybe not desirable
 	}
 
-	m.A(`" type=`, QUOTED, Ternary(w.Password, "password", "text"), ` id="`, auxId, `" value="`)
+	m.A(`" type=`, QUO, Ternary(w.Password, "password", "text"), ` id="`, auxId, `" value="`)
 	m.A(ESCAPED, s.WidgetStringValue(w))
 	m.A(`" onchange="jsVal('`, id, `')"`).TgClose()
 

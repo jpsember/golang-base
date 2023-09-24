@@ -208,7 +208,7 @@ func (j JServer) writeHeader(bp MarkupBuilder) {
 	if false && j.TopPadding != 0 {
 		containerClass += "  pt-" + IntToString(j.TopPadding)
 	}
-	bp.Comments("page container").TgOpen(`div class=`).A(QUOTED, containerClass).TgContent()
+	bp.Comments("page container").TgOpen(`div class=`).A(QUO, containerClass).TgContent()
 }
 
 func (j JServer) sendFullPage(sess Session) {

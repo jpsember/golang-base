@@ -67,7 +67,7 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 	// Determine a unique prefix for this card's fields.
 	// Note that we do *don't* set any state providers until we know what this prefix is.  Specifically,
 	// we don't create a state provider at construction time.
-	w.ChildIdPrefix = m.AllocateAnonymousId("card_children.")
+	w.ChildIdPrefix = m.AllocateAnonymousId("card_children:")
 
 	// If we were given an actual animal, give this card's children a default state provider
 	if w.cardAnimal.Id() != 0 {

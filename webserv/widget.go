@@ -87,7 +87,7 @@ func RenderWidget(w Widget, s Session, m MarkupBuilder) {
 		Todo("!is it ok to render this as a void tag? Apparently not")
 		w.Log("RenderWidget, not visible;")
 		i := m.Len()
-		m.TgOpen(`div id=`).A(QUOTED, w.Id()).TgContent().TgClose()
+		m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent().TgClose()
 		w.Log("Markup:", INDENT, m.String()[i:])
 		//m.A(`<div id=`,QUOTED, w.Id(), `></div>`).Cr()
 	} else {

@@ -21,7 +21,7 @@ func (w HeadingWidget) RenderTo(s Session, m MarkupBuilder) {
 	textContent := s.WidgetStringValue(w)
 	tag := wsHeadingSize[w.Size()]
 	m.TgOpen(tag)
-	m.A(` id=`, QUOTED, w.Id())
+	m.A(` id=`, QUO, w.Id())
 
 	// Have some special handling for the Micro size; very small text, and right justified
 	if w.size == SizeMicro {
@@ -29,7 +29,7 @@ func (w HeadingWidget) RenderTo(s Session, m MarkupBuilder) {
 	}
 	tx := wsHeadingAlign[w.Align()]
 	if tx != "" {
-		m.A(` class=`, QUOTED, tx)
+		m.A(` class=`, QUO, tx)
 	}
 	m.TgContent()
 	m.A(ESCAPED, textContent)

@@ -82,12 +82,12 @@ func TestTag3(t *testing.T) {
 
 	m := webserv.NewMarkupBuilder()
 
-	m.Comment("checkbox").TgOpen(`div class=`).A(QUOTED, `abc`).TgContent()
+	m.Comment("checkbox").TgOpen(`div class=`).A(QUO, `abc`).TgContent()
 	{
-		m.TgOpen(`input class="form-check-input" type="checkbox" id=`).A(QUOTED, "auxid").TgClose()
+		m.TgOpen(`input class="form-check-input" type="checkbox" id=`).A(QUO, "auxid").TgClose()
 		{
 			m.Comment("Label").TgOpen(`label class="form-check-label" for=`)
-			m.A(QUOTED, "auxid").TgContent().A(ESCAPED, "fox & hound").TgClose()
+			m.A(QUO, "auxid").TgContent().A(ESCAPED, "fox & hound").TgClose()
 		}
 	}
 	m.TgClose()

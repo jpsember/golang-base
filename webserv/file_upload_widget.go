@@ -32,10 +32,10 @@ func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 
 	// The outermost element must have the widget's id!  Or chaos happens during repainting.
 
-	m.TgOpen(`div id=`).A(QUOTED, id, ` class="mb-3"`).TgContent()
+	m.TgOpen(`div id=`).A(QUO, id, ` class="mb-3"`).TgContent()
 	{
 
-		m.TgOpen(`form id=`).A(QUOTED, formId, ` enctype="multipart/form-data" method="post" `).TgContent()
+		m.TgOpen(`form id=`).A(QUO, formId, ` enctype="multipart/form-data" method="post" `).TgContent()
 
 		// I suspect the multipart/form-data has nothing to do with file uploads, but is for forms in general
 
@@ -43,14 +43,14 @@ func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 			labelHtml := w.Label
 			if labelHtml != nil {
 				m.Comment("Label")
-				m.TgOpen(`label for=`).A(QUOTED, inputId, ` class="form-label"`).Style(`font-size:70%`).TgContent()
+				m.TgOpen(`label for=`).A(QUO, inputId, ` class="form-label"`).Style(`font-size:70%`).TgContent()
 				m.Escape(labelHtml)
 				m.TgClose()
 			}
 		}
 
 		m.TgOpen(`input class="form-control" type="file" name=`)
-		m.A(QUOTED, inputName, ` id=`, QUOTED, inputId, ` onchange='jsUpload(`, QUOTED, w.Id(), `)'`)
+		m.A(QUO, inputName, ` id=`, QUO, inputId, ` onchange='jsUpload(`, QUO, w.Id(), `)'`)
 		m.TgClose()
 
 		problemId := WidgetIdWithProblem(w.Id())

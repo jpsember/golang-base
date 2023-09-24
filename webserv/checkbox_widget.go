@@ -67,13 +67,13 @@ func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 			role = ``
 		}
 
-		m.Comment("checkbox").TgOpen(`div class=`).A(QUOTED, cbClass).TgContent()
+		m.Comment("checkbox").TgOpen(`div class=`).A(QUO, cbClass).TgContent()
 		{
 			m.TgOpen(`input class="form-check-input" type="checkbox" id='`).A(auxId, `'`, role,
 				Ternary(s.WidgetBoolValue(w), ` checked`, ``),
 				` onclick="jsCheckboxClicked('`, s.PrependId(w.baseId), `')"`).TgClose()
 			{
-				m.Comment("Label").TgOpen(`label class="form-check-label" for=`).A(QUOTED, auxId).TgContent().Escape(w.Label).TgClose()
+				m.Comment("Label").TgOpen(`label class="form-check-label" for=`).A(QUO, auxId).TgContent().Escape(w.Label).TgClose()
 			}
 		}
 		m.TgClose()

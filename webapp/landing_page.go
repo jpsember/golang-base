@@ -91,20 +91,16 @@ func (p LandingPage) generateWidgets(sess Session) {
 		{
 			m.Id("alpha").Col(2).AddText()
 			m.Id("abba").Col(3).AddInput(func(sess Session, widget InputWidget, value string) (string, error) {
-				Pr("abba listener, id:", widget.Id(), "value:", value)
-				Pr("state provider:", sess.BaseStateProvider(), "widget provider:", widget.StateProvider())
+				Pr("abba listener, id:", widget.Id(), "value:", QUO, value, "context:", sess.Context())
 				return value, nil
 			})
 
 			m.Id("bravo").Col(2).Label("Hello").AddButton(func(sess Session, widget Widget, message string) {
-				Pr("Landing page, button listener, id:", widget.Id(), "message:", message)
-				Todo("It is cumbersome to have to figure out the list element id from the state provider callback. Use a 'context' arg?")
-				Pr("state provider:", sess.BaseStateProvider(), "widget provider:", widget.StateProvider())
+				Pr("Landing page, button listener, id:", widget.Id(), "message:", QUO, message, "context:", sess.Context())
 			})
 			m.Id("charlie").Col(5).Label("Option:").AddCheckbox(
 				func(sess Session, widget CheckboxWidget, state bool) (bool, error) {
-					Pr("Landing page, checkbox listener, id:", widget.Id(), "state:", state)
-					Pr("state provider:", sess.BaseStateProvider(), "widget provider:", widget.StateProvider())
+					Pr("Landing page, checkbox listener, id:", widget.Id(), "state:", state, "context:", sess.Context())
 					return state, nil
 				})
 		}

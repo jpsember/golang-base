@@ -15,7 +15,7 @@ type ListWidgetStruct struct {
 
 func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	pr := PrIf("list_widget.LowLevel listener", false)
-	pr("value:", QUOTED, value, "caller:", Caller())
+	pr("value:", QUO, value, "caller:", Caller())
 
 	b := widget.(ListWidget)
 
@@ -33,7 +33,7 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 		pr("remainder:", remainder, "value:", elementId, "err:", err)
 		if err != nil {
 			Alert("#50 trouble parsing int from:", value)
-			return nil, Error("trouble parsing int from:", QUOTED, value)
+			return nil, Error("trouble parsing int from:", QUO, value)
 		}
 		Todo("!Verify that the parsed value matches an id in the list")
 
@@ -49,7 +49,7 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 
 		if sourceWidget == nil {
 			Alert("#50Can't find source widget(s) for:", Quoted(sourceId), "; original value:", Quoted(value))
-			return nil, Error("can't find widget with id:", QUOTED, sourceId, "value was:", QUOTED, value)
+			return nil, Error("can't find widget with id:", QUO, sourceId, "value was:", QUO, value)
 		}
 		// Forward the message to that widget
 		Todo("!How do we distinguish between value actions (like text fields) and button presses?")
@@ -58,7 +58,7 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 		pv := b.list.ItemStateProvider(sess, elementId)
 		np := NewStateProvider(widget.Id()+"."+elementIdStr+"."+savedStateProvider.Prefix, pv.State)
 		sess.SetBaseStateProvider(np)
-		sess.ProcessWidgetValue(sourceWidget, remainder)
+		sess.ProcessWidgetValue(sourceWidget, remainder, elementId)
 		sess.SetBaseStateProvider(savedStateProvider)
 		// Fall through to return nil, nil
 	}
@@ -146,7 +146,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	pr("ListWidget.RenderTo")
 	m.Comment("ListWidget")
 
-	m.TgOpen(`div id=`).A(QUOTED, w.Id()).TgContent()
+	m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent()
 
 	if w.WithPageControls {
 		w.renderPagination(s, m)
