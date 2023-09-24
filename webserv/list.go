@@ -13,8 +13,7 @@ type ListInterface interface {
 	TotalPages() int
 	SetCurrentPage(pageNumber int)
 
-	// ItemStateProvider constructs a state provider xi for item i.  This function is called
-	// both when (a) rendering the item, and (b) about to call widget listeners for item i.
+	// ItemStateProvider constructs a state provider xi for item i.
 	// Child widgets within the item widget that already have explicit state providers
 	// will *not* use Xi.  <--- Actually, not sure about this last thing.
 	ItemStateProvider(s Session, elementId int) WidgetStateProvider

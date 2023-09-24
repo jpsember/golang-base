@@ -71,11 +71,7 @@ type ListWidget = *ListWidgetStruct
 // itemWidget : this is a widget that will be rendered for each displayed item
 func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget {
 	Todo("!Have option to wrap list items in a clickable div")
-
-	Todo("It is clunky having list listeners rely on session provider callback to store list element id; better to pass a 'context' arg in listeners?")
-
 	CheckArg(itemWidget != nil, "No itemWidget given")
-
 	w := ListWidgetStruct{
 		list:             list,
 		itemWidget:       itemWidget,
