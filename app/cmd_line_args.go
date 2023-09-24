@@ -343,7 +343,7 @@ type Option struct {
 	Description string
 	Invocation  string
 	BoolValue   bool
-	IntValue    int64
+	IntValue    int
 	FloatValue  float64
 	StringValue string
 }

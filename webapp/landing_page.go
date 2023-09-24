@@ -90,7 +90,6 @@ func (p LandingPage) generateWidgets(sess Session) {
 
 		itemWidget := m.Open()
 		{
-			Todo("!Lists shouldn't intercept actions from items, instead call the item listener(s)")
 			m.Id("alpha").Col(2).AddText()
 			m.Id("echo").Col(3).AddInput(func(sess Session, widget InputWidget, value string) (string, error) {
 				Pr("echo listener, id:", widget.Id(), "value:", value)

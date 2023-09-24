@@ -57,7 +57,7 @@ func (p PageArgs) Int() int {
 		p.SetProblem()
 	} else {
 		a := p.Next()
-		val, err := base.ParseInt2(a)
+		val, err := base.ParseInt(a)
 		if err != nil {
 			p.SetProblem()
 		} else {

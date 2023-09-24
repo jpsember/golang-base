@@ -289,7 +289,7 @@ func extractId(expr string) (string, string) {
 
 func (s Session) auxHandleAjax() {
 	pr := PrIf("auxHandleAjax", true)
-	pr("Session.auxHandleAjax")
+	pr(VERT_SP, "Session.auxHandleAjax")
 
 	didSomething := false
 
@@ -344,12 +344,19 @@ func (s Session) auxHandleAjax() {
 
 	value := joinWithDelimiter(remainder, widgetValueExpr)
 
+	Todo("move following code into separate function, as it is duplicated in list_widget")
 	pr("calling LowListener for id:", widget.Id(), "with value:", value)
 	updatedValue, err := widget.LowListener()(s, widget, value)
+
+	// The trouble is the widget we want to update is not necessarily the one we passed to the low listener.
+	// If it was a list, then that widget might have changed to a list item.
+	// Solution: have list call SetWidgetValue(...) on that widget, and return nil for an updated value.
 	{
+		pr("LowListener returned updatedValue:", updatedValue, "err:", err)
 		if err != nil {
 			Pr("got error from widget listener:", widget.Id(), INDENT, err)
 		} else if updatedValue != nil {
+			pr("setting widget value", widget.Id(), "to:", updatedValue)
 			s.SetWidgetValue(widget, updatedValue)
 		}
 	}

@@ -31,8 +31,8 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	remainder := ""
 	if c > 0 {
 		remainder = value[c+1:]
-		valStr := value[0:c]
-		elementId, err := ParseInt(valStr)
+		elementIdStr := value[0:c]
+		elementId, err := ParseInt(elementIdStr)
 		if err == nil {
 			Todo("!Verify that the parsed value matches an id in the list")
 		}
@@ -69,8 +69,31 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 		} else {
 			// Forward the message to that widget
 			Todo("!How do we distinguish between value actions (like text fields) and button presses?")
+			// Set up the same state provider that we did when rendering the widget
+			savedStateProvider := sess.BaseStateProvider()
+			pv := b.list.ItemStateProvider(sess, elementId)
+			np := NewStateProvider(widget.Id()+"."+elementIdStr+"."+savedStateProvider.Prefix, pv.State)
+			pr("forwarding message to widget", sourceWidget.Id(), "after replacing state provider with:", np)
+
+			// This doesn't quite work... clicking on the image is not having any effect.
+			// The heading and summary strings appear ok though.
+			sess.SetBaseStateProvider(np)
+			Todo("move following code into separate function, as it is duplicated in session.go")
 			newVal, err := sourceWidget.LowListener()(sess, sourceWidget, fwdValue)
-			return newVal, err
+			// Do the update code that we would normally do in auxHandleAjax, to update this other widget instead.
+			{
+				pr("wrapped widget's low listener returned updated value", newVal, "and err", err)
+				if err != nil {
+					Pr("got error from widget listener:", sourceWidget.Id(), INDENT, err)
+				} else if newVal != nil {
+					pr("setting widget value", sourceWidget.Id(), "to:", newVal)
+					sess.SetWidgetValue(sourceWidget, newVal)
+				}
+			}
+			sess.SetWidgetProblem(sourceWidget.Id(), err)
+			sess.SetBaseStateProvider(savedStateProvider)
+			// Return nil,nil since we handled the value ourselves
+			return nil, nil
 		}
 	}
 	return "", nil
