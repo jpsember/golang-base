@@ -621,13 +621,12 @@ func orBaseProvider(s Session, p WidgetStateProvider) WidgetStateProvider {
 	return p
 }
 
+// If the id has the prefix, remove it.
 func compileId(prefix string, id string) string {
-	// If the id has the prefix, remove it
 	var out string
 	if result, removed := TrimIfPrefix(id, prefix); removed {
 		out = result
 	} else {
-		Alert("Only SUBTRACTING")
 		out = id
 	}
 	//Pr("compileId, prefix:", Quoted(prefix), "id:", id, "returning:", out)

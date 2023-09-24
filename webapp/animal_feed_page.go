@@ -63,7 +63,8 @@ func (p FeedPage) generateWidgets(s Session) {
 		m.Id("experiment")
 	}
 
-	listWidget := m.AddList(animalList, cardWidget, p.listListener)
+	Alert("Due to refactor, p.listListener no longer used in list construction")
+	listWidget := m.AddList(animalList, cardWidget)
 	if Experiment {
 		listWidget.WithPageControls = false
 	}

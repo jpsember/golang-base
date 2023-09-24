@@ -12,13 +12,10 @@ type ListWidgetStruct struct {
 	itemWidget       Widget
 	pagePrefix       string
 	WithPageControls bool
-	listener         ListWidgetListener
 }
 
-type ListWidgetListener func(sess Session, widget *ListWidgetStruct, itemId int, args string)
-
 func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
-	pr := PrIf("", true)
+	pr := PrIf("list_widget.LowLevel listener", true)
 	pr("listListenWrapper, value:", Quoted(value), "caller:", Caller())
 
 	b := widget.(ListWidget)
@@ -30,7 +27,6 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	}
 
 	// This is presumably something like <element id> '.' <remainder>
-	itemId := -1
 	c := strings.IndexByte(value, '.')
 	remainder := ""
 	if c > 0 {
@@ -43,14 +39,12 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 		pr("remainder:", remainder, "value:", val, "err:", err)
 		if err != nil {
 			Alert("#50 trouble parsing int from:", value)
-		} else {
-			itemId = int(val)
 		}
 
 		// Look for a widget (presumably within the original ListItem widget) with the extracted id.
 		// If the value is "xxx.yyy.zzz" and we don't find such a widget, look for "xxx.yyy" and pass "zzz" as the value
 
-    Todo("Have some constraints on widget ids so we don't use ., so that they can safely be delimiters here")
+		Todo("Have some constraints on widget ids so we don't use ., so that they can safely be delimiters here")
 
 		expr := remainder
 		fwdValue := ""
@@ -74,17 +68,10 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 			Alert("#50Can't find source widget(s) for:", Quoted(remainder), "; original value:", Quoted(value))
 		} else {
 			// Forward the message to that widget
-			Todo("How do we distinguish between value actions (like text fields) and button presses?")
+			Todo("!How do we distinguish between value actions (like text fields) and button presses?")
 			newVal, err := sourceWidget.LowListener()(sess, sourceWidget, fwdValue)
-			Pr("sourceWidget lowlistener returned:", newVal, err)
 			return newVal, err
 		}
-	}
-
-	if b.listener == nil {
-		Alert("#50No ListListener registered; itemId:", itemId, "args:", remainder)
-	} else {
-		b.listener(sess, b, itemId, remainder)
 	}
 	return "", nil
 }
@@ -94,7 +81,7 @@ type ListWidget = *ListWidgetStruct
 // Construct a ListWidget.
 //
 // itemWidget : this is a widget that will be rendered for each displayed item
-func NewListWidget(id string, list ListInterface, itemWidget Widget, listener ListWidgetListener) ListWidget {
+func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget {
 	Todo("!Have option to wrap list items in a clickable div")
 	CheckArg(itemWidget != nil, "No itemWidget given")
 
@@ -102,7 +89,6 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, listener Li
 		list:             list,
 		itemWidget:       itemWidget,
 		WithPageControls: true,
-		listener:         listener,
 	}
 	w.InitBase(id)
 	w.LowListen = listListenWrapper
@@ -164,7 +150,7 @@ func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, ta
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf("ListWidget.RenderTo", true)
+	pr := PrIf("ListWidget.RenderTo", false)
 	pr("ListWidget.RenderTo")
 	m.Comment("ListWidget")
 
@@ -185,19 +171,13 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 			savedStateProvider := s.BaseStateProvider()
 
-			Todo("What is savedBaseIdPrefix used for?  Can't this just be the BaseStateProvider?")
-			//savedBaseIdPrefix := s.baseIdPrefix
-
 			pr(VERT_SP, "saved pv:", INDENT, savedStateProvider)
-
-			Todo("I think we want to send list *item* messages to the list item widget's handler, with message to include the list item id")
 
 			for _, id := range elementIds {
 				m.Comment("----------------- rendering list item with id:", id)
 
 				pv := w.list.ItemStateProvider(s, id)
 				pr("itm pv:", INDENT, pv)
-				Todo("what is the prefix returned by the list item state provider?")
 				np := NewStateProvider(w.Id()+"."+IntToString(id)+"."+savedStateProvider.Prefix, pv.State)
 				pr("replacing with:", INDENT, np)
 

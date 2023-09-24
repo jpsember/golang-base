@@ -46,6 +46,7 @@ func (p LandingPage) Args() []string { return nil }
 
 type ExpStruct struct {
 	BasicListStruct
+	itemStates map[int]JSMap
 }
 
 type Exp = *ExpStruct
@@ -54,6 +55,7 @@ func NewExp() Exp {
 	t := &ExpStruct{}
 	t.ElementIds = []int{17, 42, 93, 61, 18, 29, 70}
 	t.ElementsPerPage = 3
+	t.itemStates = make(map[int]JSMap)
 	return t
 }
 
@@ -61,8 +63,19 @@ func NewExp() Exp {
 // Child widgets within the item widget that already have explicit state providers
 // will *not* use Xi.
 func (x Exp) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
-  Todo("Have some actual state persisting for elements, to verify checkboxes etc are working")
-	return NewStateProvider("", NewJSMap().Put("alpha", "#"+IntToString(elementId)).Put("charlie", true))
+	j := x.itemStates[elementId]
+	if j == nil {
+		j = NewJSMap().Put("alpha", "#"+IntToString(elementId)).Put("charlie", true)
+		x.itemStates[elementId] = j
+	}
+	Todo("Have some actual state persisting for elements, to verify checkboxes etc are working")
+	return NewStateProvider("", j)
+}
+
+func (p LandingPage) experimentButtonListener(sess Session, widget Widget, message string) {
+	Pr("Landing page, button listener, id:", widget.Id(), "message:", message)
+	Pr("how do we determine the list item?")
+	Pr("state provider:", sess.BaseStateProvider())
 }
 
 func (p LandingPage) generateWidgets(sess Session) {
@@ -81,21 +94,17 @@ func (p LandingPage) generateWidgets(sess Session) {
 		{
 			Todo("!Lists shouldn't intercept actions from items, instead call the item listener(s)")
 			m.Id("alpha").Col(5).AddText()
-			m.Id("bravo").Col(2).Label("Hello").AddButton(func(sess Session, widget Widget, message string) {
-				Pr("button listener, id:", widget.Id(), "message:", message)
-			})
+			m.Id("bravo").Col(2).Label("Hello").AddButton(p.experimentButtonListener)
 			m.Id("charlie").Col(5).Label("Option:").AddCheckbox(
 				func(sess Session, widget CheckboxWidget, state bool) (bool, error) {
-					Pr("checkbox listener, id:", widget.Id(), "state:", state)
+					Pr("Landing page, checkbox listener, id:", widget.Id(), "state:", state)
 					return state, nil
 				})
 		}
 		m.Close()
 		itemWidget.SetVisible(false)
 
-		y := m.AddList(NewExp(), itemWidget, func(sess Session, widget *ListWidgetStruct, itemId int, message string) {
-			Pr("!!! We shouldn't need these listeners...!!! Experiment item listener, itemId:", itemId, "message:", Quoted(message))
-		})
+		y := m.AddList(NewExp(), itemWidget)
 		y.WithPageControls = false
 	}
 

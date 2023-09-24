@@ -37,7 +37,7 @@ func NewCheckboxWidget(switchFlag bool, id string, label HtmlString, listener Ch
 }
 
 func checkboxListenWrapper(sess Session, widget Widget, value string) (any, error) {
-	pr := PrIf("checkboxListenWrapper", true)
+	pr := PrIf("checkboxListenWrapper", false)
 	highLevelListener := widget.(CheckboxWidget)
 	boolValue := false
 	Todo("!Add support for QUO in BasePrinter")

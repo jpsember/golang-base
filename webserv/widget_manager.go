@@ -75,6 +75,9 @@ func (m WidgetManager) consumePendingId() string {
 	id := m.pendingId
 	CheckNonEmpty(id, "no pending id")
 	m.pendingId = ""
+	if strings.IndexByte(id, '.') >= 0 {
+		Alert("#50Soon to be illegal widget id: " + id)
+	}
 	return id
 }
 func (m WidgetManager) consumeOptionalPendingId() string {
@@ -326,14 +329,13 @@ func (m WidgetManager) AddPassword(listener InputWidgetListener) InputWidget {
 	return m.auxAddInput(listener, true)
 }
 
-func (m WidgetManager) AddList(list ListInterface, itemWidget Widget, listener ListWidgetListener) ListWidget {
+func (m WidgetManager) AddList(list ListInterface, itemWidget Widget) ListWidget {
 	if itemWidget.Visible() {
 		Alert("#50ListItem widget is visible! expected it to be invisible")
 		itemWidget.SetVisible(false)
 	}
 	id := m.consumeOptionalPendingId()
-	Pr("optional pending id:", id)
-	t := NewListWidget(id, list, itemWidget, listener)
+	t := NewListWidget(id, list, itemWidget)
 	m.Add(t)
 	return t
 }

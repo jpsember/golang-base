@@ -80,7 +80,8 @@ func (p ManagerPage) generateWidgets(sess Session) {
 		m.Id("experiment")
 	}
 	Todo("!document how the list forwards clicks related to items on to the list listener")
-	m.AddList(animalList, cardWidget, p.listListener)
+	Alert("Due to refactor, p.listListener no longer used in list construction")
+	m.AddList(animalList, cardWidget)
 }
 
 func (p ManagerPage) listListener(sess Session, widget *ListWidgetStruct, itemId int, args string) {

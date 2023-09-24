@@ -84,7 +84,7 @@ func WidgetIdWithProblem(id string) string {
 // Call w.RenderTo(...) iff the widget is visible, otherwise render an empty div with the widget's id.
 func RenderWidget(w Widget, s Session, m MarkupBuilder) {
 	if !w.Visible() {
-		Todo("is it ok to render this as a void tag? Apparently not")
+		Todo("!is it ok to render this as a void tag? Apparently not")
 		w.Log("RenderWidget, not visible;")
 		i := m.Len()
 		m.TgOpen(`div id=`).A(QUOTED, w.Id()).TgContent().TgClose()
