@@ -564,10 +564,13 @@ func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
 // ------------------------------------------------------------------------------------
 
 func (s Session) SwitchToPage(page Page) {
-	//Pr("SwitchToPage:", page.Name(), "from:", Caller())
+	Pr("SwitchToPage:", page.Name(), "from:", Caller())
+	Pr("manager widget ids:", INDENT, s.WidgetManager().IdSummary())
 	s.Repaint(s.PageWidget)
 	s.browserURLExpr = s.ConstructPathFromPage(page)
 	s.debugPage = page
+	Pr("after switching, ids:", INDENT, s.WidgetManager().IdSummary())
+
 }
 
 func (s Session) NewBrowserPath() string {
@@ -650,7 +653,7 @@ func readStateBoolValue(p WidgetStateProvider, id string) bool {
 // Read widget value; assumed to be a string.
 func readStateStringValue(p WidgetStateProvider, id string) string {
 	key := compileId(p.Prefix, id)
-	if Alert("checking") {
+	if Alert("checking for non-existent key") {
 		if !p.State.HasKey(key) {
 			Pr("State has no key", QUO, key, " (id ", QUO, id, "), state:", INDENT, p.State)
 			Pr("prefix:", p.Prefix)

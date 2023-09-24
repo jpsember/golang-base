@@ -171,7 +171,7 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	id := widget.Id()
 	if id != "" {
 		if m.Exists(id) {
-			BadState("<1Attempt to add widget with duplicate id:", id)
+			BadState("<1Attempt to add widget with duplicate id:", id, "widget ids:", m.IdSummary())
 		}
 		m.widgetMap[id] = widget
 	}
@@ -199,6 +199,7 @@ func (m WidgetManager) stackedState() *mgrState {
 
 // Detach a widget that has just been constructed from the WidgetManager and its container.
 func (m WidgetManager) Detach(widget Widget) Widget {
+	BadState("Detach shouldn't be called anymore")
 	result := m.Opt(widget.Id())
 	if result == nil {
 		BadArg("Cannot detach widget; not in manager set:", widget.Id())
@@ -531,4 +532,12 @@ func (m WidgetManager) EndConstruction(expectedStackSize int) {
 	if len(m.stack) != expectedStackSize {
 		BadState("expected state stack to be at", expectedStackSize, "but is at", len(m.stack), INDENT, m.dumpStateStack(expectedStackSize))
 	}
+}
+
+func (m WidgetManager) IdSummary() JSList {
+	js := NewJSList()
+	for k := range m.widgetMap {
+		js.Add(k)
+	}
+	return js
 }

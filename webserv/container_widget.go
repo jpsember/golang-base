@@ -42,6 +42,7 @@ func (w GridWidget) AddChild(c Widget, manager WidgetManager) {
 }
 
 func (w GridWidget) RemoveChild(c Widget) {
+	Die("probably shouldn't be necessary")
 	for index, child := range w.children {
 		if child == c {
 			w.children = DeleteSliceElements(w.children, index, 1)

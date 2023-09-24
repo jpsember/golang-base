@@ -325,8 +325,10 @@ func (p AnimalDetailPage) writeStateToAnimal(s Session, b AnimalBuilder) {
 }
 
 func (p AnimalDetailPage) exit(s Session) {
+	Todo("I suspect the widgetManager is still holding onto ids from the current page, and maybe switching doesn't remove them?")
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
 	var page Page
+	Pr("attempting to switch to new feed page? ids:", INDENT, s.WidgetManager().IdSummary())
 	if SessionUser(s).UserClass() == UserClassDonor {
 		page = NewFeedPage(s)
 	} else {

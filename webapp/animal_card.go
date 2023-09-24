@@ -19,6 +19,7 @@ type AnimalCardStruct struct {
 
 type AnimalCard = *AnimalCardStruct
 
+// Note: If card is a list item, the widget's Animal() might not be accurate!
 type CardWidgetListener func(sess Session, widget AnimalCard, arg string)
 
 func (w AnimalCard) Animal() Animal {
@@ -46,7 +47,7 @@ func NewAnimalCard(widgetId string, animal Animal, cardListener CardWidgetListen
 }
 
 func (w AnimalCard) lowLevelListener(sess Session, widget Widget, value string) (any, error) {
-	pr := PrIf("cardListenWrapper", false)
+	pr := PrIf("cardListenWrapper", true)
 	pr("calling listener for id", QUO, w.Id(), "value", QUO, value)
 	Todo("!Is the listener 'value' necessary?")
 	if w.cardListener != nil {

@@ -49,7 +49,9 @@ func (p FeedPage) generateWidgets(s Session) {
 		// Construct the list item widget
 		w := NewAnimalCard(m.AllocateAnonymousId("feedcard"), DefaultAnimal,
 			func(sess Session, widget AnimalCard, arg string) {
-				p.attemptSelectAnimal(sess, widget.Animal().Id())
+				animalId := sess.Context().(int)
+				Pr("card listener, animal id:", animalId, "arg:", arg)
+				p.attemptSelectAnimal(sess, animalId)
 			},
 			"", nil)
 
@@ -88,6 +90,8 @@ func (p FeedPage) attemptSelectAnimal(s Session, id int) bool {
 		Alert("#50trouble reading animal:", id)
 		return false
 	}
+	Alert("switching to NewViewAnimalPage for animal:", INDENT, animal)
+	Alert("I think some widgets are not being removed from the map")
 	s.SwitchToPage(NewViewAnimalPage(s, animal.Id()))
 	return true
 }
