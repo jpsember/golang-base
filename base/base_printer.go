@@ -4,7 +4,6 @@ package base
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 )
 
@@ -46,6 +45,7 @@ type BasePrinter struct {
 	column        int
 	maxColumn     int
 	pendingBreak  int
+	pendingQuoted bool
 	contentBuffer strings.Builder
 }
 
@@ -155,7 +155,11 @@ func (b *BasePrinter) Append(value any) {
 	case nil:
 		b.AppendString("<nil>")
 	case string:
-		b.AppendString(v)
+		if b.pendingQuoted {
+			b.AppendString(Quoted(v))
+		} else {
+			b.AppendString(v)
+		}
 	case int: // We aren't sure if it's 32 or 64, so choose 64
 		b.AppendLong(int64(v))
 	case int32:
@@ -185,13 +189,8 @@ func (b *BasePrinter) Append(value any) {
 	case PrintEffect:
 		processPrintEffect(v, b)
 	default:
-		q := reflect.TypeOf(v)
 		// Fall back on using fmt.Sprint()
-		if false {
-			b.AppendString("???" + q.String() + "???" + fmt.Sprint(v))
-		} else {
-			b.AppendString(fmt.Sprint(v))
-		}
+		b.AppendString(fmt.Sprint(v))
 	}
 }
 
@@ -240,6 +239,7 @@ func (b *BasePrinter) AppendString(str string) *BasePrinter {
 		b.Cr()
 		str = str[1+nextCrLocation:]
 	}
+	b.pendingQuoted = false
 	return b
 }
 
@@ -332,28 +332,6 @@ func (b *BasePrinter) formatLong(longVal int64, fixedWidth int) {
 	b.AppendString(spaces + signChar + digits)
 }
 
-// // ---------------------------------------------------------------------------------------
-// // Plugging in handlers for client types
-// // ---------------------------------------------------------------------------------------
-
-// // A function that clients can register with the BasePrinter class(?) to
-// // allow printer to handle types it doesn't know about at compile time.
-// //
-// // The 'any' argument should have the type that the handler is prepared
-// // to convert to a string.
-// type BasePrintableFunc func(any) string
-
-// // Register a handler such that BasePrinters will call the handler to
-// // convert values of the same type as value to a string to be printed.
-// func RegisterBasePrinterType(value any, handler BasePrintableFunc) {
-// 	valueType := reflect.TypeOf(value)
-// 	_, exists := handlerMap[valueType]
-// 	CheckState(!exists, "handler already exists")
-// 	handlerMap[valueType] = handler
-// }
-
-// var handlerMap = make(map[any]BasePrintableFunc)
-
 // ---------------------------------------------------------------------------------------
 // Singleton objects that have effects when included in a BasePrinter.pr() argument list
 // ---------------------------------------------------------------------------------------
@@ -393,5 +371,9 @@ func processPrintEffect(v PrintEffect, b *BasePrinter) {
 		b.contentBuffer.WriteString("\n\n\n\n")
 	case RESET:
 		b.ResetIndentation()
+	case QUOTED:
+		b.pendingQuoted = true
+	default:
+		Alert("#50Unsupported print effect, id:", v.value)
 	}
 }

@@ -2,7 +2,6 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"strings"
 )
 
 // A Widget that displays editable text
@@ -15,8 +14,8 @@ type ListWidgetStruct struct {
 }
 
 func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
-	pr := PrIf("list_widget.LowLevel listener", true)
-	pr("listListenWrapper, value:", Quoted(value), "caller:", Caller())
+	pr := PrIf("list_widget.LowLevel listener", false)
+	pr("value:", QUOTED, value, "caller:", Caller())
 
 	b := widget.(ListWidget)
 
@@ -26,13 +25,10 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 		return nil, nil
 	}
 
-	// This is presumably something like <element id> '.' <remainder>
-	Todo("Usewidget value parser utility function(s) for this")
-	c := strings.IndexByte(value, '.')
-	remainder := ""
-	if c > 0 {
-		remainder = value[c+1:]
-		elementIdStr := value[0:c]
+	// We expect a value to be <element id> ['.' <remainder>]*
+
+	elementIdStr, remainder := ExtractFirstDotArg(value)
+	if elementIdStr != "" {
 		elementId, err := ParseInt(elementIdStr)
 		if err == nil {
 			Todo("!Verify that the parsed value matches an id in the list")
@@ -45,26 +41,15 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 		// Look for a widget (presumably within the original ListItem widget) with the extracted id.
 		// If the value is "xxx.yyy.zzz" and we don't find such a widget, look for "xxx.yyy" and pass "zzz" as the value
 
-		expr := remainder
-		fwdValue := ""
 		var sourceWidget Widget
-
-		for {
-			sourceId := expr
+		var sourceId string
+		sourceId, remainder = ExtractFirstDotArg(remainder)
+		if sourceId != "" {
 			sourceWidget = sess.WidgetManager().Opt(sourceId)
-			if sourceWidget != nil {
-				break
-			}
-			i := strings.LastIndexByte(expr, '.')
-			if i < 0 {
-				break
-			}
-			fwdValue = expr[i+1:]
-			expr = expr[0:i]
 		}
 
 		if sourceWidget == nil {
-			Alert("#50Can't find source widget(s) for:", Quoted(remainder), "; original value:", Quoted(value))
+			Alert("#50Can't find source widget(s) for:", Quoted(sourceId), "; original value:", Quoted(value))
 		} else {
 			// Forward the message to that widget
 			Todo("!How do we distinguish between value actions (like text fields) and button presses?")
@@ -73,13 +58,12 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 			pv := b.list.ItemStateProvider(sess, elementId)
 			np := NewStateProvider(widget.Id()+"."+elementIdStr+"."+savedStateProvider.Prefix, pv.State)
 			sess.SetBaseStateProvider(np)
-			sess.ProcessWidgetValue(sourceWidget, fwdValue)
+			sess.ProcessWidgetValue(sourceWidget, remainder)
 			sess.SetBaseStateProvider(savedStateProvider)
-			// Return nil,nil since we have already processed the widget value
-			return nil, nil
+			// Fall through to return nil, nil
 		}
 	}
-	return "", nil
+	return nil, nil
 }
 
 type ListWidget = *ListWidgetStruct

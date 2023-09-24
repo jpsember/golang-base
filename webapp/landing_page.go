@@ -63,14 +63,14 @@ func NewExp() Exp {
 // Child widgets within the item widget that already have explicit state providers
 // will *not* use Xi.
 func (x Exp) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
-	pr := PrIf("Exp.ItemStateProvider", true)
+	pr := PrIf("Exp.ItemStateProvider", false)
 	j := x.itemStates[elementId]
 	if j == nil {
 		j = NewJSMap().Put("alpha", "#"+IntToString(elementId)).Put("charlie", true)
 		x.itemStates[elementId] = j
 	}
 	result := NewStateProvider("", j)
-	Todo("figure out if padding ints in BasePrinter is desired behavior.")
+	Todo("!figure out if padding ints in BasePrinter is desired behavior.")
 	pr("element id:", elementId, "returning:", result)
 	return result
 }

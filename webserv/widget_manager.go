@@ -68,8 +68,7 @@ func (m WidgetManager) find(id string) Widget {
 
 func (m WidgetManager) Id(id string) WidgetManager {
 	v := m.IdPrefix() + id
-	Todo("use utility function here")
-	if strings.IndexByte(v, '.') >= 0 {
+	if FirstDot(v) >= 0 {
 		BadArg("Don't use periods in widget ids:", Quoted(v))
 	}
 	m.pendingId = v

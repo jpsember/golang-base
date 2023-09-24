@@ -1019,8 +1019,9 @@ func Truncated(arg any) string {
 	}
 }
 func trunc(x string) string {
-	if len(x) > 40 {
-		return x[0:40] + "..."
+	const maxLen = 75
+	if len(x) > maxLen {
+		return x[0:maxLen] + "..."
 	}
 	return x
 }

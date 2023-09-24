@@ -2,6 +2,7 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"strings"
 )
 
 // Escaper interface performs html escaping on its argument
@@ -81,4 +82,50 @@ func InferContentTypeFromBlob(data []byte) string {
 		result = "application/octet-stream"
 	}
 	return result
+}
+
+const DOT_DELIMITER = '.'
+
+func FirstDot(expr string) int {
+	return strings.IndexByte(expr, DOT_DELIMITER)
+}
+
+// Join nonempty strings with '.' delimiter; if no nonempty strings, return "".
+func DotJoin(args ...string) string {
+	s := strings.Builder{}
+	for _, arg := range args {
+		if arg != "" {
+			if s.Len() != 0 {
+				s.WriteByte(DOT_DELIMITER)
+			}
+			s.WriteString(arg)
+		}
+	}
+	return s.String()
+}
+
+// Extract the first argument from a dotted expression (xxxx.yyyy.zzzz) and return xxxx, yyyy.zzzz; or "","" if none exist
+func ExtractFirstDotArg(expr string) (string, string) {
+	pr := PrIf("ExtractFirstDotArg", false)
+	pr("ExtractFirstDotArg")
+	var arg, remainder string
+	for {
+		pr("expression:", QUOTED, expr)
+		dotPos := FirstDot(expr)
+		pr("dotPos:", dotPos)
+		if dotPos < 0 {
+			arg, remainder = expr, ""
+			break
+		}
+		// If there's a leading dot, remove it and repeat (so we don't return an empty argument unless there are no more)
+		if dotPos == 0 {
+			pr("leading dot")
+			expr = expr[1:]
+		} else {
+			arg, remainder = expr[0:dotPos], expr[dotPos+1:]
+			break
+		}
+	}
+	pr("returning:", QUOTED, arg, QUOTED, remainder)
+	return arg, remainder
 }

@@ -279,17 +279,8 @@ func (s Session) parseAjaxRequest() {
 	}
 }
 
-func extractId(expr string) (string, string) {
-	Todo("Use utility functions here")
-	dotPos := strings.IndexByte(expr, '.')
-	if dotPos >= 0 {
-		return expr[0:dotPos], expr[dotPos+1:]
-	}
-	return expr, ""
-}
-
 func (s Session) auxHandleAjax() {
-	pr := PrIf("auxHandleAjax", true)
+	pr := PrIf("auxHandleAjax", false)
 	pr(VERT_SP, "Session.auxHandleAjax")
 
 	didSomething := false
@@ -316,7 +307,8 @@ func (s Session) auxHandleAjax() {
 	// See if the id expression has the form <widget id> '.' <remainder>.
 	// If so, treat <remainder>. as prefix for widget value
 
-	id, remainder := extractId(widgetIdExpr)
+	Todo("better to accept bad input, like lots of dots or empty strings, and handle gracefully")
+	id, remainder := ExtractFirstDotArg(widgetIdExpr)
 	pr("id:", id, "remainder:", remainder)
 
 	widgetValueExpr := s.ajaxWidgetValue
@@ -341,12 +333,13 @@ func (s Session) auxHandleAjax() {
 
 	// We are juggling two values:  the remainder from the id, and the ajaxValue.
 	// We will join them together (where they exist) with '.'
-	value := joinWithDelimiter(remainder, widgetValueExpr)
+	Todo("?What if some of the arguments have illegal values, e.g. starting with dots?")
+	value := DotJoin(remainder, widgetValueExpr)
 	s.ProcessWidgetValue(widget, value)
 }
 
 func (s Session) ProcessWidgetValue(widget Widget, value string) {
-	pr := PrIf("Session.ProcessWidgetValue", true)
+	pr := PrIf("Session.ProcessWidgetValue", false)
 	updatedValue, err := widget.LowListener()(s, widget, value)
 
 	// The trouble is the widget we want to update is not necessarily the one we passed to the low listener.
@@ -365,21 +358,6 @@ func (s Session) ProcessWidgetValue(widget Widget, value string) {
 	s.SetWidgetProblem(widget.Id(), err)
 }
 
-// Join nonempty strings with '.' delimiter; if no nonempty strings, return "".
-func joinWithDelimiter(args ...string) string {
-	s := strings.Builder{}
-	for _, arg := range args {
-		if arg != "" {
-			s.WriteByte('.')
-			s.WriteString(arg)
-		}
-	}
-	w := s.String()
-	if w != "" {
-		w = w[1:]
-	}
-	return w
-}
 func (s Session) processClientInfo(infoString string) {
 	json, err := JSMapFromString(infoString)
 	if err != nil {
