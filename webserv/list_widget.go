@@ -30,13 +30,12 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	elementIdStr, remainder := ExtractFirstDotArg(value)
 	if elementIdStr != "" {
 		elementId, err := ParseInt(elementIdStr)
-		if err == nil {
-			Todo("!Verify that the parsed value matches an id in the list")
-		}
 		pr("remainder:", remainder, "value:", elementId, "err:", err)
 		if err != nil {
 			Alert("#50 trouble parsing int from:", value)
+			return nil, Error("trouble parsing int from:", QUOTED, value)
 		}
+		Todo("!Verify that the parsed value matches an id in the list")
 
 		// Look for a widget (presumably within the original ListItem widget) with the extracted id.
 		// If the value is "xxx.yyy.zzz" and we don't find such a widget, look for "xxx.yyy" and pass "zzz" as the value
@@ -50,18 +49,18 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 
 		if sourceWidget == nil {
 			Alert("#50Can't find source widget(s) for:", Quoted(sourceId), "; original value:", Quoted(value))
-		} else {
-			// Forward the message to that widget
-			Todo("!How do we distinguish between value actions (like text fields) and button presses?")
-			// Set up the same state provider that we did when rendering the widget
-			savedStateProvider := sess.BaseStateProvider()
-			pv := b.list.ItemStateProvider(sess, elementId)
-			np := NewStateProvider(widget.Id()+"."+elementIdStr+"."+savedStateProvider.Prefix, pv.State)
-			sess.SetBaseStateProvider(np)
-			sess.ProcessWidgetValue(sourceWidget, remainder)
-			sess.SetBaseStateProvider(savedStateProvider)
-			// Fall through to return nil, nil
+			return nil, Error("can't find widget with id:", QUOTED, sourceId, "value was:", QUOTED, value)
 		}
+		// Forward the message to that widget
+		Todo("!How do we distinguish between value actions (like text fields) and button presses?")
+		// Set up the same state provider that we did when rendering the widget
+		savedStateProvider := sess.BaseStateProvider()
+		pv := b.list.ItemStateProvider(sess, elementId)
+		np := NewStateProvider(widget.Id()+"."+elementIdStr+"."+savedStateProvider.Prefix, pv.State)
+		sess.SetBaseStateProvider(np)
+		sess.ProcessWidgetValue(sourceWidget, remainder)
+		sess.SetBaseStateProvider(savedStateProvider)
+		// Fall through to return nil, nil
 	}
 	return nil, nil
 }
