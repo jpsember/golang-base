@@ -243,10 +243,6 @@ func (m WidgetManager) resetPendingColumns() {
 	m.stackedState().pendingChildColumns = MaxColumns
 }
 
-func (m WidgetManager) CurrentContainer() Widget {
-	return m.stackedState().Parent
-}
-
 // Add a child GridContainerWidget, and push onto stack as active container
 func (m WidgetManager) Open() Widget {
 	m.Log("open")

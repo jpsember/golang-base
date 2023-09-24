@@ -61,7 +61,8 @@ func NewExp() Exp {
 // Child widgets within the item widget that already have explicit state providers
 // will *not* use Xi.
 func (x Exp) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
-	return NewStateProvider("", NewJSMap().Put("alpha", "#"+IntToString(elementId)))
+  Todo("Have some actual state persisting for elements, to verify checkboxes etc are working")
+	return NewStateProvider("", NewJSMap().Put("alpha", "#"+IntToString(elementId)).Put("charlie", true))
 }
 
 func (p LandingPage) generateWidgets(sess Session) {
@@ -73,27 +74,24 @@ func (p LandingPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)
 
 	if Alert("!Doing an experiment with lists") {
-		Alert("List item widgets have to have distinct ids for each item")
 
 		// Construct a widget to serve as the item widget
 
-		itemWidgetContainer := m.CurrentContainer()
 		itemWidget := m.Open()
 		{
 			Todo("!Lists shouldn't intercept actions from items, instead call the item listener(s)")
-			m.Id("alpha").Col(6).AddText()
-			m.Id("bravo").Col(6).Label("Hello").AddButton(func(sess Session, widget Widget, message string) {
+			m.Id("alpha").Col(5).AddText()
+			m.Id("bravo").Col(2).Label("Hello").AddButton(func(sess Session, widget Widget, message string) {
 				Pr("button listener, id:", widget.Id(), "message:", message)
 			})
+			m.Id("charlie").Col(5).Label("Option:").AddCheckbox(
+				func(sess Session, widget CheckboxWidget, state bool) (bool, error) {
+					Pr("checkbox listener, id:", widget.Id(), "state:", state)
+					return state, nil
+				})
 		}
 		m.Close()
-		itemWidget.SetTrace(true)
-
-		Todo("Instead of detaching list item widgets, make them invisible")
 		itemWidget.SetVisible(false)
-		// Remove this widget from its container altogether... let us assume that container is the page widget?
-		// But this leaves a memory leak, as removing the children of the container will no longer remove the now orphaned widget...
-		itemWidgetContainer.RemoveChild(itemWidget)
 
 		y := m.AddList(NewExp(), itemWidget, func(sess Session, widget *ListWidgetStruct, itemId int, message string) {
 			Pr("!!! We shouldn't need these listeners...!!! Experiment item listener, itemId:", itemId, "message:", Quoted(message))

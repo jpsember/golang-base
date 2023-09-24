@@ -37,8 +37,12 @@ func NewCheckboxWidget(switchFlag bool, id string, label HtmlString, listener Ch
 }
 
 func checkboxListenWrapper(sess Session, widget Widget, value string) (any, error) {
+	pr := PrIf("checkboxListenWrapper", true)
 	highLevelListener := widget.(CheckboxWidget)
 	boolValue := false
+	Todo("!Add support for QUO in BasePrinter")
+	Todo("!Rename QUOTED -> QUO to avoid confusion with func")
+	pr("widget id:", widget.Id(), "value:", Quoted(value))
 	if b, err := strconv.ParseBool(value); err != nil {
 		Alert("trouble parsing bool from:", Quoted(value))
 	} else {
@@ -48,9 +52,10 @@ func checkboxListenWrapper(sess Session, widget Widget, value string) (any, erro
 }
 
 func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
-	auxId := w.AuxId()
+	auxId := s.PrependId(w.AuxId())
 
-	m.TgOpen(`div id="`).A(w.Id(), `"`).TgContent()
+	id := s.PrependId(w.Id())
+	m.TgOpen(`div id="`).A(id, `"`).TgContent()
 	{
 		var cbClass string
 		var role string
@@ -64,9 +69,9 @@ func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 
 		m.Comment("checkbox").TgOpen(`div class=`).A(QUOTED, cbClass).TgContent()
 		{
-			m.TgOpen(`input class="form-check-input" type="checkbox" id=`).A(QUOTED, auxId, role,
+			m.TgOpen(`input class="form-check-input" type="checkbox" id='`).A(auxId, `'`, role,
 				Ternary(s.WidgetBoolValue(w), ` checked`, ``),
-				` onclick='jsCheckboxClicked("`, s.PrependId(w.baseId), `")'`).TgClose()
+				` onclick="jsCheckboxClicked('`, s.PrependId(w.baseId), `')"`).TgClose()
 			{
 				m.Comment("Label").TgOpen(`label class="form-check-label" for=`).A(QUOTED, auxId).TgContent().Escape(w.Label).TgClose()
 			}

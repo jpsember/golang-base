@@ -147,7 +147,13 @@ function jsButton(id) {
 // An click event has occurred within a checkbox
 function jsCheckboxClicked(id) {
     db("jsCheckboxClicked", id)
-    const checkbox = document.getElementById(id+'.aux');
+    auxId = id + '.aux'
+
+    const checkbox = document.getElementById(auxId)
+    if (checkbox == null) {
+        warning("Cannot find checkbox element with id:",auxId)
+        return
+    }
     makeAjaxCall(request_key_widget,id,request_key_value,checkbox.checked.toString())
 }
 

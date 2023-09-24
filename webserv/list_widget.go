@@ -47,15 +47,35 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 			itemId = int(val)
 		}
 
-		// Look for a widget (presumably within the original ListItem widget) with the extracted id
-		sourceId := remainder
-		sourceWidget := sess.WidgetManager().Opt(sourceId)
+		// Look for a widget (presumably within the original ListItem widget) with the extracted id.
+		// If the value is "xxx.yyy.zzz" and we don't find such a widget, look for "xxx.yyy" and pass "zzz" as the value
+
+    Todo("Have some constraints on widget ids so we don't use ., so that they can safely be delimiters here")
+
+		expr := remainder
+		fwdValue := ""
+		var sourceWidget Widget
+
+		for {
+			sourceId := expr
+			sourceWidget = sess.WidgetManager().Opt(sourceId)
+			if sourceWidget != nil {
+				break
+			}
+			i := strings.LastIndexByte(expr, '.')
+			if i < 0 {
+				break
+			}
+			fwdValue = expr[i+1:]
+			expr = expr[0:i]
+		}
+
 		if sourceWidget == nil {
-			Alert("#50Can't find source widget with id", Quoted(sourceId), "; original value:", Quoted(value))
+			Alert("#50Can't find source widget(s) for:", Quoted(remainder), "; original value:", Quoted(value))
 		} else {
 			// Forward the message to that widget
 			Todo("How do we distinguish between value actions (like text fields) and button presses?")
-			newVal, err := sourceWidget.LowListener()(sess, sourceWidget, valStr)
+			newVal, err := sourceWidget.LowListener()(sess, sourceWidget, fwdValue)
 			Pr("sourceWidget lowlistener returned:", newVal, err)
 			return newVal, err
 		}

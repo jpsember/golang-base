@@ -319,16 +319,16 @@ func (s Session) auxHandleAjax() {
 	id, remainder := extractId(widgetIdExpr)
 	pr("id:", id, "remainder:", remainder)
 
-	// If there was no widget value, and there was a parsed widget id remainder, send that remainder as the value
-	if s.ajaxWidgetValue == "" && remainder != "" {
-		s.ajaxWidgetValue = remainder
-	}
+	widgetValueExpr := s.ajaxWidgetValue
+	s.ajaxWidgetValue = "" // To emphasize that we are done with this field
+
+	// We are juggling two values:  the remainder from the id, and the ajaxValue
 
 	Todo("!Clarify difference between a widget 'low level listener' and its possible clickListener")
 
 	widget := s.widgetManager.Opt(id)
 	if widget == nil {
-		pr("no widget with id", Quoted(id), "found to handle value", Quoted(s.ajaxWidgetValue))
+		pr("no widget with id", Quoted(id), "found to handle value", Quoted(widgetValueExpr))
 		return
 	}
 	pr("found widget with id:", id, "and type:", TypeOf(widget))
@@ -343,8 +343,15 @@ func (s Session) auxHandleAjax() {
 		return
 	}
 
-	pr("calling LowListener for id:", widget.Id(), "with value:", s.ajaxWidgetValue)
-	updatedValue, err := widget.LowListener()(s, widget, s.ajaxWidgetValue)
+	value := remainder
+	if value == "" {
+		value = widgetValueExpr
+	} else if widgetValueExpr != "" {
+		value = value + "." + widgetValueExpr
+	}
+
+	pr("calling LowListener for id:", widget.Id(), "with value:", value)
+	updatedValue, err := widget.LowListener()(s, widget, value)
 	{
 		if err != nil {
 			Pr("got error from widget listener:", widget.Id(), INDENT, err)
@@ -632,7 +639,6 @@ func (s Session) BaseStateProvider() WidgetStateProvider {
 }
 
 func (s Session) SetBaseStateProvider(p WidgetStateProvider) {
-//	Pr(Caller(), "SetBaseStateProvider to:", p)
 	s.stateProvider = p
 }
 
@@ -685,7 +691,6 @@ func (s Session) WidgetBoolValue(w Widget) bool {
 // Read widget value; assumed to be a string.
 func (s Session) WidgetStringValue(w Widget) string {
 	p := orBaseProvider(s, w.StateProvider())
-//	Pr("WidgetStringValue, id:", w.Id(), " stateProvider:", p)
 	return readStateStringValue(p, w.Id())
 }
 
