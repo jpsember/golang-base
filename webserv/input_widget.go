@@ -81,7 +81,7 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	m.A(`" type=`, QUOTED, Ternary(w.Password, "password", "text"), ` id="`, w.Id(), `.aux" value="`)
 	m.A(ESCAPED, s.WidgetStringValue(w))
-	m.A(`" onchange='jsVal("`, w.Id(), `")'`).TgClose()
+	m.A(`" onchange="jsVal('`, w.Id(), `')"`).TgClose()
 
 	if hasProblem {
 		m.Comment("Problem")

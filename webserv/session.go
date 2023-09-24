@@ -277,7 +277,6 @@ func (s Session) parseAjaxRequest() {
 	if clientInfoArray != nil && len(clientInfoArray) == 1 {
 		s.clientInfoString = clientInfoArray[0]
 	}
-
 }
 
 func extractId(expr string) (string, string) {
@@ -313,8 +312,8 @@ func (s Session) auxHandleAjax() {
 		return
 	}
 
-	// See if the id expression has the form <widget id> '.' <remainder>
-	//
+	// See if the id expression has the form <widget id> '.' <remainder>.
+	// If so, treat <remainder>. as prefix for widget value
 
 	id, remainder := extractId(widgetIdExpr)
 	pr("id:", id, "remainder:", remainder)
@@ -343,12 +342,7 @@ func (s Session) auxHandleAjax() {
 		return
 	}
 
-	value := remainder
-	if value == "" {
-		value = widgetValueExpr
-	} else if widgetValueExpr != "" {
-		value = value + "." + widgetValueExpr
-	}
+	value := joinWithDelimiter(remainder, widgetValueExpr)
 
 	pr("calling LowListener for id:", widget.Id(), "with value:", value)
 	updatedValue, err := widget.LowListener()(s, widget, value)
@@ -363,6 +357,21 @@ func (s Session) auxHandleAjax() {
 	s.SetWidgetProblem(widget.Id(), err)
 }
 
+// Join nonempty strings with '.' delimiter; if no nonempty strings, return "".
+func joinWithDelimiter(args ...string) string {
+	s := strings.Builder{}
+	for _, arg := range args {
+		if arg != "" {
+			s.WriteByte('.')
+			s.WriteString(arg)
+		}
+	}
+	w := s.String()
+	if w != "" {
+		w = w[1:]
+	}
+	return w
+}
 func (s Session) processClientInfo(infoString string) {
 	json, err := JSMapFromString(infoString)
 	if err != nil {
