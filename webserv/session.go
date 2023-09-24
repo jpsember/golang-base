@@ -649,7 +649,14 @@ func readStateBoolValue(p WidgetStateProvider, id string) bool {
 
 // Read widget value; assumed to be a string.
 func readStateStringValue(p WidgetStateProvider, id string) string {
-	return p.State.OptString(compileId(p.Prefix, id), "")
+	key := compileId(p.Prefix, id)
+	if Alert("checking") {
+		if !p.State.HasKey(key) {
+			Pr("State has no key", QUO, key, " (id ", QUO, id, "), state:", INDENT, p.State)
+			Pr("prefix:", p.Prefix)
+		}
+	}
+	return p.State.OptString(key, "")
 }
 
 // Read widget value; assumed to be an int.

@@ -51,8 +51,6 @@ const sampleImageId = "sample_image"
 var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
 
-const gallery_card_prefix = "gallery_card."
-
 func (p GalleryPage) generateWidgets(sess Session) {
 
 	trim := false && Alert("removing most widgets")

@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const anim_state_prefix = "_create_animal_."
+const anim_state_prefix = "_create_animal_:"
 
 // Use the field names that Animal produces as JSMaps
 const (

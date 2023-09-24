@@ -46,24 +46,23 @@ func (p FeedPage) generateWidgets(s Session) {
 	// For now, write the code as one big function; split up later once structure is more apparent.
 	var cardWidget AnimalCard
 	{
-		cardListener := func(sess Session, widget AnimalCard, arg string) {
-			Pr("animal feed page listener for card, id:", widget.Id())
-			p.attemptSelectAnimal(sess, widget.Animal().Id())
-		}
-		// Construct the list item widget by adding it to the page (which adds its children as well).  Then, detach the item.
-		w := NewAnimalCard(m.AllocateAnonymousId("feedcard"), DefaultAnimal, cardListener, "", nil)
+		// Construct the list item widget
+		w := NewAnimalCard(m.AllocateAnonymousId("feedcard"), DefaultAnimal,
+			func(sess Session, widget AnimalCard, arg string) {
+				p.attemptSelectAnimal(sess, widget.Animal().Id())
+			},
+			"", nil)
+
 		cardWidget = w
-		m.Add(w)
-		m.Detach(w)
 	}
+	m.Add(cardWidget)
+	cardWidget.SetVisible(false)
 
 	animalList := NewAnimalList(getAnimals(), cardWidget)
 
 	if Experiment {
 		m.Id("experiment")
 	}
-
-	Alert("Due to refactor, p.listListener no longer used in list construction")
 	listWidget := m.AddList(animalList, cardWidget)
 	if Experiment {
 		listWidget.WithPageControls = false
@@ -81,10 +80,6 @@ func getAnimals() []int {
 		}
 	}
 	return result
-}
-
-func (p FeedPage) listListener(sess Session, widget *ListWidgetStruct, itemId int, args string) {
-	p.attemptSelectAnimal(sess, itemId)
 }
 
 func (p FeedPage) attemptSelectAnimal(s Session, id int) bool {

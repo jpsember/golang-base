@@ -21,7 +21,7 @@ func NewAnimalList(animalIds []int, cardWidget AnimalCard) AnimalList {
 	}
 	b := &t.BasicListStruct
 	if Experiment {
-		animalIds = ClampedSlice(animalIds, 0, 1)
+		animalIds = ClampedSlice(animalIds, 0, 2)
 	}
 	b.ElementIds = animalIds
 	b.ElementsPerPage = 12

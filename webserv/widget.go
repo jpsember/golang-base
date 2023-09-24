@@ -89,7 +89,6 @@ func RenderWidget(w Widget, s Session, m MarkupBuilder) {
 		i := m.Len()
 		m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent().TgClose()
 		w.Log("Markup:", INDENT, m.String()[i:])
-		//m.A(`<div id=`,QUOTED, w.Id(), `></div>`).Cr()
 	} else {
 		w.RenderTo(s, m)
 	}

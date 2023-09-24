@@ -21,16 +21,6 @@ type AnimalCard = *AnimalCardStruct
 
 type CardWidgetListener func(sess Session, widget AnimalCard, arg string)
 
-func cardListenWrapper(sess Session, widget Widget, value string) (any, error) {
-	pr := PrIf("cardListenWrapper", true)
-	b := widget.(AnimalCard)
-	pr("calling listener for id", QUO, b.Id(), "value", QUO, value)
-	Todo("!Is the listener 'value' necessary?")
-	b.cardListener(sess, b, value)
-	Alert("#50cardListenWrapper, calling AnimalCard", b.Id())
-	return nil, nil
-}
-
 func (w AnimalCard) Animal() Animal {
 	return w.cardAnimal
 }
@@ -48,13 +38,21 @@ func NewAnimalCard(widgetId string, animal Animal, cardListener CardWidgetListen
 		buttonListener: buttonListener,
 	}
 	Todo("!any way of simplifying the LowListener boilerplate here and in other widgets? Using templates perhaps?")
-	w.LowListen = cardListenWrapper // Only has an effect if cardListener != nil
+	w.LowListen = w.lowLevelListener // Only has an effect if cardListener != nil
 	w.InitBase(widgetId)
 	//w.SetTrace(true)
-
 	Todo("!instead of passing around WidgetManager, maybe pass around Sessions, which contain the wm?")
-
 	return &w
+}
+
+func (w AnimalCard) lowLevelListener(sess Session, widget Widget, value string) (any, error) {
+	pr := PrIf("cardListenWrapper", false)
+	pr("calling listener for id", QUO, w.Id(), "value", QUO, value)
+	Todo("!Is the listener 'value' necessary?")
+	if w.cardListener != nil {
+		w.cardListener(sess, w, value)
+	}
+	return nil, nil
 }
 
 func (w AnimalCard) ourButtonListener(sess Session, widget Widget, arg string) {
@@ -66,19 +64,21 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 	pr := PrIf("", false)
 	pr("adding children to new card")
 
-	// Determine a unique prefix for this card's fields.
-	// Note that we do *don't* set any state providers until we know what this prefix is.  Specifically,
-	// we don't create a state provider at construction time.
-	w.ChildIdPrefix = m.AllocateAnonymousId("card_children:")
-
-	// If we were given an actual animal, give this card's children a default state provider
+	// If we were given an actual animal, give this card's children a default state provider.
+	// Otherwise, it is (presumably) being used as a list item widget, and the list interface's
+	// ItemStateProvider will make this unnecessary (and it will in fact not work if we
+	// modify the prefix).
 	if w.cardAnimal.Id() != 0 {
+		// Determine a unique prefix for this card's fields.
+		// Note that we do *don't* set any state providers until we know what this prefix is.  Specifically,
+		// we don't create a state provider at construction time.
+		w.ChildIdPrefix = m.AllocateAnonymousId("card_children:")
 		m.PushStateProvider(NewStateProvider(w.ChildIdPrefix, w.cardAnimal.ToJson()))
 	}
 
 	m.OpenContainer(w)
 	m.PushIdPrefix(w.ChildIdPrefix)
-	if !Experiment {
+	{
 		c1 := m.Id("name").Size(SizeTiny).AddHeading()
 		c2 := m.Id("summary").AddText()
 		c1.SetTrace(false)
@@ -139,7 +139,7 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 		// Display title and brief summary
 		m.Comments("title and summary")
 		m.TgOpen(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`).TgContent()
-		if !Experiment {
+		{
 			m.TgOpen(`h6 class="card-title"`).TgContent()
 			{
 				// Render the name as the first child
