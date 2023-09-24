@@ -141,9 +141,14 @@ func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, ta
 }
 
 func (w ListWidget) constructStateProvider(s Session, elementId int, oldPrefix string) WidgetStateProvider {
-	pv := w.list.ItemStateProvider(s, elementId)
-	np := NewStateProvider(w.Id()+"."+IntToString(elementId)+"."+oldPrefix, pv.State)
-	return np
+	cached := w.cachedStateProviders[elementId]
+	if cached == nil {
+		pv := w.list.ItemStateProvider(s, elementId)
+		cached = NewStateProvider(w.Id()+"."+IntToString(elementId)+"."+oldPrefix, pv.State)
+		w.cachedStateProviders[elementId] = cached
+		//Pr("...constructed and cached state provider for element", elementId)
+	}
+	return cached
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
