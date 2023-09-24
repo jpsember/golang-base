@@ -7,13 +7,14 @@ import (
 // A Widget that displays editable text
 type ListWidgetStruct struct {
 	BaseWidgetObj
-	list             ListInterface
-	itemWidget       Widget
-	pagePrefix       string
-	WithPageControls bool
+	list                 ListInterface
+	itemWidget           Widget
+	pagePrefix           string
+	WithPageControls     bool
+	cachedStateProviders map[int]WidgetStateProvider
 }
 
-func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
+func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	pr := PrIf("list_widget.LowLevel listener", false)
 	pr("value:", QUO, value, "caller:", Caller())
 
@@ -55,9 +56,7 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 		Todo("!How do we distinguish between value actions (like text fields) and button presses?")
 		// Set up the same state provider that we did when rendering the widget
 		savedStateProvider := sess.BaseStateProvider()
-		pv := b.list.ItemStateProvider(sess, elementId)
-		np := NewStateProvider(widget.Id()+"."+elementIdStr+"."+savedStateProvider.Prefix, pv.State)
-		sess.SetBaseStateProvider(np)
+		sess.SetBaseStateProvider(w.constructStateProvider(sess, elementId, savedStateProvider.Prefix))
 		sess.ProcessWidgetValue(sourceWidget, remainder, elementId)
 		sess.SetBaseStateProvider(savedStateProvider)
 		// Fall through to return nil, nil
@@ -83,7 +82,7 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget 
 		WithPageControls: true,
 	}
 	w.InitBase(id)
-	w.LowListen = listListenWrapper
+	w.LowListen = w.listListenWrapper
 	w.pagePrefix = id + ".page_"
 	return &w
 }
@@ -141,6 +140,12 @@ func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, ta
 	m.A(`">`, label, `</a></li>`, CR)
 }
 
+func (w ListWidget) constructStateProvider(s Session, elementId int, oldPrefix string) WidgetStateProvider {
+	pv := w.list.ItemStateProvider(s, elementId)
+	np := NewStateProvider(w.Id()+"."+IntToString(elementId)+"."+oldPrefix, pv.State)
+	return np
+}
+
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	pr := PrIf("ListWidget.RenderTo", false)
 	pr("ListWidget.RenderTo")
@@ -148,6 +153,10 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent()
 
+	// Discard any previously cached state providers, and
+	// cache those we are about to construct (so we don't ask client
+	// to construct them unnecessarily).
+	w.cachedStateProviders = make(map[int]WidgetStateProvider)
 	if w.WithPageControls {
 		w.renderPagination(s, m)
 	}
@@ -162,31 +171,11 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			// the list's one.  Save the current default state provider here, for later restoration.
 
 			savedStateProvider := s.BaseStateProvider()
-
 			pr(VERT_SP, "saved pv:", INDENT, savedStateProvider)
 
 			for _, id := range elementIds {
 				m.Comment("----------------- rendering list item with id:", id)
-
-				pv := w.list.ItemStateProvider(s, id)
-				pr("itm pv:", INDENT, pv)
-				np := NewStateProvider(w.Id()+"."+IntToString(id)+"."+savedStateProvider.Prefix, pv.State)
-				pr("replacing with:", INDENT, np)
-
-				// This doesn't quite work... clicking on the image is not having any effect.
-				// The heading and summary strings appear ok though.
-				s.SetBaseStateProvider(np)
-
-				// When rendering list items, any ids should be mangled in such a way that
-				//  a) ids remain distinct, even if we are rendering the same widget for each row; and
-				//  b) when responding to click events and the like, we can figure out which list, and
-				//      element within the list, generated the event.
-
-				// The item widgets will have this id structure:
-				//
-				// [id of containing ListWidget].[id of item].[session.baseIdPrefix (?what for?)]
-				//
-
+				s.SetBaseStateProvider(w.constructStateProvider(s, id, savedStateProvider.Prefix))
 				// Note that we are not calling RenderWidget(), which would not draw anything since the
 				// list item widget has been marked as invisible
 				w.itemWidget.RenderTo(s, m)
