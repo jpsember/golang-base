@@ -64,15 +64,14 @@ func NewExp() Exp {
 // will *not* use Xi.
 func (x Exp) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
 	pr := PrIf("Exp.ItemStateProvider", true)
-	pr("elementId:", elementId)
 	j := x.itemStates[elementId]
 	if j == nil {
 		j = NewJSMap().Put("alpha", "#"+IntToString(elementId)).Put("charlie", true)
 		x.itemStates[elementId] = j
 	}
-	Todo("Have some actual state persisting for elements, to verify checkboxes etc are working")
 	result := NewStateProvider("", j)
-	pr("returning:", result)
+	Todo("figure out if padding ints in BasePrinter is desired behavior.")
+	pr("element id:", elementId, "returning:", result)
 	return result
 }
 
@@ -91,15 +90,15 @@ func (p LandingPage) generateWidgets(sess Session) {
 		itemWidget := m.Open()
 		{
 			m.Id("alpha").Col(2).AddText()
-			m.Id("echo").Col(3).AddInput(func(sess Session, widget InputWidget, value string) (string, error) {
-				Pr("echo listener, id:", widget.Id(), "value:", value)
+			m.Id("abba").Col(3).AddInput(func(sess Session, widget InputWidget, value string) (string, error) {
+				Pr("abba listener, id:", widget.Id(), "value:", value)
 				Pr("state provider:", sess.BaseStateProvider(), "widget provider:", widget.StateProvider())
 				return value, nil
 			})
 
 			m.Id("bravo").Col(2).Label("Hello").AddButton(func(sess Session, widget Widget, message string) {
 				Pr("Landing page, button listener, id:", widget.Id(), "message:", message)
-				Pr("how do we determine the list item?")
+				Todo("It is cumbersome to have to figure out the list element id from the state provider callback. Use a 'context' arg?")
 				Pr("state provider:", sess.BaseStateProvider(), "widget provider:", widget.StateProvider())
 			})
 			m.Id("charlie").Col(5).Label("Option:").AddCheckbox(

@@ -140,38 +140,38 @@ func (p ManagerPage) renderItem(session Session, widget ListWidget, elementId in
 
 const action_prefix_animal_card = "animal_id_"
 
-func (p ManagerPage) clickListener(sess Session, message string) bool {
-	Todo("This explicit handler probably not required")
-
-	for {
-
-		Alert("Do we still need this code?")
-		if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
-			id, err := ParseAsPositiveInt(id_str)
-			if ReportIfError(err) {
-				break
-			}
-			p.attemptSelectAnimal(sess, id)
-			break
-			//animal, err := ReadActualAnimal(id)
-			//if err != nil || animal.Id() == 0 {
-			//	Alert("#50trouble reading animal for clickListener message", message)
-			//	break
-			//}
-			//if animal.ManagerId() != p.manager.Id() {
-			//	Alert("#50wrong manager for animal", message, animal)
-			//	break
-			//}
-			//sess.SetClickListener(nil)
-			//sess.SwitchToPage(NewEditAnimalPage(sess, animal.Id()))
-			//break
-		}
-
-		return false
-	}
-	return true
-
-}
+//func (p ManagerPage) clickListener(sess Session, message string) bool {
+//	Todo("This explicit handler probably not required")
+//
+//	for {
+//
+//		Alert("Do we still need this code?")
+//		if id_str, f := TrimIfPrefix(message, action_prefix_animal_card); f {
+//			id, err := ParseAsPositiveInt(id_str)
+//			if ReportIfError(err) {
+//				break
+//			}
+//			p.attemptSelectAnimal(sess, id)
+//			break
+//			//animal, err := ReadActualAnimal(id)
+//			//if err != nil || animal.Id() == 0 {
+//			//	Alert("#50trouble reading animal for clickListener message", message)
+//			//	break
+//			//}
+//			//if animal.ManagerId() != p.manager.Id() {
+//			//	Alert("#50wrong manager for animal", message, animal)
+//			//	break
+//			//}
+//			//sess.SetClickListener(nil)
+//			//sess.SwitchToPage(NewEditAnimalPage(sess, animal.Id()))
+//			//break
+//		}
+//
+//		return false
+//	}
+//	return true
+//
+//}
 
 func (p ManagerPage) attemptSelectAnimal(s Session, id int) bool {
 	animal, err := ReadActualAnimal(id)

@@ -27,6 +27,7 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	}
 
 	// This is presumably something like <element id> '.' <remainder>
+	Todo("Usewidget value parser utility function(s) for this")
 	c := strings.IndexByte(value, '.')
 	remainder := ""
 	if c > 0 {
@@ -43,8 +44,6 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 
 		// Look for a widget (presumably within the original ListItem widget) with the extracted id.
 		// If the value is "xxx.yyy.zzz" and we don't find such a widget, look for "xxx.yyy" and pass "zzz" as the value
-
-		Todo("Have some constraints on widget ids so we don't use ., so that they can safely be delimiters here")
 
 		expr := remainder
 		fwdValue := ""
@@ -73,26 +72,10 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 			savedStateProvider := sess.BaseStateProvider()
 			pv := b.list.ItemStateProvider(sess, elementId)
 			np := NewStateProvider(widget.Id()+"."+elementIdStr+"."+savedStateProvider.Prefix, pv.State)
-			pr("forwarding message to widget", sourceWidget.Id(), "after replacing state provider with:", np)
-
-			// This doesn't quite work... clicking on the image is not having any effect.
-			// The heading and summary strings appear ok though.
 			sess.SetBaseStateProvider(np)
-			Todo("move following code into separate function, as it is duplicated in session.go")
-			newVal, err := sourceWidget.LowListener()(sess, sourceWidget, fwdValue)
-			// Do the update code that we would normally do in auxHandleAjax, to update this other widget instead.
-			{
-				pr("wrapped widget's low listener returned updated value", newVal, "and err", err)
-				if err != nil {
-					Pr("got error from widget listener:", sourceWidget.Id(), INDENT, err)
-				} else if newVal != nil {
-					pr("setting widget value", sourceWidget.Id(), "to:", newVal)
-					sess.SetWidgetValue(sourceWidget, newVal)
-				}
-			}
-			sess.SetWidgetProblem(sourceWidget.Id(), err)
+			sess.ProcessWidgetValue(sourceWidget, fwdValue)
 			sess.SetBaseStateProvider(savedStateProvider)
-			// Return nil,nil since we handled the value ourselves
+			// Return nil,nil since we have already processed the widget value
 			return nil, nil
 		}
 	}
@@ -106,6 +89,9 @@ type ListWidget = *ListWidgetStruct
 // itemWidget : this is a widget that will be rendered for each displayed item
 func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget {
 	Todo("!Have option to wrap list items in a clickable div")
+
+	Todo("It is clunky having list listeners rely on session provider callback to store list element id; better to pass a 'context' arg in listeners?")
+
 	CheckArg(itemWidget != nil, "No itemWidget given")
 
 	w := ListWidgetStruct{
@@ -194,7 +180,6 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 			savedStateProvider := s.BaseStateProvider()
 
-			Todo("We have to set up the same state providers when forwarding events from this widget!")
 			pr(VERT_SP, "saved pv:", INDENT, savedStateProvider)
 
 			for _, id := range elementIds {
@@ -218,7 +203,6 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				//
 				// [id of containing ListWidget].[id of item].[session.baseIdPrefix (?what for?)]
 				//
-				//s.baseIdPrefix = w.Id() + "." + IntToString(id) + "." + savedBaseIdPrefix
 
 				// Note that we are not calling RenderWidget(), which would not draw anything since the
 				// list item widget has been marked as invisible

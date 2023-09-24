@@ -280,6 +280,7 @@ func (s Session) parseAjaxRequest() {
 }
 
 func extractId(expr string) (string, string) {
+	Todo("Use utility functions here")
 	dotPos := strings.IndexByte(expr, '.')
 	if dotPos >= 0 {
 		return expr[0:dotPos], expr[dotPos+1:]
@@ -321,10 +322,6 @@ func (s Session) auxHandleAjax() {
 	widgetValueExpr := s.ajaxWidgetValue
 	s.ajaxWidgetValue = "" // To emphasize that we are done with this field
 
-	// We are juggling two values:  the remainder from the id, and the ajaxValue
-
-	Todo("!Clarify difference between a widget 'low level listener' and its possible clickListener")
-
 	widget := s.widgetManager.Opt(id)
 	if widget == nil {
 		pr("no widget with id", Quoted(id), "found to handle value", Quoted(widgetValueExpr))
@@ -342,10 +339,14 @@ func (s Session) auxHandleAjax() {
 		return
 	}
 
+	// We are juggling two values:  the remainder from the id, and the ajaxValue.
+	// We will join them together (where they exist) with '.'
 	value := joinWithDelimiter(remainder, widgetValueExpr)
+	s.ProcessWidgetValue(widget, value)
+}
 
-	Todo("move following code into separate function, as it is duplicated in list_widget")
-	pr("calling LowListener for id:", widget.Id(), "with value:", value)
+func (s Session) ProcessWidgetValue(widget Widget, value string) {
+	pr := PrIf("Session.ProcessWidgetValue", true)
 	updatedValue, err := widget.LowListener()(s, widget, value)
 
 	// The trouble is the widget we want to update is not necessarily the one we passed to the low listener.

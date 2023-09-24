@@ -67,7 +67,12 @@ func (m WidgetManager) find(id string) Widget {
 // ------------------------------------------------------------------------------------
 
 func (m WidgetManager) Id(id string) WidgetManager {
-	m.pendingId = m.IdPrefix() + id
+	v := m.IdPrefix() + id
+	Todo("use utility function here")
+	if strings.IndexByte(v, '.') >= 0 {
+		BadArg("Don't use periods in widget ids:", Quoted(v))
+	}
+	m.pendingId = v
 	return m
 }
 
@@ -75,9 +80,6 @@ func (m WidgetManager) consumePendingId() string {
 	id := m.pendingId
 	CheckNonEmpty(id, "no pending id")
 	m.pendingId = ""
-	if strings.IndexByte(id, '.') >= 0 {
-		Alert("#50Soon to be illegal widget id: " + id)
-	}
 	return id
 }
 func (m WidgetManager) consumeOptionalPendingId() string {

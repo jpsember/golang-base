@@ -320,20 +320,20 @@ func (p GalleryPage) provideURL(s Session) string {
 	return url
 }
 
-func (p GalleryPage) clickListener(sess Session, message string) bool {
-	Todo("This explicit handler probably not required")
-	//
-	//if p.list.HandleClick(sess, message) {
-	//	return true
-	//}
-
-	if arg, f := TrimIfPrefix(message, gallery_card_prefix); f {
-		Pr("card click, remaining arg:", arg)
-		return true
-
-	}
-	return false
-}
+//func (p GalleryPage) clickListener(sess Session, message string) bool {
+//	Todo("This explicit handler probably not required")
+//	//
+//	//if p.list.HandleClick(sess, message) {
+//	//	return true
+//	//}
+//
+//	if arg, f := TrimIfPrefix(message, gallery_card_prefix); f {
+//		Pr("card click, remaining arg:", arg)
+//		return true
+//
+//	}
+//	return false
+//}
 
 func (p GalleryPage) fooListener(sess Session, widget InputWidget, value string) (string, error) {
 	Todo("Clarify prefix role in provider, widget ids, and resolve confusion about add/subtract prefix")
