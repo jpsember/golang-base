@@ -32,11 +32,11 @@ func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	if c > 0 {
 		remainder = value[c+1:]
 		valStr := value[0:c]
-		val, err := ParseInt(valStr)
+		elementId, err := ParseInt(valStr)
 		if err == nil {
 			Todo("!Verify that the parsed value matches an id in the list")
 		}
-		pr("remainder:", remainder, "value:", val, "err:", err)
+		pr("remainder:", remainder, "value:", elementId, "err:", err)
 		if err != nil {
 			Alert("#50 trouble parsing int from:", value)
 		}
@@ -171,6 +171,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 			savedStateProvider := s.BaseStateProvider()
 
+			Todo("We have to set up the same state providers when forwarding events from this widget!")
 			pr(VERT_SP, "saved pv:", INDENT, savedStateProvider)
 
 			for _, id := range elementIds {
