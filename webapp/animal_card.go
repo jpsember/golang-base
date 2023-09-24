@@ -22,8 +22,10 @@ type AnimalCard = *AnimalCardStruct
 type CardWidgetListener func(sess Session, widget AnimalCard, arg string)
 
 func cardListenWrapper(sess Session, widget Widget, value string) (any, error) {
+	pr := PrIf("cardListenWrapper", true)
 	b := widget.(AnimalCard)
-	Todo("!Is the listener 'arg' necessary?")
+	pr("calling listener for id", QUO, b.Id(), "value", QUO, value)
+	Todo("!Is the listener 'value' necessary?")
 	b.cardListener(sess, b, value)
 	Alert("#50cardListenWrapper, calling AnimalCard", b.Id())
 	return nil, nil
