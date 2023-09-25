@@ -105,7 +105,7 @@ func (p LandingPage) generateWidgets(sess Session) {
 				})
 		}
 		m.Close()
-		itemWidget.SetVisible(false)
+		//itemWidget.SetVisible(false)
 
 		y := m.AddList(NewExp(), itemWidget)
 		y.WithPageControls = false

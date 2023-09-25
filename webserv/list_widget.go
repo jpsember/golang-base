@@ -178,7 +178,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				m.Comment("----------------- rendering list item with id:", id)
 				s.SetBaseStateProvider(w.constructStateProvider(s, id, savedStateProvider.Prefix))
 				// Note that we are not calling RenderWidget(), which would not draw anything since the
-				// list item widget has been marked as invisible
+				// list item widget has been marked as detached
 				w.itemWidget.RenderTo(s, m)
 			}
 			// Restore the default state provider to what it was before we rendered the items.

@@ -868,6 +868,18 @@ func ByteSlice(bytes []byte, start int, length int) []byte {
 	return ClampedSlice(bytes, start, start+length)
 }
 
+func BinaryN(value int, digits int) string {
+	sb := strings.Builder{}
+	for i := 0; i < digits; i++ {
+		var ch byte = '0'
+		if value&(1<<(digits-1-i)) != 0 {
+			ch = '1'
+		}
+		sb.WriteByte(ch)
+	}
+	return sb.String()
+}
+
 func appendHex(sb *strings.Builder, value uint64, ndigits int) {
 	for ch := 0; ch < ndigits; ch++ {
 		shiftCount := (ndigits - 1 - ch) << 2

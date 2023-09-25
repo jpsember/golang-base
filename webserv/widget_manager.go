@@ -330,10 +330,10 @@ func (m WidgetManager) AddPassword(listener InputWidgetListener) InputWidget {
 }
 
 func (m WidgetManager) AddList(list ListInterface, itemWidget Widget) ListWidget {
-	if itemWidget.Visible() {
-		Alert("#50ListItem widget is visible! expected it to be invisible")
-		itemWidget.SetVisible(false)
+	if !itemWidget.Visible() {
+		BadArg("widget is not visible (detaching will happen by us)")
 	}
+	itemWidget.SetDetached(true)
 	id := m.consumeOptionalPendingId()
 	t := NewListWidget(id, list, itemWidget)
 	m.Add(t)
@@ -472,13 +472,7 @@ func SetWidgetDebugRendering() {
 func (s Session) RepaintIds(ids ...string) WidgetManager {
 	m := s.WidgetManager()
 	for _, id := range ids {
-		w := m.Opt(id)
-		Todo("Do the existence check elsewhere?")
-		if w != nil {
-			s.RepaintId(id)
-		} else {
-			Alert("#50<1Can't find widget to repaint with id:", id)
-		}
+		s.RepaintId(id)
 	}
 	return m
 }

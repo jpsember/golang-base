@@ -15,7 +15,8 @@ type Widget interface {
 	LowListener() LowLevelWidgetListener
 	Enabled() bool
 	Visible() bool
-	// This should not be called directly; rather, RenderWidget() to handle invisible widgets properly
+	Detached() bool
+	// This should not be called directly; rather, RenderWidget() to handle invisible and detached widgets properly
 	RenderTo(s *SessionStruct, m MarkupBuilder)
 	Children() []Widget
 	AddChild(c Widget, manager WidgetManager)
@@ -26,6 +27,7 @@ type Widget interface {
 	StateProvider() WidgetStateProvider
 	SetStateProvider(p WidgetStateProvider)
 	SetVisible(bool)
+	SetDetached(bool)
 	SetTrace(bool)
 	Trace() bool
 	Log(args ...any) // Logs messages if tracing is set for this widget
@@ -83,6 +85,9 @@ func WidgetIdWithProblem(id string) string {
 
 // Call w.RenderTo(...) iff the widget is visible, otherwise render an empty div with the widget's id.
 func RenderWidget(w Widget, s Session, m MarkupBuilder) {
+	if w.Detached() {
+		return
+	}
 	if !w.Visible() {
 		Todo("!is it ok to render this as a void tag? Apparently not")
 		w.Log("RenderWidget, not visible;")

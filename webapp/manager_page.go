@@ -63,7 +63,6 @@ func (p ManagerPage) generateWidgets(sess Session) {
 			}, "", nil)
 		cardWidget = w
 		m.Add(w)
-		w.SetVisible(false)
 	}
 
 	managerId := SessionUser(sess).Id()
@@ -118,4 +117,3 @@ func getManagerAnimals(managerId int) []int {
 }
 
 const action_prefix_animal_card = "animal_id_"
-

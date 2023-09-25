@@ -9,25 +9,45 @@ type BaseWidgetObj struct {
 	baseId string
 
 	LowListen     LowLevelWidgetListener
-	trace         bool
-	hidden        bool
-	disabled      bool
 	staticContent any
 	size          WidgetSize
 	align         WidgetAlign
 	columns       int
 	stateProvider WidgetStateProvider
+	bitFlags      int
 }
+
+const (
+	wflagHidden = 1 << iota
+	wflagTrace
+	wflagDisabled
+	wflagDetached
+)
 
 type BaseWidget = *BaseWidgetObj
 
-func (w BaseWidget) Trace() bool { return w.trace }
+func (w BaseWidget) isFlag(flag int) bool {
+	return (w.bitFlags & flag) != 0
+}
+
+func (w BaseWidget) Trace() bool { return w.isFlag(wflagTrace) }
+func (w BaseWidget) setOrClearFlag(flag int, set bool) bool {
+	old := w.bitFlags
+	new := old
+	if set {
+		new |= flag
+	} else {
+		new ^= flag
+	}
+	w.bitFlags = new
+	return new != old
+}
 
 func (w BaseWidget) SetTrace(flag bool) {
-	if flag && !w.trace {
+	changed := w.setOrClearFlag(wflagTrace, flag)
+	if flag && changed {
 		Alert("#50<1Setting trace on widget:", w.Id())
 	}
-	w.trace = flag
 }
 
 func (w BaseWidget) InitBase(id string) {
@@ -86,19 +106,27 @@ func (w BaseWidget) StaticContent() any {
 }
 
 func (w BaseWidget) Visible() bool {
-	return !w.hidden
+	return !w.isFlag(wflagHidden)
+}
+
+func (w BaseWidget) Detached() bool {
+	return w.isFlag(wflagDetached)
 }
 
 func (w BaseWidget) SetVisible(v bool) {
-	w.hidden = !v
+	w.setOrClearFlag(wflagHidden, v)
+}
+
+func (w BaseWidget) SetDetached(v bool) {
+	w.setOrClearFlag(wflagDetached, v)
 }
 
 func (w BaseWidget) Enabled() bool {
-	return !w.disabled
+	return !w.isFlag(wflagDisabled)
 }
 
 func (w BaseWidget) SetEnabled(s bool) {
-	w.disabled = !s
+	w.setOrClearFlag(wflagDisabled, !s)
 }
 
 func (w BaseWidget) AddChild(c Widget, manager WidgetManager) {
@@ -131,7 +159,7 @@ func (w BaseWidget) AuxId() string {
 }
 
 func (w BaseWidget) SetStateProvider(p WidgetStateProvider) {
-	if w.trace {
+	if w.isFlag(wflagTrace) {
 		if p != nil {
 			w.Log("SetStateProvider:", p, Caller())
 		}
@@ -140,7 +168,7 @@ func (w BaseWidget) SetStateProvider(p WidgetStateProvider) {
 }
 
 func (w BaseWidget) Log(args ...any) {
-	if w.trace {
+	if w.isFlag(wflagTrace) {
 		Pr("{"+w.Id()+"}: ", ToString(args...))
 	}
 }
