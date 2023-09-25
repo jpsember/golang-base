@@ -68,9 +68,7 @@ func (m WidgetManager) find(id string) Widget {
 
 func (m WidgetManager) Id(id string) WidgetManager {
 	v := m.IdPrefix() + id
-	if FirstDot(v) >= 0 {
-		BadArg("Don't use periods in widget ids:", Quoted(v))
-	}
+	AssertNoDots(v)
 	m.pendingId = v
 	return m
 }
@@ -233,7 +231,7 @@ func (m WidgetManager) With(container Widget) WidgetManager {
 	cont := container.(GridWidget)
 	id := cont.Id()
 
-	CheckState(m.Exists(id))
+	CheckState(m.Exists(id), "There is no widget with id:", id)
 
 	// Discard any existing child widgets
 	m.removeWidgets(cont.Children())
@@ -540,4 +538,12 @@ func (m WidgetManager) IdSummary() JSList {
 		js.Add(k)
 	}
 	return js
+}
+
+func (m WidgetManager) RebuildPageWidget() Widget {
+	m.widgetMap = make(map[string]Widget)
+	m.Id(WidgetIdPage)
+	widget := m.Open()
+	m.Close()
+	return widget
 }

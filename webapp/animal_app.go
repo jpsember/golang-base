@@ -8,7 +8,7 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-const AutoLogInName = "donor1"
+const AutoLogInName = "manager1"
 
 var DevDatabase = Alert("!Using development database")
 
@@ -104,7 +104,7 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 		if nm == "" {
 			break
 		}
-		Todo("!Auto logging in:", nm)
+		Todo("Auto logging in:", nm)
 		if oper.autoLoggedIn {
 			break
 		}

@@ -8,7 +8,7 @@ import (
 
 const FeedPageName = "feed"
 
-var FeedPageTemplate = NewFeedPage(nil)
+var FeedPageTemplate = &FeedPageStruct{}
 
 type FeedPageStruct struct {
 	animList AnimalList
@@ -16,20 +16,14 @@ type FeedPageStruct struct {
 
 type FeedPage = *FeedPageStruct
 
-func NewFeedPage(s Session) FeedPage {
-	t := &FeedPageStruct{}
-	if s != nil {
-		t.generateWidgets(s)
-	}
-	return t
-}
-
 func (p FeedPage) Name() string { return FeedPageName }
 
 func (p FeedPage) ConstructPage(s Session, args PageArgs) Page {
 	if args.CheckDone() {
 		if SessionUserIs(s, UserClassDonor) {
-			return NewFeedPage(s)
+			t := &FeedPageStruct{}
+			t.generateWidgets(s)
+			return t
 		}
 	}
 	return nil
@@ -90,8 +84,6 @@ func (p FeedPage) attemptSelectAnimal(s Session, id int) bool {
 		Alert("#50trouble reading animal:", id)
 		return false
 	}
-	Alert("switching to NewViewAnimalPage for animal:", INDENT, animal)
-	Alert("I think some widgets are not being removed from the map")
-	s.SwitchToPage(NewViewAnimalPage(s, animal.Id()))
+	s.SwitchToPage(ViewAnimalPageTemplate, PageArgsWith(animal.Id()))
 	return true
 }

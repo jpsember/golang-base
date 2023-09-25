@@ -12,7 +12,7 @@ import (
 
 const LandingPageName = "signin"
 
-var LandingPageTemplate = NewLandingPage(nil)
+var LandingPageTemplate = &LandingPageStruct{}
 
 // ------------------------------------------------------------------------------------
 
@@ -227,10 +227,10 @@ func (p LandingPage) signInListener(sess Session, widget Widget, arg string) {
 		pr("attempting to select page for user:", INDENT, user)
 		switch user.UserClass() {
 		case UserClassDonor:
-			sess.SwitchToPage(NewFeedPage(sess))
+			sess.SwitchToPage(FeedPageTemplate, nil)
 			break
 		case UserClassManager:
-			sess.SwitchToPage(NewManagerPage(sess))
+			sess.SwitchToPage(ManagerPageTemplate, nil)
 		default:
 			NotImplemented("Page for user class:", user.UserClass())
 		}
@@ -238,11 +238,11 @@ func (p LandingPage) signInListener(sess Session, widget Widget, arg string) {
 }
 
 func (p LandingPage) signUpListener(s Session, widget Widget, arg string) {
-	s.SwitchToPage(NewSignUpPage(s))
+	s.SwitchToPage(SignUpPageTemplate, nil)
 }
 
 func (p LandingPage) galleryListener(sess Session, widget Widget, arg string) {
-	sess.SwitchToPage(NewGalleryPage(sess))
+	sess.SwitchToPage(GalleryPageTemplate, nil)
 }
 
 func (p LandingPage) forgotPwdListener(sess Session, widget Widget, arg string) {

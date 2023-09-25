@@ -27,8 +27,9 @@ func (w AnimalCard) Animal() Animal {
 }
 
 func NewAnimalCard(widgetId string, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) AnimalCard {
-	// An id of zero can be used for constructing a template (e.g., list item widget)
-
+	Todo("NewAnimalCard should use widgetmanager id?")
+	// An animal id of zero can be used for constructing a template (e.g., list item widget)
+	AssertNoDots(widgetId)
 	// If a button is requested, it must have a listener
 	CheckArg((buttonLabel == "") == (buttonListener == nil))
 

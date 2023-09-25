@@ -1,6 +1,8 @@
 package webserv
 
-import "github.com/jpsember/golang-base/base"
+import (
+	. "github.com/jpsember/golang-base/base"
+)
 
 type PageArgsStruct struct {
 	args    []string
@@ -9,6 +11,19 @@ type PageArgsStruct struct {
 }
 
 type PageArgs = *PageArgsStruct
+
+func PageArgsWith(args ...any) PageArgs {
+	var strargs []string
+	for _, a := range args {
+		var s string
+		switch t := a.(type) {
+		case int:
+			s = IntToString(t)
+		}
+		strargs = append(strargs, s)
+	}
+	return NewPageArgs(strargs)
+}
 
 func NewPageArgs(args []string) PageArgs {
 	if args == nil {
@@ -57,7 +72,7 @@ func (p PageArgs) Int() int {
 		p.SetProblem()
 	} else {
 		a := p.Next()
-		val, err := base.ParseInt(a)
+		val, err := ParseInt(a)
 		if err != nil {
 			p.SetProblem()
 		} else {

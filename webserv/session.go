@@ -563,14 +563,16 @@ func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
 // Page url and arguments
 // ------------------------------------------------------------------------------------
 
-func (s Session) SwitchToPage(page Page) {
-	Pr("SwitchToPage:", page.Name(), "from:", Caller())
-	Pr("manager widget ids:", INDENT, s.WidgetManager().IdSummary())
-	s.Repaint(s.PageWidget)
-	s.browserURLExpr = s.ConstructPathFromPage(page)
-	s.debugPage = page
-	Pr("after switching, ids:", INDENT, s.WidgetManager().IdSummary())
+func (s Session) SwitchToPage(template Page, args PageArgs) {
+	pr := PrIf("SwitchToPage", true)
+	pr("page:", template.Name(), "from:", Caller())
 
+	if args == nil {
+		args = NewPageArgs(nil)
+	}
+	s.rebuildAndDisplayNewPage(func(s Session) Page {
+		return template.ConstructPage(s, args)
+	})
 }
 
 func (s Session) NewBrowserPath() string {
@@ -653,7 +655,7 @@ func readStateBoolValue(p WidgetStateProvider, id string) bool {
 // Read widget value; assumed to be a string.
 func readStateStringValue(p WidgetStateProvider, id string) string {
 	key := compileId(p.Prefix, id)
-	if Alert("checking for non-existent key") {
+	if false && Alert("checking for non-existent key") {
 		if !p.State.HasKey(key) {
 			Pr("State has no key", QUO, key, " (id ", QUO, id, "), state:", INDENT, p.State)
 			Pr("prefix:", p.Prefix)
@@ -703,4 +705,25 @@ func (s Session) SetWidgetValue(w Widget, value any) {
 // Get the context for the current listener.  For list items, this will be the list element id.
 func (s Session) Context() any {
 	return s.listenerContext
+}
+
+// This merges a couple of separate functions, to reduce the complexity.
+func (s Session) rebuildAndDisplayNewPage(pageProvider func(s Session) Page) {
+	// Dispose of any existing widgets
+	m := s.WidgetManager()
+	m.widgetMap = make(map[string]Widget)
+
+	// Build a new page widget
+	s.PageWidget = m.Id(WidgetIdPage).Open()
+	m.Close()
+
+	// Get the new page (it is now safe to construct, as the old widgets are gone)
+	page := pageProvider(s)
+	CheckState(page != nil, "no page was provided")
+	s.debugPage = page
+
+	// Display the new page
+	Todo("!Verify that this works for normal refreshes as well as ajax operations")
+	s.Repaint(s.PageWidget)
+	s.browserURLExpr = s.ConstructPathFromPage(page)
 }

@@ -19,12 +19,12 @@ func ourProcessUserHeaderClick(sess Session, widget Widget, message string) {
 	case USER_HEADER_ACTION_SIGN_OUT:
 		if user.Id() > 0 {
 			LogOut(sess)
-			sess.SwitchToPage(NewLandingPage(sess))
+			sess.SwitchToPage(LandingPageTemplate, nil)
 		}
 		break
 	case USER_HEADER_ACTION_SIGN_IN:
 		if user.Id() == 0 {
-			sess.SwitchToPage(NewLandingPage(sess))
+			sess.SwitchToPage(LandingPageTemplate, nil)
 		}
 		break
 	}

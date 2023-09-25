@@ -29,9 +29,9 @@ type AnimalDetailPageStruct struct {
 
 type AnimalDetailPage = *AnimalDetailPageStruct
 
-var CreateAnimalPageTemplate = NewCreateAnimalPage(nil)
-var EditAnimalPageTemplate = NewEditAnimalPage(nil, 0)
-var ViewAnimalPageTemplate = NewViewAnimalPage(nil, 0)
+var CreateAnimalPageTemplate = &AnimalDetailPageStruct{name: "new"}
+var EditAnimalPageTemplate = &AnimalDetailPageStruct{name: "edit"}
+var ViewAnimalPageTemplate = &AnimalDetailPageStruct{name: "view"}
 
 func NewCreateAnimalPage(sess Session) AnimalDetailPage {
 	t := &AnimalDetailPageStruct{
@@ -327,14 +327,12 @@ func (p AnimalDetailPage) writeStateToAnimal(s Session, b AnimalBuilder) {
 func (p AnimalDetailPage) exit(s Session) {
 	Todo("I suspect the widgetManager is still holding onto ids from the current page, and maybe switching doesn't remove them?")
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
-	var page Page
 	Pr("attempting to switch to new feed page? ids:", INDENT, s.WidgetManager().IdSummary())
 	if SessionUser(s).UserClass() == UserClassDonor {
-		page = NewFeedPage(s)
+		s.SwitchToPage(FeedPageTemplate, nil)
 	} else {
-		page = NewManagerPage(s)
+		s.SwitchToPage(ManagerPageTemplate, nil)
 	}
-	s.SwitchToPage(page)
 }
 
 func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (string, error) {

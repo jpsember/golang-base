@@ -118,7 +118,7 @@ func (j JServer) handleBlobRequest(s Session, blobId string) {
 
 // A handler such as this must be thread safe!
 func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf("", false)
+	pr := PrIf("JServer.handle", false)
 	pr("JServer handler, request:", req.RequestURI)
 
 	// We don't know what the session is yet, so we don't have a lock on it...
@@ -131,15 +131,15 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 	defer sess.ReleaseLockAndDiscardRequest()
 
 	sess.PrepareForHandlingRequest(w, req)
+	pr("session id:", sess.Id, "page widget:", sess.PageWidget)
 
 	// If session hasn't been prepared yet, do so.
 	if sess.PageWidget == nil {
+		pr(VERT_SP, "constructing page widget")
+
 		// Open a container for the entire page
 		m := sess.WidgetManager()
-		m.Id(WidgetIdPage)
-		widget := m.Open()
-		sess.PageWidget = widget
-		m.Close()
+		sess.PageWidget = m.RebuildPageWidget()
 		j.App.PrepareSession(sess)
 	}
 
@@ -265,14 +265,9 @@ func (j JServer) processPageRequest(s Session, path string) bool {
 		}
 	}
 
-	page := j.pageRequester.Process(s, path)
-	if page != nil {
-		s.SwitchToPage(page)
-		j.sendFullPage(s)
-		return true
-	}
-
-	return false
+	j.pageRequester.Process(s, path)
+	j.sendFullPage(s)
+	return true
 }
 
 func (j JServer) AddResourceHandler(pathPrefix string, handler PathHandler) {

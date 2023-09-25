@@ -86,6 +86,13 @@ func InferContentTypeFromBlob(data []byte) string {
 
 const DOT_DELIMITER = '.'
 
+func AssertNoDots(expr string) string {
+	if FirstDot(expr) >= 0 {
+		BadArg("Expression must not have dots:", QUO, expr)
+	}
+	return expr
+}
+
 func FirstDot(expr string) int {
 	return strings.IndexByte(expr, DOT_DELIMITER)
 }

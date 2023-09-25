@@ -24,6 +24,8 @@ type SignUpPageStruct struct {
 }
 type SignUpPage = *SignUpPageStruct
 
+var SignUpPageTemplate = &SignUpPageStruct{}
+
 func NewSignUpPage(session Session) SignUpPage {
 	t := &SignUpPageStruct{}
 	// The session will be nil if this is to be the 'template' page (used to construct
