@@ -54,7 +54,6 @@ func (p ManagerPage) generateWidgets(sess Session) {
 
 	var cardWidget AnimalCard
 	{
-		Todo("Why a separate card listener?")
 		w := NewAnimalCard(m.AllocateAnonymousId("managercard"), DefaultAnimal,
 			func(sess Session, widget AnimalCard, arg string) {
 				animalId := sess.Context().(int)

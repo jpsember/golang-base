@@ -27,6 +27,7 @@ func (w AnimalCard) Animal() Animal {
 }
 
 func NewAnimalCard(widgetId string, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) AnimalCard {
+	Todo("!Not sure we will need card buttons")
 	Todo("NewAnimalCard should use widgetmanager id?")
 	// An animal id of zero can be used for constructing a template (e.g., list item widget)
 	AssertNoDots(widgetId)

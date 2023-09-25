@@ -478,7 +478,7 @@ func (s Session) RepaintIds(ids ...string) WidgetManager {
 }
 
 func (s Session) RepaintId(id string) Session {
-	deb := debRepaint || true
+	deb := debRepaint || false
 	pr := PrIf("Widget.RepaintId", deb)
 	ok := s.repaintSet.Add(id)
 	if deb {

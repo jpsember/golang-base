@@ -58,23 +58,31 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	Todo("!Don't add markup that is outside of the div<widget id>, else it will pile up due to ajax refreshes")
 	m.TgOpen(`div id=`).A(QUO, s.PrependId(w.Id())).TgContent()
 	m.Comments(`GridWidget`, w.IdSummary())
-	if len(w.children) != 0 {
-		m.TgOpen(`div class='row'`).TgContent()
-		Todo("!Have a special flag like invisible, but different, for widgets used for lists; we don't want them to appear in the container...")
-		for _, child := range w.children {
-			m.TgOpen(`div class="col-sm-`).A(child.Columns(), `"`)
-			if WidgetDebugRenderingFlag {
-				m.Style(`background-color:`, DebugColorForString(child.Id()), `;`)
-				m.Style(`border-style:double;`)
-			}
-			m.TgContent()
-			{
-				verify := m.VerifyBegin()
-				RenderWidget(child, s, m)
-				m.VerifyEnd(verify, child)
-			}
-			m.TgClose()
+	
+  anyPlotted := false
+	for _, child := range w.children {
+		if child.Detached() {
+			continue
 		}
+		if !anyPlotted {
+			anyPlotted = true
+			m.TgOpen(`div class='row'`).TgContent()
+		}
+
+		m.TgOpen(`div class="col-sm-`).A(child.Columns(), `"`)
+		if WidgetDebugRenderingFlag {
+			m.Style(`background-color:`, DebugColorForString(child.Id()), `;`)
+			m.Style(`border-style:double;`)
+		}
+		m.TgContent()
+		{
+			verify := m.VerifyBegin()
+			RenderWidget(child, s, m)
+			m.VerifyEnd(verify, child)
+		}
+		m.TgClose()
+	}
+	if anyPlotted {
 		m.TgClose().Br()
 	}
 	m.TgClose()

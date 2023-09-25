@@ -170,12 +170,10 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 			// While rendering this list's items, we will replace any existing default state provider with
 			// the list's one.  Save the current default state provider here, for later restoration.
-
 			savedStateProvider := s.BaseStateProvider()
 			pr(VERT_SP, "saved pv:", INDENT, savedStateProvider)
 
 			for _, id := range elementIds {
-				m.Comment("----------------- rendering list item with id:", id)
 				s.SetBaseStateProvider(w.constructStateProvider(s, id, savedStateProvider.Prefix))
 				// Note that we are not calling RenderWidget(), which would not draw anything since the
 				// list item widget has been marked as detached

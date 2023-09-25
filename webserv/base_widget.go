@@ -37,7 +37,7 @@ func (w BaseWidget) setOrClearFlag(flag int, set bool) bool {
 	if set {
 		new |= flag
 	} else {
-		new ^= flag
+		new &= ^flag
 	}
 	w.bitFlags = new
 	return new != old
