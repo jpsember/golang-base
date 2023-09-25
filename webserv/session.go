@@ -344,11 +344,13 @@ func (s Session) ProcessWidgetValue(widget Widget, value string, context any) {
 	s.listenerContext = nil
 	{
 		pr("LowListener returned updatedValue:", updatedValue, "err:", err)
-		if err != nil {
-			Pr("got error from widget listener:", widget.Id(), INDENT, err)
-		} else if updatedValue != nil {
+		if updatedValue != nil {
 			pr("setting widget value", widget.Id(), "to:", updatedValue)
 			s.SetWidgetValue(widget, updatedValue)
+			Todo("!Do we always want to repaint widget if setting its value?")
+		}
+		if err != nil {
+			Pr("got error from widget listener:", widget.Id(), INDENT, err)
 		}
 	}
 	// Always update the problem, in case we are clearing a previous error
@@ -369,12 +371,7 @@ func (s Session) processClientInfo(infoString string) {
 
 // Mark a widget for repainting
 func (s Session) Repaint(w Widget) Session {
-	pr := PrIf("", debRepaint)
-	pr("Repaint:", w)
-	if s.repaintSet.Add(w.Id()) {
-		pr("...adding to set")
-	}
-	return s
+	return s.RepaintId(w.Id())
 }
 
 // Traverse a widget tree, rendering widgets that have been marked for repainting.
@@ -484,7 +481,7 @@ func (s Session) auxSetWidgetProblem(widgetId string, problemText string) {
 		} else {
 			state.Put(key, problemText)
 		}
-		s.RepaintIds(widgetId)
+		s.RepaintId(widgetId)
 	}
 }
 
@@ -698,8 +695,17 @@ func (s Session) WidgetStringValue(w Widget) string {
 }
 
 func (s Session) SetWidgetValue(w Widget, value any) {
+	pr := PrIf("SetWidgetValue", true)
 	p := orBaseProvider(s, w.StateProvider())
-	p.State.Put(compileId(p.Prefix, w.Id()), value)
+	wid := w.Id()
+	id := compileId(p.Prefix, wid)
+	oldVal := p.State.OptUnsafe(id)
+	changed := value != oldVal
+	pr("old:", oldVal, "new:", value, "changed:", changed)
+	if changed {
+		p.State.Put(id, value)
+		s.RepaintId(wid)
+	}
 }
 
 // Get the context for the current listener.  For list items, this will be the list element id.

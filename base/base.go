@@ -40,6 +40,20 @@ func Caller() string {
 	return CallerLocation(2)
 }
 
+func Callers(skipStart, count int) string {
+	x := GenerateStackTrace(1 + skipStart).Elements
+	x = ClampedSlice(x, 0, 0+count)
+	if len(x) == 0 {
+		return "<no location available!>"
+	}
+	sb := strings.Builder{}
+	for _, y := range x {
+		sb.WriteString(y.StringBrief())
+		sb.WriteByte('\n')
+	}
+	return sb.String()
+}
+
 func Panic(message ...any) {
 	auxAbort(1, "Panic", message...)
 }

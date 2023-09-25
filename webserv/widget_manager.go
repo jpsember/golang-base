@@ -473,13 +473,27 @@ func (s Session) RepaintIds(ids ...string) WidgetManager {
 	m := s.WidgetManager()
 	for _, id := range ids {
 		w := m.Opt(id)
+		Todo("Do the existence check elsewhere?")
 		if w != nil {
-			s.Repaint(w)
+			s.RepaintId(id)
 		} else {
 			Alert("#50<1Can't find widget to repaint with id:", id)
 		}
 	}
 	return m
+}
+
+func (s Session) RepaintId(id string) Session {
+	deb := debRepaint || true
+	pr := PrIf("Widget.RepaintId", deb)
+	ok := s.repaintSet.Add(id)
+	if deb {
+		pr("id:", id, INDENT, Callers(0, 3))
+	}
+	if WebServDebug && !ok {
+		pr("****** was already in list")
+	}
+	return s
 }
 
 func (m WidgetManager) PushContainer(container Widget) WidgetManager {

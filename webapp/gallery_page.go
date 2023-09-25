@@ -225,9 +225,13 @@ func buttonListener(s Session, widget Widget, arg string) {
 	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
 	alertWidget.SetVisible(true)
 
-	s.State.Put(alertWidget.Id(),
-		strings.TrimSpace(newVal))
-	s.Repaint(alertWidget)
+	if Alert("Is this adequate?") {
+		s.SetWidgetValue(alertWidget, newVal)
+	} else {
+		s.State.Put(alertWidget.Id(),
+			strings.TrimSpace(newVal))
+		s.Repaint(alertWidget)
+	}
 }
 
 func (p GalleryPage) checkboxListener(s Session, widget CheckboxWidget, state bool) (bool, error) {
