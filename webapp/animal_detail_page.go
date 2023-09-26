@@ -220,7 +220,8 @@ func (p AnimalDetailPage) generateForViewing(s Session) {
 	m.Close()
 
 	m.Open()
-	imgWidget := m.AddImage()
+	Todo("extract common widget creation between manager/donor")
+	imgWidget := m.Id(Animal_PhotoThumbnail).AddImage()
 	imgWidget.URLProvider = p.provideURL
 
 	// Scale the photos based on browser resolution
@@ -250,18 +251,9 @@ func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget, a
 		return
 	}
 
-	b := NewAnimal()
-	p.writeStateToAnimal(s, b)
+	b := p.editor.Read().(Animal)
 
-	if Alert("Verifying equivalency") {
-		s2 := p.editor.State.AsJSMap().CompactString()
-		s1 := b.ToJson().AsJSMap().CompactString()
-		///s2 := b2.ToJson().AsJSMap().CompactString()
-		Pr("s1:", s1)
-		Pr("s2:", s2)
-		CheckState(s1 == s2)
-	}
-
+	p.DebugSanityCheck(s, b)
 	ub, err := CreateAnimal(b)
 	if ReportIfError(err, "CreateAnimal after editing") {
 		return
@@ -303,14 +295,10 @@ func (p AnimalDetailPage) doneEditListener(s Session, widget Widget, arg string)
 		return
 	}
 
-	a, err := ReadActualAnimal(p.animalId)
-	if ReportIfError(err, "ReadAnimal after editing") {
-		return
-	}
-	b := a.ToBuilder()
-	p.writeStateToAnimal(s, b)
+	b := p.editor.Read().(Animal)
+	p.DebugSanityCheck(s, b)
 
-	err = UpdateAnimal(b)
+	err := UpdateAnimal(b)
 	if ReportIfError(err, "UpdateAnimal after editing") {
 		return
 	}
@@ -324,18 +312,6 @@ func (p AnimalDetailPage) doneViewListener(s Session, widget Widget, arg string)
 
 func (p AnimalDetailPage) abortEditListener(s Session, widget Widget, arg string) {
 	p.exit(s)
-}
-
-func (p AnimalDetailPage) writeStateToAnimal(s Session, b AnimalBuilder) {
-	Todo("This method ought to be removed; we can probably just call editor.parse")
-	pr := PrIf("writeStateToAnimal", true)
-	pr("builder, before:", INDENT, b)
-	b.SetName(p.nameWidget.Value(s))
-	b.SetSummary(p.summaryWidget.Value(s))
-	b.SetDetails(p.detailsWidget.Value(s))
-	b.SetPhotoThumbnail(p.editor.GetInt(Animal_PhotoThumbnail))
-	b.SetManagerId(SessionUser(s).Id())
-	pr("builder, after:", INDENT, b)
 }
 
 func (p AnimalDetailPage) exit(s Session) {
@@ -462,7 +438,7 @@ func (p AnimalDetailPage) provideURL(s Session) string {
 	pr := PrIf("", false)
 	url := ""
 
-	// We need to access the state directly, without a widget.
+	// We need to access the state directly, without a widget; we can get it from the animal embedded in the editor
 	imageId := p.editor.GetInt(Animal_PhotoThumbnail)
 	if imageId == 0 {
 		imageId = 1 // This is the default placeholder blob id
@@ -474,6 +450,33 @@ func (p AnimalDetailPage) provideURL(s Session) string {
 		pr("read into cache, url:", url)
 	}
 	return url
+}
+
+func (p AnimalDetailPage) DebugSanityCheck(s Session, a Animal) {
+	problem := ""
+	for {
+		problem = "wrong manager"
+		if a.ManagerId() != SessionUser(s).Id() {
+			break
+		}
+
+		problem = "bad photo"
+		if a.PhotoThumbnail() < 2 {
+			break
+		}
+
+		problem = "missing text"
+		if a.Name() == "" || a.Summary() == "" || a.Details() == "" {
+			break
+		}
+
+		problem = ""
+		break
+	}
+
+	if problem != "" {
+		BadState("Problem with sanity check:", problem, INDENT, a)
+	}
 }
 
 func DiscardBlob(id int) {

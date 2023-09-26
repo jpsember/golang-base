@@ -26,7 +26,8 @@ type SignUpPage = *SignUpPageStruct
 
 var SignUpPageTemplate = &SignUpPageStruct{}
 
-func NewSignUpPage(session Session) SignUpPage {
+func newSignUpPage(session Session) SignUpPage {
+	Todo("Use editor and dataclass to hold the state, e.g. user name, pwd, pwd verify")
 	t := &SignUpPageStruct{}
 	// The session will be nil if this is to be the 'template' page (used to construct
 	// other instances)
@@ -42,7 +43,7 @@ func (p SignUpPage) ConstructPage(s Session, args PageArgs) Page {
 	// Use the PageArgs to verify that the construction parameters are valid.
 	if args.CheckDone() {
 		if OptSessionUser(s).Id() == 0 {
-			return NewSignUpPage(s)
+			return newSignUpPage(s)
 		}
 	}
 	return nil

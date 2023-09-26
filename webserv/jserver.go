@@ -36,12 +36,17 @@ type JServerStruct struct {
 
 type JServer = *JServerStruct
 
+var singletonJServer JServer
+
 func NewJServer(app ServerApp) JServer {
+	CheckState(singletonJServer == nil, "singleton server already constructed")
+
 	t := &JServerStruct{
 		App:           app,
 		pageRequester: NewPageRequester(app),
 		handlerMap:    make(map[string]PathHandler),
 	}
+	singletonJServer = t
 	t.resources = app.Resources().AssertNonEmpty()
 	t.registerPages()
 	t.headerMarkup = t.resources.JoinM("header.html").ReadStringM()
@@ -70,6 +75,12 @@ func (j JServer) registerPages() {
 }
 
 const BlobURLPrefix = "~/"
+
+func DebVerifyServerStarted() {
+	if singletonJServer == nil || !singletonJServer.started {
+		BadState("JServer has not been started yet")
+	}
+}
 
 func (j JServer) StartServing() {
 

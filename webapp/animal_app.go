@@ -60,7 +60,7 @@ func (oper AnimalOper) Perform(app *App) {
 
 func (oper AnimalOper) PageTemplates() []Page {
 	return []Page{
-		LandingPageTemplate, GalleryPageTemplate, NewSignUpPage(nil), FeedPageTemplate, ManagerPageTemplate,
+		LandingPageTemplate, GalleryPageTemplate, SignUpPageTemplate, FeedPageTemplate, ManagerPageTemplate,
 		ViewAnimalPageTemplate, CreateAnimalPageTemplate, EditAnimalPageTemplate,
 	}
 }

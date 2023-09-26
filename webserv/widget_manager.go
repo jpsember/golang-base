@@ -26,6 +26,7 @@ type WidgetManagerObj struct {
 }
 
 func NewWidgetManager() WidgetManager {
+	DebVerifyServerStarted()
 	w := WidgetManagerObj{
 		widgetMap: make(map[string]Widget),
 	}
