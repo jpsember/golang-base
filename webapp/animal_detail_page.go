@@ -5,17 +5,13 @@ import (
 	"github.com/jpsember/golang-base/jimg"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
-	"strings"
 )
 
 const anim_state_prefix = "_create_animal_:"
 
-// Use the field names that Animal produces as JSMaps
+// // Use the field names that Animal produces as JSMaps
 const (
-	id_animal_name        = anim_state_prefix + "name"
-	id_animal_summary     = anim_state_prefix + "summary"
-	id_animal_details     = anim_state_prefix + "details"
-	id_animal_uploadpic   = anim_state_prefix + "photo"
+	id_animal_uploadpic   = "photo"
 	id_animal_display_pic = anim_state_prefix + "photo_thumbnail"
 )
 
@@ -23,8 +19,14 @@ type AnimalDetailPageStruct struct {
 	animalId int
 	editing  bool
 	name     string
-	// This will have the fields of the animal we are editing, as a JSMap
-	anim2 JSMap
+
+	editor DataEditor
+
+	nameWidget      InputWidget
+	summaryWidget   InputWidget
+	detailsWidget   InputWidget
+	uploadPicWidget Widget
+	imgWidget       Widget
 }
 
 type AnimalDetailPage = *AnimalDetailPageStruct
@@ -33,65 +35,34 @@ var CreateAnimalPageTemplate = &AnimalDetailPageStruct{name: "new"}
 var EditAnimalPageTemplate = &AnimalDetailPageStruct{name: "edit"}
 var ViewAnimalPageTemplate = &AnimalDetailPageStruct{name: "view"}
 
-func NewCreateAnimalPage(sess Session) AnimalDetailPage {
-	t := &AnimalDetailPageStruct{
-		editing: true,
-		name:    "new",
-	}
-	t.generateWidgets(sess)
-	return t
-}
-
-func NewEditAnimalPage(sess Session, animalId int) AnimalDetailPage {
-	t := &AnimalDetailPageStruct{
-		animalId: animalId,
-		editing:  true,
-		name:     "edit",
-	}
-	// This might be the template
-	if animalId == 0 {
-		return t
-	}
-	t.prepareAnimal()
-	t.generateWidgets(sess)
-	return t
-}
-
-func NewViewAnimalPage(sess Session, animalId int) AnimalDetailPage {
-	t := &AnimalDetailPageStruct{
-		animalId: animalId,
-		editing:  false,
-		name:     "view",
-	}
-	// This might be the template
-	if animalId == 0 {
-		return t
-	}
-	t.prepareAnimal()
-	t.generateWidgets(sess)
-	return t
-}
-
 func (p AnimalDetailPage) prepareAnimal() {
 	anim, err := ReadAnimal(p.animalId)
 	if ReportIfError(err, "NewEditAnimalPage") {
 		BadState(err)
 	}
-	p.anim2 = anim.ToJson().AsJSMap()
+	p.editor = NewDataEditor(anim)
 }
 
 func (p AnimalDetailPage) ConstructPage(s Session, args PageArgs) Page {
-	switch p.name {
+	pr := PrIf("AnimDetailPage.ConstructPage", true)
+
+	// Construct a copy of the template
+	t := *p
+	var result Page
+
+	switch t.name {
 	case "new":
 		if args.Done() {
-			return NewCreateAnimalPage(s)
+			t.editing = true
 		}
+		result = &t
+		break
 	case "view", "edit":
-		animalId := args.PositiveInt()
+		t.animalId = args.PositiveInt()
 		if args.Problem() {
 			break
 		}
-		anim := ReadAnimalIgnoreError(animalId)
+		anim := ReadAnimalIgnoreError(t.animalId)
 		if anim.Id() == 0 {
 			break
 		}
@@ -100,16 +71,25 @@ func (p AnimalDetailPage) ConstructPage(s Session, args PageArgs) Page {
 			if p.name == "edit" {
 				break
 			}
-			return NewViewAnimalPage(s, animalId)
+			t.editing = false
 		} else {
 			if anim.ManagerId() != user.Id() {
 				break
 			}
-			return NewEditAnimalPage(s, animalId)
+			t.editing = true
 		}
-		return p
+		t.prepareAnimal()
+		result = &t
+		break
 	}
-	return nil
+
+	if result != nil {
+		pr("constructed page:", result.Name())
+		pr("generating widgets")
+		t.generateWidgets(s)
+		pr("done generating")
+	}
+	return result
 }
 
 func (p AnimalDetailPage) Name() string {
@@ -136,19 +116,14 @@ func (p AnimalDetailPage) readStateFromAnimal(sess Session) {
 			return
 		}
 	}
-	s := sess.State
-	s.Put(id_animal_name, a.Name())
-	s.Put(id_animal_summary, a.Summary())
-	s.Put(id_animal_details, a.Details())
-	s.Put(id_animal_display_pic, a.PhotoThumbnail())
+	p.editor = NewDataEditor(a)
+	//s.Put(id_animal_display_pic, a.PhotoThumbnail())
 }
 
 func (p AnimalDetailPage) generateWidgets(s Session) {
 	if s == nil {
 		return
 	}
-	// Until more are needed, the user header (assuming one is present) is the only listener, so forward it
-	//s.SetClickListener(ProcessUserHeaderClick)
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
 	GenerateHeader(s, p)
 	if p.viewing() {
@@ -159,7 +134,7 @@ func (p AnimalDetailPage) generateWidgets(s Session) {
 
 	Todo("!Have ajax listener that can show advice without an actual error, e.g., if user left some fields blank")
 
-	s.WidgetManager().PushStateProvider(NewStateProvider(anim_state_prefix, p.anim2))
+	s.WidgetManager().PushStateProvider(p.editor.StateProvider())
 	if p.editing {
 		p.generateForEditing(s)
 	} else {
@@ -173,12 +148,25 @@ func (p AnimalDetailPage) generateForEditing(s Session) {
 	m.Col(6).Open()
 	{
 		m.Col(12)
-		m.Label("Name").Id(id_animal_name).AddInput(AnimalNameListener)
 
-		m.Label("Summary").Id(id_animal_summary).AddInput(p.AnimalTextListener)
+		Todo("!datagen option to generate field name constants for use here")
+
+		p.nameWidget = m.Label("Name").Id(Animal_Name).AddInput(AnimalNameListener)
+
+		p.summaryWidget = m.Label("Summary").Id(Animal_Summary).AddInput(p.animalSummaryListener)
 		m.Size(SizeTiny).Label("A brief paragraph to appear in the 'card' view.").AddText()
-		m.Label("Details").Id(id_animal_details).AddInput(p.AnimalTextListener)
+
+		p.detailsWidget = m.Label("Details").Id(Animal_Details).AddInput(p.animalDetailsListener)
 		m.Size(SizeTiny).Label("Additional paragraphs to appear on the 'details' view.").AddText()
+
+		/**
+			name            string
+		summary         string
+		details         string
+		campaignTarget  int
+		campaignBalance int
+		photoThumbnail  int
+		*/
 
 		m.Col(6)
 		if p.animalId != 0 {
@@ -192,12 +180,15 @@ func (p AnimalDetailPage) generateForEditing(s Session) {
 	m.Close()
 
 	m.Open()
-	m.Id(id_animal_uploadpic).Label("Photo").AddFileUpload(p.uploadPhotoListener)
+	//m.Id(id_animal_uploadpic)
+	p.uploadPicWidget =
+		m.Label("Photo").Id(id_animal_uploadpic).AddFileUpload(p.uploadPhotoListener)
+
 	imgWidget := m.Id(id_animal_display_pic).AddImage()
 	imgWidget.URLProvider = p.provideURL
-
 	// Scale the photos based on browser resolution
 	imgWidget.SetSize(AnimalPicSizeNormal, 0.6)
+	p.imgWidget = imgWidget
 
 	m.Close()
 }
@@ -209,7 +200,7 @@ func (p AnimalDetailPage) generateForViewing(s Session) {
 	{
 		Todo("!Flesh this out some")
 		m.Col(12)
-		m.Id(id_animal_name).AddText()
+		m.Id("name").AddText()
 
 		//m.Label("Summary").Id(id_animal_summary).AddInput(p.AnimalTextListener)
 		//m.Size(SizeTiny).Label("A brief paragraph to appear in the 'card' view.").AddText()
@@ -223,11 +214,13 @@ func (p AnimalDetailPage) generateForViewing(s Session) {
 	m.Close()
 
 	m.Open()
-	imgWidget := m.Id(id_animal_display_pic).AddImage()
+	imgWidget := m.AddImage()
 	imgWidget.URLProvider = p.provideURL
 
 	// Scale the photos based on browser resolution
 	imgWidget.SetSize(AnimalPicSizeNormal, 0.6)
+
+	p.imgWidget = imgWidget
 
 	m.Close()
 }
@@ -236,12 +229,12 @@ func AnimalNameListener(s Session, widget InputWidget, value string) (string, er
 	return ValidateAnimalName(value, VALIDATE_EMPTYOK)
 }
 
-func (p AnimalDetailPage) AnimalTextListener(sess Session, widget InputWidget, value string) (string, error) {
-	if widget.Id() == id_animal_summary {
-		return animalInfoListener(value, 20, 200, true)
-	} else {
-		return animalInfoListener(value, 200, 2000, true)
-	}
+func (p AnimalDetailPage) animalSummaryListener(sess Session, widget InputWidget, value string) (string, error) {
+	return animalInfoListener(value, 20, 200, true)
+}
+
+func (p AnimalDetailPage) animalDetailsListener(sess Session, widget InputWidget, value string) (string, error) {
+	return animalInfoListener(value, 200, 2000, true)
 }
 
 func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget, arg string) {
@@ -267,17 +260,19 @@ func (p AnimalDetailPage) validateAll(s Session) bool {
 	pr := PrIf("", false)
 
 	{
-		text := s.StringValue(id_animal_name)
+		text := s.WidgetStringValue(p.nameWidget)
 		_, err := ValidateAnimalName(text, 0)
-		s.SetWidgetProblem(id_animal_name, err)
+		s.SetProblem(p.nameWidget, err)
 	}
 
-	preCreateValidateText(s, id_animal_summary, 20, 200, 0)
-	preCreateValidateText(s, id_animal_details, 200, 2000, 0)
+	preCreateValidateText(s, p.summaryWidget, 20, 200, 0)
+	preCreateValidateText(s, p.detailsWidget, 200, 2000, 0)
 	{
-		picId := s.IntValue(id_animal_display_pic)
+		picId :=
+			s.WidgetIntValue(p.imgWidget)
+		//s.IntValue(id_animal_display_pic)
 		if picId == 0 {
-			s.SetWidgetProblem(id_animal_uploadpic, "Please upload a photo")
+			s.SetProblem(p.uploadPicWidget, "Please upload a photo")
 		}
 	}
 
@@ -317,22 +312,27 @@ func (p AnimalDetailPage) abortEditListener(s Session, widget Widget, arg string
 }
 
 func (p AnimalDetailPage) writeStateToAnimal(s Session, b AnimalBuilder) {
-	b.SetName(strings.TrimSpace(s.StringValue(id_animal_name)))
-	b.SetSummary(strings.TrimSpace(s.StringValue(id_animal_summary)))
-	b.SetDetails(strings.TrimSpace(s.StringValue(id_animal_details)))
+	pr := PrIf("writeStateToAnimal", true)
+	pr("builder, before:", INDENT, b)
+	b.SetName(p.nameWidget.Value(s))
+	b.SetSummary(p.summaryWidget.Value(s))
+	b.SetDetails(p.detailsWidget.Value(s))
 	b.SetPhotoThumbnail(s.IntValue(id_animal_display_pic))
 	b.SetManagerId(SessionUser(s).Id())
+	pr("builder, after:", INDENT, b)
 }
 
 func (p AnimalDetailPage) exit(s Session) {
-	Todo("I suspect the widgetManager is still holding onto ids from the current page, and maybe switching doesn't remove them?")
+	pr := PrIf("AnimalDetailPage.exit", true)
+	pr("state fields:", INDENT, s.State)
 	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
-	Pr("attempting to switch to new feed page? ids:", INDENT, s.WidgetManager().IdSummary())
+	pr("state fields after deleting:", INDENT, s.State)
 	if SessionUser(s).UserClass() == UserClassDonor {
 		s.SwitchToPage(FeedPageTemplate, nil)
 	} else {
 		s.SwitchToPage(ManagerPageTemplate, nil)
 	}
+	pr("state fields after switching pages:", INDENT, s.State)
 }
 
 func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (string, error) {
@@ -364,10 +364,10 @@ func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (s
 	return n, err
 }
 
-func preCreateValidateText(s Session, widgetId string, minLength int, maxLength int, flags ValidateFlag) {
-	n := s.StringValue(widgetId)
+func preCreateValidateText(s Session, widget Widget, minLength int, maxLength int, flags ValidateFlag) {
+	n := s.WidgetStringValue(widget)
 	n, err := animalInfoListener(n, minLength, maxLength, flags.Has(VALIDATE_EMPTYOK))
-	s.SetWidgetProblem(widgetId, err)
+	s.SetProblem(widget, err)
 }
 
 func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by []byte) error {

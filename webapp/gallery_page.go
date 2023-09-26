@@ -113,12 +113,12 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			Todo("We need to create a state provider for cards, when not in list (list handles that already somehow)")
 
 			// Create a new card that will contain other widgets
-			c1 := NewAnimalCard("gallery_card", ReadAnimalIgnoreError(3), cardListener, "Hello", cardButtonListener)
+			c1 := NewAnimalCard(m, ReadAnimalIgnoreError(3), cardListener, "Hello", cardButtonListener)
 			//c1.SetTrace(true)
 
 			m.Add(c1)
 			m.Add(
-				NewAnimalCard("gallery_card2", ReadAnimalIgnoreError(4), nil, "Bop", cardButtonListener))
+				NewAnimalCard(m, ReadAnimalIgnoreError(4), nil, "Bop", cardButtonListener))
 
 			m.Open()
 

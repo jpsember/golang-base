@@ -353,6 +353,11 @@ func (s Session) ProcessWidgetValue(widget Widget, value string, context any) {
 			Pr("got error from widget listener:", widget.Id(), INDENT, err)
 		}
 	}
+
+	// If the widget no longer exists, we may have changed pages...
+	if s.widgetManager.Opt(widget.Id()) == nil {
+		return
+	}
 	// Always update the problem, in case we are clearing a previous error
 	s.SetWidgetProblem(widget.Id(), err)
 }
@@ -455,7 +460,7 @@ func (s Session) Ok() bool {
 	return s.requestProblem == nil
 }
 
-func (s Session) SetWidgetProblem(widgetId string, problem any) {
+func (s Session) SetProblem(widget Widget, problem any) {
 	var text string
 	if problem != nil {
 		switch t := problem.(type) {
@@ -467,11 +472,14 @@ func (s Session) SetWidgetProblem(widgetId string, problem any) {
 			BadArg("<1Unsupported type")
 		}
 	}
-	s.auxSetWidgetProblem(widgetId, text)
+	s.auxSetWidgetProblem(widget, text)
+}
+func (s Session) SetWidgetProblem(widgetId string, problem any) {
+	s.SetProblem(s.widgetManager.Get(widgetId), problem)
 }
 
-func (s Session) auxSetWidgetProblem(widgetId string, problemText string) {
-	key := WidgetIdWithProblem(widgetId)
+func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {
+	key := WidgetIdWithProblem(widget.Id())
 	state := s.State
 	existingProblem := state.OptString(key, "")
 	if existingProblem != problemText {
@@ -481,7 +489,7 @@ func (s Session) auxSetWidgetProblem(widgetId string, problemText string) {
 		} else {
 			state.Put(key, problemText)
 		}
-		s.RepaintId(widgetId)
+		s.RepaintId(widget.Id())
 	}
 }
 
@@ -561,7 +569,7 @@ func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
 // ------------------------------------------------------------------------------------
 
 func (s Session) SwitchToPage(template Page, args PageArgs) {
-	pr := PrIf("SwitchToPage", true)
+	pr := PrIf("SwitchToPage", false)
 	pr("page:", template.Name(), "from:", Caller())
 
 	if args == nil {
@@ -691,6 +699,9 @@ func (s Session) WidgetBoolValue(w Widget) bool {
 // Read widget value; assumed to be a string.
 func (s Session) WidgetStringValue(w Widget) string {
 	p := orBaseProvider(s, w.StateProvider())
+	if p.State == nil {
+		BadState("no state in state provider!")
+	}
 	return readStateStringValue(p, w.Id())
 }
 

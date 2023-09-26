@@ -79,7 +79,7 @@ func (m WidgetManager) consumePendingId() string {
 	m.pendingId = ""
 	return id
 }
-func (m WidgetManager) consumeOptionalPendingId() string {
+func (m WidgetManager) ConsumeOptionalPendingId() string {
 	id := m.pendingId
 	if id != "" {
 		m.pendingId = ""
@@ -249,7 +249,7 @@ func (m WidgetManager) resetPendingColumns() {
 // Add a child GridContainerWidget, and push onto stack as active container
 func (m WidgetManager) Open() Widget {
 	m.Log("open")
-	widget := NewContainerWidget(m.consumeOptionalPendingId())
+	widget := NewContainerWidget(m.ConsumeOptionalPendingId())
 	m.Add(widget)
 	return m.OpenContainer(widget)
 }
@@ -312,14 +312,14 @@ func (m WidgetManager) AddInput(listener InputWidgetListener) InputWidget {
 
 // The ButtonWidgetListener will receive message USER_HEADER_ACTION_xxxx.
 func (m WidgetManager) AddUserHeader(listener ButtonWidgetListener) UserHeaderWidget {
-	w := NewUserHeaderWidget(m.consumeOptionalPendingId(), listener)
+	w := NewUserHeaderWidget(m.ConsumeOptionalPendingId(), listener)
 	w.BgndImageMarkup = `style=" height:50px; background-image:url('app_header.jpg'); background-repeat: no-repeat;"`
 	m.Add(w)
 	return w
 }
 
 func (m WidgetManager) auxAddInput(listener InputWidgetListener, password bool) InputWidget {
-	id := m.consumeOptionalPendingId()
+	id := m.ConsumeOptionalPendingId()
 	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()), listener, password)
 	m.Add(t)
 	return t
@@ -334,7 +334,7 @@ func (m WidgetManager) AddList(list ListInterface, itemWidget Widget) ListWidget
 		BadArg("widget is not visible (detaching will happen by us)")
 	}
 	itemWidget.SetDetached(true)
-	id := m.consumeOptionalPendingId()
+	id := m.ConsumeOptionalPendingId()
 	t := NewListWidget(id, list, itemWidget)
 	m.Add(t)
 	return t
@@ -350,7 +350,7 @@ func (m WidgetManager) getStaticContentAndId() (string, string) {
 	if hasStaticContent {
 		CheckState(m.pendingId == "", "specify id OR static content")
 	}
-	id := m.consumeOptionalPendingId()
+	id := m.ConsumeOptionalPendingId()
 	return staticContent, id
 }
 
@@ -380,7 +380,7 @@ func (m WidgetManager) AddText() TextWidget {
 }
 
 func (m WidgetManager) AddButton(listener ButtonWidgetListener) ButtonWidget {
-	w := NewButtonWidget(m.consumeOptionalPendingId(), listener)
+	w := NewButtonWidget(m.ConsumeOptionalPendingId(), listener)
 	w.SetSize(m.consumePendingSize())
 	w.SetAlign(m.consumePendingAlign())
 	m.Log("Adding button, id:", w.Id())
@@ -390,7 +390,7 @@ func (m WidgetManager) AddButton(listener ButtonWidgetListener) ButtonWidget {
 }
 
 func (m WidgetManager) AddSpace() WidgetManager {
-	return m.Add(NewBaseWidget(m.consumeOptionalPendingId()))
+	return m.Add(NewBaseWidget(m.ConsumeOptionalPendingId()))
 }
 
 func doNothingFileUploadListener(sess Session, widget FileUpload, value []byte) error {

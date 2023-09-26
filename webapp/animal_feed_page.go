@@ -41,7 +41,7 @@ func (p FeedPage) generateWidgets(s Session) {
 	var cardWidget AnimalCard
 	{
 		// Construct the list item widget
-		w := NewAnimalCard(m.AllocateAnonymousId("feedcard"), DefaultAnimal,
+		w := NewAnimalCard(m, DefaultAnimal,
 			func(sess Session, widget AnimalCard, arg string) {
 				animalId := sess.Context().(int)
 				Pr("card listener, animal id:", animalId, "arg:", arg)

@@ -26,11 +26,13 @@ func (w AnimalCard) Animal() Animal {
 	return w.cardAnimal
 }
 
-func NewAnimalCard(widgetId string, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) AnimalCard {
+func NewAnimalCard(m WidgetManager, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) AnimalCard {
 	Todo("!Not sure we will need card buttons")
-	Todo("NewAnimalCard should use widgetmanager id?")
+
+	widgetId := m.ConsumeOptionalPendingId()
+
 	// An animal id of zero can be used for constructing a template (e.g., list item widget)
-	AssertNoDots(widgetId)
+
 	// If a button is requested, it must have a listener
 	CheckArg((buttonLabel == "") == (buttonListener == nil))
 
@@ -43,7 +45,6 @@ func NewAnimalCard(widgetId string, animal Animal, cardListener CardWidgetListen
 	Todo("!any way of simplifying the LowListener boilerplate here and in other widgets? Using templates perhaps?")
 	w.LowListen = w.lowLevelListener // Only has an effect if cardListener != nil
 	w.InitBase(widgetId)
-	//w.SetTrace(true)
 	Todo("!instead of passing around WidgetManager, maybe pass around Sessions, which contain the wm?")
 	return &w
 }

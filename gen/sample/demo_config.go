@@ -78,20 +78,20 @@ func (v *sDemoConfig) ToBuilder() DemoConfigBuilder {
 
 func (v *sDemoConfig) ToJson() JSEntity {
 	var m = NewJSMap()
-	m.Put("simulate", v.simulate)
-	m.Put("name", v.name)
-	m.Put("greeting", v.greeting)
-	m.Put("target", v.target)
+	m.Put(DemoConfig_Simulate, v.simulate)
+	m.Put(DemoConfig_Name, v.name)
+	m.Put(DemoConfig_Greeting, v.greeting)
+	m.Put(DemoConfig_Target, v.target)
 	return m
 }
 
 func (v *sDemoConfig) Parse(source JSEntity) DataClass {
 	var s = source.AsJSMap()
 	var n = newDemoConfig().(*sDemoConfig)
-	n.simulate = s.OptBool("simulate", false)
-	n.name = s.OptString("name", "")
-	n.greeting = s.OptString("greeting", "hello")
-	n.target = s.OptInt("target", 12)
+	n.simulate = s.OptBool(DemoConfig_Simulate, false)
+	n.name = s.OptString(DemoConfig_Name, "")
+	n.greeting = s.OptString(DemoConfig_Greeting, "hello")
+	n.target = s.OptInt(DemoConfig_Target, 12)
 	return n
 }
 
@@ -161,6 +161,11 @@ func (v DemoConfigBuilder) Parse(source JSEntity) DataClass {
 func (v DemoConfigBuilder) String() string {
 	return v.Build().String()
 }
+
+const DemoConfig_Simulate = "simulate"
+const DemoConfig_Name = "name"
+const DemoConfig_Greeting = "greeting"
+const DemoConfig_Target = "target"
 
 // Convenience method to parse a DemoConfig from a JSMap
 func ParseDemoConfig(jsmap JSEntity) DemoConfig {

@@ -93,3 +93,7 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	m.TgClose()
 }
+
+func (w InputWidget) Value(s Session) string {
+	return s.WidgetStringValue(w)
+}
