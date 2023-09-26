@@ -116,7 +116,14 @@ func (p AnimalDetailPage) readStateFromAnimal(sess Session) {
 		}
 	}
 	p.editor = NewDataEditor(a)
-	//s.Put(id_animal_display_pic, a.PhotoThumbnail())
+
+	if p.editing {
+		mgrId := SessionUser(sess).Id()
+		if p.animalId == 0 {
+			p.editor.PutInt(Animal_ManagerId, mgrId)
+		}
+		CheckState(p.editor.GetInt(Animal_ManagerId) == mgrId)
+	}
 }
 
 func (p AnimalDetailPage) generateWidgets(s Session) {
@@ -245,6 +252,15 @@ func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget, a
 
 	b := NewAnimal()
 	p.writeStateToAnimal(s, b)
+
+	if Alert("Verifying equivalency") {
+		s2 := p.editor.State.AsJSMap().CompactString()
+		s1 := b.ToJson().AsJSMap().CompactString()
+		///s2 := b2.ToJson().AsJSMap().CompactString()
+		Pr("s1:", s1)
+		Pr("s2:", s2)
+		CheckState(s1 == s2)
+	}
 
 	ub, err := CreateAnimal(b)
 	if ReportIfError(err, "CreateAnimal after editing") {
