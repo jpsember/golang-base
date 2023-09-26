@@ -11,8 +11,7 @@ const anim_state_prefix = "_create_animal_:"
 
 // // Use the field names that Animal produces as JSMaps
 const (
-	id_animal_uploadpic   = "photo"
-	id_animal_display_pic = anim_state_prefix + "photo_thumbnail"
+	id_animal_uploadpic = "photo"
 )
 
 type AnimalDetailPageStruct struct {
@@ -184,7 +183,7 @@ func (p AnimalDetailPage) generateForEditing(s Session) {
 	p.uploadPicWidget =
 		m.Label("Photo").Id(id_animal_uploadpic).AddFileUpload(p.uploadPhotoListener)
 
-	imgWidget := m.Id(id_animal_display_pic).AddImage()
+	imgWidget := m.Id(Animal_PhotoThumbnail).AddImage()
 	imgWidget.URLProvider = p.provideURL
 	// Scale the photos based on browser resolution
 	imgWidget.SetSize(AnimalPicSizeNormal, 0.6)
@@ -312,12 +311,13 @@ func (p AnimalDetailPage) abortEditListener(s Session, widget Widget, arg string
 }
 
 func (p AnimalDetailPage) writeStateToAnimal(s Session, b AnimalBuilder) {
+	Todo("This method ought to be removed; we can probably just call editor.parse")
 	pr := PrIf("writeStateToAnimal", true)
 	pr("builder, before:", INDENT, b)
 	b.SetName(p.nameWidget.Value(s))
 	b.SetSummary(p.summaryWidget.Value(s))
 	b.SetDetails(p.detailsWidget.Value(s))
-	b.SetPhotoThumbnail(s.IntValue(id_animal_display_pic))
+	b.SetPhotoThumbnail(p.editor.GetInt(Animal_PhotoThumbnail))
 	b.SetManagerId(SessionUser(s).Id())
 	pr("builder, after:", INDENT, b)
 }
@@ -432,16 +432,11 @@ func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by [
 	// that version to the database).
 	//
 	if err == nil {
-		picId := id_animal_display_pic
 		// Discard the old blob whose id we are now replacing
-		DiscardBlob(s.IntValue(picId))
-
-		// Store the id of the blob in the image widget
-		s.State.Put(picId, imageId)
-
-		pr("repainting animal_display_pic")
-		s.RepaintIds(picId)
-
+		DiscardBlob(p.editor.GetInt(Animal_PhotoThumbnail))
+		p.editor.PutInt(Animal_PhotoThumbnail, imageId)
+		pr("repainting Animal_PhotoThumbnail")
+		s.RepaintId(Animal_PhotoThumbnail)
 		pr("state:", s.State)
 	}
 	return err
@@ -452,8 +447,7 @@ func (p AnimalDetailPage) provideURL(s Session) string {
 	url := ""
 
 	// We need to access the state directly, without a widget.
-	imageId := s.IntValue(id_animal_display_pic)
-
+	imageId := p.editor.GetInt(Animal_PhotoThumbnail)
 	if imageId == 0 {
 		imageId = 1 // This is the default placeholder blob id
 	}

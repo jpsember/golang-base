@@ -10,7 +10,7 @@ import (
 
 const AutoLogInName = "manager1"
 
-var DevGallery = true && Alert("Showing gallery")
+var DevGallery = false && Alert("Showing gallery")
 
 var DevDatabase = Alert("!Using development database")
 

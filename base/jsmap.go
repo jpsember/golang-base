@@ -152,6 +152,11 @@ func (m JSMap) Put(key string, value any) JSMap {
 	return m
 }
 
+func (m JSMap) PutInt(key string, value int) JSMap {
+	m.MutableWrapped()[key] = MakeJInteger(int64(value))
+	return m
+}
+
 func (m JSMap) PutNumbered(value any) *JSMapStruct {
 	var numKeys = len(m.wrappedMap)
 	var key = fmt.Sprintf("%3d", numKeys)
