@@ -16,6 +16,10 @@ var LandingPageTemplate = &LandingPageStruct{}
 
 // ------------------------------------------------------------------------------------
 
+const (
+	id_user_name = "user_name"
+)
+
 type LandingPageStruct struct {
 }
 

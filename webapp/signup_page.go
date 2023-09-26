@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	id_user_name       = "user_name"
+	//id_user_name       = "user_name"
 	id_user_pwd_verify = "user_pwd_verify"
 	id_user_pwd        = "user_pwd"
 	id_user_email      = "user_email"
@@ -20,7 +20,7 @@ const (
 // ------------------------------------------------------------------------------------
 
 type SignUpPageStruct struct {
-	// Any additional state for the page can go here, e.g., data backing lists
+	editor DataEditor
 }
 type SignUpPage = *SignUpPageStruct
 
@@ -29,11 +29,8 @@ var SignUpPageTemplate = &SignUpPageStruct{}
 func newSignUpPage(session Session) SignUpPage {
 	Todo("Use editor and dataclass to hold the state, e.g. user name, pwd, pwd verify")
 	t := &SignUpPageStruct{}
-	// The session will be nil if this is to be the 'template' page (used to construct
-	// other instances)
-	if session != nil {
-		t.generateWidgets(session)
-	}
+	t.editor = NewDataEditor(NewSignUpState())
+	t.generateWidgets(session)
 	return t
 }
 
@@ -50,22 +47,27 @@ func (p SignUpPage) ConstructPage(s Session, args PageArgs) Page {
 }
 
 func (p SignUpPage) generateWidgets(s Session) {
+
 	s.DeleteStateErrors()
 	m := GenerateHeader(s, p)
 	m.Label("Sign Up Page").Size(SizeLarge).AddHeading()
+
+	s.WidgetManager().PushStateProvider(p.editor.WidgetStateProvider)
 	m.Col(6).Open()
 	{
 		m.Col(12)
-		m.Label("User name").Id(id_user_name).AddInput(p.validateUserName)
-		m.Label("Password").Id(id_user_pwd).AddPassword(p.validateUserPwd)
-		m.Label("Password Again").Id(id_user_pwd_verify).AddPassword(p.validateMatchPwd)
-		m.Label("Email").Id(id_user_email).AddInput(p.validateEmail)
+		m.Label("User name").Id(SignUpState_UserName).AddInput(p.validateUserName)
+		m.Label("Password").Id(SignUpState_UserPwd).AddPassword(p.validateUserPwd)
+		m.Label("Password Again").Id(SignUpState_UserPwdVerify).AddPassword(p.validateMatchPwd)
+		m.Label("Email").Id(SignUpState_UserEmail).AddInput(p.validateEmail)
 		m.Size(SizeTiny).Label("We will never share your email address with anyone.").AddText()
 		m.Col(6)
 		m.AddSpace()
 		m.Id(id_sign_up).Label("Sign Up").AddButton(p.signUpListener)
 	}
 	m.Close()
+
+	s.WidgetManager().PopStateProvider()
 }
 
 // ------------------------------------------------------------------------------------
@@ -80,8 +82,9 @@ func (p SignUpPage) validateUserName(s Session, widget InputWidget, value string
 	return ValidateUserName(value, VALIDATE_EMPTYOK)
 }
 
-func (p SignUpPage) auxValidateUserName(s Session, widgetId string, value string, flag ValidateFlag) {
+func (p SignUpPage) auxValidateUserName(s Session, widgetId string, flag ValidateFlag) {
 	pr := PrIf("", true)
+	value := p.editor.GetString(widgetId)
 	pr("auxValidateUserName")
 	pr("value:", value)
 	value, err := ValidateUserName(value, flag)
@@ -90,11 +93,13 @@ func (p SignUpPage) auxValidateUserName(s Session, widgetId string, value string
 }
 
 func (p SignUpPage) validateUserPwd(s Session, widget InputWidget, value string) (string, error) {
-	return value, p.auxValidateUserPwd(s, widget, value, VALIDATE_EMPTYOK)
+	// This assumes that the widget state is stored in our editor.
+	return value, p.auxValidateUserPwd(s, widget.Id(), VALIDATE_EMPTYOK)
 }
 
-func (p SignUpPage) auxValidateUserPwd(s Session, widget Widget, value string, flag ValidateFlag) error {
+func (p SignUpPage) auxValidateUserPwd(s Session, widgetId string, flag ValidateFlag) error {
 	pr := PrIf("", false)
+	value := p.editor.GetString(widgetId)
 	pr("auxValidateUserPwd:", value)
 	value, err := ValidateUserPassword(value, flag)
 	pr("afterward:", value, "err:", err)
@@ -102,10 +107,11 @@ func (p SignUpPage) auxValidateUserPwd(s Session, widget Widget, value string, f
 }
 
 func (p SignUpPage) validateMatchPwd(s Session, widget InputWidget, value string) (string, error) {
-	return p.auxValidateMatchPwd(s, widget, value, VALIDATE_EMPTYOK)
+	return p.auxValidateMatchPwd(s, widget.Id(), VALIDATE_EMPTYOK)
 }
 
-func (p SignUpPage) auxValidateMatchPwd(s Session, widget InputWidget, value string, flag ValidateFlag) (string, error) {
+func (p SignUpPage) auxValidateMatchPwd(s Session, widgetId string, flag ValidateFlag) (string, error) {
+	value := p.editor.GetString(widgetId)
 	if flag.Has(VALIDATE_EMPTYOK) && value == "" {
 		return value, nil
 	}
@@ -119,26 +125,21 @@ func (p SignUpPage) auxValidateMatchPwd(s Session, widget InputWidget, value str
 }
 
 func (p SignUpPage) validateEmail(s Session, widget InputWidget, value string) (string, error) {
-	return p.auxValidateEmail(s, widget, value, VALIDATE_EMPTYOK)
+	return p.auxValidateEmail(s, widget.Id(), VALIDATE_EMPTYOK)
 }
 
-func (p SignUpPage) auxValidateEmail(s Session, widget Widget, value string, flag ValidateFlag) (string, error) {
-	return ValidateEmailAddress(value, flag)
+func (p SignUpPage) auxValidateEmail(s Session, widgetId string, flag ValidateFlag) (string, error) {
+	return ValidateEmailAddress(p.editor.GetString(widgetId), flag)
 }
 
 func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
 	pr := PrIf("", false)
 	pr("signUpListener, state:", INDENT, s.State)
 
-	p.auxValidateUserName(s, id_user_name, s.State.OptString(id_user_name, ""), 0)
-	p.auxValidateUserPwd(s, getWidget(s, id_user_pwd), s.State.OptString(id_user_pwd, ""), 0)
-	p.auxValidateMatchPwd(s, getWidget(s, id_user_pwd_verify).(InputWidget), s.State.OptString(id_user_pwd_verify, ""), 0)
-	p.auxValidateEmail(s, getWidget(s, id_user_email), s.State.OptString(id_user_email, ""), 0)
-
-	b := NewUser()
-	b.SetName(s.State.OptString(id_user_name, ""))
-	b.SetPassword(s.State.OptString(id_user_pwd, ""))
-	b.SetEmail(s.State.OptString(id_user_email, ""))
+	p.auxValidateUserName(s, SignUpState_UserName, 0)
+	p.auxValidateUserPwd(s, SignUpState_UserPwd, 0)
+	p.auxValidateMatchPwd(s, SignUpState_UserPwdVerify, 0)
+	p.auxValidateEmail(s, SignUpState_UserEmail, 0)
 
 	errcount := WidgetErrorCount(s.PageWidget, s.State)
 	pr("error count:", errcount)
@@ -148,12 +149,20 @@ func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
 
 	Todo("don't create the user until we are sure the other fields have no errors")
 
+	// Construct a user by parsing the signupstate map
+	b := DefaultUser.Parse(p.editor.State).(User)
+
+	//b := NewUser()
+	//b.SetName(s.State.OptString(id_user_name, ""))
+	//b.SetPassword(s.State.OptString(id_user_pwd, ""))
+	//b.SetEmail(s.State.OptString(id_user_email, ""))
+
 	ub, err := CreateUserWithName(b)
 	if ReportIfError(err, "CreateUserWithName", b) {
 		return
 	}
 	if ub.Id() == 0 {
-		s.SetWidgetProblem(id_user_name, "A user with this name already exists.")
+		s.SetWidgetProblem(SignUpState_UserName, "A user with this name already exists.")
 		return
 	}
 

@@ -1,0 +1,7 @@
+class {
+    string name;
+    string password;
+    string password_verify;
+    string email;
+}
+
