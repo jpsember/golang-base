@@ -158,18 +158,20 @@ func (s Session) HandleUploadRequest(widgetId string) {
 	s.sendAjaxResponse()
 }
 
-func (s Session) processUpload(uploadWidgetId string) {
+func (s Session) processUpload(widgetId string) {
+	pr := PrIf("Session.processUpload", true)
+	pr("widget id:", widgetId)
 
-	var fileUploadWidget FileUpload
-
-	widget := s.WidgetManager().Opt(uploadWidgetId)
-	if widget == nil {
-		Alert("Can't find upload widget:", uploadWidgetId)
+	untypedWidget := s.WidgetManager().Opt(widgetId)
+	if untypedWidget == nil {
+		Alert("Can't find upload widget:", widgetId)
 		return
 	}
+
 	var ok bool
-	if fileUploadWidget, ok = widget.(FileUpload); !ok {
-		Alert("Not an UploadWidget:", uploadWidgetId)
+	var widget FileUpload
+	if widget, ok = untypedWidget.(FileUpload); !ok {
+		Alert("Not an UploadWidget:", untypedWidget.Id())
 		return
 	}
 
@@ -183,6 +185,8 @@ func (s Session) processUpload(uploadWidgetId string) {
 		if req.Method != "POST" {
 			break
 		}
+
+		Todo("?How do we get the name of the file that was uploaded?")
 
 		// From https://freshman.tech/file-upload-golang/
 
@@ -200,7 +204,8 @@ func (s Session) processUpload(uploadWidgetId string) {
 		// of the file input on the frontend; not sure what that is about
 
 		problem = "trouble getting request FormFile"
-		file, _, err1 := req.FormFile(uploadWidgetId + ".input")
+		file, _, err1 := req.FormFile(widget.Id() + ".input")
+
 		if err1 != nil {
 			break
 		}
@@ -222,12 +227,11 @@ func (s Session) processUpload(uploadWidgetId string) {
 	}
 
 	// Always update the problem, in case we are clearing a previous error
-	s.SetWidgetProblem(uploadWidgetId, problem)
 	if problem == "" {
-		err := fileUploadWidget.listener(s, fileUploadWidget, result)
+		err := widget.listener(s, widget, result)
 		problem = StringFromOptError(err)
 	}
-	s.SetWidgetProblem(uploadWidgetId, problem)
+	s.SetProblem(widget, problem)
 }
 
 // Serve a request for a resource

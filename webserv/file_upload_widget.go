@@ -24,11 +24,11 @@ func NewFileUpload(id string, label HtmlString, listener FileUploadWidgetListene
 
 func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 	id := w.Id()
-	inputId := id + ".input"
+	filenameId := id + ".input"
 	formId := id + ".form"
 	inputName := id + ".input"
 
-	m.Comment("file upload")
+	m.Comment("file upload widget")
 
 	// The outermost element must have the widget's id!  Or chaos happens during repainting.
 
@@ -42,15 +42,16 @@ func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 		{
 			labelHtml := w.Label
 			if labelHtml != nil {
-				m.Comment("Label")
-				m.TgOpen(`label for=`).A(QUO, inputId, ` class="form-label"`).Style(`font-size:70%`).TgContent()
+				m.Comment("Label for the widget")
+				m.TgOpen(`label for=`).A(QUO, filenameId, ` class="form-label"`).Style(`font-size:70%`).TgContent()
 				m.Escape(labelHtml)
 				m.TgClose()
 			}
 		}
 
-		m.TgOpen(`input class="form-control" type="file" name=`)
-		m.A(QUO, inputName, ` id=`, QUO, inputId, ` onchange='jsUpload(`, QUO, w.Id(), `)'`)
+		m.Comment(`The input element that Bootstrap does some magic on`)
+		m.TgOpen(`input class='form-control' type='file' name=`)
+		m.A(QUO, inputName, ` id=`, QUO, filenameId, ` onchange="jsUpload('`, w.Id(), `')"`)
 		m.TgClose()
 
 		problemId := WidgetIdWithProblem(w.Id())

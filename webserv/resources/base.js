@@ -120,7 +120,9 @@ function jsVal(id) {
     makeAjaxCall(request_key_widget,id,request_key_value,x.value)
 }
 
-// An onchange event has occurred within a file upload
+// An onchange event has occurred within a file upload.
+// It assumes that the <form> element has id '<id>.form'
+//
 function jsUpload(id) {
     db("jsUpload",id)
     const addr = window.origin;

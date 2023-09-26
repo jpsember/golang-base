@@ -10,6 +10,8 @@ import (
 
 const AutoLogInName = "manager1"
 
+var DevGallery = true && Alert("Showing gallery")
+
 var DevDatabase = Alert("!Using development database")
 
 type AnimalOperStruct struct {
@@ -32,14 +34,6 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AnimalOper) Perform(app *App) {
-
-	if false {
-		var x uint16 = 1 << 3
-		Pr("x:", x)
-		Pr("x ^ 4:", x^4)
-		Pr("^x:", ^x)
-		Pr("binary:", "["+BinaryN(12, 32)+"]")
-	}
 
 	ClearAlertHistory(false)
 	Todo("!clear alert history should be a text file that is deleted after handling?")
@@ -79,7 +73,7 @@ func (oper AnimalOper) UserForSession(s Session) AbstractUser {
 }
 
 func (oper AnimalOper) DefaultPageForUser(abstractUser AbstractUser) Page {
-	if false && Alert("gallery") {
+	if DevGallery {
 		return GalleryPageTemplate
 	}
 	user := abstractUser.(User)

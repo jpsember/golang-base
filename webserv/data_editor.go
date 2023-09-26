@@ -17,7 +17,7 @@ func NewDataEditor(data DataClass) DataEditor {
 		parser: data,
 		state:  data.ToJson().AsJSMap(),
 	}
-	t.ProvideName("DataEditor for " + TypeOf(data))
+	t.SetName("DataEditor for " + TypeOf(data))
 	t.AlertVerbose()
 	t.Log("constructed state:", INDENT, t.state)
 	return t

@@ -15,6 +15,7 @@ import (
 type GalleryPageStruct struct {
 	fooMap JSMap
 	list   ListWidget
+	editor DataEditor
 }
 
 func NewGalleryPage(sess Session) Page {
@@ -57,6 +58,29 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	m := GenerateHeader(sess, p)
 
+	anim := ReadAnimalIgnoreError(1)
+	if anim.Id() == 0 {
+		Alert("No animals available")
+	} else {
+		m.Open()
+		p.editor = NewDataEditor(anim)
+		m.Id("foo").Label("Photo").AddFileUpload(p.uploadListener)
+		imgWidget := m.Id("upload_image").AddImage()
+		Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
+		Todo("!give widgets values (state) in this way wherever appropriate")
+		imgWidget.URLProvider = func(s Session) string {
+			url := ""
+			imageId := s.State.OptInt(sampleImageId, 0)
+			Pr("provideURL, image id read from state:", imageId)
+			if imageId != 0 {
+				url = SharedWebCache.GetBlobURL(imageId)
+				Pr("read into cache, url:", url)
+			}
+			return url
+		}
+		m.Close()
+	}
+
 	m.Open()
 	{
 		m.Col(6)
@@ -86,7 +110,6 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		listItemWidget := m.Open()
 		m.Id("foo_text").Height(3).AddText()
 		m.Close()
-		m.Detach(listItemWidget)
 
 		p.list = m.AddList(NewGalleryListImplementation(), listItemWidget)
 		if trim {
@@ -136,11 +159,6 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 		}
 
-		m.Id("sample_upload").Label("Photo").AddFileUpload(p.uploadListener)
-		imgWidget := m.Id("sample_image").AddImage()
-		Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
-		Todo("!give widgets values (state) in this way wherever appropriate")
-		imgWidget.URLProvider = p.provideURL
 		m.Close()
 	}
 
@@ -240,7 +258,12 @@ func (p GalleryPage) checkboxListener(s Session, widget CheckboxWidget, state bo
 }
 
 func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, value []byte) error {
-	pr := PrIf("", false)
+	pr := PrIf("Gallery.uploadListener", true)
+
+	//pr("who called this?", Callers(0, 8))
+	Todo("!fileUploadWidget argument not used")
+
+	Alert("For simplicity, maybe file upload widgets don't have values.  They just return byte arrays, and what are done with them is up to the client.")
 
 	var jpeg []byte
 	var imageId int
@@ -307,35 +330,6 @@ func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, valu
 	}
 	return errOut
 }
-
-func (p GalleryPage) provideURL(s Session) string {
-	pr := PrIf("", false)
-	url := ""
-	imageId := s.State.OptInt(sampleImageId, 0)
-
-	pr("provideURL, image id read from state:", imageId)
-
-	if imageId != 0 {
-		url = SharedWebCache.GetBlobURL(imageId)
-		pr("read into cache, url:", url)
-	}
-	return url
-}
-
-//func (p GalleryPage) clickListener(sess Session, message string) bool {
-//	Todo("This explicit handler probably not required")
-//	//
-//	//if p.list.HandleClick(sess, message) {
-//	//	return true
-//	//}
-//
-//	if arg, f := TrimIfPrefix(message, gallery_card_prefix); f {
-//		Pr("card click, remaining arg:", arg)
-//		return true
-//
-//	}
-//	return false
-//}
 
 func (p GalleryPage) fooListener(sess Session, widget InputWidget, value string) (string, error) {
 	Todo("Clarify prefix role in provider, widget ids, and resolve confusion about add/subtract prefix")

@@ -35,14 +35,6 @@ var CreateAnimalPageTemplate = &AnimalDetailPageStruct{name: "new"}
 var EditAnimalPageTemplate = &AnimalDetailPageStruct{name: "edit"}
 var ViewAnimalPageTemplate = &AnimalDetailPageStruct{name: "view"}
 
-func (p AnimalDetailPage) prepareAnimal() {
-	anim, err := ReadAnimal(p.animalId)
-	if ReportIfError(err, "NewEditAnimalPage") {
-		BadState(err)
-	}
-	p.editor = NewDataEditor(anim)
-}
-
 func (p AnimalDetailPage) ConstructPage(s Session, args PageArgs) Page {
 	pr := PrIf("AnimDetailPage.ConstructPage", true)
 
@@ -101,6 +93,14 @@ func (p AnimalDetailPage) Args() []string {
 		return []string{IntToString(p.animalId)}
 	}
 	return nil
+}
+
+func (p AnimalDetailPage) prepareAnimal() {
+	anim, err := ReadAnimal(p.animalId)
+	if ReportIfError(err, "NewEditAnimalPage") {
+		BadState(err)
+	}
+	p.editor = NewDataEditor(anim)
 }
 
 func (p AnimalDetailPage) viewing() bool {

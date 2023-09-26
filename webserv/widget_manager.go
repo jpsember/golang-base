@@ -195,24 +195,6 @@ func (m WidgetManager) stackedState() *mgrState {
 	return &m.stack[len(m.stack)-1]
 }
 
-// Detach a widget that has just been constructed from the WidgetManager and its container.
-func (m WidgetManager) Detach(widget Widget) Widget {
-	BadState("Detach shouldn't be called anymore")
-	result := m.Opt(widget.Id())
-	if result == nil {
-		BadArg("Cannot detach widget; not in manager set:", widget.Id())
-	}
-	container := m.parentWidget()
-	container.RemoveChild(widget)
-
-	// Delete all widgets within the detached widget's tree from the widget map
-	idList := getWidgetsInTree(widget)
-	for _, id := range idList {
-		delete(m.widgetMap, id)
-	}
-	return result
-}
-
 func getWidgetsInTree(widget Widget) []string {
 	return auxGetWidgetsInTree(widget, nil)
 }
