@@ -47,8 +47,6 @@ func (p GalleryPage) Args() []string { return nil }
 
 // ------------------------------------------------------------------------------------
 
-const sampleImageId = "sample_image"
-
 var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
 
@@ -58,20 +56,29 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	m := GenerateHeader(sess, p)
 
-	anim := ReadAnimalIgnoreError(1)
+	anim := ReadAnimalIgnoreError(3)
 	if anim.Id() == 0 {
 		Alert("No animals available")
 	} else {
 		m.Open()
 		p.editor = NewDataEditor(anim)
 		m.Id("foo").Label("Photo").AddFileUpload(p.uploadListener)
-		imgWidget := m.Id("upload_image").AddImage()
+
+		// The image widget will have the same id as the animal field that is to store its photo blob id.
+		//
+		imgWidget := m.Id(Animal_PhotoThumbnail).AddImage()
+		imgWidget.SetSize(AnimalPicSizeNormal, 0.3)
+
 		Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
+
 		Todo("!give widgets values (state) in this way wherever appropriate")
+
 		imgWidget.URLProvider = func(s Session) string {
-			url := ""
-			imageId := s.State.OptInt(sampleImageId, 0)
+			// We are storing the image's blob id in the animal's photo_thumbnail field,
+			// so we can use the editor's embedded JSMap to access it.
+			imageId := p.editor.GetInt(Animal_PhotoThumbnail)
 			Pr("provideURL, image id read from state:", imageId)
+			url := ""
 			if imageId != 0 {
 				url = SharedWebCache.GetBlobURL(imageId)
 				Pr("read into cache, url:", url)
@@ -324,9 +331,8 @@ func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, valu
 		}
 		errOut = Error(problem)
 	} else {
-		// Store the id of the blob in the image widget
-		s.State.Put(sampleImageId, imageId)
-		s.RepaintIds(sampleImageId)
+		p.editor.Put(Animal_PhotoThumbnail, imageId)
+		s.RepaintIds(Animal_PhotoThumbnail)
 	}
 	return errOut
 }

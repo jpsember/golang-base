@@ -5,34 +5,24 @@ import (
 )
 
 type DataEditorStruct struct {
-	BaseObject
+	JSMap
+	WidgetStateProvider
 	parser DataClass
-	state  JSMap
 }
 
 type DataEditor = *DataEditorStruct
 
 func NewDataEditor(data DataClass) DataEditor {
+	j := data.ToJson().AsJSMap()
 	t := &DataEditorStruct{
-		parser: data,
-		state:  data.ToJson().AsJSMap(),
+		parser:              data,
+		JSMap:               j,
+		WidgetStateProvider: NewStateProvider("", j),
 	}
-	t.SetName("DataEditor for " + TypeOf(data))
-	t.AlertVerbose()
-	t.Log("constructed state:", INDENT, t.state)
 	return t
 }
 
-func (d DataEditor) State() JSMap {
-	return d.state
-}
-
 func (d DataEditor) Read() DataClass {
-	result := d.parser.Parse(d.state)
-	d.Log("Read():", INDENT, result)
+	result := d.parser.Parse(d)
 	return result
-}
-
-func (d DataEditor) StateProvider() WidgetStateProvider {
-	return NewStateProvider("", d.state)
 }

@@ -710,17 +710,23 @@ func (s Session) WidgetStringValue(w Widget) string {
 }
 
 func (s Session) SetWidgetValue(w Widget, value any) {
-	pr := PrIf("SetWidgetValue", true)
-	p := orBaseProvider(s, w.StateProvider())
-	wid := w.Id()
-	id := compileId(p.Prefix, wid)
+	if s.SetValue(w.Id(), w.StateProvider(), value) {
+		s.Repaint(w)
+	}
+}
+
+// I separated this out from SetWidgetValue, since we may want to update values given just ids and state providers
+func (s Session) SetValue(widgetId string, provider WidgetStateProvider, value any) bool {
+	pr := PrIf("SetValue", true)
+	p := orBaseProvider(s, provider)
+	id := compileId(p.Prefix, widgetId)
 	oldVal := p.State.OptUnsafe(id)
 	changed := value != oldVal
 	pr("old:", oldVal, "new:", value, "changed:", changed)
 	if changed {
 		p.State.Put(id, value)
-		s.RepaintId(wid)
 	}
+	return changed
 }
 
 // Get the context for the current listener.  For list items, this will be the list element id.
