@@ -12,8 +12,11 @@ var DebugUIFlag = false
 type Widget interface {
 	fmt.Stringer
 	Id() string
-	ValueAsString(s *SessionStruct) string // Get the current value of this widget as a string
 	LowListener() LowLevelWidgetListener
+	// Get value as a string, or return false if no validation required. This should be the same value that
+	// can be passed to the LowLevelWidgetListener.  This allows us to validate the widget by simulating
+	// what any listeners would have done with values received via AJAX calls.
+	ValidationValue(s *SessionStruct) (string, bool)
 	Enabled() bool
 	Visible() bool
 	Detached() bool

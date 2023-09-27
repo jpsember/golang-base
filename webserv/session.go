@@ -778,9 +778,13 @@ func (s Session) Validate(widget Widget) {
 	pr := PrIf("Session.Validate", true)
 	pr("id:", widget.Id())
 	if widget.LowListener() != nil {
-		strValue := widget.ValueAsString(s)
-		pr("...processing widget value", QUO, strValue)
-		s.ProcessWidgetValue(widget, strValue, nil)
+		valAsString, applicable := widget.ValidationValue(s)
+		if applicable {
+			pr("...calling low level listener with", QUO, valAsString)
+			Alert("Do LowListeners need to include a widget argument?")
+			updatedValue, err := widget.LowListener()(s, widget, valAsString)
+			s.UpdateValueAndProblem(widget, updatedValue, err)
+		}
 	}
 	for _, child := range widget.Children() {
 		s.Validate(child)

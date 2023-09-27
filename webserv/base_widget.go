@@ -68,9 +68,9 @@ func (w BaseWidget) String() string {
 	return "<" + w.Id() + ">"
 }
 
-func (w BaseWidget) ValueAsString(s Session) string {
-	Pr("BaseWidget, valueAsString:", w.Id())
-	return ""
+func (w BaseWidget) ValidationValue(s Session) (string, bool) {
+	Pr("BaseWidget, ValidationValue:", w.Id())
+	return "", false
 }
 
 func (w BaseWidget) Id() string {

@@ -93,6 +93,10 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.TgClose()
 }
 
+func (w InputWidget) ValidationValue(s Session) (string, bool) {
+	return s.WidgetStringValue(w), true
+}
+
 func (w InputWidget) ValueAsString(s Session) string {
 	return s.WidgetStringValue(w)
 }
