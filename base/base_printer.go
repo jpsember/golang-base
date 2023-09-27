@@ -17,7 +17,12 @@ func PrIf(prompt string, active bool) func(messages ...any) {
 		if prompt == "" {
 			prompt = "{ " + Caller() + " }"
 		} else {
+			addVertSpace := false
+			prompt, addVertSpace = TrimIfPrefix(prompt, ">")
 			prompt = "{" + prompt + ":} "
+			if addVertSpace {
+				Pr(VERT_SP)
+			}
 		}
 		Alert("<1Printing is active for " + prompt)
 		return func(messages ...any) { fmt.Println(prompt, ToString(messages...)) }

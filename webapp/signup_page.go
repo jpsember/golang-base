@@ -15,6 +15,7 @@ type SignUpPageStruct struct {
 	editor DataEditor
 	strict bool
 }
+
 type SignUpPage = *SignUpPageStruct
 
 var SignUpPageTemplate = &SignUpPageStruct{}
@@ -65,103 +66,67 @@ func (p SignUpPage) generateWidgets(s Session) {
 
 // ------------------------------------------------------------------------------------
 
-func getWidget(sess Session, id string) Widget {
-	return sess.WidgetManager().Get(id)
+func (p SignUpPage) validateFlag() ValidateFlag {
+	return Ternary(p.strict, 0, VALIDATE_EMPTYOK)
 }
 
 func (p SignUpPage) listenerValidateName(s Session, widget InputWidget, value string) (string, error) {
-	// It is here in the listener that we read the 'client requested' value for the widget
-	// from the ajax parameters, and write it to the state.  We will validate it here.
-	return ValidateUserName(value, Ternary(p.strict, 0, VALIDATE_EMPTYOK))
-}
-
-func (p SignUpPage) auxValidateUserName(s Session, widgetId string, flag ValidateFlag) (string, error) {
-	pr := PrIf("auxValidateUserName", true)
-	value := p.editor.GetString(widgetId)
-	pr("value:", value)
-	value, err := ValidateUserName(value, flag)
-	pr("validated:", value, "error:", err)
-	//	s.UpdateValueAndProblemId(widgetId, value, err)
-	return value, err
+	return ValidateUserName(value, p.validateFlag())
 }
 
 func (p SignUpPage) listenerValidatePwd(s Session, widget InputWidget, value string) (string, error) {
-	pr := PrIf("listenerValidatePwd", true)
-	// This assumes that the widget state is stored in our editor.
-	flag := Ternary(p.strict, 0, VALIDATE_EMPTYOK)
-	//widgetId := widget.Id()
-	pr(VERT_SP, "Validating, value:", QUO, value)
-	//
-	//	return p.auxValidateUserPwd(s, widget.Id(), Ternary(p.strict, 0, VALIDATE_EMPTYOK))
-	//}
-	//
-	//func (p SignUpPage) auxValidateUserPwd(s Session, widgetId string, flag ValidateFlag) (string, error) {
-	//edValue := p.editor.GetString(widgetId)
-	//pr("editor.GetString:", QUO, edValue)
-	//pr("widgetId:", widgetId, "pwd:", value)
+	pr := PrIf(">listenerValidatePwd", true)
+	flag := p.validateFlag()
+	pr("Validating, value:", QUO, value)
 	validated, err := ValidateUserPassword(value, flag)
 	pr("after validating:", validated, "err:", err)
-	//	s.UpdateValueAndProblemId(widgetId, value, err)
+	if !p.strict {
+		// We must DELAY this additional validation until after the current validation has completed,
+		// else the most recent password value isn't the one we will read
+
+		// If this becomes a common idiom, we will add a function s.PostValidate(...)
+		s.AddPostRequestEvent(func() { s.Validate(s.Widget(SignUpState_PasswordVerify)) })
+	}
 	return validated, err
 }
 
 func (p SignUpPage) listenerValidatePwdVerify(s Session, widget InputWidget, value string) (string, error) {
-	return p.auxValidateMatchPwd(s, widget.Id(), Ternary(p.strict, 0, VALIDATE_EMPTYOK))
-}
-
-func (p SignUpPage) auxValidateMatchPwd(s Session, widgetId string, flag ValidateFlag) (string, error) {
+	pr := PrIf(">listenerValidatePwdVerify", true)
+	pr("verify value  :", QUO, value)
 	var err error
-	pr := PrIf("auxValidateMatchPwd", true)
-	pr("widgetId:", widgetId, "flag:", flag)
-	value := p.editor.GetString(widgetId)
-	pr("flag.Has(VALIDATE_EMPTYOK):", flag.Has(VALIDATE_EMPTYOK))
+	flag := p.validateFlag()
 	if flag.Has(VALIDATE_EMPTYOK) && value == "" {
 	} else {
 		value1 := p.editor.GetString(SignUpState_Password)
+		pr("password value:", QUO, value1)
+		pr("editor state:", INDENT, p.editor.State)
 		err, value = replaceWithTestInput(err, value, "a", value1)
 		if value1 != value {
 			err = Ternary(value == "", ErrorEmptyUserPassword, ErrorUserPasswordsDontMatch)
 		}
-		pr("returning:", QUO, value, "err:", err)
 	}
-	//	if flag.Has(VALIDATE_UPDATE_WIDGETS) {
-	//		s.UpdateValueAndProblemId(widgetId, value, err)
-	//	}
-	//s.SetWidgetProblem(widgetId, err)
+	pr("returning:", QUO, value, "err:", err)
 	return value, err
 }
 
 func (p SignUpPage) validateEmail(s Session, widget InputWidget, value string) (string, error) {
-	return p.auxValidateEmail(s, widget.Id(), Ternary(p.strict, 0, VALIDATE_EMPTYOK))
-}
-
-func (p SignUpPage) auxValidateEmail(s Session, widgetId string, flag ValidateFlag) (string, error) {
-	Todo("would be simpler to pass in the widget, not the widget id")
-	val, err := ValidateEmailAddress(p.editor.GetString(widgetId), flag)
-	//	if flag.Has(VALIDATE_UPDATE_WIDGETS) {
-	//		s.UpdateValueAndProblemId(widgetId, val, err)
-	//	}
-	return val, err
+	return ValidateEmailAddress(value, p.validateFlag())
 }
 
 func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
 	pr := PrIf("signupListener", true)
 	pr("state:", INDENT, p.editor.State)
+	pr("s.State:", INDENT, s.State)
 
-	// We need to basically call all the same validators that we do in the callbacks,
-	// and we have to update the widget values and errors ourselves (something the callback handler
-	// does automatically).
-
-	// Better approach: set a flag that says we are doing 'strict' validation
+	// Re-validate all the widgets in 'strict' mode.
 	p.strict = true
 	s.Validate(s.PageWidget)
-
-	//Todo("Have a push state thing to set VALIDATE_UPDATE_WIDGETS here?")
-	//p.auxValidateUserName(s, SignUpState_Name, VALIDATE_UPDATE_WIDGETS)
-	//p.auxValidateUserPwd(s, SignUpState_Password, VALIDATE_UPDATE_WIDGETS)
-	//p.auxValidateMatchPwd(s, SignUpState_PasswordVerify, VALIDATE_UPDATE_WIDGETS)
-	//p.auxValidateEmail(s, SignUpState_Email, VALIDATE_UPDATE_WIDGETS)
 	p.strict = false
+
+	pr("after validating page;")
+	pr("state:", INDENT, p.editor.State)
+	pr("s.State:", INDENT, s.State)
+
 	errcount := WidgetErrorCount(s.PageWidget, s.State)
 	Todo("Maybe have Validate(...) return the error count?")
 	pr("error count:", errcount)
@@ -174,11 +139,6 @@ func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
 	// Construct a user by parsing the signupstate map
 	b := DefaultUser.Parse(p.editor.State).(User).ToBuilder()
 	b.SetUserClass(UserClassDonor)
-
-	//b := NewUser()
-	//b.SetName(s.State.OptString(id_user_name, ""))
-	//b.SetPassword(s.State.OptString(id_user_pwd, ""))
-	//b.SetEmail(s.State.OptString(id_user_email, ""))
 
 	ub, err := CreateUserWithName(b)
 	if ReportIfError(err, "CreateUserWithName", b) {

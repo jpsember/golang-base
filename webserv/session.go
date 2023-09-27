@@ -64,6 +64,8 @@ func DiscardAllSessions(sessionManager SessionManager) {
 
 type Session = *SessionStruct
 
+type PostRequestEvent func()
+
 type SessionStruct struct {
 	Id string
 
@@ -96,6 +98,7 @@ type SessionStruct struct {
 	browserURLExpr         string // If not nil, client browser should push this onto the history
 	repaintSet             StringSet
 	repaintWidgetMarkupMap JSMap // Used only during repainting; the map of widget ids -> markup to be repainted by client
+	postRequestEvents      []PostRequestEvent
 }
 
 func NewSession() Session {
@@ -369,9 +372,13 @@ func (s Session) ProcessWidgetValue(widget Widget, value string, context any) {
 	//s.SetWidgetProblem(widget.Id(), err)
 }
 
+func (s Session) Widget(id string) Widget {
+	return s.WidgetManager().Get(id)
+}
+
 func (s Session) UpdateValueAndProblemId(widgetId string, optionalValue any, err error) {
 	Alert("Would be better to refactor an make this function unnecessary")
-	widget := s.WidgetManager().Get(widgetId)
+	widget := s.Widget(widgetId)
 	s.UpdateValueAndProblem(widget, optionalValue, err)
 }
 
@@ -435,6 +442,10 @@ func (s Session) sendAjaxResponse() {
 	}
 	pr := PrIf("", debRepaint)
 
+	for _, f := range s.postRequestEvents {
+		f()
+	}
+
 	jsmap := NewJSMap()
 	s.repaintWidgetMarkupMap = NewJSMap()
 	s.processRepaintFlags(s.PageWidget)
@@ -464,6 +475,7 @@ func (s Session) ReleaseLockAndDiscardRequest() {
 	s.clientInfoString = ""
 	s.browserURLExpr = ""
 	s.repaintSet = nil
+	s.postRequestEvents = nil
 	s.lock.Unlock()
 }
 
@@ -740,7 +752,7 @@ func (s Session) SetWidgetValue(w Widget, value any) {
 
 // I separated this out from SetWidgetValue, since we may want to update values given just ids and state providers
 func (s Session) SetValue(widgetId string, provider WidgetStateProvider, value any) bool {
-	pr := PrIf("SetValue", true)
+	pr := PrIf("SetValue", false)
 	p := orBaseProvider(s, provider)
 	id := compileId(p.Prefix, widgetId)
 	oldVal := p.State.OptUnsafe(id)
@@ -798,4 +810,10 @@ func (s Session) Validate(widget Widget) {
 	for _, child := range widget.Children() {
 		s.Validate(child)
 	}
+}
+
+// Schedule an event to be executed after the current AJAX request handling has completed.  For example,
+// additional widget validations that are triggered by a current validation.
+func (s Session) AddPostRequestEvent(event PostRequestEvent) {
+	s.postRequestEvents = append(s.postRequestEvents, event)
 }

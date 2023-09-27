@@ -150,12 +150,11 @@ func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 }
 
 func ValidateUserPassword(password string, flag ValidateFlag) (string, error) {
-	pr := PrIf("", false)
-	pr("ValidateUserPassword:", Quoted(password), flag)
+	pr := PrIf(">ValidateUserPassword", false)
+	pr("pwd:", QUO, password, flag)
 
 	text := password
 	text = strings.TrimSpace(text)
-	validatedName := text
 	var err error
 
 	x := len(text)
@@ -171,16 +170,18 @@ func ValidateUserPassword(password string, flag ValidateFlag) (string, error) {
 		}
 	}
 
-	pr("before replaceWithTestInput:", err, validatedName)
-	err, validatedName = replaceWithTestInput(err, validatedName, "a", "bigpassword123")
-	pr("after replaceWithTestInput:", err, validatedName)
-	return validatedName, err
+	pr("before replaceWithTestInput:", err, text)
+	err, text = replaceWithTestInput(err, text, "a", "bigpassword123")
+	pr("after replaceWithTestInput:", err, text)
+	return text, err
 }
 
 func ValidateEmailAddress(emailAddress string, flag ValidateFlag) (string, error) {
+	pr := PrIf(">ValidateEmailAddress", true)
+	pr("email:", QUO, emailAddress, flag)
+
 	text := emailAddress
 	text = strings.TrimSpace(text)
-	validatedEmail := text
 	var err error
 
 	x := len(text)
@@ -192,15 +193,15 @@ func ValidateEmailAddress(emailAddress string, flag ValidateFlag) (string, error
 		if x > USER_EMAIL_MAX_LENGTH {
 			err = ErrorUserEmailLength
 		} else {
-			_, err2 := mail.ParseAddress(text)
-			if err2 != nil {
+			_, err = mail.ParseAddress(text)
+			if err != nil {
 				err = ErrorUserEmailInvalid
 			}
 		}
 	}
-
-	err, validatedEmail = replaceWithTestInput(err, validatedEmail, "a", "joe_user@anycompany.xyx")
-	return validatedEmail, err
+	err, text = replaceWithTestInput(err, text, "a", "joe_user@anycompany.xyx")
+	pr("returning:", QUO, text, err)
+	return text, err
 }
 
 // If AllowTestInputs, and value is empty or equals shortcutForTest, return (nil, fullValueForTest).

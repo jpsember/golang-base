@@ -162,7 +162,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget, arg string) {
 	var err1 error
 	userName, err1 = ValidateUserName(userName, VALIDATE_ONLY_NONEMPTY)
 	var err2 error
-	pwd, err2 = ValidateEmailAddress(pwd, VALIDATE_ONLY_NONEMPTY)
+	pwd, err2 = ValidateUserPassword(pwd, VALIDATE_ONLY_NONEMPTY)
 
 	pr("id_user_name problem:", err1)
 	pr("id_user_pwd  problem:", err2)
