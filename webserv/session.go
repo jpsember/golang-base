@@ -484,7 +484,7 @@ func (s Session) Ok() bool {
 // Widget problems
 // ------------------------------------------------------------------------------------
 
-var prProb = PrIf("Widget Problems", true)
+var prProb = PrIf("Widget Problems", false)
 
 // Read widget problem.  Returns an empty string if it hasn't got one.
 func (s Session) WidgetProblem(w Widget) string {

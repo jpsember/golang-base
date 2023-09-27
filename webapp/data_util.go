@@ -107,7 +107,7 @@ var UserPasswordValidatorRegExp = Regexp(`^[^ ]+$`)
 var AnimalNameValidatorRegExp = Regexp(`^[a-zA-Z]+(?: [a-zA-Z]+)*$`)
 
 func ValidateAnimalName(name string, flag ValidateFlag) (string, error) {
-	pr := PrIf("ValidateAnimalName", true)
+	pr := PrIf("ValidateAnimalName", false)
 	pr("name:", QUO, name, "flag:", flag)
 	name = strings.TrimSpace(name)
 	Todo("?Replace two or more spaces by a single space")

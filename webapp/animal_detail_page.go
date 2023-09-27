@@ -7,11 +7,6 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-// Use the field names that Animal produces as JSMaps
-const (
-	id_animal_uploadpic = "photo"
-)
-
 type AnimalDetailPageStruct struct {
 	animalId int
 	editing  bool
@@ -180,9 +175,8 @@ func (p AnimalDetailPage) generateForEditing(s Session) {
 	m.Close()
 
 	m.Open()
-	//m.Id(id_animal_uploadpic)
 	p.uploadPicWidget =
-		m.Label("Photo").Id(id_animal_uploadpic).AddFileUpload(p.uploadPhotoListener)
+		m.Label("Photo").Id("wtf").AddFileUpload(p.uploadPhotoListener)
 
 	imgWidget := m.Id(Animal_PhotoThumbnail).AddImage()
 	imgWidget.URLProvider = p.provideURL
@@ -270,9 +264,7 @@ func (p AnimalDetailPage) validateAll(s Session) bool {
 	preCreateValidateText(s, p.summaryWidget, 20, 200, 0)
 	preCreateValidateText(s, p.detailsWidget, 200, 2000, 0)
 	{
-		picId :=
-			s.WidgetIntValue(p.imgWidget)
-		//s.IntValue(id_animal_display_pic)
+		picId := s.WidgetIntValue(p.imgWidget)
 		if picId == 0 {
 			s.SetProblem(p.uploadPicWidget, "Please upload a photo")
 		}
