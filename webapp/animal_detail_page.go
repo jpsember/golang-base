@@ -7,9 +7,7 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-const anim_state_prefix = "_create_animal_:"
-
-// // Use the field names that Animal produces as JSMaps
+// Use the field names that Animal produces as JSMaps
 const (
 	id_animal_uploadpic = "photo"
 )
@@ -127,10 +125,6 @@ func (p AnimalDetailPage) readStateFromAnimal(sess Session) {
 }
 
 func (p AnimalDetailPage) generateWidgets(s Session) {
-	if s == nil {
-		return
-	}
-	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
 	GenerateHeader(s, p)
 	if p.viewing() {
 		AddUserHeaderWidget(s)
@@ -318,8 +312,6 @@ func (p AnimalDetailPage) abortEditListener(s Session, widget Widget, arg string
 func (p AnimalDetailPage) exit(s Session) {
 	pr := PrIf("AnimalDetailPage.exit", true)
 	pr("state fields:", INDENT, s.State)
-	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
-	pr("state fields after deleting:", INDENT, s.State)
 	if SessionUser(s).UserClass() == UserClassDonor {
 		s.SwitchToPage(FeedPageTemplate, nil)
 	} else {

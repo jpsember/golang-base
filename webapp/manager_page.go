@@ -40,16 +40,15 @@ const manager_card_id = manager_id_prefix + "card"
 func (p ManagerPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)
 	debug := m.StartConstruction()
-	if !Experiment {
-		AddUserHeaderWidget(sess)
+	AddUserHeaderWidget(sess)
 
-		// Row of buttons at top.
-		m.Open()
-		{
-			m.Label("New Animal").AddButton(p.newAnimalListener)
-		}
-		m.Close()
+	// Row of buttons at top.
+	m.Open()
+	{
+		m.Label("New Animal").AddButton(p.newAnimalListener)
 	}
+	m.Close()
+
 	// Construct a list, and a card to use as the list item widget
 
 	var cardWidget AnimalCard
@@ -66,9 +65,6 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	managerId := SessionUser(sess).Id()
 	animalList := NewAnimalList(getManagerAnimals(managerId), cardWidget)
 
-	if Experiment {
-		m.Id("experiment")
-	}
 	Todo("!document how the list forwards clicks related to items on to the list listener")
 	m.AddList(animalList, cardWidget)
 	m.EndConstruction(debug)

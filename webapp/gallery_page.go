@@ -56,6 +56,12 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	m := GenerateHeader(sess, p)
 
+	if !trim {
+		alertWidget = NewAlertWidget("sample_alert", AlertInfo)
+		alertWidget.SetVisible(false)
+		m.Add(alertWidget)
+	}
+
 	anim := ReadAnimalIgnoreError(3)
 	if anim.Id() == 0 {
 		Alert("No animals available")
@@ -212,9 +218,7 @@ Multiple line feeds:
 
 	if !trim {
 		AddUserHeaderWidget(sess)
-		alertWidget = NewAlertWidget("sample_alert", AlertInfo)
-		alertWidget.SetVisible(false)
-		m.Add(alertWidget)
+
 	}
 
 }
@@ -249,14 +253,7 @@ func buttonListener(s Session, widget Widget, arg string) {
 	// Increment the alert class, and update its message
 	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
 	alertWidget.SetVisible(true)
-
-	if Alert("Is this adequate?") {
-		s.SetWidgetValue(alertWidget, newVal)
-	} else {
-		s.State.Put(alertWidget.Id(),
-			strings.TrimSpace(newVal))
-		s.Repaint(alertWidget)
-	}
+	s.SetWidgetValue(alertWidget, newVal)
 }
 
 func (p GalleryPage) checkboxListener(s Session, widget CheckboxWidget, state bool) (bool, error) {

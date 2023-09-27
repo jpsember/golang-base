@@ -52,17 +52,9 @@ func (p FeedPage) generateWidgets(s Session) {
 		cardWidget = w
 	}
 	m.Add(cardWidget)
-	cardWidget.SetVisible(false)
 
 	animalList := NewAnimalList(getAnimals(), cardWidget)
-
-	if Experiment {
-		m.Id("experiment")
-	}
-	listWidget := m.AddList(animalList, cardWidget)
-	if Experiment {
-		listWidget.WithPageControls = false
-	}
+	m.AddList(animalList, cardWidget)
 	m.EndConstruction(debug)
 }
 

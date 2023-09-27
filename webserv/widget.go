@@ -29,7 +29,7 @@ type Widget interface {
 	SetColumns(columns int)            // Set the number of columns the widget occupies in its row
 	Columns() int                      // Get the number of columns the widget occupies in its row
 	StateProvider() WidgetStateProvider
-	SetStateProvider(p WidgetStateProvider)
+	setStateProvider(p WidgetStateProvider)
 	SetVisible(bool)
 	SetDetached(bool)
 	SetTrace(bool)

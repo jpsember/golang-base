@@ -543,15 +543,6 @@ func (s Session) DeleteStateError(id string) {
 	delete(m, id)
 }
 
-func (s Session) DeleteStateFieldsWithPrefix(prefix string) {
-	m := s.State.MutableWrapped()
-	for k, _ := range m {
-		if strings.HasPrefix(k, ".error") {
-			delete(m, k)
-		}
-	}
-}
-
 // ------------------------------------------------------------------------------------
 // Accessing values of widgets other than the widget currently being listened to
 // ------------------------------------------------------------------------------------
@@ -747,7 +738,7 @@ func (s Session) rebuildAndDisplayNewPage(pageProvider func(s Session) Page) {
 	page := pageProvider(s)
 	CheckState(page != nil, "no page was provided")
 	s.debugPage = page
-	Pr(VERT_SP, "changed page to", page.Name(), INDENT, Callers(1, 5), VERT_SP)
+	//Pr(VERT_SP, "changed page to", page.Name(), INDENT, Callers(1, 5), VERT_SP)
 
 	// Display the new page
 	Todo("!Verify that this works for normal refreshes as well as ajax operations")

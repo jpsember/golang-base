@@ -176,7 +176,7 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	}
 	// Set its state provider, if it doesn't already have one
 	if widget.StateProvider() == nil {
-		widget.SetStateProvider(m.StateProvider())
+		widget.setStateProvider(m.StateProvider())
 	}
 
 	m.Log("addWidget, id:", id, "panel stack size:", len(m.stack))
@@ -353,7 +353,7 @@ func (m WidgetManager) AddHeading() HeadingWidget {
 func (m WidgetManager) AddText() TextWidget {
 	staticContent, id := m.getStaticContentAndId()
 	w := NewTextWidget(id, m.consumePendingSize(), m.consumePendingHeight())
-	w.SetStateProvider(m.StateProvider())
+	w.setStateProvider(m.StateProvider())
 	if staticContent != "" {
 		w.SetStaticContent(staticContent)
 	}

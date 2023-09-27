@@ -32,15 +32,15 @@ func (w BaseWidget) isFlag(flag int) bool {
 
 func (w BaseWidget) Trace() bool { return w.isFlag(wflagTrace) }
 func (w BaseWidget) setOrClearFlag(flag int, set bool) bool {
-	old := w.bitFlags
-	new := old
+	oldVal := w.bitFlags
+	newVal := oldVal
 	if set {
-		new |= flag
+		newVal |= flag
 	} else {
-		new &= ^flag
+		newVal &= ^flag
 	}
-	w.bitFlags = new
-	return new != old
+	w.bitFlags = newVal
+	return newVal != oldVal
 }
 
 func (w BaseWidget) SetTrace(flag bool) {
@@ -119,7 +119,8 @@ func (w BaseWidget) Detached() bool {
 }
 
 func (w BaseWidget) SetVisible(v bool) {
-	w.setOrClearFlag(wflagHidden, v)
+	Todo("?These flags don't cause widget to be plotted, which they ought to be (if their status is changing)")
+	w.setOrClearFlag(wflagHidden, !v)
 }
 
 func (w BaseWidget) SetDetached(v bool) {
@@ -163,10 +164,10 @@ func (w BaseWidget) AuxId() string {
 	return w.Id() + ".aux"
 }
 
-func (w BaseWidget) SetStateProvider(p WidgetStateProvider) {
+func (w BaseWidget) setStateProvider(p WidgetStateProvider) {
 	if w.isFlag(wflagTrace) {
 		if p != nil {
-			w.Log("SetStateProvider:", p, Caller())
+			w.Log("setStateProvider:", p, Caller())
 		}
 	}
 	w.stateProvider = p
