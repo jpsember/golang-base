@@ -79,6 +79,7 @@ func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
 }
 
 func WidgetIdWithProblem(id string) string {
+	Alert("Issue #80: where are these stored?")
 	CheckArg(id != "")
 	return id + ".problem"
 }

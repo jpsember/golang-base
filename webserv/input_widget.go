@@ -60,9 +60,8 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	m.TgOpen(`div id=`).A(QUO, id).TgContent()
 
-	problemId := WidgetIdWithProblem(id)
 	auxId := id + `.aux`
-	problemText := s.StringValue(problemId)
+	problemText := s.WidgetProblem(w)
 	if false && Alert("always problem") {
 		problemText = "sample problem information"
 	}

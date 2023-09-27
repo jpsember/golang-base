@@ -204,7 +204,8 @@ func (p LandingPage) forgotPwdListener(sess Session, widget Widget, arg string) 
 
 	for {
 
-		userEmail := sess.StringValue(id_user_email)
+		w := sess.Widget(id_user_email)
+		userEmail := sess.WidgetStringValue(w)
 
 		if userEmail == "" {
 			sess.SetWidgetProblem(id_user_email, "Please enter your email address.")

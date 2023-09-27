@@ -54,8 +54,7 @@ func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
 		m.A(QUO, inputName, ` id=`, QUO, filenameId, ` onchange="jsUpload('`, w.Id(), `')"`)
 		m.TgClose()
 
-		problemId := WidgetIdWithProblem(w.Id())
-		problemText := s.StringValue(problemId)
+		problemText := s.WidgetProblem(w)
 
 		hasProblem := problemText != ""
 

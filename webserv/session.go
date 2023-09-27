@@ -709,21 +709,6 @@ func readStateStringValue(p WidgetStateProvider, id string) string {
 }
 
 // Read widget value; assumed to be an int.
-func (s Session) IntValue(id string) int {
-	return readStateIntValue(s.BaseStateProvider(), id)
-}
-
-// Read widget value; assumed to be a boolean.
-func (s Session) BoolValue(id string) bool {
-	return readStateBoolValue(s.BaseStateProvider(), id)
-}
-
-// Read widget value; assumed to be a string.
-func (s Session) StringValue(id string) string {
-	return readStateStringValue(s.BaseStateProvider(), id)
-}
-
-// Read widget value; assumed to be an int.
 func (s Session) WidgetIntValue(w Widget) int {
 	p := orBaseProvider(s, w.StateProvider())
 	return readStateIntValue(p, w.Id())
@@ -733,6 +718,15 @@ func (s Session) WidgetIntValue(w Widget) int {
 func (s Session) WidgetBoolValue(w Widget) bool {
 	p := orBaseProvider(s, w.StateProvider())
 	return readStateBoolValue(p, w.Id())
+}
+
+// Read widget problem, if any
+func (s Session) WidgetProblem(w Widget) string {
+	p := orBaseProvider(s, w.StateProvider())
+	if p.State == nil {
+		BadState("no state in state provider!")
+	}
+	return readStateStringValue(p, WidgetIdWithProblem(w.Id()))
 }
 
 // Read widget value; assumed to be a string.
