@@ -20,6 +20,7 @@ const (
 
 type SignUpPageStruct struct {
 	editor DataEditor
+	strict bool
 }
 type SignUpPage = *SignUpPageStruct
 
@@ -150,19 +151,25 @@ func (p SignUpPage) auxValidateEmail(s Session, widgetId string, flag ValidateFl
 }
 
 func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
-	pr := PrIf("signupListener", false)
+	pr := PrIf("signupListener", true)
 	pr("state:", INDENT, p.editor.State)
 
 	// We need to basically call all the same validators that we do in the callbacks,
 	// and we have to update the widget values and errors ourselves (something the callback handler
 	// does automatically).
-	Todo("Have a push state thing to set VALIDATE_UPDATE_WIDGETS here?")
-	p.auxValidateUserName(s, SignUpState_Name, VALIDATE_UPDATE_WIDGETS)
-	p.auxValidateUserPwd(s, SignUpState_Password, VALIDATE_UPDATE_WIDGETS)
-	p.auxValidateMatchPwd(s, SignUpState_PasswordVerify, VALIDATE_UPDATE_WIDGETS)
-	p.auxValidateEmail(s, SignUpState_Email, VALIDATE_UPDATE_WIDGETS)
 
+	// Better approach: set a flag that says we are doing 'strict' validation
+	p.strict = true
+	s.Validate(s.PageWidget)
+
+	//Todo("Have a push state thing to set VALIDATE_UPDATE_WIDGETS here?")
+	//p.auxValidateUserName(s, SignUpState_Name, VALIDATE_UPDATE_WIDGETS)
+	//p.auxValidateUserPwd(s, SignUpState_Password, VALIDATE_UPDATE_WIDGETS)
+	//p.auxValidateMatchPwd(s, SignUpState_PasswordVerify, VALIDATE_UPDATE_WIDGETS)
+	//p.auxValidateEmail(s, SignUpState_Email, VALIDATE_UPDATE_WIDGETS)
+	p.strict = false
 	errcount := WidgetErrorCount(s.PageWidget, s.State)
+	Todo("Maybe have Validate(...) return the error count?")
 	pr("error count:", errcount)
 	if errcount != 0 {
 		return

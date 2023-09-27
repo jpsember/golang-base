@@ -4,6 +4,7 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
+	"strings"
 )
 
 func RandomUser(r JSRand) UserBuilder {
@@ -81,6 +82,24 @@ func PopulateDatabase() {
 	}
 	for i := 0; i < 5; i++ {
 		createUserIfMissing("manager"+IntToString(i+1), UserClassManager)
+	}
+
+	// Delete other users
+	{
+		delList := []int{}
+		iter := UserIterator(0)
+		for iter.HasNext() {
+			user := iter.Next().(User)
+			n := user.Name()
+			if strings.HasPrefix(n, "donor") || strings.HasPrefix(n, "admin") || strings.HasPrefix(n, "manager") {
+				continue
+			}
+			Pr("deleting user:", user.Id(), QUO, user.Name())
+			delList = append(delList, user.Id())
+		}
+		for _, id := range delList {
+			DeleteUser(id)
+		}
 	}
 
 	for i := 0; i < 100; i++ {

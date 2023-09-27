@@ -328,7 +328,7 @@ func (s Session) auxHandleAjax() {
 		s.SetRequestProblem("widget is disabled", widget)
 		return
 	}
-
+	Todo("!maybe check the lowlistener inside the ProcessWidgetValue func instead?")
 	if widget.LowListener() == nil {
 		Alert("#50Widget has no low-level listener:", Info(widget))
 		return
@@ -776,4 +776,26 @@ func (s Session) rebuildAndDisplayNewPage(pageProvider func(s Session) Page) {
 	Todo("!Verify that this works for normal refreshes as well as ajax operations")
 	s.Repaint(s.PageWidget)
 	s.browserURLExpr = s.ConstructPathFromPage(page)
+}
+
+func (s Session) Validate(widget Widget) {
+	pr := PrIf("Session.Validate", true)
+	pr("id:", widget.Id())
+	if widget.LowListener() != nil {
+		p := orBaseProvider(s, widget.StateProvider())
+		id := compileId(p.Prefix, widget.Id())
+		value := p.State.OptUnsafe(id)
+		pr(" value from state:", Info(value))
+		if jstr, ok := value.(JString); ok {
+			str := jstr.AsString()
+			pr("...processing widget value", QUO, str)
+			s.ProcessWidgetValue(widget, str, nil)
+		} else {
+			Alert("#50<1Don't know how to validate widget", widget.Id(), "with value", Info(value))
+			Todo("Perhaps we need a widget method that returns the current widget's value as 'any'")
+		}
+	}
+	for _, child := range widget.Children() {
+		s.Validate(child)
+	}
 }
