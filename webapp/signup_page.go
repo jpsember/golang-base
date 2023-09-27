@@ -75,7 +75,7 @@ func (p SignUpPage) listenerValidateName(s Session, widget InputWidget, value st
 }
 
 func (p SignUpPage) listenerValidatePwd(s Session, widget InputWidget, value string) (string, error) {
-	pr := PrIf(">listenerValidatePwd", true)
+	pr := PrIf(">listenerValidatePwd", false)
 	flag := p.validateFlag()
 	pr("Validating, value:", QUO, value)
 	validated, err := ValidateUserPassword(value, flag)
@@ -91,7 +91,7 @@ func (p SignUpPage) listenerValidatePwd(s Session, widget InputWidget, value str
 }
 
 func (p SignUpPage) listenerValidatePwdVerify(s Session, widget InputWidget, value string) (string, error) {
-	pr := PrIf(">listenerValidatePwdVerify", true)
+	pr := PrIf(">listenerValidatePwdVerify", false)
 	pr("verify value  :", QUO, value)
 	var err error
 	flag := p.validateFlag()

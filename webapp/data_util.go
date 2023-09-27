@@ -130,7 +130,7 @@ func ValidateAnimalName(name string, flag ValidateFlag) (string, error) {
 }
 
 func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
-	pr := PrIf("ValidateUserName", true)
+	pr := PrIf("ValidateUserName", false)
 	userName = strings.TrimSpace(userName)
 	Todo("?Replace two or more spaces by a single space")
 	validatedName := userName
@@ -177,7 +177,7 @@ func ValidateUserPassword(password string, flag ValidateFlag) (string, error) {
 }
 
 func ValidateEmailAddress(emailAddress string, flag ValidateFlag) (string, error) {
-	pr := PrIf(">ValidateEmailAddress", true)
+	pr := PrIf(">ValidateEmailAddress", false)
 	pr("email:", QUO, emailAddress, flag)
 
 	text := emailAddress
