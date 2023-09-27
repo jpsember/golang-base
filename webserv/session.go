@@ -793,20 +793,23 @@ func (s Session) WidgetErrorCount(widget Widget) int {
 }
 
 func (s Session) Validate(widget Widget) {
-	pr := PrIf("Session.Validate", false)
+	pr := PrIf("Session.Validate", true)
 	pr("id:", widget.Id())
 	if widget.LowListener() != nil {
 		p := s.provider(widget)
 		id := compileId(p.Prefix, widget.Id())
 		value := p.State.OptUnsafe(id)
-		pr(" value from state:", Info(value))
-		if jstr, ok := value.(JString); ok {
-			str := jstr.AsString()
-			pr("...processing widget value", QUO, str)
-			s.ProcessWidgetValue(widget, str, nil)
-		} else {
-			Alert("#50<1Don't know how to validate widget", widget.Id(), "with value", Info(value))
-			Todo("Perhaps we need a widget method that returns the current widget's value as 'any'")
+		// NOTE: the value might be nil for strings, if the map doesn't have that key
+		{
+			pr(" value from state:", Info(value))
+			if jstr, ok := value.(JString); ok {
+				str := jstr.AsString()
+				pr("...processing widget value", QUO, str)
+				s.ProcessWidgetValue(widget, str, nil)
+			} else {
+				Alert("#50<1Don't know how to validate widget", widget.Id(), "with value", Info(value))
+				Todo("Perhaps we need a widget method that returns the current widget's value as 'any'")
+			}
 		}
 	}
 	for _, child := range widget.Children() {
