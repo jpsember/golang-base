@@ -108,7 +108,7 @@ func PopulateDatabase() {
 }
 
 func AttemptSignIn(sess Session, userId int) string {
-	pr := PrIf("AttemptSignIn", true)
+	pr := PrIf("AttemptSignIn", false)
 	var user User
 	var prob = ""
 	for {

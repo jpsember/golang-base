@@ -264,6 +264,7 @@ func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget, a
 }
 
 func (p AnimalDetailPage) validateAll(s Session) bool {
+	Todo("This could be refactored to use Validate etc.")
 	pr := PrIf("", false)
 
 	{
@@ -283,7 +284,7 @@ func (p AnimalDetailPage) validateAll(s Session) bool {
 		}
 	}
 
-	errcount := WidgetErrorCount(s.PageWidget, s.State)
+	errcount := s.WidgetErrorCount(s.PageWidget)
 	pr("error count:", errcount)
 	return errcount == 0
 }

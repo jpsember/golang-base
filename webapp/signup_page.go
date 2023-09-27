@@ -21,7 +21,6 @@ type SignUpPage = *SignUpPageStruct
 var SignUpPageTemplate = &SignUpPageStruct{}
 
 func newSignUpPage(session Session) SignUpPage {
-	Todo("Use editor and dataclass to hold the state, e.g. user name, pwd, pwd verify")
 	t := &SignUpPageStruct{}
 	t.editor = NewDataEditor(NewSignUpState())
 	t.generateWidgets(session)
@@ -41,8 +40,6 @@ func (p SignUpPage) ConstructPage(s Session, args PageArgs) Page {
 }
 
 func (p SignUpPage) generateWidgets(s Session) {
-
-	s.DeleteStateErrors()
 	m := GenerateHeader(s, p)
 	m.Label("Sign Up Page").Size(SizeLarge).AddHeading()
 
@@ -114,21 +111,19 @@ func (p SignUpPage) validateEmail(s Session, widget InputWidget, value string) (
 }
 
 func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
-	pr := PrIf("signupListener", true)
+	pr := PrIf("signupListener", false)
 	pr("state:", INDENT, p.editor.State)
 	pr("s.State:", INDENT, s.State)
 
 	// Re-validate all the widgets in 'strict' mode.
 	p.strict = true
-	s.Validate(s.PageWidget)
+	errcount := s.ValidateAndCountErrors(s.PageWidget)
 	p.strict = false
 
 	pr("after validating page;")
 	pr("state:", INDENT, p.editor.State)
 	pr("s.State:", INDENT, s.State)
 
-	errcount := WidgetErrorCount(s.PageWidget, s.State)
-	Todo("Maybe have Validate(...) return the error count?")
 	pr("error count:", errcount)
 	if errcount != 0 {
 		return

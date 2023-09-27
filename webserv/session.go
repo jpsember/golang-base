@@ -393,7 +393,7 @@ func (s Session) UpdateValueAndProblem(widget Widget, optionalValue any, err err
 		return
 	}
 	// Always update the problem, in case we are clearing a previous error
-	s.SetWidgetProblem(widget.Id(), err)
+	s.SetProblem(widget, err)
 }
 
 func (s Session) processClientInfo(infoString string) {
@@ -499,7 +499,23 @@ func (s Session) Ok() bool {
 	return s.requestProblem == nil
 }
 
+// ------------------------------------------------------------------------------------
+// Widget problems
+// ------------------------------------------------------------------------------------
+
+var prProb = PrIf("Widget Problems", false)
+
+// Read widget problem.  Returns an empty string if it hasn't got one.
+func (s Session) WidgetProblem(w Widget) string {
+	pr := prProb
+	p := s.provider(w)
+	result := readStateStringValue(p, widgetProblemKey(w))
+	pr("problem for", w.Id(), "is:", QUO, result)
+	return result
+}
+
 func (s Session) SetProblem(widget Widget, problem any) {
+	pr := prProb
 	var text string
 	if problem != nil {
 		switch t := problem.(type) {
@@ -511,25 +527,24 @@ func (s Session) SetProblem(widget Widget, problem any) {
 			BadArg("<1Unsupported type")
 		}
 	}
-	s.auxSetWidgetProblem(widget, text)
-}
-func (s Session) SetWidgetProblem(widgetId string, problem any) {
-	s.SetProblem(s.widgetManager.Get(widgetId), problem)
-}
 
-func (s Session) auxSetWidgetProblem(widget Widget, problemText string) {
-	key := WidgetIdWithProblem(widget.Id())
-	state := s.State
+	key := widgetProblemKey(widget)
+	p := s.provider(widget)
+	state := p.State
 	existingProblem := state.OptString(key, "")
-	if existingProblem != problemText {
-		// Pr("SetWidgetProblem:", widget.Id(), "from:", existingProblem, "to:", problemText)
-		if problemText == "" {
+	if existingProblem != text {
+		pr("changing from:", QUO, existingProblem, "to:", QUO, text)
+		if text == "" {
 			state.Delete(key)
 		} else {
-			state.Put(key, problemText)
+			state.Put(key, text)
 		}
 		s.RepaintId(widget.Id())
 	}
+}
+
+func (s Session) SetWidgetProblem(widgetId string, problem any) {
+	s.SetProblem(s.widgetManager.Get(widgetId), problem)
 }
 
 // Include javascript call within page to get client's display properties.
@@ -539,16 +554,6 @@ func (s Session) RequestClientInfo(sb MarkupBuilder) {
 	if true {
 		Alert("!Always making resolution call; might want to avoid infinite calls by only requesting if at least n seconds elapsed")
 		sb.A(`<script>jsGetDisplayProperties();</script>`).Cr()
-	}
-}
-
-func (s Session) DeleteStateErrors() {
-	m := s.State.MutableWrapped()
-	Todo("safe to delete key while iterating through them?")
-	for k, _ := range m {
-		if strings.HasSuffix(k, ".error") {
-			delete(m, k)
-		}
 	}
 }
 
@@ -650,16 +655,8 @@ func (pv WidgetStateProvider) String() string {
 }
 
 func NewStateProvider(prefix string, state JSEntity) WidgetStateProvider {
+	Todo("Is the prefix really necessary?")
 	return &WidgetStateProviderStruct{Prefix: prefix, State: state.AsJSMap()}
-}
-
-// If state provider is nil, use default one
-func orBaseProvider(s Session, p WidgetStateProvider) WidgetStateProvider {
-	if p == nil {
-		// This is the state provider if no other one has been specified
-		p = s.BaseStateProvider()
-	}
-	return p
 }
 
 // If the id has the prefix, remove it.
@@ -710,52 +707,44 @@ func readStateStringValue(p WidgetStateProvider, id string) string {
 
 // Read widget value; assumed to be an int.
 func (s Session) WidgetIntValue(w Widget) int {
-	p := orBaseProvider(s, w.StateProvider())
+	p := s.provider(w)
 	return readStateIntValue(p, w.Id())
 }
 
 // Read widget value; assumed to be a bool.
 func (s Session) WidgetBoolValue(w Widget) bool {
-	p := orBaseProvider(s, w.StateProvider())
+	p := s.provider(w)
 	return readStateBoolValue(p, w.Id())
 }
 
-// Read widget problem, if any
-func (s Session) WidgetProblem(w Widget) string {
-	p := orBaseProvider(s, w.StateProvider())
+func (s Session) provider(w Widget) WidgetStateProvider {
+	p := w.StateProvider()
+	if p == nil {
+		p = s.BaseStateProvider()
+	}
 	if p.State == nil {
 		BadState("no state in state provider!")
 	}
-	return readStateStringValue(p, WidgetIdWithProblem(w.Id()))
+	return p
 }
 
 // Read widget value; assumed to be a string.
 func (s Session) WidgetStringValue(w Widget) string {
-	p := orBaseProvider(s, w.StateProvider())
-	if p.State == nil {
-		BadState("no state in state provider!")
-	}
+	p := s.provider(w)
 	return readStateStringValue(p, w.Id())
 }
 
 func (s Session) SetWidgetValue(w Widget, value any) {
-	if s.SetValue(w.Id(), w.StateProvider(), value) {
-		s.Repaint(w)
-	}
-}
-
-// I separated this out from SetWidgetValue, since we may want to update values given just ids and state providers
-func (s Session) SetValue(widgetId string, provider WidgetStateProvider, value any) bool {
-	pr := PrIf("SetValue", false)
-	p := orBaseProvider(s, provider)
-	id := compileId(p.Prefix, widgetId)
+	pr := PrIf("SetWidgetValue", false)
+	p := s.provider(w)
+	id := compileId(p.Prefix, w.Id())
 	oldVal := p.State.OptUnsafe(id)
 	changed := value != oldVal
 	pr("old:", oldVal, "new:", value, "changed:", changed)
 	if changed {
 		p.State.Put(id, value)
+		s.Repaint(w)
 	}
-	return changed
 }
 
 // Get the context for the current listener.  For list items, this will be the list element id.
@@ -784,11 +773,30 @@ func (s Session) rebuildAndDisplayNewPage(pageProvider func(s Session) Page) {
 	s.browserURLExpr = s.ConstructPathFromPage(page)
 }
 
+func (s Session) ValidateAndCountErrors(widget Widget) int {
+	s.Validate(widget)
+	return s.WidgetErrorCount(widget)
+}
+
+func (s Session) WidgetErrorCount(widget Widget) int {
+	Todo("?Use 's' instead of 'sess' everywhere")
+	count := 0
+
+	problemText := s.WidgetProblem(widget)
+	if problemText != "" {
+		count++
+	}
+	for _, child := range widget.Children() {
+		count += s.WidgetErrorCount(child)
+	}
+	return count
+}
+
 func (s Session) Validate(widget Widget) {
 	pr := PrIf("Session.Validate", false)
 	pr("id:", widget.Id())
 	if widget.LowListener() != nil {
-		p := orBaseProvider(s, widget.StateProvider())
+		p := s.provider(widget)
 		id := compileId(p.Prefix, widget.Id())
 		value := p.State.OptUnsafe(id)
 		pr(" value from state:", Info(value))

@@ -62,26 +62,8 @@ const (
 	AlignRight
 )
 
-func WidgetErrorCount(root Widget, state JSMap) int {
-	count := 0
-	return auxWidgetErrorCount(count, root, state)
-}
-
-func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
-	problemId := WidgetIdWithProblem(w.Id())
-	if state.OptString(problemId, "") != "" {
-		count++
-	}
-	for _, child := range w.Children() {
-		count = auxWidgetErrorCount(count, child, state)
-	}
-	return count
-}
-
-func WidgetIdWithProblem(id string) string {
-	Alert("Issue #80: where are these stored?")
-	CheckArg(id != "")
-	return id + ".problem"
+func widgetProblemKey(w Widget) string {
+	return w.Id() + ".problem"
 }
 
 // Call w.RenderTo(...) iff the widget is visible, otherwise render an empty div with the widget's id.

@@ -154,6 +154,7 @@ var AutoActivateUser = DevDatabase && Alert("?Automatically activating user")
 
 func (p LandingPage) signInListener(sess Session, widget Widget, arg string) {
 	pr := PrIf("", false)
+	Todo("can be refactored to use ValidateAndCountErrors")
 	s := sess.State
 	pr("signInListener; state:", INDENT, s)
 	userName := s.OptString(id_user_name, "")
@@ -172,7 +173,7 @@ func (p LandingPage) signInListener(sess Session, widget Widget, arg string) {
 	var user = DefaultUser
 	prob := ""
 	for {
-		errcount := WidgetErrorCount(sess.PageWidget, sess.State)
+		errcount := sess.WidgetErrorCount(sess.PageWidget)
 		pr("errcount:", errcount)
 		if errcount != 0 {
 			break
