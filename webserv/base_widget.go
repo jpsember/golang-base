@@ -68,6 +68,11 @@ func (w BaseWidget) String() string {
 	return "<" + w.Id() + ">"
 }
 
+func (w BaseWidget) ValueAsString(s Session) string {
+	Pr("BaseWidget, valueAsString:", w.Id())
+	return ""
+}
+
 func (w BaseWidget) Id() string {
 	return w.baseId
 }

@@ -87,3 +87,7 @@ func boolToHtmlString(value bool) string {
 	}
 	return "false"
 }
+
+func (w CheckboxWidget) ValueAsString(s Session) string {
+	return Ternary(s.WidgetBoolValue(w), `true`, `false`)
+}

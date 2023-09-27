@@ -351,25 +351,6 @@ func (s Session) ProcessWidgetValue(widget Widget, value string, context any) {
 	s.listenerContext = nil
 	pr("LowListener returned updatedValue:", updatedValue, "err:", err)
 	s.UpdateValueAndProblem(widget, updatedValue, err)
-	//
-	//}
-	//{
-	//	if updatedValue != nil {
-	//		pr("setting widget value", widget.Id(), "to:", updatedValue)
-	//		s.SetWidgetValue(widget, updatedValue)
-	//		Todo("!Do we always want to repaint widget if setting its value?")
-	//	}
-	//	if err != nil {
-	//		Pr("got error from widget listener:", widget.Id(), INDENT, err)
-	//	}
-	//}
-	//
-	//// If the widget no longer exists, we may have changed pages...
-	//if s.widgetManager.Opt(widget.Id()) == nil {
-	//	return
-	//}
-	//// Always update the problem, in case we are clearing a previous error
-	//s.SetWidgetProblem(widget.Id(), err)
 }
 
 func (s Session) Widget(id string) Widget {
@@ -503,7 +484,7 @@ func (s Session) Ok() bool {
 // Widget problems
 // ------------------------------------------------------------------------------------
 
-var prProb = PrIf("Widget Problems", false)
+var prProb = PrIf("Widget Problems", true)
 
 // Read widget problem.  Returns an empty string if it hasn't got one.
 func (s Session) WidgetProblem(w Widget) string {
@@ -766,6 +747,7 @@ func (s Session) rebuildAndDisplayNewPage(pageProvider func(s Session) Page) {
 	page := pageProvider(s)
 	CheckState(page != nil, "no page was provided")
 	s.debugPage = page
+	Pr(VERT_SP, "changed page to", page.Name(), INDENT, Callers(1, 5), VERT_SP)
 
 	// Display the new page
 	Todo("!Verify that this works for normal refreshes as well as ajax operations")
@@ -796,21 +778,9 @@ func (s Session) Validate(widget Widget) {
 	pr := PrIf("Session.Validate", true)
 	pr("id:", widget.Id())
 	if widget.LowListener() != nil {
-		p := s.provider(widget)
-		id := compileId(p.Prefix, widget.Id())
-		value := p.State.OptUnsafe(id)
-		// NOTE: the value might be nil for strings, if the map doesn't have that key
-		{
-			pr(" value from state:", Info(value))
-			if jstr, ok := value.(JString); ok {
-				str := jstr.AsString()
-				pr("...processing widget value", QUO, str)
-				s.ProcessWidgetValue(widget, str, nil)
-			} else {
-				Alert("#50<1Don't know how to validate widget", widget.Id(), "with value", Info(value))
-				Todo("Perhaps we need a widget method that returns the current widget's value as 'any'")
-			}
-		}
+		strValue := widget.ValueAsString(s)
+		pr("...processing widget value", QUO, strValue)
+		s.ProcessWidgetValue(widget, strValue, nil)
 	}
 	for _, child := range widget.Children() {
 		s.Validate(child)

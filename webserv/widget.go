@@ -12,6 +12,7 @@ var DebugUIFlag = false
 type Widget interface {
 	fmt.Stringer
 	Id() string
+	ValueAsString(s *SessionStruct) string // Get the current value of this widget as a string
 	LowListener() LowLevelWidgetListener
 	Enabled() bool
 	Visible() bool
