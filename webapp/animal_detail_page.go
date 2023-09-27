@@ -176,7 +176,7 @@ func (p AnimalDetailPage) generateForEditing(s Session) {
 
 	m.Open()
 	p.uploadPicWidget =
-		m.Label("Photo").Id("wtf").AddFileUpload(p.uploadPhotoListener)
+		m.Label("Photo").AddFileUpload(p.uploadPhotoListener)
 
 	imgWidget := m.Id(Animal_PhotoThumbnail).AddImage()
 	imgWidget.URLProvider = p.provideURL

@@ -385,7 +385,7 @@ func (m WidgetManager) AddFileUpload(listener FileUploadWidgetListener) FileUplo
 	if listener == nil {
 		listener = doNothingFileUploadListener
 	}
-	w := NewFileUpload(m.consumePendingId(), NewHtmlString(m.consumePendingLabel()), listener)
+	w := NewFileUpload(m.ConsumeOptionalPendingId(), NewHtmlString(m.consumePendingLabel()), listener)
 	m.Add(w)
 	return w
 }
