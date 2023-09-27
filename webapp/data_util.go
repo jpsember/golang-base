@@ -69,7 +69,6 @@ func (x ValidateFlag) String() string {
 const (
 	VALIDATE_EMPTYOK       ValidateFlag = 1 << iota // A blank value is ok
 	VALIDATE_ONLY_NONEMPTY                          // Check only that the value isn't blank
-	VALIDATE_UPDATE_WIDGETS
 )
 
 func (f ValidateFlag) Has(bits ValidateFlag) bool {
@@ -131,6 +130,7 @@ func ValidateAnimalName(name string, flag ValidateFlag) (string, error) {
 }
 
 func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
+	pr := PrIf("ValidateUserName", true)
 	userName = strings.TrimSpace(userName)
 	Todo("?Replace two or more spaces by a single space")
 	validatedName := userName
@@ -145,6 +145,7 @@ func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 	} else if !UserNameValidatorRegExp.MatchString(userName) {
 		err = ErrorUserNameIllegalCharacters
 	}
+	pr("userName:", QUO, userName, "flags:", flag, "result:", QUO, validatedName, "err:", err)
 	return validatedName, err
 }
 

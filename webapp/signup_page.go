@@ -6,13 +6,6 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-const (
-// id_user_name       = "user_name"
-// id_user_pwd_verify = "user_pwd_verify"
-// id_user_pwd        = "user_pwd"
-// id_user_email      = "user_email"
-)
-
 // ------------------------------------------------------------------------------------
 // This is the canonical boilerplate that I will turn into a goland live template,
 // to simplify creating new pages:
@@ -79,7 +72,7 @@ func getWidget(sess Session, id string) Widget {
 func (p SignUpPage) listenerValidateName(s Session, widget InputWidget, value string) (string, error) {
 	// It is here in the listener that we read the 'client requested' value for the widget
 	// from the ajax parameters, and write it to the state.  We will validate it here.
-	return ValidateUserName(value, VALIDATE_EMPTYOK)
+	return ValidateUserName(value, Ternary(p.strict, 0, VALIDATE_EMPTYOK))
 }
 
 func (p SignUpPage) auxValidateUserName(s Session, widgetId string, flag ValidateFlag) (string, error) {
@@ -88,31 +81,32 @@ func (p SignUpPage) auxValidateUserName(s Session, widgetId string, flag Validat
 	pr("value:", value)
 	value, err := ValidateUserName(value, flag)
 	pr("validated:", value, "error:", err)
-	if flag.Has(VALIDATE_UPDATE_WIDGETS) {
-		s.UpdateValueAndProblemId(widgetId, value, err)
-	}
+	//	s.UpdateValueAndProblemId(widgetId, value, err)
 	return value, err
 }
 
 func (p SignUpPage) listenerValidatePwd(s Session, widget InputWidget, value string) (string, error) {
+	pr := PrIf("listenerValidatePwd", true)
 	// This assumes that the widget state is stored in our editor.
-	return p.auxValidateUserPwd(s, widget.Id(), VALIDATE_EMPTYOK)
-}
-
-func (p SignUpPage) auxValidateUserPwd(s Session, widgetId string, flag ValidateFlag) (string, error) {
-	pr := PrIf("auxValidateUserPwd", true)
-	value := p.editor.GetString(widgetId)
-	pr("widgetId:", widgetId, "pwd:", value)
-	value, err := ValidateUserPassword(value, flag)
-	pr("after validating:", value, "err:", err)
-	if flag.Has(VALIDATE_UPDATE_WIDGETS) {
-		s.UpdateValueAndProblemId(widgetId, value, err)
-	}
-	return value, err
+	flag := Ternary(p.strict, 0, VALIDATE_EMPTYOK)
+	//widgetId := widget.Id()
+	pr(VERT_SP, "Validating, value:", QUO, value)
+	//
+	//	return p.auxValidateUserPwd(s, widget.Id(), Ternary(p.strict, 0, VALIDATE_EMPTYOK))
+	//}
+	//
+	//func (p SignUpPage) auxValidateUserPwd(s Session, widgetId string, flag ValidateFlag) (string, error) {
+	//edValue := p.editor.GetString(widgetId)
+	//pr("editor.GetString:", QUO, edValue)
+	//pr("widgetId:", widgetId, "pwd:", value)
+	validated, err := ValidateUserPassword(value, flag)
+	pr("after validating:", validated, "err:", err)
+	//	s.UpdateValueAndProblemId(widgetId, value, err)
+	return validated, err
 }
 
 func (p SignUpPage) listenerValidatePwdVerify(s Session, widget InputWidget, value string) (string, error) {
-	return p.auxValidateMatchPwd(s, widget.Id(), VALIDATE_EMPTYOK)
+	return p.auxValidateMatchPwd(s, widget.Id(), Ternary(p.strict, 0, VALIDATE_EMPTYOK))
 }
 
 func (p SignUpPage) auxValidateMatchPwd(s Session, widgetId string, flag ValidateFlag) (string, error) {
@@ -130,23 +124,23 @@ func (p SignUpPage) auxValidateMatchPwd(s Session, widgetId string, flag Validat
 		}
 		pr("returning:", QUO, value, "err:", err)
 	}
-	if flag.Has(VALIDATE_UPDATE_WIDGETS) {
-		s.UpdateValueAndProblemId(widgetId, value, err)
-	}
+	//	if flag.Has(VALIDATE_UPDATE_WIDGETS) {
+	//		s.UpdateValueAndProblemId(widgetId, value, err)
+	//	}
 	//s.SetWidgetProblem(widgetId, err)
 	return value, err
 }
 
 func (p SignUpPage) validateEmail(s Session, widget InputWidget, value string) (string, error) {
-	return p.auxValidateEmail(s, widget.Id(), VALIDATE_EMPTYOK)
+	return p.auxValidateEmail(s, widget.Id(), Ternary(p.strict, 0, VALIDATE_EMPTYOK))
 }
 
 func (p SignUpPage) auxValidateEmail(s Session, widgetId string, flag ValidateFlag) (string, error) {
 	Todo("would be simpler to pass in the widget, not the widget id")
 	val, err := ValidateEmailAddress(p.editor.GetString(widgetId), flag)
-	if flag.Has(VALIDATE_UPDATE_WIDGETS) {
-		s.UpdateValueAndProblemId(widgetId, val, err)
-	}
+	//	if flag.Has(VALIDATE_UPDATE_WIDGETS) {
+	//		s.UpdateValueAndProblemId(widgetId, val, err)
+	//	}
 	return val, err
 }
 

@@ -90,7 +90,7 @@ func (p LandingPage) generateWidgets(sess Session) {
 
 	m := GenerateHeader(sess, p)
 
-	if Alert("!Doing an experiment with lists") {
+	if false && Alert("!Doing an experiment with lists") {
 
 		// Construct a widget to serve as the item widget
 

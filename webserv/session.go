@@ -779,7 +779,7 @@ func (s Session) rebuildAndDisplayNewPage(pageProvider func(s Session) Page) {
 }
 
 func (s Session) Validate(widget Widget) {
-	pr := PrIf("Session.Validate", true)
+	pr := PrIf("Session.Validate", false)
 	pr("id:", widget.Id())
 	if widget.LowListener() != nil {
 		p := orBaseProvider(s, widget.StateProvider())
