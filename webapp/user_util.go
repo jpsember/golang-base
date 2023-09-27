@@ -3,6 +3,7 @@ package webapp
 import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	. "github.com/jpsember/golang-base/webserv"
 )
 
 func RandomUser(r JSRand) UserBuilder {
@@ -85,4 +86,70 @@ func PopulateDatabase() {
 	for i := 0; i < 100; i++ {
 		createAnimalsUpTo(rnd, i+1)
 	}
+}
+
+func AttemptSignIn(sess Session, userId int) string {
+	pr := PrIf("AttemptSignIn", true)
+	var user User
+	var prob = ""
+	for {
+		prob = "No such user, or incorrect password"
+		if userId == 0 {
+			break
+		}
+
+		prob = "User is already logged in"
+		if IsUserLoggedIn(userId) {
+			break
+		}
+
+		prob = "User is unavaliable; sorry"
+		user = ReadUserIgnoreError(userId)
+		if user.Id() == 0 {
+			break
+		}
+
+		if AutoActivateUser {
+			if user.State() == UserStateWaitingActivation {
+				Alert("Activating user automatically (without email verification)")
+				user = user.ToBuilder().SetState(UserStateActive).Build()
+				UpdateUser(user)
+			}
+		}
+
+		prob = ""
+		switch user.State() {
+		case UserStateActive:
+			// This is ok.
+		case UserStateWaitingActivation:
+			prob = "This user has not been activated yet"
+		default:
+			prob = "This user is in an unsupported state"
+		}
+		if prob != "" {
+			break
+		}
+
+		prob = "Unable to log in at this time"
+		if !TryLoggingIn(sess, user) {
+			break
+		}
+
+		prob = ""
+		break
+	}
+	pr("problem is:", prob)
+	if prob == "" {
+		pr("attempting to select page for user:", INDENT, user)
+		switch user.UserClass() {
+		case UserClassDonor:
+			sess.SwitchToPage(FeedPageTemplate, nil)
+			break
+		case UserClassManager:
+			sess.SwitchToPage(ManagerPageTemplate, nil)
+		default:
+			NotImplemented("Page for user class:", user.UserClass())
+		}
+	}
+	return prob
 }

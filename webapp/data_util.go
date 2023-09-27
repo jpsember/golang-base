@@ -12,8 +12,6 @@ type BlobId string
 
 const blobIdLength = 10
 
-var AllowTestInputs = DevDatabase //Alert("!Allowing test inputs (user name, password, etc)")
-
 func (b BlobId) String() string {
 	return string(b)
 }
@@ -64,9 +62,14 @@ var lock sync.Mutex
 
 type ValidateFlag int
 
+func (x ValidateFlag) String() string {
+	return BinaryN(int(x), 64)
+}
+
 const (
 	VALIDATE_EMPTYOK       ValidateFlag = 1 << iota // A blank value is ok
 	VALIDATE_ONLY_NONEMPTY                          // Check only that the value isn't blank
+	VALIDATE_UPDATE_WIDGETS
 )
 
 func (f ValidateFlag) Has(bits ValidateFlag) bool {
@@ -204,7 +207,7 @@ func replaceWithTestInput(err error, value string, shortcutForTest string, fullV
 	if AllowTestInputs {
 		if value == shortcutForTest || value == "" {
 			value = fullValueForTest
-			Alert("?<2replaceWithTestInput; replacing: " + shortcutForTest + " with: " + value)
+			Alert("?<2replaceWithTestInput;    replacing: " + shortcutForTest + " with: " + value)
 			err = nil
 		}
 	}

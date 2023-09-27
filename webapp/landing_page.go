@@ -17,7 +17,10 @@ var LandingPageTemplate = &LandingPageStruct{}
 // ------------------------------------------------------------------------------------
 
 const (
-	id_user_name = "user_name"
+	id_user_name       = "user_name"
+	id_user_pwd_verify = "user_pwd_verify"
+	id_user_pwd        = "user_pwd"
+	id_user_email      = "user_email"
 )
 
 type LandingPageStruct struct {
@@ -115,6 +118,7 @@ func (p LandingPage) generateWidgets(sess Session) {
 		y.WithPageControls = false
 	}
 
+	Todo("Refactor to eliminate id_user_xxx")
 	m.Label("gallery").Align(AlignRight).Size(SizeTiny).AddButton(p.galleryListener)
 	m.Col(6)
 	m.Open()
@@ -179,65 +183,12 @@ func (p LandingPage) signInListener(sess Session, widget Widget, arg string) {
 		ReportIfError(err)
 		userId := user.Id()
 
-		prob = "No such user, or incorrect password"
-		if userId == 0 {
-			break
-		}
-
-		prob = "User is already logged in"
-		if IsUserLoggedIn(userId) {
-			break
-		}
-
-		prob = "User is unavaliable; sorry"
-		userData := ReadUserIgnoreError(userId)
-		if userData.Id() == 0 {
-			break
-		}
-
-		if AutoActivateUser {
-			if userData.State() == UserStateWaitingActivation {
-				Alert("Activating user automatically (without email verification)")
-				userData = userData.ToBuilder().SetState(UserStateActive).Build()
-				UpdateUser(userData)
-			}
-		}
-
-		prob = ""
-		switch userData.State() {
-		case UserStateActive:
-			// This is ok.
-		case UserStateWaitingActivation:
-			prob = "This user has not been activated yet"
-		default:
-			prob = "This user is in an unsupported state"
-		}
-		if prob != "" {
-			break
-		}
-
-		prob = "Unable to log in at this time"
-		if !TryLoggingIn(sess, user) {
-			break
-		}
-
-		prob = ""
+		prob = AttemptSignIn(sess, userId)
 		break
 	}
 	pr("problem is:", prob)
 	if prob != "" {
 		sess.SetWidgetProblem(id_user_name, prob)
-	} else {
-		pr("attempting to select page for user:", INDENT, user)
-		switch user.UserClass() {
-		case UserClassDonor:
-			sess.SwitchToPage(FeedPageTemplate, nil)
-			break
-		case UserClassManager:
-			sess.SwitchToPage(ManagerPageTemplate, nil)
-		default:
-			NotImplemented("Page for user class:", user.UserClass())
-		}
 	}
 }
 

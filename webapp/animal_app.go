@@ -8,11 +8,12 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-const AutoLogInName = "manager1"
+const AutoLogInName = "donor1"
 
-var DevGallery = false && Alert("Showing gallery")
-
+var DevAutoLogIn = false && Alert("!Performing auto log in with:", AutoLogInName)
 var DevDatabase = Alert("!Using development database")
+var DevGallery = false && Alert("Showing gallery")
+var AllowTestInputs = DevDatabase && false && Alert("!Allowing test inputs (user name, password, etc)")
 
 type AnimalOperStruct struct {
 	appRoot      Path
@@ -102,6 +103,9 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 
 	// Perform a once-only attempt to do an auto login
 	for {
+		if !DevAutoLogIn {
+			break
+		}
 		nm := AutoLogInName
 		if nm == "" {
 			break

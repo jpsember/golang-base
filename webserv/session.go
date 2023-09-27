@@ -346,16 +346,39 @@ func (s Session) ProcessWidgetValue(widget Widget, value string, context any) {
 	s.listenerContext = context
 	updatedValue, err := widget.LowListener()(s, widget, value)
 	s.listenerContext = nil
-	{
-		pr("LowListener returned updatedValue:", updatedValue, "err:", err)
-		if updatedValue != nil {
-			pr("setting widget value", widget.Id(), "to:", updatedValue)
-			s.SetWidgetValue(widget, updatedValue)
-			Todo("!Do we always want to repaint widget if setting its value?")
-		}
-		if err != nil {
-			Pr("got error from widget listener:", widget.Id(), INDENT, err)
-		}
+	pr("LowListener returned updatedValue:", updatedValue, "err:", err)
+	s.UpdateValueAndProblem(widget, updatedValue, err)
+	//
+	//}
+	//{
+	//	if updatedValue != nil {
+	//		pr("setting widget value", widget.Id(), "to:", updatedValue)
+	//		s.SetWidgetValue(widget, updatedValue)
+	//		Todo("!Do we always want to repaint widget if setting its value?")
+	//	}
+	//	if err != nil {
+	//		Pr("got error from widget listener:", widget.Id(), INDENT, err)
+	//	}
+	//}
+	//
+	//// If the widget no longer exists, we may have changed pages...
+	//if s.widgetManager.Opt(widget.Id()) == nil {
+	//	return
+	//}
+	//// Always update the problem, in case we are clearing a previous error
+	//s.SetWidgetProblem(widget.Id(), err)
+}
+
+func (s Session) UpdateValueAndProblemId(widgetId string, optionalValue any, err error) {
+	Alert("Would be better to refactor an make this function unnecessary")
+	widget := s.WidgetManager().Get(widgetId)
+	s.UpdateValueAndProblem(widget, optionalValue, err)
+}
+
+func (s Session) UpdateValueAndProblem(widget Widget, optionalValue any, err error) {
+
+	if optionalValue != nil {
+		s.SetWidgetValue(widget, optionalValue)
 	}
 
 	// If the widget no longer exists, we may have changed pages...

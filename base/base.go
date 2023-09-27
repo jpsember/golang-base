@@ -871,12 +871,17 @@ func ByteSlice(bytes []byte, start int, length int) []byte {
 func BinaryN(value int, digits int) string {
 	sb := strings.Builder{}
 	for i := 0; i < digits; i++ {
-		var ch byte = '0'
+		var ch byte = '.'
 		if value&(1<<(digits-1-i)) != 0 {
 			ch = '1'
 		}
 		sb.WriteByte(ch)
 	}
+	sb.WriteString(" $")
+	ndig := (digits + 3) / 4
+	appendHex(&sb, uint64(value), ndig)
+	sb.WriteString(" ")
+	sb.WriteString(IntToString(value))
 	return sb.String()
 }
 
