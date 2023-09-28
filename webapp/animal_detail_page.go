@@ -129,17 +129,16 @@ func (p AnimalDetailPage) generateWidgets(s Session) {
 
 	Todo("!Have ajax listener that can show advice without an actual error, e.g., if user left some fields blank")
 
-	s.WidgetManager().PushStateProvider(p.editor.WidgetStateProvider)
+	s.PushStateProvider(p.editor.WidgetStateProvider)
 	if p.editing {
 		p.generateForEditing(s)
 	} else {
 		p.generateForViewing(s)
 	}
-	s.WidgetManager().PopStateProvider()
+	s.PopStateProvider()
 }
 
-func (p AnimalDetailPage) generateForEditing(s Session) {
-	m := s.WidgetManager()
+func (p AnimalDetailPage) generateForEditing(m Session) {
 	m.Col(6).Open()
 	{
 		m.Col(12)
@@ -176,8 +175,7 @@ func (p AnimalDetailPage) generateForEditing(s Session) {
 	m.Close()
 }
 
-func (p AnimalDetailPage) generateForViewing(s Session) {
-	m := s.WidgetManager()
+func (p AnimalDetailPage) generateForViewing(m Session) {
 
 	m.Col(6).Open()
 	{

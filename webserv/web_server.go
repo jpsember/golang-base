@@ -29,7 +29,7 @@ func DetermineSession(manager SessionManager, w http.ResponseWriter, req *http.R
 		session = manager.CreateSession()
 		cookie := &http.Cookie{
 			Name:   sessionCookieName,
-			Value:  session.Id,
+			Value:  session.SessionId,
 			MaxAge: 1200, // 20 minutes
 		}
 		http.SetCookie(w, cookie)

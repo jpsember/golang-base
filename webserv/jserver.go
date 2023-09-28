@@ -149,8 +149,7 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 		pr(VERT_SP, "constructing page widget")
 
 		// Open a container for the entire page
-		m := sess.WidgetManager()
-		sess.PageWidget = m.RebuildPageWidget()
+		sess.PageWidget = sess.RebuildPageWidget()
 		j.App.PrepareSession(sess)
 	}
 

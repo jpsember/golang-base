@@ -67,7 +67,8 @@ type Session = *SessionStruct
 type PostRequestEvent func()
 
 type SessionStruct struct {
-	Id string
+	WidgetManagerObj
+	SessionId string
 
 	// For storing an application Oper, for example
 	appData map[string]any
@@ -84,7 +85,7 @@ type SessionStruct struct {
 
 	app any // ServerApp is stored here, will clean up later
 
-	widgetManager   WidgetManager
+	//widgetManager   WidgetManager
 	stateProvider   *WidgetStateProviderStruct
 	listenerContext any
 
@@ -103,10 +104,12 @@ type SessionStruct struct {
 
 func NewSession() Session {
 	s := SessionStruct{
-		State:       NewJSMap(),
-		BrowserInfo: webserv_data.DefaultClientInfo,
-		appData:     make(map[string]any),
+		WidgetManagerObj: *NewWidgetManager(),
+		State:            NewJSMap(),
+		BrowserInfo:      webserv_data.DefaultClientInfo,
+		appData:          make(map[string]any),
 	}
+	Todo("Should widgetManager be an actual struct, not a pointer?")
 	s.SetBaseStateProvider(NewStateProvider("", s.State))
 	Todo("!Restore user session from filesystem/database")
 	Todo("?ClientInfo (browser info) not sent soon enough")
@@ -124,14 +127,6 @@ func (s Session) PrepareForHandlingRequest(w http.ResponseWriter, req *http.Requ
 	s.repaintSet = NewStringSet()
 }
 
-// Get WidgetManager for this session, creating one if necessary
-func (s Session) WidgetManager() WidgetManager {
-	if s.widgetManager == nil {
-		s.widgetManager = NewWidgetManager()
-	}
-	return s.widgetManager
-}
-
 func (s Session) ToJson() *JSMapStruct {
 	m := NewJSMap()
 	m.Put("id", s.Id)
@@ -141,7 +136,7 @@ func (s Session) ToJson() *JSMapStruct {
 func ParseSession(source JSEntity) Session {
 	var s = source.(*JSMapStruct)
 	var n = NewSession()
-	n.Id = s.OptString("id", "")
+	n.SessionId = s.OptString("id", "")
 	return n
 }
 
@@ -165,7 +160,7 @@ func (s Session) processUpload(widgetId string) {
 	pr := PrIf("Session.processUpload", true)
 	pr("widget id:", widgetId)
 
-	untypedWidget := s.WidgetManager().Opt(widgetId)
+	untypedWidget := s.Opt(widgetId)
 	if untypedWidget == nil {
 		Alert("Can't find upload widget:", widgetId)
 		return
@@ -320,7 +315,7 @@ func (s Session) auxHandleAjax() {
 	widgetValueExpr := s.ajaxWidgetValue
 	s.ajaxWidgetValue = "" // To emphasize that we are done with this field
 
-	widget := s.widgetManager.Opt(id)
+	widget := s.Opt(id)
 	if widget == nil {
 		pr("no widget with id", Quoted(id), "found to handle value", Quoted(widgetValueExpr))
 		return
@@ -354,7 +349,8 @@ func (s Session) ProcessWidgetValue(widget Widget, value string, context any) {
 }
 
 func (s Session) Widget(id string) Widget {
-	return s.WidgetManager().Get(id)
+	Todo("This should be deprecated.  Just call Get")
+	return s.Get(id)
 }
 
 func (s Session) UpdateValueAndProblemId(widgetId string, optionalValue any, err error) {
@@ -370,7 +366,7 @@ func (s Session) UpdateValueAndProblem(widget Widget, optionalValue any, err err
 	}
 
 	// If the widget no longer exists, we may have changed pages...
-	if s.widgetManager.Opt(widget.Id()) == nil {
+	if s.Opt(widget.Id()) == nil {
 		return
 	}
 	// Always update the problem, in case we are clearing a previous error
@@ -525,7 +521,7 @@ func (s Session) SetProblem(widget Widget, problem any) {
 }
 
 func (s Session) SetWidgetProblem(widgetId string, problem any) {
-	s.SetProblem(s.widgetManager.Get(widgetId), problem)
+	s.SetProblem(s.Get(widgetId), problem)
 }
 
 // Include javascript call within page to get client's display properties.
@@ -724,25 +720,24 @@ func (s Session) Context() any {
 }
 
 // This merges a couple of separate functions, to reduce the complexity.
-func (s Session) rebuildAndDisplayNewPage(pageProvider func(s Session) Page) {
+func (m Session) rebuildAndDisplayNewPage(pageProvider func(s Session) Page) {
 	// Dispose of any existing widgets
-	m := s.WidgetManager()
 	m.widgetMap = make(map[string]Widget)
 
 	// Build a new page widget
-	s.PageWidget = m.Id(WidgetIdPage).Open()
+	m.PageWidget = m.Id(WidgetIdPage).Open()
 	m.Close()
 
 	// Get the new page (it is now safe to construct, as the old widgets are gone)
-	page := pageProvider(s)
+	page := pageProvider(m)
 	CheckState(page != nil, "no page was provided")
-	s.debugPage = page
+	m.debugPage = page
 	//Pr(VERT_SP, "changed page to", page.Name(), INDENT, Callers(1, 5), VERT_SP)
 
 	// Display the new page
 	Todo("!Verify that this works for normal refreshes as well as ajax operations")
-	s.Repaint(s.PageWidget)
-	s.browserURLExpr = s.ConstructPathFromPage(page)
+	m.Repaint(m.PageWidget)
+	m.browserURLExpr = m.ConstructPathFromPage(page)
 }
 
 func (s Session) ValidateAndCountErrors(widget Widget) int {

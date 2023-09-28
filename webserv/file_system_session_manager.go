@@ -52,13 +52,13 @@ func (s *FileSystemSessionManager) CreateSession() Session {
 	b := NewSession()
 
 	for {
-		b.Id = RandomSessionId()
+		b.SessionId = RandomSessionId()
 		// Stop looking for session ids if we've found one that isn't used
-		if s.sessionMap[b.Id] == nil {
+		if s.sessionMap[b.SessionId] == nil {
 			break
 		}
 	}
-	s.sessionMap[b.Id] = b
+	s.sessionMap[b.SessionId] = b
 	s.setModified()
 	s.lock.Unlock()
 

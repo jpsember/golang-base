@@ -16,7 +16,6 @@ type Page interface {
 func GenerateHeader(s Session, p Page) WidgetManager {
 	var _ = Pr
 	CheckState(s != nil)
-	m := s.WidgetManager()
-	m.With(s.PageWidget)
-	return m
+	s.With(s.PageWidget)
+	return &s.WidgetManagerObj
 }

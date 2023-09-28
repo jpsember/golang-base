@@ -48,8 +48,8 @@ func (s *inMemorySessionMap) CreateSession() Session {
 
 	b := NewSession()
 	for {
-		b.Id = RandomSessionId()
-		_, ok := s.sessionMap.Provide(b.Id, b)
+		b.SessionId = RandomSessionId()
+		_, ok := s.sessionMap.Provide(b.SessionId, b)
 		// Stop looking for session ids if we've found one that isn't used
 		if !ok {
 			break

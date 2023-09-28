@@ -43,7 +43,7 @@ func (p SignUpPage) generateWidgets(s Session) {
 	m := GenerateHeader(s, p)
 	m.Label("Sign Up Page").Size(SizeLarge).AddHeading()
 
-	s.WidgetManager().PushStateProvider(p.editor.WidgetStateProvider)
+	s.PushStateProvider(p.editor.WidgetStateProvider)
 	m.Col(6).Open()
 	{
 		m.Col(12)
@@ -58,7 +58,7 @@ func (p SignUpPage) generateWidgets(s Session) {
 	}
 	m.Close()
 
-	s.WidgetManager().PopStateProvider()
+	s.PopStateProvider()
 }
 
 // ------------------------------------------------------------------------------------

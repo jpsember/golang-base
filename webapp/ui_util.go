@@ -7,8 +7,7 @@ import (
 
 // This adds the webserv UserHeaderWidget, and adds our app's click listener to it.
 func AddUserHeaderWidget(s Session) {
-	m := s.WidgetManager()
-	m.AddUserHeader(ourProcessUserHeaderClick)
+	s.AddUserHeader(ourProcessUserHeaderClick)
 }
 
 func ourProcessUserHeaderClick(sess Session, widget Widget, message string) {

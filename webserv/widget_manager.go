@@ -440,12 +440,12 @@ func SetWidgetDebugRendering() {
 }
 
 // Mark widgets for repainting (if they exist).  Does nothing if there is no repaintSet.
-func (s Session) RepaintIds(ids ...string) WidgetManager {
-	m := s.WidgetManager()
+func (s Session) RepaintIds(ids ...string) Session {
+	Todo("Don't return the widget manager")
 	for _, id := range ids {
 		s.RepaintId(id)
 	}
-	return m
+	return s
 }
 
 func (s Session) RepaintId(id string) Session {

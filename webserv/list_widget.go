@@ -45,7 +45,7 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string)
 		var sourceId string
 		sourceId, remainder = ExtractFirstDotArg(remainder)
 		if sourceId != "" {
-			sourceWidget = sess.WidgetManager().Opt(sourceId)
+			sourceWidget = sess.Opt(sourceId)
 		}
 
 		if sourceWidget == nil {
