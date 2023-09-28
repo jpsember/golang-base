@@ -85,7 +85,6 @@ type SessionStruct struct {
 
 	app any // ServerApp is stored here, will clean up later
 
-	//widgetManager   WidgetManager
 	stateProvider   *WidgetStateProviderStruct
 	listenerContext any
 
@@ -104,12 +103,11 @@ type SessionStruct struct {
 
 func NewSession() Session {
 	s := SessionStruct{
-		WidgetManagerObj: *NewWidgetManager(),
-		State:            NewJSMap(),
-		BrowserInfo:      webserv_data.DefaultClientInfo,
-		appData:          make(map[string]any),
+		State:       NewJSMap(),
+		BrowserInfo: webserv_data.DefaultClientInfo,
+		appData:     make(map[string]any),
 	}
-	Todo("Should widgetManager be an actual struct, not a pointer?")
+	s.InitializeWidgetManager()
 	s.SetBaseStateProvider(NewStateProvider("", s.State))
 	Todo("!Restore user session from filesystem/database")
 	Todo("?ClientInfo (browser info) not sent soon enough")

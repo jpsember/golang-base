@@ -14,7 +14,6 @@ type mgrState struct {
 }
 
 type WidgetManagerObj struct {
-	BaseObject
 	widgetMap          WidgetMap
 	stack              []mgrState
 	pendingSize        WidgetSize
@@ -25,15 +24,11 @@ type WidgetManagerObj struct {
 	anonymousIdCounter int
 }
 
-func NewWidgetManager() WidgetManager {
+func (w WidgetManager) InitializeWidgetManager() {
 	DebVerifyServerStarted()
-	w := WidgetManagerObj{
-		widgetMap: make(map[string]Widget),
-	}
+	w.widgetMap = make(map[string]Widget)
 	w.initStateStack()
-	w.SetName("WidgetManager")
 	w.resetPendingColumns()
-	return &w
 }
 
 func (m WidgetManager) initStateStack() {
@@ -179,7 +174,6 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		widget.setStateProvider(m.StateProvider())
 	}
 
-	m.Log("addWidget, id:", id, "panel stack size:", len(m.stack))
 	state := m.stackedState()
 	parent := state.Parent
 	if parent != nil {
@@ -219,7 +213,6 @@ func (m WidgetManager) resetPendingColumns() {
 
 // Add a child GridContainerWidget, and push onto stack as active container
 func (m WidgetManager) Open() Widget {
-	m.Log("open")
 	widget := NewContainerWidget(m.ConsumeOptionalPendingId())
 	m.Add(widget)
 	return m.OpenContainer(widget)
@@ -227,11 +220,9 @@ func (m WidgetManager) Open() Widget {
 
 // Push a container widget onto the stack as an active container
 func (m WidgetManager) OpenContainer(widget Widget) Widget {
-	m.Log("Adding container widget")
 	itm := *m.stackedState()
 	itm.Parent = widget
 	m.pushState(itm, tag_container)
-	m.Log("added container to stack")
 	return widget
 }
 
@@ -248,7 +239,6 @@ const (
 
 // Pop the active container from the stack.
 func (m WidgetManager) Close() WidgetManager {
-	m.Log("Close")
 	m.popStack(tag_container)
 	return m
 }
@@ -345,7 +335,6 @@ func (m WidgetManager) AddText() TextWidget {
 	if staticContent != "" {
 		w.SetStaticContent(staticContent)
 	}
-	m.Log("Adding text, id:", w.Id())
 	m.Add(w)
 	return w
 }
@@ -354,7 +343,6 @@ func (m WidgetManager) AddButton(listener ButtonWidgetListener) ButtonWidget {
 	w := NewButtonWidget(m.ConsumeOptionalPendingId(), listener)
 	w.SetSize(m.consumePendingSize())
 	w.SetAlign(m.consumePendingAlign())
-	m.Log("Adding button, id:", w.Id())
 	w.Label = NewHtmlString(m.consumePendingLabel())
 	m.Add(w)
 	return w
