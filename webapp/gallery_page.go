@@ -51,6 +51,7 @@ var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
 
 func (p GalleryPage) generateWidgets(sess Session) {
+	pr := PrIf("GalleryPage.generateWidgets", false)
 
 	trim := false && Alert("removing most widgets")
 
@@ -83,11 +84,11 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			// We are storing the image's blob id in the animal's photo_thumbnail field,
 			// so we can use the editor's embedded JSMap to access it.
 			imageId := p.editor.GetInt(Animal_PhotoThumbnail)
-			Pr("provideURL, image id read from state:", imageId)
+			pr("provideURL, image id read from state:", imageId)
 			url := ""
 			if imageId != 0 {
 				url = SharedWebCache.GetBlobURL(imageId)
-				Pr("read into cache, url:", url)
+				pr("read into cache, url:", url)
 			}
 			return url
 		}

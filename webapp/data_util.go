@@ -63,7 +63,7 @@ var lock sync.Mutex
 type ValidateFlag int
 
 func (x ValidateFlag) String() string {
-	return BinaryN(int(x), 64)
+	return BinaryN(int(x))
 }
 
 const (
@@ -130,7 +130,7 @@ func ValidateAnimalName(name string, flag ValidateFlag) (string, error) {
 }
 
 func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
-	pr := PrIf("ValidateUserName", true)
+	pr := PrIf("ValidateUserName", false)
 	userName = strings.TrimSpace(userName)
 	Todo("?Replace two or more spaces by a single space")
 	validatedName := userName

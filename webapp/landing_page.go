@@ -6,15 +6,7 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-// ------------------------------------------------------------------------------------
-// Page implementation
-// ------------------------------------------------------------------------------------
-
-const LandingPageName = "signin"
-
 var LandingPageTemplate = &LandingPageStruct{}
-
-// ------------------------------------------------------------------------------------
 
 type LandingPageStruct struct {
 	editor         DataEditor
@@ -25,29 +17,30 @@ type LandingPageStruct struct {
 
 type LandingPage = *LandingPageStruct
 
-func NewLandingPage(sess Session) Page {
-	t := &LandingPageStruct{}
-	if sess != nil {
-		t.editor = NewDataEditor(NewLandingState())
-		t.generateWidgets(sess)
-	}
-	return t
-}
-
 func (p LandingPage) Name() string {
-	return LandingPageName
+	return "signin"
 }
 
 func (p LandingPage) ConstructPage(s Session, args PageArgs) Page {
 	if args.CheckDone() {
 		user := OptSessionUser(s)
 		if user.Id() == 0 {
-			return NewLandingPage(s)
+			return newLandingPage(s)
 		}
 	}
 	return nil
 }
+
 func (p LandingPage) Args() []string { return nil }
+
+func newLandingPage(s Session) Page {
+	t := &LandingPageStruct{}
+	if s != nil {
+		t.editor = NewDataEditor(NewLandingState())
+		t.generateWidgets(s)
+	}
+	return t
+}
 
 func (p LandingPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)
@@ -58,7 +51,6 @@ func (p LandingPage) generateWidgets(sess Session) {
 	{
 		m.Col(12)
 		p.nameWidget = m.Label("User name").Id(LandingState_Name).AddInput(p.validateUserName)
-		Alert("validateUserName is NOT being called if the value hasn't changed")
 		p.passwordWidget = m.Label("Password").Id(LandingState_Password).AddPassword(p.validateUserPwd)
 		m.Open()
 		m.Col(6)
@@ -89,15 +81,13 @@ func (p LandingPage) validateFlag() ValidateFlag {
 	return Ternary(p.strict, 0, VALIDATE_EMPTYOK)
 }
 
-var AutoActivateUser = DevDatabase && Alert("?Automatically activating user")
-
-func (p LandingPage) signInListener(sess Session, widget Widget, arg string) {
-	pr := PrIf("LandingPage.signInListener", true)
+func (p LandingPage) signInListener(s Session, widget Widget, arg string) {
+	pr := PrIf("LandingPage.signInListener", false)
 	pr("state:", INDENT, p.editor.State)
 
 	// Re-validate all the widgets in 'strict' mode.
 	p.strict = true
-	errcount := sess.ValidateAndCountErrors(sess.PageWidget)
+	errcount := s.ValidateAndCountErrors(s.PageWidget)
 	p.strict = false
 
 	pr("error count:", errcount)
@@ -108,25 +98,20 @@ func (p LandingPage) signInListener(sess Session, widget Widget, arg string) {
 	var user = DefaultUser
 	prob := ""
 	for {
-		//errcount := sess.WidgetErrorCount(sess.PageWidget)
-		//pr("errcount:", errcount)
-		//if errcount != 0 {
-		//	break
-		//}
-		userName := sess.WidgetStringValue(p.nameWidget)
+		userName := s.WidgetStringValue(p.nameWidget)
 		var err error
 		user, err = ReadUserWithName(userName)
 		ReportIfError(err)
 		userId := user.Id()
 
-		Todo("verify password match", p.passwordWidget)
+		Todo("!verify the password matches the widget", p.passwordWidget)
 
-		prob = AttemptSignIn(sess, userId)
+		prob = AttemptSignIn(s, userId)
 		break
 	}
 	pr("problem is:", prob)
 	if prob != "" {
-		sess.SetProblem(p.nameWidget, prob)
+		s.SetProblem(p.nameWidget, prob)
 	}
 }
 
@@ -134,35 +119,10 @@ func (p LandingPage) signUpListener(s Session, widget Widget, arg string) {
 	s.SwitchToPage(SignUpPageTemplate, nil)
 }
 
-func (p LandingPage) galleryListener(sess Session, widget Widget, arg string) {
-	sess.SwitchToPage(GalleryPageTemplate, nil)
+func (p LandingPage) galleryListener(s Session, widget Widget, arg string) {
+	s.SwitchToPage(GalleryPageTemplate, nil)
 }
 
-func (p LandingPage) forgotPwdListener(sess Session, widget Widget, arg string) {
-
-	Todo("Where is the email widget?")
-	//for {
-	//
-	//	w := sess.Widget(id_user_email)
-	//	userEmail := sess.WidgetStringValue(w)
-	//
-	//	if userEmail == "" {
-	//		sess.SetWidgetProblem(id_user_email, "Please enter your email address.")
-	//		return
-	//	}
-	//
-	//	sess.SetWidgetProblem(id_user_name, "An email has been sent with a link to change your password.")
-	//
-	//	//user, err := webapp_data.ReadUserWithName(userName)
-	//	//userId := user.Id()
-	//	//
-	//	//if err != nil {
-	//	//	Alert("Not revealing that 'no such user exists' in forgot password logic")
-	//	//}
-	//	//if userId != 0 {
-	//	//	Todo("Send email")
-	//	//}
-	//	//break
-	//}
-
+func (p LandingPage) forgotPwdListener(s Session, widget Widget, arg string) {
+	s.SwitchToPage(ForgotPasswordPageTemplate, nil)
 }

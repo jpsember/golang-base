@@ -868,7 +868,21 @@ func ByteSlice(bytes []byte, start int, length int) []byte {
 	return ClampedSlice(bytes, start, start+length)
 }
 
-func BinaryN(value int, digits int) string {
+func BinaryN(value2 int) string {
+	value := uint64(value2)
+	var digits int
+	if value >= 0x100000000000000 {
+		digits = 64
+	} else if value >= 0x1000000 {
+		digits = 32
+	} else if value >= 0x10000 {
+		digits = 24
+	} else if value >= 0x100 {
+		digits = 16
+	} else {
+		digits = 8
+	}
+
 	sb := strings.Builder{}
 	for i := 0; i < digits; i++ {
 		var ch byte = '.'
@@ -880,8 +894,8 @@ func BinaryN(value int, digits int) string {
 	sb.WriteString(" $")
 	ndig := (digits + 3) / 4
 	appendHex(&sb, uint64(value), ndig)
-	sb.WriteString(" ")
-	sb.WriteString(IntToString(value))
+	sb.WriteString(" #")
+	sb.WriteString(strconv.FormatUint(value, 10))
 	return sb.String()
 }
 

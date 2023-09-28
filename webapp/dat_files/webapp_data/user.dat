@@ -11,4 +11,4 @@ class {
     enum UserClass user_class;
 }
 
-sql { index name }
+sql { index name index email }

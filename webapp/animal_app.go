@@ -14,6 +14,7 @@ var DevAutoLogIn = true && Alert("!Performing auto log in with:", AutoLogInName)
 var DevDatabase = Alert("!Using development database")
 var DevGallery = false && Alert("Showing gallery")
 var AllowTestInputs = DevDatabase && false && Alert("!Allowing test inputs (user name, password, etc)")
+var AutoActivateUser = DevDatabase && Alert("?Automatically activating user")
 
 type AnimalOperStruct struct {
 	appRoot      Path
@@ -61,8 +62,9 @@ func (oper AnimalOper) Perform(app *App) {
 
 func (oper AnimalOper) PageTemplates() []Page {
 	return []Page{
-		LandingPageTemplate, GalleryPageTemplate, SignUpPageTemplate, FeedPageTemplate, ManagerPageTemplate,
-		ViewAnimalPageTemplate, CreateAnimalPageTemplate, EditAnimalPageTemplate,
+		LandingPageTemplate, ForgotPasswordPageTemplate, CheckMailPageTemplate, GalleryPageTemplate, SignUpPageTemplate,
+		FeedPageTemplate, ManagerPageTemplate, ViewAnimalPageTemplate, CreateAnimalPageTemplate,
+		EditAnimalPageTemplate,
 	}
 }
 
