@@ -378,11 +378,8 @@ func (m WidgetManager) checkboxHelper(listener CheckboxWidgetListener, switchFla
 }
 
 func (m WidgetManager) AllocateAnonymousId(debugInfo string) string {
-	Alert("Should this include the prefix?")
 	m.anonymousIdCounter++
-	result :=
-		m.IdPrefix() +
-			"z" + IntToString(m.anonymousIdCounter)
+	result := m.IdPrefix() + "z" + IntToString(m.anonymousIdCounter)
 	if debugInfo != "" {
 		result += "_" + debugInfo + "_"
 	}

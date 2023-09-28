@@ -28,7 +28,7 @@ var EditAnimalPageTemplate = &AnimalDetailPageStruct{name: "edit"}
 var ViewAnimalPageTemplate = &AnimalDetailPageStruct{name: "view"}
 
 func (p AnimalDetailPage) ConstructPage(s Session, args PageArgs) Page {
-	pr := PrIf("AnimDetailPage.ConstructPage", true)
+	pr := PrIf("AnimDetailPage.ConstructPage", false)
 
 	// Construct a copy of the template
 	t := *p

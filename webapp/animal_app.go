@@ -38,7 +38,6 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 func (oper AnimalOper) Perform(app *App) {
 
 	ClearAlertHistory(false)
-	Todo("!clear alert history should be a text file that is deleted after handling?")
 	ExitOnPanic()
 
 	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")

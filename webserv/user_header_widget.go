@@ -33,7 +33,6 @@ const (
 func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
 	pr := PrIf("UserHeaderWidget", false)
 	pr("RenderTo, widget id", w.Id(), "BaseId:", w.Id())
-	Todo("!Use new embedded widgets technique")
 	app := SessionApp(s)
 	user := app.UserForSession(s)
 	signedIn := user.Id() != 0
@@ -83,7 +82,6 @@ func (w UserHeaderWidget) RenderTo(s Session, m MarkupBuilder) {
 	}
 	if img != "" {
 		m.TgClose()
-		//m.CloseTag()
 	}
 	m.TgClose()
 }

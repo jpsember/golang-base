@@ -738,7 +738,6 @@ func (s Session) Validate(widget Widget) {
 		valAsString, applicable := widget.ValidationValue(s)
 		if applicable {
 			pr("...calling low level listener with", QUO, valAsString)
-			Alert("Do LowListeners need to include a widget argument?")
 			updatedValue, err := widget.LowListener()(s, widget, valAsString)
 			pr("updated value, err:", updatedValue, err)
 			s.UpdateValueAndProblem(widget, updatedValue, err)

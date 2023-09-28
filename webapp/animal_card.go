@@ -45,12 +45,11 @@ func NewAnimalCard(m WidgetManager, animal Animal, cardListener CardWidgetListen
 	Todo("!any way of simplifying the LowListener boilerplate here and in other widgets? Using templates perhaps?")
 	w.LowListen = w.lowLevelListener // Only has an effect if cardListener != nil
 	w.InitBase(widgetId)
-	Todo("!instead of passing around WidgetManager, maybe pass around Sessions, which contain the wm?")
 	return &w
 }
 
 func (w AnimalCard) lowLevelListener(sess Session, widget Widget, value string) (any, error) {
-	pr := PrIf("cardListenWrapper", true)
+	pr := PrIf("cardListenWrapper", false)
 	pr("calling listener for id", QUO, w.Id(), "value", QUO, value)
 	Todo("!Is the listener 'value' necessary?")
 	if w.cardListener != nil {
