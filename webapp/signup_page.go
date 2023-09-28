@@ -113,7 +113,6 @@ func (p SignUpPage) validateEmail(s Session, widget InputWidget, value string) (
 func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
 	pr := PrIf("signupListener", false)
 	pr("state:", INDENT, p.editor.State)
-	pr("s.State:", INDENT, s.State)
 
 	// Re-validate all the widgets in 'strict' mode.
 	p.strict = true
@@ -122,7 +121,6 @@ func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
 
 	pr("after validating page;")
 	pr("state:", INDENT, p.editor.State)
-	pr("s.State:", INDENT, s.State)
 
 	pr("error count:", errcount)
 	if errcount != 0 {

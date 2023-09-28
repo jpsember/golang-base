@@ -392,7 +392,6 @@ func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by [
 		p.editor.PutInt(Animal_PhotoThumbnail, imageId)
 		pr("repainting Animal_PhotoThumbnail")
 		s.RepaintId(Animal_PhotoThumbnail)
-		pr("state:", s.State)
 	}
 	return err
 }
