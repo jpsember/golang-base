@@ -22,12 +22,21 @@ const (
 	wflagTrace
 	wflagDisabled
 	wflagDetached
+	wflagRepaint
 )
 
 type BaseWidget = *BaseWidgetObj
 
 func (w BaseWidget) isFlag(flag int) bool {
 	return (w.bitFlags & flag) != 0
+}
+
+func (w BaseWidget) SetRepaint(flag bool) {
+	w.setOrClearFlag(wflagRepaint, flag)
+}
+
+func (w BaseWidget) IsRepaint() bool {
+	return w.isFlag(wflagRepaint)
 }
 
 func (w BaseWidget) Trace() bool { return w.isFlag(wflagTrace) }

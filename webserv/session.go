@@ -89,14 +89,13 @@ type SessionStruct struct {
 	listenerContext any
 
 	// Current request variables
-	ResponseWriter         http.ResponseWriter
-	request                *http.Request
-	requestProblem         error  // If not nil, problem detected with current request
-	clientInfoString       string // If nonempty information sent from client about screen size, etc
-	ajaxWidgetId           string // Id of widget that ajax call is being sent to
-	ajaxWidgetValue        string // The string representation of the ajax widget's requested value (if there was one)
-	browserURLExpr         string // If not nil, client browser should push this onto the history
-	repaintSet             StringSet
+	ResponseWriter   http.ResponseWriter
+	request          *http.Request
+	requestProblem   error  // If not nil, problem detected with current request
+	clientInfoString string // If nonempty information sent from client about screen size, etc
+	ajaxWidgetId     string // Id of widget that ajax call is being sent to
+	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
+	browserURLExpr   string // If not nil, client browser should push this onto the history
 	repaintWidgetMarkupMap JSMap // Used only during repainting; the map of widget ids -> markup to be repainted by client
 	postRequestEvents      []PostRequestEvent
 }
@@ -122,7 +121,6 @@ func (s Session) PrependId(id string) string {
 func (s Session) PrepareForHandlingRequest(w http.ResponseWriter, req *http.Request) {
 	s.ResponseWriter = w
 	s.request = req
-	s.repaintSet = NewStringSet()
 }
 
 func (s Session) ToJson() *JSMapStruct {
@@ -372,15 +370,18 @@ func (s Session) processClientInfo(infoString string) {
 
 // Mark a widget for repainting
 func (s Session) Repaint(w Widget) Session {
+	Alert("Call SetRepaint instead")
 	deb := debRepaint || false
 	pr := PrIf("Widget.RepaintId", deb)
-	ok := s.repaintSet.Add(w.Id())
 	if deb {
 		pr("id:", w.Id(), INDENT, Callers(0, 3))
 	}
-	if WebServDebug && !ok {
-		pr("****** was already in list")
+	if WebServDebug {
+		if w.IsRepaint() {
+			pr("****** was already in list")
+		}
 	}
+	w.SetRepaint(true)
 	return s
 }
 
@@ -389,11 +390,11 @@ func (s Session) processRepaintFlags(w Widget) {
 	// For each widget that has been marked for repainting, we send it and its markup
 	// to the client.  The children need not be descended to, as they will be repainted
 	// by their containers.
-	id := w.Id()
-	if s.repaintSet.Contains(id) {
+	if w.IsRepaint() {
 		m := NewMarkupBuilder()
 		RenderWidget(w, s, m)
-		s.repaintWidgetMarkupMap.Put(id, m.String())
+		s.repaintWidgetMarkupMap.Put(w.Id(), m.String())
+		w.SetRepaint(false)
 	} else {
 		for _, c := range w.Children() {
 			s.processRepaintFlags(c)
@@ -411,7 +412,7 @@ func (s Session) sendAjaxResponse() {
 	if !s.Ok() {
 		return
 	}
-	pr := PrIf("", debRepaint)
+	pr := PrIf("sendAjaxResponse", debRepaint)
 
 	for _, f := range s.postRequestEvents {
 		f()
@@ -445,7 +446,6 @@ func (s Session) ReleaseLockAndDiscardRequest() {
 	s.ajaxWidgetValue = ""
 	s.clientInfoString = ""
 	s.browserURLExpr = ""
-	s.repaintSet = nil
 	s.postRequestEvents = nil
 	s.lock.Unlock()
 }
