@@ -330,7 +330,7 @@ func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, valu
 		errOut = Error(problem)
 	} else {
 		p.editor.Put(Animal_PhotoThumbnail, imageId)
-		s.RepaintIds(Animal_PhotoThumbnail)
+		s.Repaint(s.Get(Animal_PhotoThumbnail))
 	}
 	return errOut
 }

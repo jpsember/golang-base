@@ -372,7 +372,16 @@ func (s Session) processClientInfo(infoString string) {
 
 // Mark a widget for repainting
 func (s Session) Repaint(w Widget) Session {
-	return s.RepaintId(w.Id())
+	deb := debRepaint || false
+	pr := PrIf("Widget.RepaintId", deb)
+	ok := s.repaintSet.Add(w.Id())
+	if deb {
+		pr("id:", w.Id(), INDENT, Callers(0, 3))
+	}
+	if WebServDebug && !ok {
+		pr("****** was already in list")
+	}
+	return s
 }
 
 // Traverse a widget tree, rendering widgets that have been marked for repainting.
@@ -501,7 +510,7 @@ func (s Session) SetProblem(widget Widget, problem any) {
 		} else {
 			state.Put(key, text)
 		}
-		s.RepaintId(widget.Id())
+		s.Repaint(widget)
 	}
 }
 

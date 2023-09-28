@@ -418,28 +418,6 @@ func SetWidgetDebugRendering() {
 	WidgetDebugRenderingFlag = true
 }
 
-// Mark widgets for repainting (if they exist).  Does nothing if there is no repaintSet.
-func (s Session) RepaintIds(ids ...string) Session {
-	Todo("Don't return the widget manager")
-	for _, id := range ids {
-		s.RepaintId(id)
-	}
-	return s
-}
-
-func (s Session) RepaintId(id string) Session {
-	deb := debRepaint || false
-	pr := PrIf("Widget.RepaintId", deb)
-	ok := s.repaintSet.Add(id)
-	if deb {
-		pr("id:", id, INDENT, Callers(0, 3))
-	}
-	if WebServDebug && !ok {
-		pr("****** was already in list")
-	}
-	return s
-}
-
 func (m WidgetManager) PushContainer(container Widget) WidgetManager {
 	// Push a container widget onto the stack
 	itm := *m.stackedState()
