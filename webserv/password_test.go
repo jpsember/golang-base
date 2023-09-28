@@ -9,10 +9,8 @@ import (
 
 func TestHashPassword(t *testing.T) {
 	j := jt.New(t)
-	j.SetVerbose()
 
 	pwd := "extemperaneous"
-
 	hash, salt := HashPassword(pwd)
 	j.Log("hash:", JSListWith(hash))
 	j.Log("salt:", salt)
@@ -21,22 +19,8 @@ func TestHashPassword(t *testing.T) {
 	j.AssertEqual(hash, hash2)
 }
 
-func TestHashPasswordWithSalt(t *testing.T) {
-	j := jt.Newz(t)
-	j.SetVerbose()
-
-	pwd := "extemperaneous"
-	salt := 1_234_567
-
-	hash := HashPasswordWithSalt(pwd, salt)
-	content := BytesAsSourceArray(hash)
-	Pr(content)
-	j.AssertMessage(content)
-}
-
 func TestVerifyPasswordWithSalt(t *testing.T) {
 	j := jt.New(t)
-	j.SetVerbose()
 
 	hashExpected := []byte{144, 158, 214, 211, 161, 15, 172, 211, 79, 172, 228,
 		72, 221, 213, 234, 107, 245, 233, 171, 71, 125, 132, 135, 221, 69, 73, 189, 66, 1, 69, 33, 232}
@@ -46,21 +30,8 @@ func TestVerifyPasswordWithSalt(t *testing.T) {
 	j.AssertTrue(result)
 }
 
-func TestVerifyPasswordWithSalt2(t *testing.T) {
-	j := jt.New(t)
-	j.SetVerbose()
-
-	pwd := "abcdefghijklmnopq"
-
-	hash, salt := HashPassword(pwd)
-
-	result := VerifyPassword(salt, hash, pwd)
-	j.AssertTrue(result)
-}
-
 func TestVariousPasswords(t *testing.T) {
 	j := jt.New(t)
-	j.SetVerbose()
 
 	r := NewJSRand().SetSeed(1965)
 

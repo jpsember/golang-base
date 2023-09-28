@@ -5,12 +5,11 @@ import (
 	"crypto/sha256"
 	"encoding/binary"
 	. "github.com/jpsember/golang-base/base"
-	"strings"
 	"time"
 )
 
 func HashPassword(password string) ([]byte, int) {
-	active := true
+	active := false
 	pr := PrIf("HashPassword", active)
 	salt := int(time.Now().UnixMilli()) * 27644437
 	pr("salt:", salt, salt%1000)
@@ -24,7 +23,7 @@ func HashPassword(password string) ([]byte, int) {
 
 func HashPasswordWithSalt(password string, salt int) []byte {
 	active := true
-	pr := PrIf("HashPassword", active)
+	pr := PrIf("HashPassword", false)
 	const saltLength = 8
 	const chunkLength = 32
 	const maxPwdLength = chunkLength - saltLength
@@ -50,7 +49,7 @@ func HashPasswordWithSalt(password string, salt int) []byte {
 	h.Write(buffer)
 	hashedResult := h.Sum(nil)
 	if active {
-		pr("SHA256 hash:", INDENT, BytesAsSourceArray(hashedResult))
+		pr("SHA256 hash:", INDENT, JSListWith(hashedResult))
 	}
 	return hashedResult
 }
@@ -58,26 +57,14 @@ func HashPasswordWithSalt(password string, salt int) []byte {
 func VerifyPassword(salt int, validHash []byte, password string) bool {
 	active := true
 	pr := PrIf("VerifyPassword", active)
-	pr("password:", password)
-	pr("hash:", INDENT, HexDump(validHash))
 
 	calcHash := HashPasswordWithSalt(password, salt)
-	pr("calc:", INDENT, calcHash)
 
-	pr("type of validHash:", Info(validHash))
-	pr("type of calcdHash:", Info(calcHash))
-	return bytes.Equal(validHash, calcHash)
-}
-
-func BytesAsSourceArray(bytes []byte) string {
-	s := strings.Builder{}
-	s.WriteByte('[')
-	for i, x := range bytes {
-		if i != 0 {
-			s.WriteByte(',')
-		}
-		s.WriteString(IntToString(int(x)))
+	if active {
+		pr("password:", password)
+		pr("hash:", INDENT, JSListWith(validHash))
+		pr("calc:", INDENT, JSListWith(calcHash))
 	}
-	s.WriteByte(']')
-	return s.String()
+
+	return bytes.Equal(validHash, calcHash)
 }
