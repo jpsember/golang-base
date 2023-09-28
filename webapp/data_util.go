@@ -1,8 +1,6 @@
 package webapp
 
 import (
-	"crypto/sha256"
-	"encoding/binary"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"net/mail"
@@ -232,46 +230,3 @@ func BlobSummary(blob Blob) JSMap {
 }
 
 var AnimalPicSizeNormal = IPointWith(600, 800)
-
-func HashPassword(password string, salt int) {
-	active := true
-	pr := PrIf("HashPassword", active)
-	CheckArg(len(password) >= 8)
-	const saltLength = 8
-	const chunkLength = 32
-
-	// Get the salt as an array of 8 bytes
-	saltBytes := make([]byte, saltLength)
-	binary.LittleEndian.PutUint64(saltBytes, uint64(salt))
-
-	// Create a buffer to hold the salt and password
-
-	buffer := make([]byte, chunkLength)
-	buffer = append(buffer, saltBytes...)
-
-	pwdBytes := []byte(password)
-	buffer = append(buffer, pwdBytes...)
-
-	// Pad the buffer with zeroes
-	buffer = buffer[0:chunkLength]
-	if active {
-		pr("Hashing these bytes:", INDENT, HexDumpWithASCII(buffer))
-	}
-
-	h := sha256.New()
-
-	h.Write(buffer)
-
-	bs := h.Sum(nil)
-	if active {
-		pr("SHA256 hash:", INDENT, HexDumpWithASCII(bs))
-	}
-
-	// I don't think I want to store the salt as a suffix, since we will need to supply the salt as an int anyways
-
-	//bs = append(bs, saltBytes...)
-	if active {
-		pr("SHA256 hash with salt suffix:", INDENT, HexDumpWithASCII(bs))
-	}
-	Halt()
-}

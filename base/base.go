@@ -914,6 +914,12 @@ func appendHex(sb *strings.Builder, value uint64, ndigits int) {
 	}
 }
 
+func ToHex(value uint64, ndigits int) string {
+	s := strings.Builder{}
+	appendHex(&s, value, ndigits)
+	return s.String()
+}
+
 func HexDump(byteArray []byte) string {
 	return hexDump(byteArray, false)
 }

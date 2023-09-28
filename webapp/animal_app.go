@@ -37,7 +37,7 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 
 func (oper AnimalOper) Perform(app *App) {
 
-	HashPassword("twas brillig and the slithy toves did gyre and gimble in the wabe", 1000)
+	HashPasswordWithSalt("twas brillig and the slithy toves did gyre and gimble in the wabe", 1000)
 
 	ClearAlertHistory(false)
 	ExitOnPanic()
