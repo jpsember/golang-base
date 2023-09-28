@@ -21,17 +21,25 @@ func HashPassword(password string) ([]byte, int) {
 	return hash, salt
 }
 
+func isPwdLegalLength(pwdBytes []byte) bool {
+	x := len(pwdBytes)
+	return x >= USER_PASSWORD_MIN_LENGTH && x <= USER_PASSWORD_MAX_LENGTH
+
+}
+
+const USER_PASSWORD_MIN_LENGTH = 8
+const USER_PASSWORD_MAX_LENGTH = 20
+
+const saltLength = 8
+const chunkLength = 32
+
 func HashPasswordWithSalt(password string, salt int) []byte {
 	active := true
 	pr := PrIf("HashPassword", false)
-	const saltLength = 8
-	const chunkLength = 32
-	const maxPwdLength = chunkLength - saltLength
 
 	pwdBytes := []byte(password)
-
 	x := len(pwdBytes)
-	CheckArg(x >= 8 && x <= maxPwdLength, "password length", QUO, password)
+	CheckArg(isPwdLegalLength(pwdBytes), "password length", QUO, password)
 
 	// Create a buffer to hold the salt and password
 	buffer := make([]byte, chunkLength, chunkLength)
@@ -58,6 +66,9 @@ func VerifyPassword(salt int, validHash []byte, password string) bool {
 	active := true
 	pr := PrIf("VerifyPassword", active)
 
+	if !isPwdLegalLength([]byte(password)) {
+		return false
+	}
 	calcHash := HashPasswordWithSalt(password, salt)
 
 	if active {

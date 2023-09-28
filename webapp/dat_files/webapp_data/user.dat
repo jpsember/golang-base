@@ -1,13 +1,16 @@
 class {
-
     // Unique id
     int id;
 
     // Unique name
     string name;
     enum UserState state;
+
+    // Unique email
     string email;
     string password;
+    *byte password_hash;
+    int password_salt;
     enum UserClass user_class;
 }
 

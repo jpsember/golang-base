@@ -96,6 +96,7 @@ func (p LandingPage) signInListener(s Session, widget Widget, arg string) {
 	}
 
 	var user = DefaultUser
+	probWidget := p.nameWidget
 	prob := ""
 	for {
 		userName := s.WidgetStringValue(p.nameWidget)
@@ -106,12 +107,19 @@ func (p LandingPage) signInListener(s Session, widget Widget, arg string) {
 
 		Todo("!verify the password matches the widget", p.passwordWidget)
 
+		validPwd := VerifyPassword(user.PasswordSalt(), user.PasswordHash(),
+			s.WidgetStringValue(p.passwordWidget))
+		if !validPwd {
+			probWidget = p.passwordWidget
+			prob = "Incorrect password"
+			break
+		}
 		prob = AttemptSignIn(s, userId)
 		break
 	}
 	pr("problem is:", prob)
 	if prob != "" {
-		s.SetProblem(p.nameWidget, prob)
+		s.SetProblem(probWidget, prob)
 	}
 }
 

@@ -41,6 +41,11 @@ func createUserIfMissing(name string, class UserClass) {
 		return
 	}
 	u := NewUser().SetName(name).SetUserClass(class)
+	u.SetPassword("password")
+	hash, salt := HashPassword(u.Password())
+	u.SetPasswordHash(hash)
+	u.SetPasswordSalt(salt)
+
 	CheckOkWith(CreateUser(u))
 }
 

@@ -3,6 +3,7 @@ package webapp
 import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	"github.com/jpsember/golang-base/webserv"
 	"net/mail"
 	"strings"
 	"sync"
@@ -91,8 +92,6 @@ var ErrorUserPasswordIllegalCharacters = Error("Password must not contain spaces
 var ErrorUserPasswordsDontMatch = Error("The two passwords don't match")
 var ErrorUserEmailLength = Error("Email address is too long")
 
-const USER_PASSWORD_MIN_LENGTH = 8
-const USER_PASSWORD_MAX_LENGTH = 20
 const USER_EMAIL_MAX_LENGTH = 40
 
 const ANIMAL_NAME_MAX_LENGTH = 16
@@ -163,7 +162,7 @@ func ValidateUserPassword(password string, flag ValidateFlag) (string, error) {
 			err = ErrorEmptyUserPassword
 		}
 	} else if !flag.Has(VALIDATE_ONLY_NONEMPTY) {
-		if x < USER_PASSWORD_MIN_LENGTH || x > USER_PASSWORD_MAX_LENGTH {
+		if x < webserv.USER_PASSWORD_MIN_LENGTH || x > webserv.USER_PASSWORD_MAX_LENGTH {
 			err = ErrorUserPasswordLength
 		} else if !UserPasswordValidatorRegExp.MatchString(text) {
 			err = ErrorUserPasswordIllegalCharacters

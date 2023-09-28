@@ -4,6 +4,7 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
+	"sync"
 )
 
 // ------------------------------------------------------------------------------------
@@ -19,6 +20,8 @@ type SignUpPageStruct struct {
 type SignUpPage = *SignUpPageStruct
 
 var SignUpPageTemplate = &SignUpPageStruct{}
+
+var CreateUserLock sync.Mutex
 
 func newSignUpPage(session Session) SignUpPage {
 	t := &SignUpPageStruct{}
@@ -127,18 +130,24 @@ func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
 		return
 	}
 
-	Todo("don't create the user until we are sure the other fields have no errors")
-
 	// Construct a user by parsing the signupstate map
 	b := DefaultUser.Parse(p.editor.State).(User).ToBuilder()
 	b.SetUserClass(UserClassDonor)
 
-	ub, err := CreateUserWithName(b)
-	if ReportIfError(err, "CreateUserWithName", b) {
-		return
-	}
-	if ub.Id() == 0 {
-		s.SetWidgetProblem(SignUpState_Name, "A user with this name already exists.")
+	hash, salt := HashPassword(b.Password())
+	b.SetPasswordHash(hash)
+	b.SetPasswordSalt(salt)
+
+	ub, err := p.attemptCreateUniqueUser(b)
+	if err != nil {
+		switch err {
+		case nameExists:
+			s.SetWidgetProblem(SignUpState_Name, err.Error())
+		case emailExists:
+			s.SetWidgetProblem(SignUpState_Email, err.Error())
+		default:
+			s.SetWidgetProblem(SignUpState_Name, "Sorry, an error occurred.")
+		}
 		return
 	}
 
@@ -146,4 +155,32 @@ func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
 
 	Todo("add support for WaitingActivation")
 	AttemptSignIn(s, ub.Id())
+}
+
+var nameExists = Error("A user with this name already exists")
+var emailExists = Error("A user with this email already exists")
+
+func (p SignUpPage) attemptCreateUniqueUser(b UserBuilder) (User, error) {
+	CreateUserLock.Lock()
+	defer CreateUserLock.Unlock()
+
+	var existing User
+
+	existing, _ = ReadUserWithName(b.Name())
+	if existing.Id() != 0 {
+		return nil, nameExists
+	}
+	existing, _ = ReadUserWithEmail(b.Email())
+	if existing.Id() != 0 {
+		return nil, emailExists
+	}
+
+	user, err := CreateUserWithName(b)
+	if err != nil {
+		return nil, err
+	}
+	if user.Id() == 0 {
+		return nil, nameExists
+	}
+	return user, nil
 }
