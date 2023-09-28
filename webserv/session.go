@@ -108,7 +108,7 @@ func NewSession() Session {
 		appData:     make(map[string]any),
 	}
 	s.InitializeWidgetManager()
-	s.SetBaseStateProvider(NewStateProvider("", s.State))
+	s.setBaseStateProvider(NewStateProvider("", s.State))
 	Todo("!Restore user session from filesystem/database")
 	Todo("?ClientInfo (browser info) not sent soon enough")
 	Todo("?The Session should have WidgetManager embedded within it, so we can call through to its methods")
@@ -116,7 +116,7 @@ func NewSession() Session {
 }
 
 func (s Session) PrependId(id string) string {
-	return s.BaseStateProvider().Prefix + id
+	return s.baseStateProvider().Prefix + id
 }
 
 func (s Session) PrepareForHandlingRequest(w http.ResponseWriter, req *http.Request) {
@@ -346,25 +346,12 @@ func (s Session) ProcessWidgetValue(widget Widget, value string, context any) {
 	s.UpdateValueAndProblem(widget, updatedValue, err)
 }
 
-func (s Session) Widget(id string) Widget {
-	Todo("This should be deprecated.  Just call Get")
-	return s.Get(id)
-}
-
-func (s Session) UpdateValueAndProblemId(widgetId string, optionalValue any, err error) {
-	Alert("Would be better to refactor an make this function unnecessary")
-	widget := s.Widget(widgetId)
-	s.UpdateValueAndProblem(widget, optionalValue, err)
-}
-
 func (s Session) UpdateValueAndProblem(widget Widget, optionalValue any, err error) {
-
 	if optionalValue != nil {
 		s.SetWidgetValue(widget, optionalValue)
 	}
-
 	// If the widget no longer exists, we may have changed pages...
-	if s.Opt(widget.Id()) == nil {
+	if !s.exists(widget.Id()) {
 		return
 	}
 	// Always update the problem, in case we are clearing a previous error
@@ -532,11 +519,6 @@ func (s Session) RequestClientInfo(sb MarkupBuilder) {
 	}
 }
 
-func (s Session) DeleteStateError(id string) {
-	m := s.State.MutableWrapped()
-	delete(m, id)
-}
-
 // ------------------------------------------------------------------------------------
 // Accessing values of widgets other than the widget currently being listened to
 // ------------------------------------------------------------------------------------
@@ -570,10 +552,6 @@ func (s Session) DeleteSessionData(key string) {
 	delete(s.appData, key)
 }
 
-func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
-	return s.WidgetStringValue(widget), false
-}
-
 // ------------------------------------------------------------------------------------
 // Page url and arguments
 // ------------------------------------------------------------------------------------
@@ -588,15 +566,6 @@ func (s Session) SwitchToPage(template Page, args PageArgs) {
 	s.rebuildAndDisplayNewPage(func(s Session) Page {
 		return template.ConstructPage(s, args)
 	})
-}
-
-func (s Session) NewBrowserPath() string {
-	return s.browserURLExpr
-}
-
-func (s Session) ConstructPathFromPage(page Page) string {
-	result := "/" + page.Name() + "/" + strings.Join(page.Args(), "/")
-	return result
 }
 
 // ------------------------------------------------------------------------------------
@@ -636,11 +605,11 @@ func compileId(prefix string, id string) string {
 	return out
 }
 
-func (s Session) BaseStateProvider() WidgetStateProvider {
+func (s Session) baseStateProvider() WidgetStateProvider {
 	return s.stateProvider
 }
 
-func (s Session) SetBaseStateProvider(p WidgetStateProvider) {
+func (s Session) setBaseStateProvider(p WidgetStateProvider) {
 	s.stateProvider = p
 }
 
@@ -670,6 +639,12 @@ func readStateStringValue(p WidgetStateProvider, id string) string {
 	return p.State.OptString(key, "")
 }
 
+// Read widget value; assumed to be a string.
+func (s Session) WidgetStringValue(w Widget) string {
+	p := s.provider(w)
+	return readStateStringValue(p, w.Id())
+}
+
 // Read widget value; assumed to be an int.
 func (s Session) WidgetIntValue(w Widget) int {
 	p := s.provider(w)
@@ -680,23 +655,6 @@ func (s Session) WidgetIntValue(w Widget) int {
 func (s Session) WidgetBoolValue(w Widget) bool {
 	p := s.provider(w)
 	return readStateBoolValue(p, w.Id())
-}
-
-func (s Session) provider(w Widget) WidgetStateProvider {
-	p := w.StateProvider()
-	if p == nil {
-		p = s.BaseStateProvider()
-	}
-	if p.State == nil {
-		BadState("no state in state provider!")
-	}
-	return p
-}
-
-// Read widget value; assumed to be a string.
-func (s Session) WidgetStringValue(w Widget) string {
-	p := s.provider(w)
-	return readStateStringValue(p, w.Id())
 }
 
 func (s Session) SetWidgetValue(w Widget, value any) {
@@ -710,6 +668,17 @@ func (s Session) SetWidgetValue(w Widget, value any) {
 		p.State.Put(id, value)
 		s.Repaint(w)
 	}
+}
+
+func (s Session) provider(w Widget) WidgetStateProvider {
+	p := w.StateProvider()
+	if p == nil {
+		p = s.baseStateProvider()
+	}
+	if p.State == nil {
+		BadState("no state in state provider!")
+	}
+	return p
 }
 
 // Get the context for the current listener.  For list items, this will be the list element id.
@@ -735,7 +704,12 @@ func (m Session) rebuildAndDisplayNewPage(pageProvider func(s Session) Page) {
 	// Display the new page
 	Todo("!Verify that this works for normal refreshes as well as ajax operations")
 	m.Repaint(m.PageWidget)
-	m.browserURLExpr = m.ConstructPathFromPage(page)
+
+	//func (s Session) constructPathFromPage(page Page) string {
+	m.browserURLExpr = "/" + page.Name() + "/" + strings.Join(page.Args(), "/")
+	//return result
+	//}
+	//	m.browserURLExpr = m.constructPathFromPage(page)
 }
 
 func (s Session) ValidateAndCountErrors(widget Widget) int {

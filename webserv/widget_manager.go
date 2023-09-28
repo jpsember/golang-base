@@ -24,11 +24,11 @@ type WidgetManagerObj struct {
 	anonymousIdCounter int
 }
 
-func (w WidgetManager) InitializeWidgetManager() {
+func (m WidgetManager) InitializeWidgetManager() {
 	DebVerifyServerStarted()
-	w.widgetMap = make(map[string]Widget)
-	w.initStateStack()
-	w.resetPendingColumns()
+	m.widgetMap = make(map[string]Widget)
+	m.initStateStack()
+	m.resetPendingColumns()
 }
 
 func (m WidgetManager) initStateStack() {
@@ -37,25 +37,20 @@ func (m WidgetManager) initStateStack() {
 
 type WidgetManager = *WidgetManagerObj
 
-// Determine if a widget exists
-func (m WidgetManager) Exists(id string) bool {
-	return m.find(id) != nil
+func (m WidgetManager) Opt(id string) Widget {
+	return m.widgetMap[id]
+}
+
+func (m WidgetManager) exists(id string) bool {
+	return m.Opt(id) != nil
 }
 
 func (m WidgetManager) Get(id string) Widget {
-	w := m.find(id)
+	w := m.Opt(id)
 	if w == nil {
 		BadState("Can't find widget with id:", Quoted(id))
 	}
 	return w
-}
-
-func (m WidgetManager) Opt(id string) Widget {
-	return m.find(id)
-}
-
-func (m WidgetManager) find(id string) Widget {
-	return m.widgetMap[id]
 }
 
 // ------------------------------------------------------------------------------------
@@ -109,10 +104,6 @@ func (m WidgetManager) Col(columns int) WidgetManager {
 	return m
 }
 
-func (m WidgetManager) DebugGetCol() int {
-	return m.stackedState().pendingChildColumns
-}
-
 func (m WidgetManager) Label(value string) WidgetManager {
 	CheckState(m.pendingLabel == "")
 	m.pendingLabel = value
@@ -164,7 +155,7 @@ func (m WidgetManager) clearPendingComponentFields() {
 func (m WidgetManager) Add(widget Widget) WidgetManager {
 	id := widget.Id()
 	if id != "" {
-		if m.Exists(id) {
+		if m.exists(id) {
 			BadState("<1Attempt to add widget with duplicate id:", id, "widget ids:", m.IdSummary())
 		}
 		m.widgetMap[id] = widget
@@ -196,7 +187,7 @@ func (m WidgetManager) With(container Widget) WidgetManager {
 	cont := container.(GridWidget)
 	id := cont.Id()
 
-	CheckState(m.Exists(id), "There is no widget with id:", id)
+	CheckState(m.exists(id), "There is no widget with id:", id)
 
 	// Discard any existing child widgets
 	m.removeWidgets(cont.Children())
@@ -387,8 +378,11 @@ func (m WidgetManager) checkboxHelper(listener CheckboxWidgetListener, switchFla
 }
 
 func (m WidgetManager) AllocateAnonymousId(debugInfo string) string {
+	Alert("Should this include the prefix?")
 	m.anonymousIdCounter++
-	result := "z" + IntToString(m.anonymousIdCounter)
+	result :=
+		m.IdPrefix() +
+			"z" + IntToString(m.anonymousIdCounter)
 	if debugInfo != "" {
 		result += "_" + debugInfo + "_"
 	}
@@ -404,7 +398,7 @@ func (m WidgetManager) removeWidgets(widgets []Widget) {
 // Remove widget (if it exists), and the subtree of widgets it may contain.
 func (m WidgetManager) Remove(widget Widget) WidgetManager {
 	id := widget.Id()
-	if m.Exists(id) {
+	if m.exists(id) {
 		delete(m.widgetMap, id)
 		m.removeWidgets(widget.Children())
 	}

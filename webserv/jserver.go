@@ -236,7 +236,7 @@ func (j JServer) writeFooter(s Session, bp MarkupBuilder) {
 	bp.TgClose() // page container
 
 	// Add a bit of javascript that will change the url to what we want
-	expr := s.NewBrowserPath()
+	expr := s.browserURLExpr
 	if expr != "" {
 		code := `
 <script type="text/javascript">

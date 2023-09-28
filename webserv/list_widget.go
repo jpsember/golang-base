@@ -55,10 +55,10 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string)
 		// Forward the message to that widget
 		Todo("!How do we distinguish between value actions (like text fields) and button presses?")
 		// Set up the same state provider that we did when rendering the widget
-		savedStateProvider := sess.BaseStateProvider()
-		sess.SetBaseStateProvider(w.constructStateProvider(sess, elementId, savedStateProvider.Prefix))
+		savedStateProvider := sess.baseStateProvider()
+		sess.setBaseStateProvider(w.constructStateProvider(sess, elementId, savedStateProvider.Prefix))
 		sess.ProcessWidgetValue(sourceWidget, remainder, elementId)
-		sess.SetBaseStateProvider(savedStateProvider)
+		sess.setBaseStateProvider(savedStateProvider)
 		// Fall through to return nil, nil
 	}
 	return nil, nil
@@ -169,17 +169,17 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 			// While rendering this list's items, we will replace any existing default state provider with
 			// the list's one.  Save the current default state provider here, for later restoration.
-			savedStateProvider := s.BaseStateProvider()
+			savedStateProvider := s.baseStateProvider()
 			pr(VERT_SP, "saved pv:", INDENT, savedStateProvider)
 
 			for _, id := range elementIds {
-				s.SetBaseStateProvider(w.constructStateProvider(s, id, savedStateProvider.Prefix))
+				s.setBaseStateProvider(w.constructStateProvider(s, id, savedStateProvider.Prefix))
 				// Note that we are not calling RenderWidget(), which would not draw anything since the
 				// list item widget has been marked as detached
 				w.itemWidget.RenderTo(s, m)
 			}
 			// Restore the default state provider to what it was before we rendered the items.
-			s.SetBaseStateProvider(savedStateProvider)
+			s.setBaseStateProvider(savedStateProvider)
 		}
 		m.TgClose()
 	}

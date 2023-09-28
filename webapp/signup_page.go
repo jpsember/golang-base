@@ -82,7 +82,7 @@ func (p SignUpPage) listenerValidatePwd(s Session, widget InputWidget, value str
 		// else the most recent password value isn't the one we will read
 
 		// If this becomes a common idiom, we will add a function s.PostValidate(...)
-		s.AddPostRequestEvent(func() { s.Validate(s.Widget(SignUpState_PasswordVerify)) })
+		s.AddPostRequestEvent(func() { s.Validate(s.Get(SignUpState_PasswordVerify)) })
 	}
 	return validated, err
 }
