@@ -111,19 +111,6 @@ func NewSession() Session {
 	Todo("!Restore user session from filesystem/database")
 	Todo("?ClientInfo (browser info) not sent soon enough")
 	Todo("?The Session should have WidgetManager embedded within it, so we can call through to its methods")
-
-	if false {
-		Pr(BinaryN(0))
-		Pr(BinaryN(255))
-		Pr(BinaryN(256))
-		Pr(BinaryN(65535))
-		Pr(BinaryN(65536))
-		Pr(BinaryN(1 << 23))
-		Pr(BinaryN(1 << 24))
-		var x int
-		Pr(BinaryN(^x))
-	}
-
 	return &s
 }
 

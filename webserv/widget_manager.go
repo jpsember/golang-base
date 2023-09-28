@@ -196,18 +196,6 @@ func (m WidgetManager) stackedState() *mgrState {
 	return &m.stack[len(m.stack)-1]
 }
 
-func getWidgetsInTree(widget Widget) []string {
-	return auxGetWidgetsInTree(widget, nil)
-}
-
-func auxGetWidgetsInTree(widget Widget, list []string) []string {
-	list = append(list, widget.Id())
-	for _, c := range widget.Children() {
-		list = auxGetWidgetsInTree(c, list)
-	}
-	return list
-}
-
 // Have subsequent WidgetManager operations operate on a particular container widget.
 // The container is marked for repainting.
 func (m WidgetManager) With(container Widget) WidgetManager {
@@ -376,7 +364,7 @@ func (m WidgetManager) AddSpace() WidgetManager {
 	return m.Add(NewBaseWidget(m.ConsumeOptionalPendingId()))
 }
 
-func doNothingFileUploadListener(sess Session, widget FileUpload, value []byte) error {
+func doNothingFileUploadListener(s Session, widget FileUpload, value []byte) error {
 	Pr("'do nothing' FileUploadListener called with bytes:", len(value))
 	return nil
 }
