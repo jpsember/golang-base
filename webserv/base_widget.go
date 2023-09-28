@@ -69,7 +69,6 @@ func (w BaseWidget) String() string {
 }
 
 func (w BaseWidget) ValidationValue(s Session) (string, bool) {
-	Pr("BaseWidget, ValidationValue:", w.Id())
 	return "", false
 }
 

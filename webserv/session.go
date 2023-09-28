@@ -616,7 +616,7 @@ func SessionApp(s Session) ServerApp {
 // ------------------------------------------------------------------------------------
 
 type WidgetStateProviderStruct struct {
-	Prefix string // A prefix to remove from the id before constructing its map key
+	Prefix string // A prefix to remove from keys before accessing the state
 	State  JSMap  // The map containing the state
 }
 
@@ -627,7 +627,6 @@ func (pv WidgetStateProvider) String() string {
 }
 
 func NewStateProvider(prefix string, state JSEntity) WidgetStateProvider {
-	Todo("Is the prefix really necessary?")
 	return &WidgetStateProviderStruct{Prefix: prefix, State: state.AsJSMap()}
 }
 
@@ -774,6 +773,7 @@ func (s Session) Validate(widget Widget) {
 			pr("...calling low level listener with", QUO, valAsString)
 			Alert("Do LowListeners need to include a widget argument?")
 			updatedValue, err := widget.LowListener()(s, widget, valAsString)
+			pr("updated value, err:", updatedValue, err)
 			s.UpdateValueAndProblem(widget, updatedValue, err)
 		}
 	}

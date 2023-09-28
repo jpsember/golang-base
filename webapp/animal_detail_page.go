@@ -7,16 +7,16 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
+var AllowEmptySummaries = DevDatabase && true && Alert("!Allowing empty summary, details fields")
+
 type AnimalDetailPageStruct struct {
 	animalId int
 	editing  bool
 	name     string
 
 	editor DataEditor
+	strict bool
 
-	nameWidget      InputWidget
-	summaryWidget   InputWidget
-	detailsWidget   InputWidget
 	uploadPicWidget Widget
 	imgWidget       Widget
 }
@@ -144,24 +144,13 @@ func (p AnimalDetailPage) generateForEditing(s Session) {
 	{
 		m.Col(12)
 
-		Todo("!datagen option to generate field name constants for use here")
+		m.Label("Name").Id(Animal_Name).AddInput(p.animalNameListener)
 
-		p.nameWidget = m.Label("Name").Id(Animal_Name).AddInput(AnimalNameListener)
-
-		p.summaryWidget = m.Label("Summary").Id(Animal_Summary).AddInput(p.animalSummaryListener)
+		m.Label("Summary").Id(Animal_Summary).AddInput(p.animalSummaryListener)
 		m.Size(SizeTiny).Label("A brief paragraph to appear in the 'card' view.").AddText()
 
-		p.detailsWidget = m.Label("Details").Id(Animal_Details).AddInput(p.animalDetailsListener)
+		m.Label("Details").Id(Animal_Details).AddInput(p.animalDetailsListener)
 		m.Size(SizeTiny).Label("Additional paragraphs to appear on the 'details' view.").AddText()
-
-		/**
-			name            string
-		summary         string
-		details         string
-		campaignTarget  int
-		campaignBalance int
-		photoThumbnail  int
-		*/
 
 		m.Col(6)
 		if p.animalId != 0 {
@@ -220,20 +209,24 @@ func (p AnimalDetailPage) generateForViewing(s Session) {
 	m.Close()
 }
 
-func AnimalNameListener(s Session, widget InputWidget, value string) (string, error) {
-	return ValidateAnimalName(value, VALIDATE_EMPTYOK)
+func (p AnimalDetailPage) validateFlag() ValidateFlag {
+	return Ternary(p.strict, 0, VALIDATE_EMPTYOK)
+}
+
+func (p AnimalDetailPage) animalNameListener(s Session, widget InputWidget, value string) (string, error) {
+	return ValidateAnimalName(value, p.validateFlag())
 }
 
 func (p AnimalDetailPage) animalSummaryListener(sess Session, widget InputWidget, value string) (string, error) {
-	return animalInfoListener(value, 20, 200, true)
+	return animalInfoListener(value, 20, 200, p.validateFlag())
 }
 
 func (p AnimalDetailPage) animalDetailsListener(sess Session, widget InputWidget, value string) (string, error) {
-	return animalInfoListener(value, 200, 2000, true)
+	return animalInfoListener(value, 200, 2000, p.validateFlag())
 }
 
 func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget, arg string) {
-	pr := PrIf("", true)
+	pr := PrIf("Create listener", true)
 
 	if !p.validateAll(s) {
 		return
@@ -252,25 +245,18 @@ func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget, a
 }
 
 func (p AnimalDetailPage) validateAll(s Session) bool {
-	Todo("This could be refactored to use Validate etc.")
-	pr := PrIf("", false)
+	pr := PrIf("validateAll", false)
 
-	{
-		text := s.WidgetStringValue(p.nameWidget)
-		_, err := ValidateAnimalName(text, 0)
-		s.SetProblem(p.nameWidget, err)
+	// The upload widget doesn't have a validation value, so its error (if it has one)
+	// will survive the ValidateAndCountErrorsCall that follows.
+	if s.WidgetIntValue(p.imgWidget) == 0 {
+		s.SetProblem(p.uploadPicWidget, "Please upload a photo")
 	}
 
-	preCreateValidateText(s, p.summaryWidget, 20, 200, 0)
-	preCreateValidateText(s, p.detailsWidget, 200, 2000, 0)
-	{
-		picId := s.WidgetIntValue(p.imgWidget)
-		if picId == 0 {
-			s.SetProblem(p.uploadPicWidget, "Please upload a photo")
-		}
-	}
+	p.strict = true
+	errcount := s.ValidateAndCountErrors(s.PageWidget)
+	p.strict = false
 
-	errcount := s.WidgetErrorCount(s.PageWidget)
 	pr("error count:", errcount)
 	return errcount == 0
 }
@@ -302,27 +288,25 @@ func (p AnimalDetailPage) abortEditListener(s Session, widget Widget, arg string
 }
 
 func (p AnimalDetailPage) exit(s Session) {
-	pr := PrIf("AnimalDetailPage.exit", true)
-	pr("state fields:", INDENT, s.State)
 	if SessionUser(s).UserClass() == UserClassDonor {
 		s.SwitchToPage(FeedPageTemplate, nil)
 	} else {
 		s.SwitchToPage(ManagerPageTemplate, nil)
 	}
-	pr("state fields after switching pages:", INDENT, s.State)
 }
 
-func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (string, error) {
+func animalInfoListener(n string, minLength int, maxLength int, validateFlags ValidateFlag) (string, error) {
 	errStr := ""
 
-	if Alert("?Allowing zero characters in summary, details fields") {
+	if AllowEmptySummaries {
 		minLength = 0
 	}
+
 	for {
 		ln := len(n)
 
 		errStr = "Please add more info here."
-		if ln < minLength && !(ln == 0 && emptyOk) {
+		if ln < minLength && !(ln == 0 && validateFlags.Has(VALIDATE_EMPTYOK)) {
 			break
 		}
 
@@ -339,12 +323,6 @@ func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (s
 		err = Error(errStr)
 	}
 	return n, err
-}
-
-func preCreateValidateText(s Session, widget Widget, minLength int, maxLength int, flags ValidateFlag) {
-	n := s.WidgetStringValue(widget)
-	n, err := animalInfoListener(n, minLength, maxLength, flags.Has(VALIDATE_EMPTYOK))
-	s.SetProblem(widget, err)
 }
 
 func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by []byte) error {
@@ -451,7 +429,10 @@ func (p AnimalDetailPage) DebugSanityCheck(s Session, a Animal) {
 		}
 
 		problem = "missing text"
-		if a.Name() == "" || a.Summary() == "" || a.Details() == "" {
+		if a.Name() == "" {
+			break
+		}
+		if !AllowEmptySummaries && (a.Summary() == "" || a.Details() == "") {
 			break
 		}
 
