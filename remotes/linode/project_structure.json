@@ -1,0 +1,5 @@
+{
+  "resource_dir" : "resources",
+  "key_dir" : "https_keys",
+  "db_datasource_path" : "sqlite/animal_app_TMP_.db",
+}

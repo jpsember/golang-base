@@ -1,4 +1,6 @@
 class {
     File resource_dir;
     File key_dir;
+    File db_datasource_path;
+    bool dev_machine;
 }

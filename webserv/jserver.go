@@ -14,6 +14,7 @@ type ServerApp interface {
 	PrepareSession(s Session)
 	Resources() Path // Directory where resources to be served to client can be found, including header.html
 	PageTemplates() []Page
+	DevMode() bool
 }
 
 // Why does leaving the name of the arg off (s) screw things up?
@@ -52,7 +53,7 @@ func NewJServer(app ServerApp) JServer {
 	t.headerMarkup = t.resources.JoinM("header.html").ReadStringM()
 
 	// Every several runs, remind to discard tabs
-	{
+	if app.DevMode() {
 		k := ProjectDirM().JoinM("._SKIP_counter")
 		m := JSMapFromFileIfExistsM(k)
 		count := m.OptInt("", 0) + 1

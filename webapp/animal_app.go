@@ -76,6 +76,10 @@ func (oper AnimalOper) Resources() Path {
 	return oper.projectStructure.ResourceDir()
 }
 
+func (oper AnimalOper) DevMode() bool {
+	return oper.projectStructure.DevMachine()
+}
+
 func (oper AnimalOper) UserForSession(s Session) AbstractUser {
 	return OptSessionUser(s)
 }
@@ -139,7 +143,7 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 // ------------------------------------------------------------------------------------
 
 func (oper AnimalOper) prepareDatabase() {
-	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
+	dataSourcePath := oper.projectStructure.DbDatasourcePath() //ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 
 	if false && DevDatabase && Alert("Deleting database:", dataSourcePath) {
 		DeleteDatabase(dataSourcePath)

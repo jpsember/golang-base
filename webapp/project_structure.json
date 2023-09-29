@@ -1,4 +1,6 @@
 {
-  "resource_dir" : "resources_link",
-  "key_dir" : "https_keys_link"
+  "resource_dir" : "../webserv/resources",
+  "key_dir" : "../webserv/https_keys",
+  "db_datasource_path" : "sqlite/animal_app_TMP_.db",
+  "dev_machine" : true,
 }
