@@ -17,9 +17,8 @@ var AllowTestInputs = DevDatabase && false && Alert("!Allowing test inputs (user
 var AutoActivateUser = DevDatabase && Alert("?Automatically activating user")
 
 type AnimalOperStruct struct {
-	appRoot      Path
-	autoLoggedIn bool
-	resources    Path
+	autoLoggedIn     bool
+	projectStructure ProjectStructure
 }
 
 type AnimalOper = *AnimalOperStruct
@@ -40,8 +39,14 @@ func (oper AnimalOper) Perform(app *App) {
 	ClearAlertHistory(false)
 	ExitOnPanic()
 
-	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
-	oper.resources = oper.appRoot.JoinM("resources")
+	{
+		f := NewPathM("project_structure.json")
+		if !f.Exists() {
+			BadState("Cannot find:", f)
+		}
+		oper.projectStructure = DefaultProjectStructure.Parse(JSMapFromFileM(f)).(ProjectStructure)
+	}
+
 	oper.prepareDatabase()
 
 	DebugUIFlag = true
@@ -49,7 +54,7 @@ func (oper AnimalOper) Perform(app *App) {
 	s := NewJServer(oper)
 	s.SessionManager = BuildSessionMap()
 	s.BaseURL = "jeff.org"
-	s.KeyDir = oper.appRoot.JoinM("https_keys")
+	s.KeyDir = oper.projectStructure.KeyDir()
 	SharedWebCache = ConstructSharedWebCache()
 	s.BlobCache = SharedWebCache
 	s.StartServing()
@@ -68,8 +73,9 @@ func (oper AnimalOper) PageTemplates() []Page {
 }
 
 func (oper AnimalOper) Resources() Path {
-	return oper.resources
+	return oper.projectStructure.ResourceDir()
 }
+
 func (oper AnimalOper) UserForSession(s Session) AbstractUser {
 	return OptSessionUser(s)
 }
