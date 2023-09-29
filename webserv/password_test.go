@@ -39,7 +39,7 @@ func TestVariousPasswords(t *testing.T) {
 
 	for mp.Size() < 50 {
 		word := RandomText(r, 24, false)
-		if len(word) < 9 || len(word) > 23 {
+		if len(word) < USER_PASSWORD_MIN_LENGTH || len(word) > USER_PASSWORD_MAX_LENGTH {
 			continue
 		}
 		hash, salt := HashPassword(word)
