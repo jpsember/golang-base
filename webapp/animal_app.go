@@ -3,7 +3,6 @@ package webapp
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/jimg"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
 )
@@ -53,8 +52,10 @@ func (oper AnimalOper) Perform(app *App) {
 
 	s := NewJServer(oper)
 	s.SessionManager = BuildSessionMap()
-	s.BaseURL = "jeff.org"
+	s.BaseURL = oper.projectStructure.BaseUrl()
 	s.KeyDir = oper.projectStructure.KeyDir()
+	s.CertName = oper.projectStructure.CertName()
+	s.KeyName = oper.projectStructure.KeyName()
 	SharedWebCache = ConstructSharedWebCache()
 	s.BlobCache = SharedWebCache
 	s.StartServing()
@@ -145,29 +146,29 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 func (oper AnimalOper) prepareDatabase() {
 	dataSourcePath := oper.projectStructure.DbDatasourcePath() //ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 
-	if false && DevDatabase && Alert("Deleting database:", dataSourcePath) {
+	if true && !oper.projectStructure.DevMachine() && DevDatabase && Alert("Deleting database:", dataSourcePath) {
 		DeleteDatabase(dataSourcePath)
 	}
 	CreateDatabase(dataSourcePath.String())
 
 	if b, _ := ReadBlob(1); b.Id() == 0 {
-
 		// Generate default images as blobs
 		animalPicPlaceholderPath := oper.Resources().JoinM("placeholder.jpg")
-		img := CheckOkWith(jimg.DecodeImage(animalPicPlaceholderPath.ReadBytesM()))
-		img = img.ScaleToSize(AnimalPicSizeNormal)
-		jpeg := CheckOkWith(img.ToJPEG())
-		Todo("?Later, keep the original image around for crop adjustments; but for now, scale and store immediately")
-		b := NewBlob()
-		b.SetData(jpeg)
-		AssignBlobName(b)
-		created, err := CreateBlob(b)
-		CheckOk(err)
-		CheckState(created.Id() == 1, "unexpected id for placeholder:", created.Id())
+		b := CreateBlobFromImageFile(animalPicPlaceholderPath)
+		//img := CheckOkWith(jimg.DecodeImage(animalPicPlaceholderPath.ReadBytesM()))
+		//img = img.ScaleToSize(AnimalPicSizeNormal)
+		//jpeg := CheckOkWith(img.ToJPEG())
+		//Todo("?Later, keep the original image around for crop adjustments; but for now, scale and store immediately")
+		//b := NewBlob()
+		//b.SetData(jpeg)
+		//AssignBlobName(b)
+		//created, err := CreateBlob(b)
+		//CheckOk(err)
+		CheckState(b.Id() == 1, "unexpected id for placeholder:", b.Id())
 	}
 
 	if DevDatabase {
-		PopulateDatabase()
+		PopulateDatabase(oper.projectStructure)
 	}
 }
 

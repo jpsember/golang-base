@@ -25,6 +25,8 @@ type JServerStruct struct {
 	FullWidth      bool
 	BaseURL        string // e.g. "jeff.org"
 	KeyDir         Path
+	CertName       string
+	KeyName        string
 	SessionManager SessionManager
 	BlobCache      BlobCache
 	resources      Path
@@ -54,6 +56,7 @@ func NewJServer(app ServerApp) JServer {
 
 	// Every several runs, remind to discard tabs
 	if app.DevMode() {
+		Todo("This doesn't need to be in webserv module")
 		k := ProjectDirM().JoinM("._SKIP_counter")
 		m := JSMapFromFileIfExistsM(k)
 		count := m.OptInt("", 0) + 1
@@ -96,8 +99,8 @@ func (j JServer) StartServing() {
 	var ourUrl = CheckNonEmpty(j.BaseURL, "BaseURL")
 
 	var keyDir = j.KeyDir //oper.appRoot.JoinM("https_keys")
-	var certPath = keyDir.JoinM(ourUrl + ".crt")
-	var keyPath = keyDir.JoinM(ourUrl + ".key")
+	var certPath = keyDir.JoinM(j.CertName)
+	var keyPath = keyDir.JoinM(j.KeyName)
 	Pr("URL:", INDENT, `https://`+ourUrl)
 
 	http.HandleFunc("/",

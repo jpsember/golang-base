@@ -3,4 +3,9 @@ class {
     File key_dir;
     File db_datasource_path;
     bool dev_machine;
+    string base_url; // e.g. "jeff.org"
+    string cert_name; // e.g. "fullchain.pem"
+    string key_name; // e.g. "privkey.pem"
+     File raw_photos_dir;
+    File sample_photos_dir;
 }

@@ -74,7 +74,7 @@ func createAnimalsUpTo(rnd JSRand, id int) {
 	}
 }
 
-func PopulateDatabase() {
+func PopulateDatabase(projStruct ProjectStructure) {
 	CheckState(DevDatabase)
 
 	rnd := NewJSRand().SetSeed(1965)
@@ -107,10 +107,31 @@ func PopulateDatabase() {
 		}
 	}
 
+	dph := NewDemoPhotos(projStruct.RawPhotosDir(), projStruct.SamplePhotosDir())
+	numPhotos := len(dph.ScaledPhotoNames())
+
+	if numPhotos > 0 {
+		SamplePhotoBlobIdStart = 2
+		for i := 0; i < numPhotos; i++ {
+			blobId := i + SamplePhotoBlobIdStart
+			bl, _ := ReadBlob(blobId)
+			if bl.Id() == 0 {
+				// Add a blob from a random photo
+				CheckState(blobId > 1, "no placeholder? something strange")
+				j := rnd.Intn(numPhotos)
+				CreateBlobFromImageFile(dph.ScaledPhotosDir().JoinM(dph.ScaledPhotoNames()[j]))
+			}
+			SamplePhotoBlobIdCount = blobId + 1 - SamplePhotoBlobIdStart
+		}
+	}
+
 	for i := 0; i < 100; i++ {
 		createAnimalsUpTo(rnd, i+1)
 	}
 }
+
+var SamplePhotoBlobIdStart int
+var SamplePhotoBlobIdCount int
 
 func AttemptSignIn(sess Session, userId int) string {
 	pr := PrIf("AttemptSignIn", false)

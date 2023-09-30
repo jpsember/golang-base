@@ -2,6 +2,7 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/jimg"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"github.com/jpsember/golang-base/webserv"
 	"net/mail"
@@ -229,3 +230,17 @@ func BlobSummary(blob Blob) JSMap {
 }
 
 var AnimalPicSizeNormal = IPointWith(600, 800)
+
+func CreateBlobFromImageFile(imageFile Path) Blob {
+	img := CheckOkWith(jimg.DecodeImage(imageFile.ReadBytesM()))
+	img = img.ScaleToSize(AnimalPicSizeNormal)
+	jpeg := CheckOkWith(img.ToJPEG())
+	Todo("?Later, keep the original image around for crop adjustments; but for now, scale and store immediately")
+	b := NewBlob()
+	b.SetData(jpeg)
+	AssignBlobName(b)
+	blob, err := CreateBlob(b)
+	CheckOk(err)
+	Pr("created blob", blob.Id(), "from image", imageFile)
+	return blob
+}
