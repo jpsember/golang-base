@@ -89,14 +89,14 @@ type SessionStruct struct {
 	listenerContext any
 
 	// Current request variables
-	ResponseWriter   http.ResponseWriter
-	request          *http.Request
-	requestProblem   error  // If not nil, problem detected with current request
-	clientInfoString string // If nonempty information sent from client about screen size, etc
-	ajaxWidgetId     string // Id of widget that ajax call is being sent to
-	ajaxWidgetValue  string // The string representation of the ajax widget's requested value (if there was one)
-	browserURLExpr   string // If not nil, client browser should push this onto the history
-	repaintWidgetMarkupMap JSMap // Used only during repainting; the map of widget ids -> markup to be repainted by client
+	ResponseWriter         http.ResponseWriter
+	request                *http.Request
+	requestProblem         error  // If not nil, problem detected with current request
+	clientInfoString       string // If nonempty information sent from client about screen size, etc
+	ajaxWidgetId           string // Id of widget that ajax call is being sent to
+	ajaxWidgetValue        string // The string representation of the ajax widget's requested value (if there was one)
+	browserURLExpr         string // If not nil, client browser should push this onto the history
+	repaintWidgetMarkupMap JSMap  // Used only during repainting; the map of widget ids -> markup to be repainted by client
 	postRequestEvents      []PostRequestEvent
 }
 
@@ -368,23 +368,6 @@ func (s Session) processClientInfo(infoString string) {
 	}
 }
 
-// Mark a widget for repainting
-func (s Session) Repaint(w Widget) Session {
-	Alert("Call SetRepaint instead")
-	deb := debRepaint || false
-	pr := PrIf("Widget.RepaintId", deb)
-	if deb {
-		pr("id:", w.Id(), INDENT, Callers(0, 3))
-	}
-	if WebServDebug {
-		if w.IsRepaint() {
-			pr("****** was already in list")
-		}
-	}
-	w.SetRepaint(true)
-	return s
-}
-
 // Traverse a widget tree, rendering widgets that have been marked for repainting.
 func (s Session) processRepaintFlags(w Widget) {
 	// For each widget that has been marked for repainting, we send it and its markup
@@ -394,7 +377,7 @@ func (s Session) processRepaintFlags(w Widget) {
 		m := NewMarkupBuilder()
 		RenderWidget(w, s, m)
 		s.repaintWidgetMarkupMap.Put(w.Id(), m.String())
-		w.SetRepaint(false)
+		w.ClearRepaint()
 	} else {
 		for _, c := range w.Children() {
 			s.processRepaintFlags(c)
@@ -510,7 +493,7 @@ func (s Session) SetProblem(widget Widget, problem any) {
 		} else {
 			state.Put(key, text)
 		}
-		s.Repaint(widget)
+		widget.Repaint()
 	}
 }
 
@@ -675,7 +658,7 @@ func (s Session) SetWidgetValue(w Widget, value any) {
 	pr("old:", oldVal, "new:", value, "changed:", changed)
 	if changed {
 		p.State.Put(id, value)
-		s.Repaint(w)
+		w.Repaint()
 	}
 }
 
@@ -712,7 +695,7 @@ func (m Session) rebuildAndDisplayNewPage(pageProvider func(s Session) Page) {
 
 	// Display the new page
 	Todo("!Verify that this works for normal refreshes as well as ajax operations")
-	m.Repaint(m.PageWidget)
+	m.PageWidget.Repaint()
 
 	//func (s Session) constructPathFromPage(page Page) string {
 	m.browserURLExpr = "/" + page.Name() + "/" + strings.Join(page.Args(), "/")

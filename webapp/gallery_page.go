@@ -106,7 +106,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			newState := !x.Visible()
 			Pr("setting x visible:", newState)
 			x.SetVisible(newState)
-			s.Repaint(x)
+			x.Repaint()
 		})
 	}
 	m.Close()
@@ -242,7 +242,7 @@ func zebraListener(s Session, widget InputWidget, newVal string) (string, error)
 	s.State.Put(alertWidget.Id(),
 		strings.TrimSpace(newVal+" "+
 			RandomText(myRand, 55, false)))
-	s.Repaint(alertWidget)
+	alertWidget.Repaint()
 	return newVal, nil
 }
 
@@ -330,7 +330,7 @@ func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, valu
 		errOut = Error(problem)
 	} else {
 		p.editor.Put(Animal_PhotoThumbnail, imageId)
-		s.Repaint(s.Get(Animal_PhotoThumbnail))
+		s.Get(Animal_PhotoThumbnail).Repaint()
 	}
 	return errOut
 }

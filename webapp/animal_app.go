@@ -36,8 +36,6 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 func (oper AnimalOper) Perform(app *App) {
 
 	ClearAlertHistory(false)
-	ExitOnPanic()
-
 	{
 		f := NewPathM("project_structure.json")
 		if !f.Exists() {
@@ -45,10 +43,12 @@ func (oper AnimalOper) Perform(app *App) {
 		}
 		oper.projectStructure = DefaultProjectStructure.Parse(JSMapFromFileM(f)).(ProjectStructure)
 	}
+	if oper.projectStructure.DevMachine() {
+		DebugUIFlag = true
+		ExitOnPanic()
+	}
 
 	oper.prepareDatabase()
-
-	DebugUIFlag = true
 
 	s := NewJServer(oper)
 	s.SessionManager = BuildSessionMap()
@@ -58,6 +58,21 @@ func (oper AnimalOper) Perform(app *App) {
 	s.KeyName = oper.projectStructure.KeyName()
 	SharedWebCache = ConstructSharedWebCache()
 	s.BlobCache = SharedWebCache
+
+	// Every several runs, remind to discard tabs
+	if oper.DevMode() {
+		k := ProjectDirM().JoinM("._SKIP_counter")
+		m := JSMapFromFileIfExistsM(k)
+		count := m.OptInt("", 0) + 1
+		m.Put("", count)
+		k.WriteStringM(m.CompactString())
+		if count >= 10 {
+			k.DeleteFileM()
+			Pr(VERT_SP, DASHES, CR, "Take a moment and discard all the tabs")
+			SleepMs(4000)
+		}
+	}
+
 	s.StartServing()
 }
 
@@ -146,7 +161,7 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 func (oper AnimalOper) prepareDatabase() {
 	dataSourcePath := oper.projectStructure.DbDatasourcePath() //ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 
-	if true && !oper.projectStructure.DevMachine() && DevDatabase && Alert("Deleting database:", dataSourcePath) {
+	if false && !oper.projectStructure.DevMachine() && DevDatabase && Alert("Deleting database:", dataSourcePath) {
 		DeleteDatabase(dataSourcePath)
 	}
 	CreateDatabase(dataSourcePath.String())

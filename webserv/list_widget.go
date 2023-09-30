@@ -212,7 +212,7 @@ func (w ListWidget) handlePagerClick(sess Session, message string) bool {
 				break
 			}
 			w.list.SetCurrentPage(targetPage)
-			sess.Repaint(w)
+			w.Repaint()
 			break
 		}
 		return true

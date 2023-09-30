@@ -33,7 +33,8 @@ type Widget interface {
 	SetVisible(bool)
 	SetDetached(bool)
 	SetTrace(bool)
-	SetRepaint(bool)
+	Repaint()
+	ClearRepaint()
 	IsRepaint() bool
 	Trace() bool
 	Log(args ...any) // Logs messages if tracing is set for this widget

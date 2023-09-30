@@ -31,10 +31,13 @@ func (w BaseWidget) isFlag(flag int) bool {
 	return (w.bitFlags & flag) != 0
 }
 
-func (w BaseWidget) SetRepaint(flag bool) {
-	w.setOrClearFlag(wflagRepaint, flag)
+func (w BaseWidget) ClearRepaint() {
+	w.setOrClearFlag(wflagRepaint, false)
 }
 
+func (w BaseWidget) Repaint() {
+	w.setOrClearFlag(wflagRepaint, true)
+}
 func (w BaseWidget) IsRepaint() bool {
 	return w.isFlag(wflagRepaint)
 }

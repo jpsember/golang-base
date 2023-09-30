@@ -389,7 +389,7 @@ func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by [
 		DiscardBlob(p.editor.GetInt(Animal_PhotoThumbnail))
 		p.editor.PutInt(Animal_PhotoThumbnail, imageId)
 		pr("repainting Animal_PhotoThumbnail")
-		s.Repaint(p.imgWidget)
+		p.imgWidget.Repaint()
 	}
 	return err
 }

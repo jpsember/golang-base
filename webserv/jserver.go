@@ -14,7 +14,6 @@ type ServerApp interface {
 	PrepareSession(s Session)
 	Resources() Path // Directory where resources to be served to client can be found, including header.html
 	PageTemplates() []Page
-	DevMode() bool
 }
 
 // Why does leaving the name of the arg off (s) screw things up?
@@ -52,23 +51,18 @@ func NewJServer(app ServerApp) JServer {
 	singletonJServer = t
 	t.resources = app.Resources().AssertNonEmpty()
 	t.registerPages()
-	t.headerMarkup = t.resources.JoinM("header.html").ReadStringM()
 
-	// Every several runs, remind to discard tabs
-	if app.DevMode() {
-		Todo("This doesn't need to be in webserv module")
-		k := ProjectDirM().JoinM("._SKIP_counter")
-		m := JSMapFromFileIfExistsM(k)
-		count := m.OptInt("", 0) + 1
-		m.Put("", count)
-		k.WriteStringM(m.CompactString())
-		if count >= 10 {
-			k.DeleteFileM()
-			Pr(VERT_SP, DASHES, CR, "Take a moment and discard all the tabs")
-			SleepMs(4000)
-		}
-	}
 	return t
+}
+
+func (j JServer) getHeaderMarkup() string {
+	if j.headerMarkup == "" {
+		CheckState(j.BaseURL != ``)
+		txt := j.resources.JoinM("header.html").ReadStringM()
+		txt = strings.Replace(txt, `jeff.org`, j.BaseURL, -1)
+		j.headerMarkup = txt
+	}
+	return j.headerMarkup
 }
 
 func (j JServer) registerPages() {
@@ -213,7 +207,7 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 
 // Generate the boilerplate header and scripts markup
 func (j JServer) writeHeader(bp MarkupBuilder) {
-	bp.A(j.headerMarkup)
+	bp.A(j.getHeaderMarkup())
 	bp.TgOpen(`body`).TgContent()
 	containerClass := "container"
 	if j.FullWidth {
