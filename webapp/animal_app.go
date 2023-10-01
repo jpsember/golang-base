@@ -5,6 +5,9 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
+	"io"
+	"net/http"
+	"strings"
 )
 
 const AutoLogInName = "manager1"
@@ -46,6 +49,11 @@ func (oper AnimalOper) Perform(app *App) {
 	if oper.projectStructure.DevMachine() {
 		DebugUIFlag = true
 		ExitOnPanic()
+	}
+
+	if Alert("doing zoho experiment") {
+		oper.zohoExperiment()
+		return
 	}
 
 	oper.prepareDatabase()
@@ -242,3 +250,55 @@ func LogOut(s Session) bool {
 	s.PutSessionData(SessionKey_User, nil)
 	return true
 }
+
+func zx(s *strings.Builder, scope string, needComma bool) bool {
+	if needComma {
+		s.WriteByte(',')
+	}
+	needComma = true
+	s.WriteString("ZohoMail." + scope + ".CREATE")
+	s.WriteString(",ZohoMail." + scope + ".READ")
+	s.WriteString(",ZohoMail." + scope + ".UPDATE")
+	s.WriteString(",ZohoMail." + scope + ".DELETE")
+	return needComma
+}
+
+func (oper AnimalOper) zohoExperiment() {
+
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, "https://accounts.zoho.com/oauth/v2/auth", nil)
+	CheckOk(err)
+
+	//https://news.ycombinator.com/item?id=24414586
+	//base, err := url.Parse("https://accounts.zoho.com/oauth/v2/auth")
+
+	p := req.URL.Query()
+
+	s := strings.Builder{}
+	needComma := false
+	needComma = zx(&s, "Messages", needComma)
+	needComma = zx(&s, "Attachments", needComma)
+
+	p.Add("scope", s.String())
+	p.Add("client_id", oper.projectStructure.ZohoClientId())
+	p.Add("response_type", "code")
+	p.Add("access_type", "offline")
+	p.Add("redirect_uri", "https://pawsforaid.org/zoho")
+
+	req.URL.RawQuery = p.Encode()
+
+	Pr("Encoded URL:", req.URL.RawQuery)
+
+	req.Header.Add("Accept", "application/json")
+	resp, err := client.Do(req)
+	CheckOk(err)
+
+	defer resp.Body.Close()
+	responseBody, err := io.ReadAll(resp.Body)
+	CheckOk(err)
+
+	Pr("resp.Status:", resp.Status)
+	Pr("resp.Body:", INDENT, string(responseBody))
+}
+
+

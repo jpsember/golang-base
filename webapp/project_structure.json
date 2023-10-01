@@ -8,4 +8,6 @@
   "key_name" : "jeff.org.key",
    "raw_photos_dir" : "project_config/sample_photos",
    "sample_photos_dir" : "project_config/sample_photos_scaled",
+   "zoho_client_id" : "???",
+   "zoho_client_secret": "???",
 }

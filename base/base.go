@@ -226,7 +226,8 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	//
 	if info.delayMs > 0 {
 		// Do this before locking, as it might attempt to use locks
-		FindProjectDirM()
+		FindProjectDirM() //<-- but rework this... we want it to fall back on using current directory if there is no project dir
+
 		debugLock.Lock()
 		flag := processAlertForMultipleSessions(info)
 		debugLock.Unlock()
