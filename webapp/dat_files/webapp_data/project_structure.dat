@@ -9,6 +9,5 @@ class {
     File raw_photos_dir;
     File sample_photos_dir;
 
-    string zoho_client_id;
-    string zoho_client_secret;
+    ZohoConfig zoho;
 }

@@ -1,0 +1,8 @@
+class {
+    string client_id;
+    string client_secret;
+    string refresh_token;
+    string access_token;
+    long access_token_expiry_ms;
+    string account_id;
+}

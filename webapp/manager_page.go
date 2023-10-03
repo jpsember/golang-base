@@ -15,7 +15,7 @@ type ManagerPage = *ManagerPageStruct
 var ManagerPageTemplate = &ManagerPageStruct{}
 
 func (p ManagerPage) Name() string {
-	return managerPageName
+	return "manager"
 }
 
 func (p ManagerPage) ConstructPage(s Session, args PageArgs) Page {
@@ -32,10 +32,6 @@ func (p ManagerPage) ConstructPage(s Session, args PageArgs) Page {
 }
 
 func (p ManagerPage) Args() []string { return nil }
-
-const managerPageName = "manager"
-const manager_id_prefix = managerPageName + "."
-const manager_card_id = manager_id_prefix + "card"
 
 func (p ManagerPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)

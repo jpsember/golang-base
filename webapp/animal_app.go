@@ -5,8 +5,6 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
-	"io"
-	"net/http"
 	"strings"
 )
 
@@ -18,9 +16,10 @@ var DevGallery = false && Alert("Showing gallery")
 var AllowTestInputs = DevDatabase && false && Alert("!Allowing test inputs (user name, password, etc)")
 var AutoActivateUser = DevDatabase && Alert("?Automatically activating user")
 
+var ProjStructure ProjectStructure
+
 type AnimalOperStruct struct {
-	autoLoggedIn     bool
-	projectStructure ProjectStructure
+	autoLoggedIn bool
 }
 
 type AnimalOper = *AnimalOperStruct
@@ -44,14 +43,14 @@ func (oper AnimalOper) Perform(app *App) {
 		if !f.Exists() {
 			BadState("Cannot find:", f)
 		}
-		oper.projectStructure = DefaultProjectStructure.Parse(JSMapFromFileM(f)).(ProjectStructure)
+		ProjStructure = DefaultProjectStructure.Parse(JSMapFromFileM(f)).(ProjectStructure)
 	}
-	if oper.projectStructure.DevMachine() {
+	if ProjStructure.DevMachine() {
 		DebugUIFlag = true
 		ExitOnPanic()
 	}
 
-	if Alert("doing zoho experiment") {
+	if true && Alert("doing zoho experiment") {
 		oper.zohoExperiment()
 		return
 	}
@@ -60,10 +59,11 @@ func (oper AnimalOper) Perform(app *App) {
 
 	s := NewJServer(oper)
 	s.SessionManager = BuildSessionMap()
-	s.BaseURL = oper.projectStructure.BaseUrl()
-	s.KeyDir = oper.projectStructure.KeyDir()
-	s.CertName = oper.projectStructure.CertName()
-	s.KeyName = oper.projectStructure.KeyName()
+	g := ProjStructure
+	s.BaseURL = g.BaseUrl()
+	s.KeyDir = g.KeyDir()
+	s.CertName = g.CertName()
+	s.KeyName = g.KeyName()
 	SharedWebCache = ConstructSharedWebCache()
 	s.BlobCache = SharedWebCache
 
@@ -97,11 +97,11 @@ func (oper AnimalOper) PageTemplates() []Page {
 }
 
 func (oper AnimalOper) Resources() Path {
-	return oper.projectStructure.ResourceDir()
+	return ProjStructure.ResourceDir()
 }
 
 func (oper AnimalOper) DevMode() bool {
-	return oper.projectStructure.DevMachine()
+	return ProjStructure.DevMachine()
 }
 
 func (oper AnimalOper) UserForSession(s Session) AbstractUser {
@@ -167,9 +167,9 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 // ------------------------------------------------------------------------------------
 
 func (oper AnimalOper) prepareDatabase() {
-	dataSourcePath := oper.projectStructure.DbDatasourcePath() //ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
+	dataSourcePath := ProjStructure.DbDatasourcePath() //ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 
-	if false && !oper.projectStructure.DevMachine() && DevDatabase && Alert("Deleting database:", dataSourcePath) {
+	if false && !ProjStructure.DevMachine() && DevDatabase && Alert("Deleting database:", dataSourcePath) {
 		DeleteDatabase(dataSourcePath)
 	}
 	CreateDatabase(dataSourcePath.String())
@@ -191,7 +191,7 @@ func (oper AnimalOper) prepareDatabase() {
 	}
 
 	if DevDatabase {
-		PopulateDatabase(oper.projectStructure)
+		PopulateDatabase(ProjStructure)
 	}
 }
 
@@ -264,41 +264,9 @@ func zx(s *strings.Builder, scope string, needComma bool) bool {
 }
 
 func (oper AnimalOper) zohoExperiment() {
-
-	client := &http.Client{}
-	req, err := http.NewRequest(http.MethodGet, "https://accounts.zoho.com/oauth/v2/auth", nil)
-	CheckOk(err)
-
-	//https://news.ycombinator.com/item?id=24414586
-	//base, err := url.Parse("https://accounts.zoho.com/oauth/v2/auth")
-
-	p := req.URL.Query()
-
-	s := strings.Builder{}
-	needComma := false
-	needComma = zx(&s, "Messages", needComma)
-	needComma = zx(&s, "Attachments", needComma)
-
-	p.Add("scope", s.String())
-	p.Add("client_id", oper.projectStructure.ZohoClientId())
-	p.Add("response_type", "code")
-	p.Add("access_type", "offline")
-	p.Add("redirect_uri", "https://pawsforaid.org/zoho")
-
-	req.URL.RawQuery = p.Encode()
-
-	Pr("Encoded URL:", req.URL.RawQuery)
-
-	req.Header.Add("Accept", "application/json")
-	resp, err := client.Do(req)
-	CheckOk(err)
-
-	defer resp.Body.Close()
-	responseBody, err := io.ReadAll(resp.Body)
-	CheckOk(err)
-
-	Pr("resp.Status:", resp.Status)
-	Pr("resp.Body:", INDENT, string(responseBody))
+	pr := PrIf("zohoExperiment", true)
+	pr("refresh token:", SharedZoho().RefreshToken())
+	pr("access token:", SharedZoho().AccessToken())
+	//SleepMs(2000)
+	pr("account id:", SharedZoho().AccountId())
 }
-
-
