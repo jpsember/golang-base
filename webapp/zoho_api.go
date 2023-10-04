@@ -5,12 +5,14 @@ import (
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
 
 type ZohoStruct struct {
 	config   ZohoConfigBuilder
 	modified bool
+	bodyMap  JSMap
 }
 
 type Zoho = *ZohoStruct
@@ -169,7 +171,17 @@ func (z Zoho) Folders() map[string]string {
 
 func (z Zoho) makeAPICall(args ...any) JSMap {
 	pr := PrIf("makeAPICall", true)
+
+	method := http.MethodGet
+
+	b := z.bodyMap
+	z.bodyMap = nil
+	if b != nil && false {
+		// Setting method=Post seems to fail
+		method = http.MethodPost
+	}
 	pr("args:", args)
+	pr("body:", b)
 
 	url := "https://mail.zoho.com/api/accounts"
 	for _, x := range args {
@@ -177,8 +189,16 @@ func (z Zoho) makeAPICall(args ...any) JSMap {
 		url = url + "/" + str
 	}
 	pr("url:", url)
+
+	var body io.Reader
+	if b != nil {
+		s := strings.Builder{}
+		s.WriteString(b.CompactString())
+		body = io.NopCloser(strings.NewReader(s.String()))
+	}
+
 	client := &http.Client{}
-	req := CheckOkWith(http.NewRequest(http.MethodGet, url, nil))
+	req := CheckOkWith(http.NewRequest(method, url, body))
 	req.Header.Set("Authorization", "Zoho-oauthtoken "+z.AccessToken())
 
 	resp := CheckOkWith(client.Do(req))
@@ -190,8 +210,27 @@ func (z Zoho) makeAPICall(args ...any) JSMap {
 	pr("resp.Body:", INDENT, string(responseBody))
 
 	mp := JSMapFromStringM(string(responseBody))
+	Pr(mp)
 	if mp.GetMap("status").GetInt("code") != 200 {
 		BadState("returned unexpected status:", INDENT, mp)
 	}
+	return mp
+}
+
+func (z Zoho) body() JSMap {
+	if z.bodyMap == nil {
+		z.bodyMap = NewJSMap()
+	}
+	return z.bodyMap
+}
+
+func (z Zoho) ReadInbox() JSMap {
+	pr := PrIf("ReadInbox", true)
+
+	z.body().Put("folderId", z.Folders()["Inbox"])
+	mp := z.makeAPICall(z.AccountId(), "messages", "view")
+	Todo("How to put things in the request body?")
+
+	pr("results:", INDENT, mp)
 	return mp
 }
