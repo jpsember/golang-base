@@ -194,22 +194,25 @@ func (z Zoho) makeAPICallJson(args ...any) JSMap {
 }
 
 func (z Zoho) makeAPICall(args ...any) []byte {
-	pr := PrIf("makeAPICall", false)
+	pr := PrIf("makeAPICall", true)
 
 	// copy some fields to locals and clear them immediately, in case there is some error later
+
 	bodyBytes := z.bodyBytes
 	z.bodyBytes = nil
-	b := z.bodyMap
+	bodyMap := z.bodyMap
 	z.bodyMap = nil
-	p := z.queryParam
+	queryParam := z.queryParam
 	z.queryParam = nil
 
-	CheckState(bodyBytes == nil || b == nil)
+	// Body, if one is included, can be either bytes or JSMap, but not both
+	CheckState(bodyBytes == nil || bodyMap == nil)
 
 	method := http.MethodGet
 
 	pr("args:", args)
-	pr("body:", z.bodyMap)
+	pr("body:", bodyMap)
+	pr("queryParam:", queryParam)
 
 	url := "https://mail.zoho.com/api/accounts"
 	for _, x := range args {
@@ -220,11 +223,10 @@ func (z Zoho) makeAPICall(args ...any) []byte {
 
 	var body io.Reader
 
-	if b != nil {
-		bodyBytes = []byte(b.CompactString())
+	if bodyMap != nil {
+		bodyBytes = []byte(bodyMap.CompactString())
 	}
 	if bodyBytes != nil {
-		Todo("I think we still want GET?")
 		method = http.MethodPost
 		pr("setting method=POST, body bytes length:", len(bodyBytes))
 		body = bytes.NewReader(bodyBytes)
@@ -233,23 +235,20 @@ func (z Zoho) makeAPICall(args ...any) []byte {
 	req := CheckOkWith(http.NewRequest(method, url, body))
 	req.Header.Set("Authorization", "Zoho-oauthtoken "+z.AccessToken())
 
-	if len(p) != 0 {
+	if len(queryParam) != 0 {
 		q := req.URL.Query()
-		for i := 0; i < len(p); i += 2 {
-			Pr("adding query param:", p[i], ":", p[i+1])
-			//if Alert("Adding as header?") {
-			//	req.Header.Set(p[i], p[i+1])
-			//	continue
-			//}
-			q.Add(p[i], p[i+1])
+		for i := 0; i < len(queryParam); i += 2 {
+			Pr("adding query param:", queryParam[i], ":", queryParam[i+1])
+			q.Add(queryParam[i], queryParam[i+1])
 		}
+    // It seems I have to do this myself
+		req.URL.RawQuery = q.Encode()
 	}
 
 	Pr("request:", CR, req)
-	Pr("query:", req.URL.Query)
+	Pr("query:", req.URL.Query())
 	Pr("req.URL:", req.URL)
-
-	//Halt("request:", CR, req)
+	Pr("rawQuery:", req.URL.RawQuery)
 
 	resp := CheckOkWith(client.Do(req))
 	defer resp.Body.Close()
@@ -294,6 +293,9 @@ func (z Zoho) ReadInbox() []Email {
 		var totalAttSize int
 
 		hasAttachment := x.GetString("hasAttachment") != "0"
+		if Alert("disabling attachments") {
+			hasAttachment = false
+		}
 		if hasAttachment {
 			mp2 := z.makeAPICallJson(z.AccountId(), "folders", id, "messages", msgId, "attachmentinfo")
 			pr("attachment info:", mp2)
@@ -320,6 +322,9 @@ func (z Zoho) ReadInbox() []Email {
 		}
 		em.SetAttachments(atts)
 		results = append(results, em.Build())
+	}
+	if Alert("disabled") {
+		return results
 	}
 	pr("results:", INDENT, results)
 	return results
