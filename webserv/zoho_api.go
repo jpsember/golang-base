@@ -194,7 +194,7 @@ func (z Zoho) makeAPICallJson(args ...any) JSMap {
 }
 
 func (z Zoho) makeAPICall(args ...any) []byte {
-	pr := PrIf("makeAPICall", true)
+	pr := PrIf("makeAPICall", false)
 
 	// copy some fields to locals and clear them immediately, in case there is some error later
 
@@ -209,7 +209,6 @@ func (z Zoho) makeAPICall(args ...any) []byte {
 	CheckState(bodyBytes == nil || bodyMap == nil)
 
 	method := http.MethodGet
-
 	pr("args:", args)
 	pr("body:", bodyMap)
 	pr("queryParam:", queryParam)
@@ -219,7 +218,6 @@ func (z Zoho) makeAPICall(args ...any) []byte {
 		str := ToString(x)
 		url = url + "/" + str
 	}
-	pr("url:", url)
 
 	var body io.Reader
 
@@ -228,7 +226,6 @@ func (z Zoho) makeAPICall(args ...any) []byte {
 	}
 	if bodyBytes != nil {
 		method = http.MethodPost
-		pr("setting method=POST, body bytes length:", len(bodyBytes))
 		body = bytes.NewReader(bodyBytes)
 	}
 	client := &http.Client{}
@@ -238,17 +235,11 @@ func (z Zoho) makeAPICall(args ...any) []byte {
 	if len(queryParam) != 0 {
 		q := req.URL.Query()
 		for i := 0; i < len(queryParam); i += 2 {
-			Pr("adding query param:", queryParam[i], ":", queryParam[i+1])
 			q.Add(queryParam[i], queryParam[i+1])
 		}
 		// It seems I have to do this myself
 		req.URL.RawQuery = q.Encode()
 	}
-
-	Pr("request:", CR, req)
-	Pr("query:", req.URL.Query())
-	Pr("req.URL:", req.URL)
-	Pr("rawQuery:", req.URL.RawQuery)
 
 	resp := CheckOkWith(client.Do(req))
 	defer resp.Body.Close()
@@ -258,7 +249,6 @@ func (z Zoho) makeAPICall(args ...any) []byte {
 func (z Zoho) body() JSMap {
 	if z.bodyMap == nil {
 		z.bodyMap = NewJSMap()
-		Pr("init body map to empty map", Callers(0, 5))
 	}
 	return z.bodyMap
 }
@@ -341,7 +331,11 @@ func EmailSummary(e Email) JSMap {
 }
 
 func (z Zoho) SendEmail(email Email) {
-	pr := PrIf("SendEmail", true)
+
+	// Uploading attachments:  https://www.zoho.com/mail/help/api/post-upload-attachments.html
+	// Sending email: https://www.zoho.com/mail/help/api/post-send-an-email.html
+
+	pr := PrIf("SendEmail", false)
 	pr("email:", INDENT, EmailSummary(email))
 
 	CheckArg(email.ToAddress() != "")
@@ -362,9 +356,7 @@ func (z Zoho) SendEmail(email Email) {
 			z.bodyBytes = x.Data()
 			z.addParam("fileName", x.Name())
 			z.addParam("isInline", "false")
-
 			result := z.makeAPICallJson(z.AccountId(), "messages", "attachments")
-			Pr("result:", result)
 			attachmentsList.Add(result.GetMap("data"))
 		}
 	}
