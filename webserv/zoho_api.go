@@ -127,16 +127,21 @@ func (z Zoho) AccessToken() string {
 
 func (z Zoho) AccountId() string {
 	pr := PrIf("AccountId", false)
-	if z.config.AccountId() == "" {
+	if z.config.AccountId() == "" || z.config.FromAddress() == "" {
 		mp := z.makeAPICallJson()
 		CheckState(mp.GetList("data").Length() == 1)
 		data := mp.GetList("data").Get(0).AsJSMap()
 		accountId := data.GetString("accountId")
-		z.editConfig().SetAccountId(accountId)
+		z.editConfig().SetAccountId(accountId).SetFromAddress(data.GetString("incomingUserName"))
 		z.flushConfig()
 		pr("account id:", accountId)
 	}
 	return z.config.AccountId()
+}
+
+func (z Zoho) FromAddress() string {
+	z.AccountId()
+	return z.config.FromAddress()
 }
 
 func (z Zoho) editConfig() ZohoConfigBuilder {
@@ -246,7 +251,7 @@ func (z Zoho) addParam(key string, value string) {
 }
 
 func (z Zoho) ReadInbox() []Email {
-	pr := PrIf("ReadInbox", true)
+	pr := PrIf("ReadInbox", false)
 	id := z.Folders()["Inbox"]
 	// The parameters end up being strings anyways, so confusion about string vs int doesn't matter
 	z.addParam("folderId", id)
@@ -300,4 +305,28 @@ func (z Zoho) ReadInbox() []Email {
 	}
 	pr("results:", INDENT, results)
 	return results
+}
+
+func (z Zoho) SendEmail(email Email) {
+	pr := PrIf("SendEmail", true)
+	pr("email:", INDENT, email)
+
+	CheckArg(email.ToAddress() != "")
+	CheckArg(email.Subject() != "")
+	CheckArg(email.Body() != "")
+	fromAddr := email.FromAddress()
+	if fromAddr == "" {
+		fromAddr = z.FromAddress()
+	}
+	CheckArg(fromAddr == z.FromAddress())
+
+	m := z.body()
+	m.Put("fromAddress", fromAddr)
+	m.Put("toAddress", email.ToAddress())
+	m.Put("subject", email.Subject())
+	m.Put("content", email.Body())
+	m.Put("mailFormat", "plaintext")
+
+	z.makeAPICallJson(z.AccountId(), "messages")
+
 }

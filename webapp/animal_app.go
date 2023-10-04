@@ -5,7 +5,7 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
-	"strings"
+	"github.com/jpsember/golang-base/webserv/gen/webserv_data"
 )
 
 const AutoLogInName = "manager1"
@@ -252,19 +252,9 @@ func LogOut(s Session) bool {
 	return true
 }
 
-func zx(s *strings.Builder, scope string, needComma bool) bool {
-	if needComma {
-		s.WriteByte(',')
-	}
-	needComma = true
-	s.WriteString("ZohoMail." + scope + ".CREATE")
-	s.WriteString(",ZohoMail." + scope + ".READ")
-	s.WriteString(",ZohoMail." + scope + ".UPDATE")
-	s.WriteString(",ZohoMail." + scope + ".DELETE")
-	return needComma
-}
-
 func (oper AnimalOper) zohoExperiment() {
 	pr := PrIf("zohoExperiment", true)
-	pr(SharedZoho().ReadInbox())
+	m := webserv_data.NewEmail().SetSubject("Sample email #2").SetBody("this is the body (or content)").SetToAddress("jpsember@gmail.com")
+	pr("sending:", INDENT, m)
+	SharedZoho().SendEmail(m)
 }
