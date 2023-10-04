@@ -1,0 +1,6 @@
+class {
+    string attachment_id;
+    string name;
+    int size;
+    *byte data;
+}

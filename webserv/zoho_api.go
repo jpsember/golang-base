@@ -10,10 +10,11 @@ import (
 )
 
 type ZohoStruct struct {
-	config     ZohoConfigBuilder
-	modified   bool
-	bodyMap    JSMap
-	queryParam []string
+	config        ZohoConfigBuilder
+	modified      bool
+	bodyMap       JSMap
+	queryParam    []string
+	binaryResults bool
 }
 
 type Zoho = *ZohoStruct
@@ -128,7 +129,7 @@ func (z Zoho) AccessToken() string {
 func (z Zoho) AccountId() string {
 	pr := PrIf("AccountId", false)
 	if z.config.AccountId() == "" {
-		mp := z.makeAPICall()
+		mp, _ := z.makeAPICall()
 		CheckState(mp.GetList("data").Length() == 1)
 		data := mp.GetList("data").Get(0).AsJSMap()
 		accountId := data.GetString("accountId")
@@ -159,7 +160,8 @@ var sharedZoho Zoho
 func (z Zoho) Folders() map[string]string {
 	if len(z.config.FolderMap()) == 0 {
 		pr := PrIf("Folders", true)
-		mp := z.makeAPICall(z.AccountId(), "folders")
+		Todo("refactor makeAPICall to return binary vs json")
+		mp, _ := z.makeAPICall(z.AccountId(), "folders")
 		pr("results:", INDENT, mp)
 
 		jl := mp.GetList("data")
@@ -178,7 +180,7 @@ func (z Zoho) Folders() map[string]string {
 	return z.config.FolderMap()
 }
 
-func (z Zoho) makeAPICall(args ...any) JSMap {
+func (z Zoho) makeAPICall(args ...any) (JSMap, []byte) {
 	pr := PrIf("makeAPICall", false)
 
 	// copy some fields to locals and clear them immediately, in case there is some error later
@@ -186,6 +188,8 @@ func (z Zoho) makeAPICall(args ...any) JSMap {
 	z.bodyMap = nil
 	p := z.queryParam
 	z.queryParam = nil
+	binFlag := z.binaryResults
+	z.binaryResults = false
 
 	method := http.MethodGet
 
@@ -223,13 +227,15 @@ func (z Zoho) makeAPICall(args ...any) JSMap {
 
 	defer resp.Body.Close()
 	responseBody := CheckOkWith(io.ReadAll(resp.Body))
-
+	var mp JSMap
 	pr("resp.Status:", resp.Status)
-	mp := JSMapFromStringM(string(responseBody))
-	if mp.GetMap("status").GetInt("code") != 200 {
-		BadState("returned unexpected status:", INDENT, mp)
+	if !binFlag {
+		mp = JSMapFromStringM(string(responseBody))
+		if mp.GetMap("status").GetInt("code") != 200 {
+			BadState("returned unexpected status:", INDENT, mp)
+		}
 	}
-	return mp
+	return mp, responseBody
 }
 
 func (z Zoho) body() JSMap {
@@ -244,12 +250,60 @@ func (z Zoho) addParam(key string, value string) {
 	z.queryParam = append(z.queryParam, []string{key, value}...)
 }
 
-func (z Zoho) ReadInbox() JSMap {
+func (z Zoho) ReadInbox() []Email {
 	pr := PrIf("ReadInbox", true)
 	id := z.Folders()["Inbox"]
 	// The parameters end up being strings anyways, so confusion about string vs int doesn't matter
 	z.addParam("folderId", id)
-	mp := z.makeAPICall(z.AccountId(), "messages", "view")
-	pr("results:", INDENT, mp)
-	return mp
+	mp, _ := z.makeAPICall(z.AccountId(), "messages", "view")
+
+	data := mp.GetList("data")
+	var results []Email
+
+	for _, x := range data.AsMaps() {
+		pr("Zoho:", INDENT, x)
+		msgId := x.GetString("messageId")
+		em := NewEmail()
+
+		em.SetMessageId(msgId)
+		em.SetFromAddress(x.GetString("sender"))
+		em.SetToAddress(x.GetString("toAddress"))
+		em.SetSubject(x.GetString("subject"))
+		em.SetBody(x.GetString("summary"))
+		em.SetReceivedTimeMs(int64(ParseInt64M(x.GetString("receivedTime"))))
+
+		var atts []Attachment
+		var totalAttSize int
+
+		hasAttachment := x.GetString("hasAttachment") != "0"
+		if hasAttachment {
+			mp2, _ := z.makeAPICall(z.AccountId(), "folders", id, "messages", msgId, "attachmentinfo")
+			pr("attachment info:", mp2)
+			alist := mp2.GetMap("data").GetList("attachments")
+			for _, y := range alist.AsMaps() {
+				att := NewAttachment()
+				att.SetAttachmentId(y.GetString("attachmentId"))
+				att.SetName(y.GetString("attachmentName"))
+				att.SetSize(y.GetInt("attachmentSize"))
+				totalAttSize += att.Size()
+				atts = append(atts, att.Build())
+			}
+		}
+
+		//https://mail.zoho.com/api/accounts/<accountId>/folders/<folderId>/messages/<messageId>/attachments/<attachId>
+		// Get the attachment data
+		Todo("!Put limit on attachment size (and total size)", totalAttSize)
+		for i, ati := range atts {
+			ab := ati.ToBuilder()
+			z.binaryResults = true
+			_, bytes := z.makeAPICall(z.AccountId(), "folders", id, "messages", msgId, "attachments", ati.AttachmentId())
+			CheckState(len(bytes) == ati.Size(), "size mismatch; expected", ati.Size(), "but got", len(bytes))
+			ab.SetData(bytes)
+			atts[i] = ab.Build()
+		}
+		em.SetAttachments(atts)
+		results = append(results, em.Build())
+	}
+	pr("results:", INDENT, results)
+	return results
 }

@@ -52,6 +52,7 @@ func ParseOrDefault(json JSEntity, defaultValue DataClass) (DataClass, error) {
 var DataClassParseError = Error("DataClass parse error")
 
 func attemptParse(json JSEntity, parser DataClass) DataClass {
+	Todo("?Should datagen empty lists just be nil?")
 	defer func() {
 		if r := recover(); r != nil {
 		}

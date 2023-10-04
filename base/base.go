@@ -427,13 +427,22 @@ func CopyOfBytes(array []byte) []byte {
 }
 
 func ParseInt(str string) (int, error) {
-	result, err := strconv.ParseInt(str, 10, 64)
+	result, err := ParseInt64(str)
 	return int(result), err
 }
 
 func ParseIntM(str string) int {
-	result, err := ParseInt(str)
-	return CheckOkWith(result, err, "Failed to parse int from:", str)
+	return int(ParseInt64M(str))
+}
+
+func ParseInt64(str string) (int64, error) {
+	result, err := strconv.ParseInt(str, 10, 64)
+	return result, err
+}
+
+func ParseInt64M(str string) int64 {
+	result, err := ParseInt64(str)
+	return CheckOkWith(result, err, "Failed to parse int64 from:", str)
 }
 
 func IntToString(value int) string {
