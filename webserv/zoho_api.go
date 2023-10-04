@@ -10,11 +10,10 @@ import (
 )
 
 type ZohoStruct struct {
-	config        ZohoConfigBuilder
-	modified      bool
-	bodyMap       JSMap
-	queryParam    []string
-	binaryResults bool
+	config     ZohoConfigBuilder
+	modified   bool
+	bodyMap    JSMap
+	queryParam []string
 }
 
 type Zoho = *ZohoStruct
@@ -129,7 +128,7 @@ func (z Zoho) AccessToken() string {
 func (z Zoho) AccountId() string {
 	pr := PrIf("AccountId", false)
 	if z.config.AccountId() == "" {
-		mp, _ := z.makeAPICall()
+		mp := z.makeAPICallJson()
 		CheckState(mp.GetList("data").Length() == 1)
 		data := mp.GetList("data").Get(0).AsJSMap()
 		accountId := data.GetString("accountId")
@@ -160,8 +159,7 @@ var sharedZoho Zoho
 func (z Zoho) Folders() map[string]string {
 	if len(z.config.FolderMap()) == 0 {
 		pr := PrIf("Folders", true)
-		Todo("refactor makeAPICall to return binary vs json")
-		mp, _ := z.makeAPICall(z.AccountId(), "folders")
+		mp := z.makeAPICallJson(z.AccountId(), "folders")
 		pr("results:", INDENT, mp)
 
 		jl := mp.GetList("data")
@@ -180,7 +178,16 @@ func (z Zoho) Folders() map[string]string {
 	return z.config.FolderMap()
 }
 
-func (z Zoho) makeAPICall(args ...any) (JSMap, []byte) {
+func (z Zoho) makeAPICallJson(args ...any) JSMap {
+	bytes := z.makeAPICall(args...)
+	mp := JSMapFromStringM(string(bytes))
+	if mp.GetMap("status").GetInt("code") != 200 {
+		BadState("returned unexpected status:", INDENT, mp)
+	}
+	return mp
+}
+
+func (z Zoho) makeAPICall(args ...any) []byte {
 	pr := PrIf("makeAPICall", false)
 
 	// copy some fields to locals and clear them immediately, in case there is some error later
@@ -188,8 +195,6 @@ func (z Zoho) makeAPICall(args ...any) (JSMap, []byte) {
 	z.bodyMap = nil
 	p := z.queryParam
 	z.queryParam = nil
-	binFlag := z.binaryResults
-	z.binaryResults = false
 
 	method := http.MethodGet
 
@@ -224,18 +229,8 @@ func (z Zoho) makeAPICall(args ...any) (JSMap, []byte) {
 	}
 
 	resp := CheckOkWith(client.Do(req))
-
 	defer resp.Body.Close()
-	responseBody := CheckOkWith(io.ReadAll(resp.Body))
-	var mp JSMap
-	pr("resp.Status:", resp.Status)
-	if !binFlag {
-		mp = JSMapFromStringM(string(responseBody))
-		if mp.GetMap("status").GetInt("code") != 200 {
-			BadState("returned unexpected status:", INDENT, mp)
-		}
-	}
-	return mp, responseBody
+	return CheckOkWith(io.ReadAll(resp.Body))
 }
 
 func (z Zoho) body() JSMap {
@@ -255,7 +250,7 @@ func (z Zoho) ReadInbox() []Email {
 	id := z.Folders()["Inbox"]
 	// The parameters end up being strings anyways, so confusion about string vs int doesn't matter
 	z.addParam("folderId", id)
-	mp, _ := z.makeAPICall(z.AccountId(), "messages", "view")
+	mp := z.makeAPICallJson(z.AccountId(), "messages", "view")
 
 	data := mp.GetList("data")
 	var results []Email
@@ -277,7 +272,7 @@ func (z Zoho) ReadInbox() []Email {
 
 		hasAttachment := x.GetString("hasAttachment") != "0"
 		if hasAttachment {
-			mp2, _ := z.makeAPICall(z.AccountId(), "folders", id, "messages", msgId, "attachmentinfo")
+			mp2 := z.makeAPICallJson(z.AccountId(), "folders", id, "messages", msgId, "attachmentinfo")
 			pr("attachment info:", mp2)
 			alist := mp2.GetMap("data").GetList("attachments")
 			for _, y := range alist.AsMaps() {
@@ -295,8 +290,7 @@ func (z Zoho) ReadInbox() []Email {
 		Todo("!Put limit on attachment size (and total size)", totalAttSize)
 		for i, ati := range atts {
 			ab := ati.ToBuilder()
-			z.binaryResults = true
-			_, bytes := z.makeAPICall(z.AccountId(), "folders", id, "messages", msgId, "attachments", ati.AttachmentId())
+			bytes := z.makeAPICall(z.AccountId(), "folders", id, "messages", msgId, "attachments", ati.AttachmentId())
 			CheckState(len(bytes) == ati.Size(), "size mismatch; expected", ati.Size(), "but got", len(bytes))
 			ab.SetData(bytes)
 			atts[i] = ab.Build()
