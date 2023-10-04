@@ -1,11 +1,11 @@
 package webserv
 
 import (
+	"bytes"
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webserv/gen/webserv_data"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -13,6 +13,7 @@ type ZohoStruct struct {
 	config     ZohoConfigBuilder
 	modified   bool
 	bodyMap    JSMap
+	bodyBytes  []byte
 	queryParam []string
 }
 
@@ -196,10 +197,14 @@ func (z Zoho) makeAPICall(args ...any) []byte {
 	pr := PrIf("makeAPICall", false)
 
 	// copy some fields to locals and clear them immediately, in case there is some error later
+	bodyBytes := z.bodyBytes
+	z.bodyBytes = nil
 	b := z.bodyMap
 	z.bodyMap = nil
 	p := z.queryParam
 	z.queryParam = nil
+
+	CheckState(bodyBytes == nil || b == nil)
 
 	method := http.MethodGet
 
@@ -216,12 +221,14 @@ func (z Zoho) makeAPICall(args ...any) []byte {
 	var body io.Reader
 
 	if b != nil {
-		Alert("Setting method=POST makes zoho complain")
-		method = http.MethodPost
-		pr("setting method=POST, body:", INDENT, b)
-		body = io.NopCloser(strings.NewReader(b.CompactString()))
+		bodyBytes = []byte(b.CompactString())
 	}
-
+	if bodyBytes != nil {
+		Todo("I think we still want GET?")
+		method = http.MethodPost
+		pr("setting method=POST, body bytes length:", len(bodyBytes))
+		body = bytes.NewReader(bodyBytes)
+	}
 	client := &http.Client{}
 	req := CheckOkWith(http.NewRequest(method, url, body))
 	req.Header.Set("Authorization", "Zoho-oauthtoken "+z.AccessToken())
@@ -229,9 +236,20 @@ func (z Zoho) makeAPICall(args ...any) []byte {
 	if len(p) != 0 {
 		q := req.URL.Query()
 		for i := 0; i < len(p); i += 2 {
+			Pr("adding query param:", p[i], ":", p[i+1])
+			//if Alert("Adding as header?") {
+			//	req.Header.Set(p[i], p[i+1])
+			//	continue
+			//}
 			q.Add(p[i], p[i+1])
 		}
 	}
+
+	Pr("request:", CR, req)
+	Pr("query:", req.URL.Query)
+	Pr("req.URL:", req.URL)
+
+	//Halt("request:", CR, req)
 
 	resp := CheckOkWith(client.Do(req))
 	defer resp.Body.Close()
@@ -307,9 +325,25 @@ func (z Zoho) ReadInbox() []Email {
 	return results
 }
 
+func trim(s string) string {
+	if len(s) > 40 {
+		return s[0:40] + "..."
+	}
+	return s
+}
+
+func EmailSummary(e Email) JSMap {
+	m := NewJSMap()
+	m.Put("to", e.ToAddress())
+	m.Put("subject", e.Subject())
+	m.Put("body", trim(e.Body()))
+	m.Put("# att", len(e.Attachments()))
+	return m
+}
+
 func (z Zoho) SendEmail(email Email) {
 	pr := PrIf("SendEmail", true)
-	pr("email:", INDENT, email)
+	pr("email:", INDENT, EmailSummary(email))
 
 	CheckArg(email.ToAddress() != "")
 	CheckArg(email.Subject() != "")
@@ -320,6 +354,21 @@ func (z Zoho) SendEmail(email Email) {
 	}
 	CheckArg(fromAddr == z.FromAddress())
 
+	// If there are attachment(s) to send, call the attachments api
+	//https://mail.zoho.com/api/accounts/<accountId>/messages/attachments
+	if len(email.Attachments()) != 0 {
+		for _, x := range email.Attachments() {
+			pr("uploading attachment:", x.Name(), "length:", len(x.Data()))
+			z.bodyBytes = x.Data()
+			z.addParam("fileName", x.Name())
+			z.addParam("isInline", "false")
+
+			result := z.makeAPICallJson(z.AccountId(), "messages", "attachments")
+			Pr("result:", result)
+		}
+		Halt()
+	}
+
 	m := z.body()
 	m.Put("fromAddress", fromAddr)
 	m.Put("toAddress", email.ToAddress())
@@ -327,6 +376,6 @@ func (z Zoho) SendEmail(email Email) {
 	m.Put("content", email.Body())
 	m.Put("mailFormat", "plaintext")
 
-	z.makeAPICallJson(z.AccountId(), "messages")
-
+	result := z.makeAPICall(z.AccountId(), "messages")
+	pr("result length:", len(result))
 }

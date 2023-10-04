@@ -6,6 +6,7 @@ import (
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
 	"github.com/jpsember/golang-base/webserv/gen/webserv_data"
+	"time"
 )
 
 const AutoLogInName = "manager1"
@@ -254,7 +255,17 @@ func LogOut(s Session) bool {
 
 func (oper AnimalOper) zohoExperiment() {
 	pr := PrIf("zohoExperiment", true)
-	m := webserv_data.NewEmail().SetSubject("Sample email #2").SetBody("this is the body (or content)").SetToAddress("jpsember@gmail.com")
-	pr("sending:", INDENT, m)
+	m := webserv_data.NewEmail()
+	m.SetSubject("Sample email at " + time.Now().Format(time.DateTime))
+	m.SetBody("this is the body (or content)")
+	m.SetToAddress("jpsember@gmail.com")
+
+	img := ProjectDirM().JoinM("webserv/resources/picture.jpg")
+
+	m.SetAttachments([]webserv_data.Attachment{
+		webserv_data.NewAttachment().SetData(img.ReadBytesM()).SetName(img.Base())})
+
+	pr("sending:", INDENT, EmailSummary(m))
+
 	SharedZoho().SendEmail(m)
 }
