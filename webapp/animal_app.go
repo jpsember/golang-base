@@ -51,13 +51,14 @@ func (oper AnimalOper) Perform(app *App) {
 		ExitOnPanic()
 	}
 
-	if true && Alert("doing zoho experiment") {
+	if false && Alert("doing zoho experiment") {
 		PrepareZoho(nil)
 		oper.zohoExperiment()
 		return
 	}
 
 	oper.prepareDatabase()
+	oper.prepareEmail()
 
 	s := NewJServer(oper)
 	s.SessionManager = BuildSessionMap()
@@ -278,4 +279,10 @@ func (oper AnimalOper) zohoExperiment() {
 
 	err := SharedZoho().SendEmail(m)
 	CheckState(err == nil)
+}
+
+func (oper AnimalOper) prepareEmail() {
+	err := PrepareZoho(nil)
+	CheckOk(err, "failed to PrepareZoho")
+	SharedEmailManager().Start()
 }
