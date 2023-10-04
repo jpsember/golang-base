@@ -1,8 +1,8 @@
-package webapp
+package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	. "github.com/jpsember/golang-base/webserv/gen/webserv_data"
 	"io"
 	"net/http"
 	"strings"
@@ -18,17 +18,21 @@ type ZohoStruct struct {
 
 type Zoho = *ZohoStruct
 
+func PrepareZoho(config ZohoConfig) {
+	CheckState(sharedZoho == nil)
+	sharedZoho = &ZohoStruct{}
+	sharedZoho.initConfig(config)
+}
+
 func SharedZoho() Zoho {
-	if sharedZoho == nil {
-		sharedZoho = &ZohoStruct{}
-		sharedZoho.initConfig()
-	}
+	CheckState(sharedZoho != nil)
 	return sharedZoho
 }
 
-func (z Zoho) initConfig() {
-	var config ZohoConfig
-	config = ProjStructure.Zoho()
+func (z Zoho) initConfig(config ZohoConfig) {
+	if config == nil {
+		config = DefaultZohoConfig
+	}
 	f := z.cacheFile()
 	z.modified = true
 	if f.Exists() {
@@ -141,11 +145,11 @@ func (z Zoho) editConfig() ZohoConfigBuilder {
 }
 
 func (z Zoho) flushConfig() {
-	pr := PrIf("flushConfig", true)
 	if z.modified {
+		pr := PrIf("flushConfig", true)
 		z.modified = false
 		f := z.cacheFile()
-		f.WriteStringM(z.config.ToJson().AsJSMap().CompactString())
+		f.WriteStringM(z.config.String())
 		pr("flushed:", INDENT, z.config)
 	}
 }
@@ -154,7 +158,7 @@ var sharedZoho Zoho
 
 func (z Zoho) Folders() map[string]string {
 	if len(z.config.FolderMap()) == 0 {
-		pr := PrIf("Folders", false)
+		pr := PrIf("Folders", true)
 		mp := z.makeAPICall(z.AccountId(), "folders")
 		pr("results:", INDENT, mp)
 
@@ -175,7 +179,7 @@ func (z Zoho) Folders() map[string]string {
 }
 
 func (z Zoho) makeAPICall(args ...any) JSMap {
-	pr := PrIf("makeAPICall", true)
+	pr := PrIf("makeAPICall", false)
 
 	// copy some fields to locals and clear them immediately, in case there is some error later
 	b := z.bodyMap
@@ -222,7 +226,6 @@ func (z Zoho) makeAPICall(args ...any) JSMap {
 
 	pr("resp.Status:", resp.Status)
 	mp := JSMapFromStringM(string(responseBody))
-	Pr(mp)
 	if mp.GetMap("status").GetInt("code") != 200 {
 		BadState("returned unexpected status:", INDENT, mp)
 	}
@@ -231,7 +234,6 @@ func (z Zoho) makeAPICall(args ...any) JSMap {
 
 func (z Zoho) body() JSMap {
 	if z.bodyMap == nil {
-		//Die("setting body map to jsmp")
 		z.bodyMap = NewJSMap()
 		Pr("init body map to empty map", Callers(0, 5))
 	}
@@ -244,17 +246,10 @@ func (z Zoho) addParam(key string, value string) {
 
 func (z Zoho) ReadInbox() JSMap {
 	pr := PrIf("ReadInbox", true)
-
-	z.Folders()
 	id := z.Folders()["Inbox"]
+	// The parameters end up being strings anyways, so confusion about string vs int doesn't matter
 	z.addParam("folderId", id)
-	//z.body().Put("folderId", ParseIntM(id))
-	Alert("which of these do we want? string, or int?")
-	//z.body().Put("folderId", id)
-
 	mp := z.makeAPICall(z.AccountId(), "messages", "view")
-	Todo("How to put things in the request body?")
-
 	pr("results:", INDENT, mp)
 	return mp
 }

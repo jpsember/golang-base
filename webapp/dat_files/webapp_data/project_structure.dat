@@ -8,6 +8,4 @@ class {
     string key_name; // e.g. "privkey.pem"
     File raw_photos_dir;
     File sample_photos_dir;
-
-    ZohoConfig zoho;
 }

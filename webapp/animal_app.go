@@ -51,6 +51,7 @@ func (oper AnimalOper) Perform(app *App) {
 	}
 
 	if true && Alert("doing zoho experiment") {
+		PrepareZoho(nil)
 		oper.zohoExperiment()
 		return
 	}
@@ -265,7 +266,5 @@ func zx(s *strings.Builder, scope string, needComma bool) bool {
 
 func (oper AnimalOper) zohoExperiment() {
 	pr := PrIf("zohoExperiment", true)
-	pr("folders:")
-	pr(SharedZoho().Folders())
 	pr(SharedZoho().ReadInbox())
 }
