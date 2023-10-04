@@ -15,6 +15,7 @@ type ZohoStruct struct {
 	bodyMap    JSMap
 	bodyBytes  []byte
 	queryParam []string
+	fatalError error
 }
 
 type Zoho = *ZohoStruct
@@ -129,13 +130,18 @@ func (z Zoho) AccessToken() string {
 func (z Zoho) AccountId() string {
 	pr := PrIf("AccountId", false)
 	if z.config.AccountId() == "" || z.config.FromAddress() == "" {
-		mp := z.makeAPICallJson()
-		CheckState(mp.GetList("data").Length() == 1)
-		data := mp.GetList("data").Get(0).AsJSMap()
-		accountId := data.GetString("accountId")
-		z.editConfig().SetAccountId(accountId).SetFromAddress(data.GetString("incomingUserName"))
+		accId := "?"
+		fromAddr := "?"
+
+		mp, err := z.makeAPICallJson()
+		if !z.setFatalErrorIf(err) {
+			data := mp.GetList("data").Get(0).AsJSMap()
+			accId = data.GetString("accountId")
+			fromAddr = data.GetString("incomingUserName")
+		}
+		z.editConfig().SetAccountId(accId).SetFromAddress(fromAddr)
 		z.flushConfig()
-		pr("account id:", accountId)
+		pr("account id:", accId)
 	}
 	return z.config.AccountId()
 }
@@ -162,10 +168,21 @@ func (z Zoho) flushConfig() {
 
 var sharedZoho Zoho
 
-func (z Zoho) Folders() map[string]string {
-	if len(z.config.FolderMap()) == 0 {
+func (z Zoho) setFatalErrorIf(err error) bool {
+	if err != nil && z.fatalError == nil {
+		z.fatalError = err
+		return true
+	}
+	return false
+}
+func (z Zoho) Folders() (map[string]string, error) {
+	if z.fatalError == nil && len(z.config.FolderMap()) == 0 {
 		pr := PrIf("Folders", true)
-		mp := z.makeAPICallJson(z.AccountId(), "folders")
+		accountId := z.AccountId()
+		mp, err := z.makeAPICallJson(accountId, "folders")
+		if err != nil {
+			return nil, err
+		}
 		pr("results:", INDENT, mp)
 
 		jl := mp.GetList("data")
@@ -181,20 +198,38 @@ func (z Zoho) Folders() map[string]string {
 		z.flushConfig()
 		pr("parsed:", INDENT, z.config.FolderMap())
 	}
-	return z.config.FolderMap()
+	return z.config.FolderMap(), nil
 }
 
-func (z Zoho) makeAPICallJson(args ...any) JSMap {
-	bytes := z.makeAPICall(args...)
-	mp := JSMapFromStringM(string(bytes))
-	if mp.GetMap("status").GetInt("code") != 200 {
-		BadState("returned unexpected status:", INDENT, mp)
+func (z Zoho) makeAPICallJson(args ...any) (JSMap, error) {
+	bytes, err := z.makeAPICall(args...)
+	if err != nil {
+		return nil, err
 	}
-	return mp
+	mp, err := JSMapFromString(string(bytes))
+	err = z.verifyOkCode(err, mp)
+	if err != nil {
+		mp = nil
+	}
+	return mp, err
 }
 
-func (z Zoho) makeAPICall(args ...any) []byte {
+func (z Zoho) verifyOkCode(err error, mp JSMap) error {
+	if err != nil {
+		return err
+	}
+	m2 := mp.OptMap("status")
+	if !(m2 != nil && m2.OptInt("code", -1) == 200) {
+		return EmailErrorAPIError
+	}
+	return nil
+}
+
+func (z Zoho) makeAPICall(args ...any) ([]byte, error) {
 	pr := PrIf("makeAPICall", false)
+	if z.fatalError != nil {
+		return nil, z.fatalError
+	}
 
 	// copy some fields to locals and clear them immediately, in case there is some error later
 
@@ -229,7 +264,11 @@ func (z Zoho) makeAPICall(args ...any) []byte {
 		body = bytes.NewReader(bodyBytes)
 	}
 	client := &http.Client{}
-	req := CheckOkWith(http.NewRequest(method, url, body))
+	req, err := http.NewRequest(method, url, body)
+	if err != nil {
+		return nil, err
+	}
+
 	req.Header.Set("Authorization", "Zoho-oauthtoken "+z.AccessToken())
 
 	if len(queryParam) != 0 {
@@ -243,7 +282,7 @@ func (z Zoho) makeAPICall(args ...any) []byte {
 
 	resp := CheckOkWith(client.Do(req))
 	defer resp.Body.Close()
-	return CheckOkWith(io.ReadAll(resp.Body))
+	return io.ReadAll(resp.Body)
 }
 
 func (z Zoho) body() JSMap {
@@ -257,12 +296,20 @@ func (z Zoho) addParam(key string, value string) {
 	z.queryParam = append(z.queryParam, []string{key, value}...)
 }
 
-func (z Zoho) ReadInbox() []Email {
+func (z Zoho) ReadInbox() ([]Email, error) {
 	pr := PrIf("ReadInbox", false)
-	id := z.Folders()["Inbox"]
+	f, err := z.Folders()
+	if err != nil {
+		return nil, err
+	}
+
+	id := f["Inbox"]
 	// The parameters end up being strings anyways, so confusion about string vs int doesn't matter
 	z.addParam("folderId", id)
-	mp := z.makeAPICallJson(z.AccountId(), "messages", "view")
+	mp, err := z.makeAPICallJson(z.AccountId(), "messages", "view")
+	if err != nil {
+		return nil, err
+	}
 
 	data := mp.GetList("data")
 	var results []Email
@@ -284,26 +331,35 @@ func (z Zoho) ReadInbox() []Email {
 
 		hasAttachment := x.GetString("hasAttachment") != "0"
 		if hasAttachment {
-			mp2 := z.makeAPICallJson(z.AccountId(), "folders", id, "messages", msgId, "attachmentinfo")
+			mp2, err := z.makeAPICallJson(z.AccountId(), "folders", id, "messages", msgId, "attachmentinfo")
+			if err != nil {
+				return nil, err
+			}
 			pr("attachment info:", mp2)
 			alist := mp2.GetMap("data").GetList("attachments")
 			for _, y := range alist.AsMaps() {
 				att := NewAttachment()
 				att.SetAttachmentId(y.GetString("attachmentId"))
 				att.SetName(y.GetString("attachmentName"))
-				att.SetSize(y.GetInt("attachmentSize"))
-				totalAttSize += att.Size()
+				size := y.GetInt("attachmentSize")
+				totalAttSize += size
+				if size > z.config.MaxAttachmentSize() || totalAttSize > z.config.MaxAttachmentTotalSize() {
+					return nil, EmailErrorAttachmentSizeLimitExceeded
+				}
 				atts = append(atts, att.Build())
 			}
 		}
 
 		//https://mail.zoho.com/api/accounts/<accountId>/folders/<folderId>/messages/<messageId>/attachments/<attachId>
 		// Get the attachment data
+
 		Todo("!Put limit on attachment size (and total size)", totalAttSize)
 		for i, ati := range atts {
 			ab := ati.ToBuilder()
-			bytes := z.makeAPICall(z.AccountId(), "folders", id, "messages", msgId, "attachments", ati.AttachmentId())
-			CheckState(len(bytes) == ati.Size(), "size mismatch; expected", ati.Size(), "but got", len(bytes))
+			bytes, err := z.makeAPICall(z.AccountId(), "folders", id, "messages", msgId, "attachments", ati.AttachmentId())
+			if err != nil {
+				return nil, err
+			}
 			ab.SetData(bytes)
 			atts[i] = ab.Build()
 		}
@@ -311,7 +367,7 @@ func (z Zoho) ReadInbox() []Email {
 		results = append(results, em.Build())
 	}
 	pr("results:", INDENT, results)
-	return results
+	return results, nil
 }
 
 func trim(s string) string {
@@ -330,7 +386,10 @@ func EmailSummary(e Email) JSMap {
 	return m
 }
 
-func (z Zoho) SendEmail(email Email) {
+var EmailErrorAttachmentSizeLimitExceeded = Error("attachment(s) size limit exceeded")
+var EmailErrorAPIError = Error("Zoho API returned unexpected results")
+
+func (z Zoho) SendEmail(email Email) error {
 
 	// Uploading attachments:  https://www.zoho.com/mail/help/api/post-upload-attachments.html
 	// Sending email: https://www.zoho.com/mail/help/api/post-send-an-email.html
@@ -347,6 +406,17 @@ func (z Zoho) SendEmail(email Email) {
 	}
 	CheckArg(fromAddr == z.FromAddress())
 
+	total_size := 0
+	max_size := 0
+	for _, x := range email.Attachments() {
+		s := len(x.Data())
+		max_size = MaxInt(max_size, s)
+		total_size += s
+	}
+	if max_size > z.config.MaxAttachmentSize() || total_size > z.config.MaxAttachmentTotalSize() {
+		return EmailErrorAttachmentSizeLimitExceeded
+	}
+
 	// If there are attachment(s) to send, call the attachments api
 	//https://mail.zoho.com/api/accounts/<accountId>/messages/attachments
 	attachmentsList := NewJSList()
@@ -356,7 +426,10 @@ func (z Zoho) SendEmail(email Email) {
 			z.bodyBytes = x.Data()
 			z.addParam("fileName", x.Name())
 			z.addParam("isInline", "false")
-			result := z.makeAPICallJson(z.AccountId(), "messages", "attachments")
+			result, err := z.makeAPICallJson(z.AccountId(), "messages", "attachments")
+			if err != nil {
+				return err
+			}
 			attachmentsList.Add(result.GetMap("data"))
 		}
 	}
@@ -371,6 +444,7 @@ func (z Zoho) SendEmail(email Email) {
 	if attachmentsList.Length() != 0 {
 		m.Put("attachments", attachmentsList)
 	}
-	result := z.makeAPICall(z.AccountId(), "messages")
+	result, err := z.makeAPICall(z.AccountId(), "messages")
 	pr("result length:", len(result))
+	return err
 }

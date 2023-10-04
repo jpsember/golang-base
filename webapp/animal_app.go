@@ -270,5 +270,6 @@ func (oper AnimalOper) zohoExperiment() {
 
 	pr("sending:", INDENT, EmailSummary(m))
 
-	SharedZoho().SendEmail(m)
+	err := SharedZoho().SendEmail(m)
+	CheckState(err == nil)
 }
