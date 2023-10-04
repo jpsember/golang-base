@@ -78,9 +78,9 @@ func (z Zoho) RefreshToken() string {
 }
 
 func (z Zoho) AccessToken() string {
-	pr := PrIf("zoho_api;AccessToken", true)
 	c := z.config
 	if c.AccessToken() == "" || c.AccessTokenExpiryMs() < time.Now().UnixMilli() {
+		pr := PrIf("zoho_api;AccessToken", false)
 		pr("using refresh token to get fresh access token")
 		// Request a new access token using the refresh token
 		client := &http.Client{}
@@ -121,7 +121,7 @@ func (z Zoho) AccessToken() string {
 }
 
 func (z Zoho) AccountId() string {
-	pr := PrIf("AccountDetails", true)
+	pr := PrIf("AccountId", false)
 	if z.config.AccountId() == "" {
 		mp := z.makeAPICall()
 		CheckState(mp.GetList("data").Length() == 1)
@@ -152,15 +152,19 @@ func (z Zoho) flushConfig() {
 var sharedZoho Zoho
 
 func (z Zoho) Folders() map[string]string {
-	pr := PrIf("Folders", true)
 	if len(z.config.FolderMap()) == 0 {
+		pr := PrIf("Folders", false)
 		mp := z.makeAPICall(z.AccountId(), "folders")
 		pr("results:", INDENT, mp)
 
 		jl := mp.GetList("data")
 		var x = make(map[string]string)
 		for _, m := range jl.AsMaps() {
+			pr("map:", INDENT, m)
+			// The folderId are appearing as *strings* in the jsmap from zoho, but elsewhere in their
+			// API they want them sent as integers.
 			x[m.GetString("folderName")] = m.GetString("folderId")
+			//x[m.GetString("folderName")] = int64(ParseIntM(m.GetString("folderId")))
 		}
 		z.editConfig().SetFolderMap(x)
 		z.flushConfig()
@@ -174,14 +178,8 @@ func (z Zoho) makeAPICall(args ...any) JSMap {
 
 	method := http.MethodGet
 
-	b := z.bodyMap
-	z.bodyMap = nil
-	if b != nil && false {
-		// Setting method=Post seems to fail
-		method = http.MethodPost
-	}
 	pr("args:", args)
-	pr("body:", b)
+	pr("body:", z.bodyMap)
 
 	url := "https://mail.zoho.com/api/accounts"
 	for _, x := range args {
@@ -191,10 +189,15 @@ func (z Zoho) makeAPICall(args ...any) JSMap {
 	pr("url:", url)
 
 	var body io.Reader
+
+	b := z.bodyMap
+	z.bodyMap = nil
+
 	if b != nil {
-		s := strings.Builder{}
-		s.WriteString(b.CompactString())
-		body = io.NopCloser(strings.NewReader(s.String()))
+		Alert("Setting method=POST makes zoho complain")
+		method = http.MethodPost
+		pr("setting method=POST, body:", INDENT, b)
+		body = io.NopCloser(strings.NewReader(b.CompactString()))
 	}
 
 	client := &http.Client{}
@@ -207,8 +210,6 @@ func (z Zoho) makeAPICall(args ...any) JSMap {
 	responseBody := CheckOkWith(io.ReadAll(resp.Body))
 
 	pr("resp.Status:", resp.Status)
-	pr("resp.Body:", INDENT, string(responseBody))
-
 	mp := JSMapFromStringM(string(responseBody))
 	Pr(mp)
 	if mp.GetMap("status").GetInt("code") != 200 {
@@ -219,7 +220,9 @@ func (z Zoho) makeAPICall(args ...any) JSMap {
 
 func (z Zoho) body() JSMap {
 	if z.bodyMap == nil {
+		//Die("setting body map to jsmp")
 		z.bodyMap = NewJSMap()
+		Pr("init body map to empty map", Callers(0, 5))
 	}
 	return z.bodyMap
 }
@@ -227,7 +230,12 @@ func (z Zoho) body() JSMap {
 func (z Zoho) ReadInbox() JSMap {
 	pr := PrIf("ReadInbox", true)
 
-	z.body().Put("folderId", z.Folders()["Inbox"])
+	z.Folders()
+	id := z.Folders()["Inbox"]
+	z.body().Put("folderId", ParseIntM(id))
+	Alert("which of these do we want? string, or int?")
+	//z.body().Put("folderId", id)
+
 	mp := z.makeAPICall(z.AccountId(), "messages", "view")
 	Todo("How to put things in the request body?")
 
