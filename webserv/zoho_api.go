@@ -20,10 +20,13 @@ type ZohoStruct struct {
 
 type Zoho = *ZohoStruct
 
-func PrepareZoho(config ZohoConfig) {
+func PrepareZoho(config ZohoConfig) error {
 	CheckState(sharedZoho == nil)
-	sharedZoho = &ZohoStruct{}
-	sharedZoho.initConfig(config)
+	z := &ZohoStruct{}
+	z.initConfig(config)
+	z.getAccountInfo()
+	sharedZoho = z
+	return z.fatalError
 }
 
 func SharedZoho() Zoho {
@@ -127,8 +130,8 @@ func (z Zoho) AccessToken() string {
 	return c.AccessToken()
 }
 
-func (z Zoho) AccountId() string {
-	pr := PrIf("AccountId", false)
+func (z Zoho) getAccountInfo() {
+	pr := PrIf("getAccountInfo", false)
 	if z.config.AccountId() == "" || z.config.FromAddress() == "" {
 		accId := "?"
 		fromAddr := "?"
@@ -143,11 +146,13 @@ func (z Zoho) AccountId() string {
 		z.flushConfig()
 		pr("account id:", accId)
 	}
+}
+
+func (z Zoho) AccountId() string {
 	return z.config.AccountId()
 }
 
 func (z Zoho) FromAddress() string {
-	z.AccountId()
 	return z.config.FromAddress()
 }
 

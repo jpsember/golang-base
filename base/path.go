@@ -69,8 +69,7 @@ func NewPath(s string) (Path, error) {
 		return EmptyPath, Error("Path isn't clean:", Quoted(s), "; should be:", Quoted(cleaned))
 	}
 	if strings.HasPrefix(s, "..") {
-		Alert("Experimentally allowing '..' in path:", QUO, s)
-		//return EmptyPath, Error("Illegal path:", Quoted(s))
+		Alert("!Experimentally allowing '..' in path:", QUO, s)
 	}
 	return Path(s), nil
 }

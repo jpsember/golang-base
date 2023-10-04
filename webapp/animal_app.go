@@ -255,6 +255,12 @@ func LogOut(s Session) bool {
 
 func (oper AnimalOper) zohoExperiment() {
 	pr := PrIf("zohoExperiment", true)
+
+	if true {
+		pr(SharedZoho().AccountId())
+		pr(SharedZoho().ReadInbox())
+		return
+	}
 	m := webserv_data.NewEmail()
 	m.SetSubject("Sample email at " + time.Now().Format(time.DateTime))
 	m.SetBody("this is the body (or content)")
