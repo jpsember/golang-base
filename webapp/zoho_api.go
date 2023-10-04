@@ -10,9 +10,10 @@ import (
 )
 
 type ZohoStruct struct {
-	config   ZohoConfigBuilder
-	modified bool
-	bodyMap  JSMap
+	config     ZohoConfigBuilder
+	modified   bool
+	bodyMap    JSMap
+	queryParam []string
 }
 
 type Zoho = *ZohoStruct
@@ -176,6 +177,12 @@ func (z Zoho) Folders() map[string]string {
 func (z Zoho) makeAPICall(args ...any) JSMap {
 	pr := PrIf("makeAPICall", true)
 
+	// copy some fields to locals and clear them immediately, in case there is some error later
+	b := z.bodyMap
+	z.bodyMap = nil
+	p := z.queryParam
+	z.queryParam = nil
+
 	method := http.MethodGet
 
 	pr("args:", args)
@@ -190,9 +197,6 @@ func (z Zoho) makeAPICall(args ...any) JSMap {
 
 	var body io.Reader
 
-	b := z.bodyMap
-	z.bodyMap = nil
-
 	if b != nil {
 		Alert("Setting method=POST makes zoho complain")
 		method = http.MethodPost
@@ -203,6 +207,13 @@ func (z Zoho) makeAPICall(args ...any) JSMap {
 	client := &http.Client{}
 	req := CheckOkWith(http.NewRequest(method, url, body))
 	req.Header.Set("Authorization", "Zoho-oauthtoken "+z.AccessToken())
+
+	if len(p) != 0 {
+		q := req.URL.Query()
+		for i := 0; i < len(p); i += 2 {
+			q.Add(p[i], p[i+1])
+		}
+	}
 
 	resp := CheckOkWith(client.Do(req))
 
@@ -227,12 +238,17 @@ func (z Zoho) body() JSMap {
 	return z.bodyMap
 }
 
+func (z Zoho) addParam(key string, value string) {
+	z.queryParam = append(z.queryParam, []string{key, value}...)
+}
+
 func (z Zoho) ReadInbox() JSMap {
 	pr := PrIf("ReadInbox", true)
 
 	z.Folders()
 	id := z.Folders()["Inbox"]
-	z.body().Put("folderId", ParseIntM(id))
+	z.addParam("folderId", id)
+	//z.body().Put("folderId", ParseIntM(id))
 	Alert("which of these do we want? string, or int?")
 	//z.body().Put("folderId", id)
 
