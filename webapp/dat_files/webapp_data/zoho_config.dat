@@ -5,4 +5,5 @@ class {
     string access_token;
     long access_token_expiry_ms;
     string account_id;
+    map string string folder_map;
 }

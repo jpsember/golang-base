@@ -121,29 +121,13 @@ func (z Zoho) AccessToken() string {
 func (z Zoho) AccountId() string {
 	pr := PrIf("AccountDetails", true)
 	if z.config.AccountId() == "" {
-		client := &http.Client{}
-		req := CheckOkWith(http.NewRequest(http.MethodGet, "https://mail.zoho.com/api/accounts", nil))
-		req.Header.Set("Authorization", "Zoho-oauthtoken "+z.AccessToken())
-		Todo("is application/json required here?")
-		req.Header.Add("Accept", "application/json")
-
-		resp := CheckOkWith(client.Do(req))
-
-		defer resp.Body.Close()
-		responseBody := CheckOkWith(io.ReadAll(resp.Body))
-
-		pr("resp.Status:", resp.Status)
-		pr("resp.Body:", INDENT, string(responseBody))
-
-		mp := JSMapFromStringM(string(responseBody))
-		pr("results:", INDENT, mp)
-
-		CheckState(mp.GetMap("status").GetInt("code") == 200)
+		mp := z.makeAPICall()
 		CheckState(mp.GetList("data").Length() == 1)
 		data := mp.GetList("data").Get(0).AsJSMap()
 		accountId := data.GetString("accountId")
 		z.editConfig().SetAccountId(accountId)
 		z.flushConfig()
+		pr("account id:", accountId)
 	}
 	return z.config.AccountId()
 }
@@ -164,3 +148,50 @@ func (z Zoho) flushConfig() {
 }
 
 var sharedZoho Zoho
+
+func (z Zoho) Folders() map[string]string {
+	pr := PrIf("Folders", true)
+	if len(z.config.FolderMap()) == 0 {
+		mp := z.makeAPICall(z.AccountId(), "folders")
+		pr("results:", INDENT, mp)
+
+		jl := mp.GetList("data")
+		var x = make(map[string]string)
+		for _, m := range jl.AsMaps() {
+			x[m.GetString("folderName")] = m.GetString("folderId")
+		}
+		z.editConfig().SetFolderMap(x)
+		z.flushConfig()
+		pr("parsed:", INDENT, z.config.FolderMap())
+	}
+	return z.config.FolderMap()
+}
+
+func (z Zoho) makeAPICall(args ...any) JSMap {
+	pr := PrIf("makeAPICall", true)
+	pr("args:", args)
+
+	url := "https://mail.zoho.com/api/accounts"
+	for _, x := range args {
+		str := ToString(x)
+		url = url + "/" + str
+	}
+	pr("url:", url)
+	client := &http.Client{}
+	req := CheckOkWith(http.NewRequest(http.MethodGet, url, nil))
+	req.Header.Set("Authorization", "Zoho-oauthtoken "+z.AccessToken())
+
+	resp := CheckOkWith(client.Do(req))
+
+	defer resp.Body.Close()
+	responseBody := CheckOkWith(io.ReadAll(resp.Body))
+
+	pr("resp.Status:", resp.Status)
+	pr("resp.Body:", INDENT, string(responseBody))
+
+	mp := JSMapFromStringM(string(responseBody))
+	if mp.GetMap("status").GetInt("code") != 200 {
+		BadState("returned unexpected status:", INDENT, mp)
+	}
+	return mp
+}

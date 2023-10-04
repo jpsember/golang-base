@@ -120,6 +120,14 @@ func (js JSList) Get(index int) JSEntity {
 	return js.wrappedList[index]
 }
 
+func (js JSList) AsMaps() []JSMap {
+	var x []JSMap
+	for _, y := range js.wrappedList {
+		x = append(x, y.AsJSMap())
+	}
+	return x
+}
+
 func (js JSList) Length() int {
 	return len(js.wrappedList)
 }

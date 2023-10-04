@@ -265,8 +265,6 @@ func zx(s *strings.Builder, scope string, needComma bool) bool {
 
 func (oper AnimalOper) zohoExperiment() {
 	pr := PrIf("zohoExperiment", true)
-	pr("refresh token:", SharedZoho().RefreshToken())
-	pr("access token:", SharedZoho().AccessToken())
-	//SleepMs(2000)
-	pr("account id:", SharedZoho().AccountId())
+	pr("folders:")
+	pr(SharedZoho().Folders())
 }
