@@ -255,21 +255,18 @@ func LogOut(s Session) bool {
 
 func (oper AnimalOper) zohoExperiment() {
 	pr := PrIf("zohoExperiment", true)
-
-	if true {
-		SharedZoho().ReadInbox()
-		return
-	}
-
 	m := webserv_data.NewEmail()
 	m.SetSubject("Sample email at " + time.Now().Format(time.DateTime))
 	m.SetBody("this is the body (or content)")
 	m.SetToAddress("jpsember@gmail.com")
 
 	img := ProjectDirM().JoinM("webserv/resources/picture.jpg")
+	img2 := ProjectDirM().JoinM("webserv/resources/placeholder.jpg")
 
 	m.SetAttachments([]webserv_data.Attachment{
-		webserv_data.NewAttachment().SetData(img.ReadBytesM()).SetName(img.Base())})
+		webserv_data.NewAttachment().SetData(img.ReadBytesM()).SetName(img.Base()),
+		webserv_data.NewAttachment().SetData(img2.ReadBytesM()).SetName(img2.Base()),
+	})
 
 	pr("sending:", INDENT, EmailSummary(m))
 

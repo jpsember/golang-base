@@ -241,7 +241,7 @@ func (z Zoho) makeAPICall(args ...any) []byte {
 			Pr("adding query param:", queryParam[i], ":", queryParam[i+1])
 			q.Add(queryParam[i], queryParam[i+1])
 		}
-    // It seems I have to do this myself
+		// It seems I have to do this myself
 		req.URL.RawQuery = q.Encode()
 	}
 
@@ -293,9 +293,6 @@ func (z Zoho) ReadInbox() []Email {
 		var totalAttSize int
 
 		hasAttachment := x.GetString("hasAttachment") != "0"
-		if Alert("disabling attachments") {
-			hasAttachment = false
-		}
 		if hasAttachment {
 			mp2 := z.makeAPICallJson(z.AccountId(), "folders", id, "messages", msgId, "attachmentinfo")
 			pr("attachment info:", mp2)
@@ -322,9 +319,6 @@ func (z Zoho) ReadInbox() []Email {
 		}
 		em.SetAttachments(atts)
 		results = append(results, em.Build())
-	}
-	if Alert("disabled") {
-		return results
 	}
 	pr("results:", INDENT, results)
 	return results
@@ -361,6 +355,7 @@ func (z Zoho) SendEmail(email Email) {
 
 	// If there are attachment(s) to send, call the attachments api
 	//https://mail.zoho.com/api/accounts/<accountId>/messages/attachments
+	attachmentsList := NewJSList()
 	if len(email.Attachments()) != 0 {
 		for _, x := range email.Attachments() {
 			pr("uploading attachment:", x.Name(), "length:", len(x.Data()))
@@ -370,9 +365,10 @@ func (z Zoho) SendEmail(email Email) {
 
 			result := z.makeAPICallJson(z.AccountId(), "messages", "attachments")
 			Pr("result:", result)
+			attachmentsList.Add(result.GetMap("data"))
 		}
-		Halt()
 	}
+	pr("attachments list:", INDENT, attachmentsList)
 
 	m := z.body()
 	m.Put("fromAddress", fromAddr)
@@ -380,7 +376,9 @@ func (z Zoho) SendEmail(email Email) {
 	m.Put("subject", email.Subject())
 	m.Put("content", email.Body())
 	m.Put("mailFormat", "plaintext")
-
+	if attachmentsList.Length() != 0 {
+		m.Put("attachments", attachmentsList)
+	}
 	result := z.makeAPICall(z.AccountId(), "messages")
 	pr("result length:", len(result))
 }
