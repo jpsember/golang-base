@@ -82,10 +82,15 @@ func (r PageRequester) Process(s Session, path string) {
 	pr("remaining args:", remainingArgs)
 
 	s.rebuildAndDisplayNewPage(func(s2 Session) Page {
+		pr := PrIf("rebuildAndDisplayNewPage func", true)
+		pr("constructing page from template", templatePage.Name())
 		page := templatePage.ConstructPage(s, remainingArgs)
 		if page == nil {
+			pr("template returned nil")
 			page = r.DefaultPagePage(user)
+			pr("constructing default page:", page.Name())
 			page = page.ConstructPage(s, NewPageArgs(nil))
+			pr("after constructing page:", page)
 		}
 		return page
 	})

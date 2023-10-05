@@ -141,7 +141,7 @@ func (p ForgotPasswordPage) sendLinkListener(sess Session, widget Widget, arg st
 		}
 	}
 
-  Todo("html email is not rendering properly")
+	Todo("html email is not rendering properly")
 
 	var bodyText string
 	{
@@ -153,7 +153,7 @@ func (p ForgotPasswordPage) sendLinkListener(sess Session, widget Widget, arg st
 <html><head><title>Reset Password Link</title></head><body>
 Hello, ` + user.Name() + `!
 
-Click here to <a href="` + ProjStructure.BaseUrl() + `/reset_password/` + forgottenPassword.Secret() + `>Reset password</a>
+Click here to <a href="` + ProjStructure.BaseUrl() + `/resetpassword/` + forgottenPassword.Secret() + `>Reset password</a>
 
 </body>
 `)
