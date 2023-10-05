@@ -12,6 +12,8 @@ class {
     *byte password_hash;
     int password_salt;
     enum UserClass user_class;
+
+    string reset_password_secret;
 }
 
 sql { index name index email }

@@ -11,7 +11,7 @@ import (
 
 const AutoLogInName = "manager1"
 
-var DevAutoLogIn = true && Alert("!Performing auto log in with:", AutoLogInName)
+var DevAutoLogIn = false && Alert("!Performing auto log in with:", AutoLogInName)
 var DevDatabase = Alert("!Using development database")
 var DevGallery = false && Alert("Showing gallery")
 var AllowTestInputs = DevDatabase && false && Alert("!Allowing test inputs (user name, password, etc)")
@@ -37,7 +37,6 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AnimalOper) Perform(app *App) {
-
 	ClearAlertHistory(false)
 	{
 		f := NewPathM("project_structure.json")

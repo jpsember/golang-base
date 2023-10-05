@@ -161,6 +161,10 @@ func (z Zoho) editConfig() ZohoConfigBuilder {
 	return z.config
 }
 
+func (z Zoho) Config() ZohoConfig {
+	return z.config.Build()
+}
+
 func (z Zoho) flushConfig() {
 	if z.modified {
 		pr := PrIf("flushConfig", true)
@@ -440,6 +444,9 @@ func (z Zoho) SendEmail(email Email) error {
 	}
 	pr("attachments list:", INDENT, attachmentsList)
 
+	if Alert("not really sending:", INDENT, email) {
+		return nil
+	}
 	m := z.body()
 	m.Put("fromAddress", fromAddr)
 	m.Put("toAddress", email.ToAddress())
@@ -449,6 +456,7 @@ func (z Zoho) SendEmail(email Email) error {
 	if attachmentsList.Length() != 0 {
 		m.Put("attachments", attachmentsList)
 	}
+
 	result, err := z.makeAPICall(z.AccountId(), "messages")
 	pr("result length:", len(result))
 	return err

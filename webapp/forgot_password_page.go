@@ -4,6 +4,8 @@ import (
 	. "github.com/jpsember/golang-base/base"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
+	. "github.com/jpsember/golang-base/webserv/gen/webserv_data"
+	"strings"
 )
 
 // ------------------------------------------------------------------------------------
@@ -19,7 +21,6 @@ var ForgotPasswordPageTemplate = &ForgotPasswordPageStruct{}
 type ForgotPasswordPageStruct struct {
 	editor      DataEditor
 	strict      bool
-	nameWidget  Widget
 	emailWidget Widget
 }
 
@@ -92,8 +93,26 @@ func (p ForgotPasswordPage) sendLinkListener(sess Session, widget Widget, arg st
 
 	if user.Id() == 0 {
 		Alert("#50No user found for email:", emailAddr)
-	} else {
-		Todo("send an email with a reset password link")
+		sess.SetProblem(p.emailWidget, "Sorry, that email doesn't belong to any registered users.")
+		return
 	}
+	Todo("send an email with a reset password link")
+
+	var bodyText string
+	{
+		Alert("Is it safe to modify the user here?")
+		b := user.ToBuilder()
+		b.SetResetPasswordSecret(RandomSessionId())
+		user = b.Build()
+		CheckOk(UpdateUser(user))
+		s := strings.Builder{}
+		s.WriteString("Hello, " + user.Name() + "!\n")
+		s.WriteString("Click here to <a href=\"" + ProjStructure.BaseUrl() + "/reset_password/" + user.ResetPasswordSecret() + IntToString(user.Id()) + "\">Reset password</a>")
+		bodyText = s.String()
+	}
+
+	m := NewEmail().SetToAddress(user.Email()).SetSubject("Reset Password Link").SetBody(bodyText)
+	SharedEmailManager().Send(m)
+
 	sess.SwitchToPage(CheckMailPageTemplate, nil)
 }
