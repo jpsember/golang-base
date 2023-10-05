@@ -8,10 +8,11 @@ import (
 )
 
 type EmailManagerStruct struct {
-	config        ZohoConfig
-	lock          sync.Mutex
-	pendingEmails []Email
-	emailQueue    []Email
+	config           ZohoConfig
+	lock             sync.Mutex
+	pendingEmails    []Email
+	emailQueue       []Email
+	actualEmailsSent int
 }
 
 type EmailManager = *EmailManagerStruct
@@ -50,6 +51,24 @@ func (m EmailManager) backgroundIter() {
 		m.pendingEmails = nil
 		m.lock.Unlock()
 	}
+
+	// Try sending queued emails
+
+	var newQueue []Email
+	for _, email := range m.emailQueue {
+		if Alert("limiting actual emails sent") && m.actualEmailsSent >= 1 {
+			continue
+		}
+		err := webserv.SharedZoho().SendEmail(email)
+		if err != nil {
+			ReportIfError(err, "failed to send email:", INDENT, email)
+			newQueue = append(newQueue, email)
+			continue
+		}
+		m.actualEmailsSent++
+	}
+	m.emailQueue = newQueue
+
 	pr("pending emails count:", len(m.pendingEmails))
 }
 

@@ -73,6 +73,21 @@ func (p ForgotPasswordPage) validateEmail(s Session, widget InputWidget, value s
 	return ValidateEmailAddress(value, 0)
 }
 
+func (p ForgotPasswordPage) reportError(sess Session, widget Widget, err error, errorMessage ...any) bool {
+	if err == nil {
+		return false
+	}
+	msg := internalErrMsg
+	if len(errorMessage) != 0 {
+		msg = ToString(errorMessage)
+	}
+	sess.SetProblem(widget, msg)
+	return true
+}
+
+var userNotFoundError = Error("No such user")
+var internalErrMsg = "Sorry, an internal error occurred."
+
 func (p ForgotPasswordPage) sendLinkListener(sess Session, widget Widget, arg string) {
 	pr := PrIf("ForgotPasswordPage.sendLinkListener", false)
 
@@ -88,26 +103,60 @@ func (p ForgotPasswordPage) sendLinkListener(sess Session, widget Widget, arg st
 	emailAddr := sess.WidgetStringValue(p.emailWidget)
 	Todo("?Massage email address to put in lower case etc")
 
-	user, err := ReadUserWithEmail(emailAddr)
-	ReportIfError(err)
+	user, err2 := ReadUserWithEmail(emailAddr)
+	if p.reportError(sess, p.emailWidget, err2, internalErrMsg) {
+		return
+	}
 
 	if user.Id() == 0 {
-		Alert("#50No user found for email:", emailAddr)
-		sess.SetProblem(p.emailWidget, "Sorry, that email doesn't belong to any registered users.")
+		p.reportError(sess, p.emailWidget, userNotFoundError, "Sorry, that email doesn't belong to any registered users.")
 		return
 	}
 	Todo("send an email with a reset password link")
 
+	var forgottenPassword ForgottenPassword
+	{
+		var err error
+
+		var oldRecord ForgottenPassword
+		oldRecord, err = ReadForgottenPasswordWithUserId(user.Id())
+		if p.reportError(sess, p.emailWidget, err) {
+			return
+		}
+
+		Alert("!Is it safe to call delete with a zero id?")
+		if true || oldRecord.Id() != 0 {
+			DeleteForgottenPassword(oldRecord.Id())
+		}
+
+		forgottenPassword, err = CreateForgottenPasswordWithSecret(RandomSessionId())
+		if p.reportError(sess, p.emailWidget, err, p.emailWidget) {
+			return
+		}
+
+		forgottenPassword = forgottenPassword.ToBuilder().SetUserId(user.Id()).SetCreationTimeMs(CurrentTimeMs()).Build()
+		err = UpdateForgottenPassword(forgottenPassword)
+		if p.reportError(sess, p.emailWidget, err, err) {
+			return
+		}
+	}
+
+  Todo("html email is not rendering properly")
+
 	var bodyText string
 	{
-		Alert("Is it safe to modify the user here?")
-		b := user.ToBuilder()
-		b.SetResetPasswordSecret(RandomSessionId())
-		user = b.Build()
-		CheckOk(UpdateUser(user))
 		s := strings.Builder{}
-		s.WriteString("Hello, " + user.Name() + "!\n")
-		s.WriteString("Click here to <a href=\"" + ProjStructure.BaseUrl() + "/reset_password/" + user.ResetPasswordSecret() + IntToString(user.Id()) + "\">Reset password</a>")
+		//<html><head><meta charset=3D"utf-8"><title>Capital vs. labor under Biden</t=
+		//itle>
+
+		s.WriteString(`
+<html><head><title>Reset Password Link</title></head><body>
+Hello, ` + user.Name() + `!
+
+Click here to <a href="` + ProjStructure.BaseUrl() + `/reset_password/` + forgottenPassword.Secret() + `>Reset password</a>
+
+</body>
+`)
 		bodyText = s.String()
 	}
 

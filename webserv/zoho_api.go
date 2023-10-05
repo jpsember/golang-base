@@ -10,12 +10,14 @@ import (
 )
 
 type ZohoStruct struct {
-	config     ZohoConfigBuilder
-	modified   bool
-	bodyMap    JSMap
-	bodyBytes  []byte
-	queryParam []string
-	fatalError error
+	config        ZohoConfigBuilder
+	modified      bool
+	bodyMap       JSMap
+	bodyBytes     []byte
+	queryParam    []string
+	fatalError    error
+	maxEmailsSent int
+	sentCount     int
 }
 
 type Zoho = *ZohoStruct
@@ -23,6 +25,9 @@ type Zoho = *ZohoStruct
 func PrepareZoho(config ZohoConfig) error {
 	CheckState(sharedZoho == nil)
 	z := &ZohoStruct{}
+	if Alert("limiting actual emails sent") {
+		z.maxEmailsSent = 3
+	}
 	z.initConfig(config)
 	z.getAccountInfo()
 	sharedZoho = z
@@ -444,15 +449,18 @@ func (z Zoho) SendEmail(email Email) error {
 	}
 	pr("attachments list:", INDENT, attachmentsList)
 
-	if Alert("not really sending:", INDENT, email) {
+	if z.maxEmailsSent > 0 && z.sentCount >= z.maxEmailsSent {
+		Alert("#50not really sending:", INDENT, email)
 		return nil
 	}
+	z.sentCount++
+
 	m := z.body()
 	m.Put("fromAddress", fromAddr)
 	m.Put("toAddress", email.ToAddress())
 	m.Put("subject", email.Subject())
 	m.Put("content", email.Body())
-	m.Put("mailFormat", "plaintext")
+	m.Put("mailFormat", Ternary(email.Html(), "html", "plaintext"))
 	if attachmentsList.Length() != 0 {
 		m.Put("attachments", attachmentsList)
 	}

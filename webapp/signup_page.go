@@ -175,7 +175,7 @@ func (p SignUpPage) attemptCreateUniqueUser(b UserBuilder) (User, error) {
 		return nil, emailExists
 	}
 
-	user, err := CreateUserWithName(b)
+	user, err := CreateUserWithName(b.Name())
 	if err != nil {
 		return nil, err
 	}
