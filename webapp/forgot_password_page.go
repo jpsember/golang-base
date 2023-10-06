@@ -112,7 +112,6 @@ func (p ForgotPasswordPage) sendLinkListener(sess Session, widget Widget, arg st
 		p.reportError(sess, p.emailWidget, userNotFoundError, "Sorry, that email doesn't belong to any registered users.")
 		return
 	}
-	Todo("send an email with a reset password link")
 
 	var forgottenPassword ForgottenPassword
 	{
@@ -140,8 +139,6 @@ func (p ForgotPasswordPage) sendLinkListener(sess Session, widget Widget, arg st
 			return
 		}
 	}
-
-	Todo("html email is not rendering properly")
 
 	var bodyText string
 	{
