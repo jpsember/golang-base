@@ -145,8 +145,7 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 
 	// If session hasn't been prepared yet, do so.
 	if sess.PageWidget == nil {
-		pr(VERT_SP, "constructing page widget for session:", sess.SessionId)
-
+		pr("constructing page widget for session:", sess.SessionId)
 		// Open a container for the entire page
 		sess.PageWidget = sess.RebuildPageWidget()
 		j.App.PrepareSession(sess)
@@ -154,7 +153,6 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 
 	url, err := url.Parse(req.RequestURI)
 	if err == nil {
-
 		path := url.Path
 		if !strings.HasPrefix(path, "/") {
 			Alert("#50path didn't have expected prefix:", VERT_SP, Quoted(path), VERT_SP)
@@ -164,7 +162,6 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 		var text string
 		var flag bool
 
-		pr("JServer, url path:", path)
 		if path == "ajax" {
 			sess.HandleAjaxRequest()
 		} else if text, flag = TrimIfPrefix(path, `upload/`); flag {

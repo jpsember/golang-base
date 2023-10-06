@@ -111,28 +111,7 @@ func (oper AnimalOper) UserForSession(s Session) AbstractUser {
 }
 
 func (oper AnimalOper) DefaultPageForUser(abstractUser AbstractUser) Page {
-	if DevGallery {
-		return GalleryPageTemplate
-	}
-	user := abstractUser.(User)
-	userId := 0
-	if user != nil {
-		userId = user.Id()
-	}
-	var result Page
-	if userId == 0 || !IsUserLoggedIn(user.Id()) {
-		result = LandingPageTemplate
-	} else {
-		switch user.UserClass() {
-		case UserClassDonor:
-			result = FeedPageTemplate
-		case UserClassManager:
-			result = ManagerPageTemplate
-		default:
-			NotSupported("page for", user.UserClass())
-		}
-	}
-	return result
+	return DefaultPageForUser(abstractUser)
 }
 
 // JServer callback to perform any optional additional initialization for a new session.

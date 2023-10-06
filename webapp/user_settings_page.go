@@ -22,15 +22,16 @@ var UserSettingsPageTemplate = &UserSettingsPageStruct{}
 func (p UserSettingsPage) prepare(session Session) {
 	p.user = OptSessionUser(session)
 
-	// Set the editor to the current user info
+	// Set the editor to the current user info, by converting the
+	// User to json, and parsing it as a SignUpState object
 
-	m := p.user.ToJson().AsJSMap()
-	ss := DefaultSignUpState.Parse(m).(SignUpState).ToBuilder()
+	userAsJSMap := p.user.ToJson().AsJSMap()
+	signUpState := DefaultSignUpState.Parse(userAsJSMap).(SignUpState).ToBuilder()
 	if p.resetPwdFlag {
 		Todo("only clear the password if args told us to")
-		ss.SetPassword("").SetPasswordVerify("")
+		signUpState.SetPassword("").SetPasswordVerify("")
 	}
-	p.editor = NewDataEditor(ss)
+	p.editor = NewDataEditor(signUpState)
 	p.generateWidgets(session)
 }
 
@@ -137,54 +138,18 @@ func (p UserSettingsPage) okListener(s Session, widget Widget, arg string) {
 		return
 	}
 
-	Die("get existing user, and modify that")
 	// Construct a user by parsing the signupstate map
 	b := DefaultUser.Parse(p.editor.State).(User).ToBuilder()
+	pr("user:", INDENT, p.user)
+	pr("editor:", INDENT, p.editor.State)
 
 	hash, salt := HashPassword(b.Password())
 	b.SetPasswordHash(hash)
 	b.SetPasswordSalt(salt)
 
-	//ub, err := p.attemptCreateUniqueUser(b)
-	//if err != nil {
-	//	switch err {
-	//	case nameExists:
-	//		s.SetWidgetProblem(SignUpState_Name, err.Error())
-	//	case emailExists:
-	//		s.SetWidgetProblem(SignUpState_Email, err.Error())
-	//	default:
-	//		s.SetWidgetProblem(SignUpState_Name, "Sorry, an error occurred.")
-	//	}
-	//	return
-	//}
+	pr("editor parsed as user:", INDENT, b)
+	p.user = b.Build()
+	UpdateUser(p.user)
 
-	//Pr("created user:", INDENT, ub)
-
-	Todo("add support for WaitingActivation")
-	//AttemptSignIn(s, ub.Id())
+	s.SwitchToPage(DefaultPageForUser(p.user), nil)
 }
-
-//func (p UserSettingsPage) attemptCreateUniqueUser(b UserBuilder) (User, error) {
-//	CreateUserLock.Lock()
-//	defer CreateUserLock.Unlock()
-//
-//	var existing User
-//
-//	existing, _ = ReadUserWithName(b.Name())
-//	if existing.Id() != 0 {
-//		return nil, nameExists
-//	}
-//	existing, _ = ReadUserWithEmail(b.Email())
-//	if existing.Id() != 0 {
-//		return nil, emailExists
-//	}
-//
-//	user, err := CreateUserWithName(b.Name())
-//	if err != nil {
-//		return nil, err
-//	}
-//	if user.Id() == 0 {
-//		return nil, nameExists
-//	}
-//	return user, nil
-//}

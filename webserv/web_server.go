@@ -23,10 +23,10 @@ func DetermineSession(manager SessionManager, w http.ResponseWriter, req *http.R
 			session = manager.FindSession(sessionId)
 		}
 		if session != nil {
+			pr("found session:", session.SessionId)
 			break
 		}
 	}
-	pr("...done cookies")
 
 	// If no session was found, create one, and send a cookie
 	if session == nil && createIfNone {
@@ -35,8 +35,9 @@ func DetermineSession(manager SessionManager, w http.ResponseWriter, req *http.R
 			Name:   sessionCookieName,
 			Value:  session.SessionId,
 			MaxAge: 1200, // 20 minutes
+			Path:   `/`,
 		}
-		pr("creating session:", session.SessionId)
+		pr("No cookie found, so creating session:", session.SessionId)
 		http.SetCookie(w, cookie)
 	}
 	return session
