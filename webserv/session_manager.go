@@ -24,7 +24,7 @@ func RandomSessionId() string {
 	b := make([]byte, idLength)
 	CheckOkWith(io.ReadFull(rand.Reader, b))
 	result := base64.URLEncoding.EncodeToString(b)
-	Todo("what are legal characters in session id?  is base64 overkill?")
+	Todo("!what are legal characters in session id?  is base64 overkill?")
 	if debug {
 		result = strings.ToUpper(result)
 	}

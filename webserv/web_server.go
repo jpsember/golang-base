@@ -6,10 +6,12 @@ import (
 	"strings"
 )
 
+var DebugWidgetRepaint = true && Alert("DebugWidgetRepaint is in effect")
+
 // This function must be threadsafe!
 func DetermineSession(manager SessionManager, w http.ResponseWriter, req *http.Request, createIfNone bool) Session {
 
-	pr := PrIf("DetermineSession", true)
+	pr := PrIf("DetermineSession", false)
 	const sessionCookieName = "session_cookie"
 
 	// Determine what session this is, by examining cookies

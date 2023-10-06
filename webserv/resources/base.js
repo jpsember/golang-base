@@ -78,6 +78,13 @@ function processServerResponse(text) {
               warning("can't find element with id:",id);
               continue;
             }
+
+            // We would like to preserve the focus on this element, if it had it
+
+            for (let child of elem.children) {
+                 pr("child",child.id,"selectionStart:",child.selectionStart,"end:",child.selectionEnd)
+            }
+
             elem.outerHTML = markup;
         }
     }

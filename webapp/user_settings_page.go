@@ -13,6 +13,7 @@ type UserSettingsPageStruct struct {
 	strict       bool
 	user         User
 	resetPwdFlag bool
+	pwdVerify    Widget
 }
 
 type UserSettingsPage = *UserSettingsPageStruct
@@ -22,16 +23,11 @@ var UserSettingsPageTemplate = &UserSettingsPageStruct{}
 func (p UserSettingsPage) prepare(session Session) {
 	p.user = OptSessionUser(session)
 
-	// Set the editor to the current user info, by converting the
-	// User to json, and parsing it as a SignUpState object
-
-	userAsJSMap := p.user.ToJson().AsJSMap()
-	signUpState := DefaultSignUpState.Parse(userAsJSMap).(SignUpState).ToBuilder()
+	b := p.user.ToBuilder()
 	if p.resetPwdFlag {
-		Todo("only clear the password if args told us to")
-		signUpState.SetPassword("").SetPasswordVerify("")
+		b.SetPassword("")
 	}
-	p.editor = NewDataEditor(signUpState)
+	p.editor = NewDataEditor(b)
 	p.generateWidgets(session)
 }
 
@@ -62,9 +58,14 @@ func (p UserSettingsPage) generateWidgets(s Session) {
 			s.PushStateProvider(p.editor.WidgetStateProvider)
 			Todo("How do I add static text?  I.e., non-editable text field?")
 			m.Label(p.user.Name()).AddText()
-			m.Label("Password").Id(SignUpState_Password).AddPassword(p.listenerValidatePwd)
-			m.Label("Password Again").Id(SignUpState_PasswordVerify).AddPassword(p.listenerValidatePwdVerify)
-			m.Label("Email").Id(SignUpState_Email).AddInput(p.validateEmail)
+			m.Label("Password").Id(User_Password).AddPassword(p.listenerValidatePwd)
+
+			// The verify password isn't part of the User object
+			s.PushStateProvider(NewStateProvider("", NewJSMap()))
+			p.pwdVerify = m.Label("Password Again").AddPassword(p.listenerValidatePwdVerify)
+			s.PopStateProvider()
+
+			m.Label("Email").Id(User_Email).AddInput(p.validateEmail)
 			m.Size(SizeTiny).Label("We will never share your email address with anyone.").AddText()
 			s.PopStateProvider()
 		}
@@ -93,7 +94,7 @@ func (p UserSettingsPage) listenerValidatePwd(s Session, widget InputWidget, val
 		// else the most recent password value isn't the one we will read
 
 		// If this becomes a common idiom, we will add a function s.PostValidate(...)
-		s.AddPostRequestEvent(func() { s.Validate(s.Get(SignUpState_PasswordVerify)) })
+		s.AddPostRequestEvent(func() { s.Validate(p.pwdVerify) })
 	}
 	return validated, err
 }
@@ -105,7 +106,7 @@ func (p UserSettingsPage) listenerValidatePwdVerify(s Session, widget InputWidge
 	flag := p.validateFlag()
 	if flag.Has(VALIDATE_EMPTYOK) && value == "" {
 	} else {
-		value1 := p.editor.GetString(SignUpState_Password)
+		value1 := p.editor.GetString(User_Password)
 		pr("password value:", QUO, value1)
 		pr("editor state:", INDENT, p.editor.State)
 		err, value = replaceWithTestInput(err, value, "a", value1)
@@ -139,15 +140,14 @@ func (p UserSettingsPage) okListener(s Session, widget Widget, arg string) {
 	}
 
 	// Construct a user by parsing the signupstate map
-	b := DefaultUser.Parse(p.editor.State).(User).ToBuilder()
-	pr("user:", INDENT, p.user)
-	pr("editor:", INDENT, p.editor.State)
+	//b := DefaultUser.Parse(p.editor.State).(User).ToBuilder()
+	b := p.editor.Read().(User).ToBuilder()
 
 	hash, salt := HashPassword(b.Password())
 	b.SetPasswordHash(hash)
 	b.SetPasswordSalt(salt)
 
-	pr("editor parsed as user:", INDENT, b)
+	pr("updated user:", INDENT, b)
 	p.user = b.Build()
 	UpdateUser(p.user)
 

@@ -36,7 +36,10 @@ func (w BaseWidget) ClearRepaint() {
 }
 
 func (w BaseWidget) Repaint() {
-	w.setOrClearFlag(wflagRepaint, true)
+	changed := w.setOrClearFlag(wflagRepaint, true)
+	if DebugWidgetRepaint && changed {
+		Pr("Repaint:", w.Id(), INDENT, Callers(1, 3))
+	}
 }
 func (w BaseWidget) IsRepaint() bool {
 	return w.isFlag(wflagRepaint)

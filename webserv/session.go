@@ -138,7 +138,6 @@ func ParseSession(source JSEntity) Session {
 
 // Prepare for serving a client request from this session's user. Acquire a lock on this session.
 func (s Session) HandleAjaxRequest() {
-	Alert("I think the page isn't getting plotted")
 	s.parseAjaxRequest()
 	if false && Alert("dumping") {
 		Pr("Query:", INDENT, s.request.URL.Query())
@@ -279,7 +278,7 @@ func (s Session) parseAjaxRequest() {
 }
 
 func (s Session) auxHandleAjax() {
-	pr := PrIf("auxHandleAjax", true)
+	pr := PrIf("auxHandleAjax", false)
 	pr("start handling")
 
 	didSomething := false
@@ -735,6 +734,9 @@ func (s Session) Validate(widget Widget) {
 			pr("...calling low level listener with", QUO, valAsString)
 			updatedValue, err := widget.LowListener()(s, widget, valAsString)
 			pr("updated value, err:", updatedValue, err)
+			if DebugWidgetRepaint {
+				Pr("Session.Validate, widget has changed value to:", QUO, valAsString)
+			}
 			s.UpdateValueAndProblem(widget, updatedValue, err)
 		}
 	}
