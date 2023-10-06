@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-var DebugWidgetRepaint = true && Alert("DebugWidgetRepaint is in effect")
+var DebugWidgetRepaint = false && Alert("DebugWidgetRepaint is in effect")
 
 // This function must be threadsafe!
 func DetermineSession(manager SessionManager, w http.ResponseWriter, req *http.Request, createIfNone bool) Session {

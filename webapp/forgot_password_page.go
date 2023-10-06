@@ -150,17 +150,23 @@ func (p ForgotPasswordPage) sendLinkListener(sess Session, widget Widget, arg st
 		//itle>
 
 		s.WriteString(`
-<html><head><title>Reset Password Link</title></head><body>
+<html>
+<body>
+<p>
 Hello, ` + user.Name() + `!
+</p>
 
-Click here to <a href="` + ProjStructure.BaseUrl() + `/resetpassword/` + forgottenPassword.Secret() + `>Reset password</a>
+<p>
+Click here to <a href="` + ProjStructure.BaseUrl() + `/resetpassword/` + forgottenPassword.Secret() + `">reset your password</a>.
+</p>
 
 </body>
+</html>
 `)
 		bodyText = s.String()
 	}
 
-	m := NewEmail().SetToAddress(user.Email()).SetSubject("Reset Password Link").SetBody(bodyText)
+	m := NewEmail().SetToAddress(user.Email()).SetHtml(true).SetSubject("Reset Password Link").SetBody(bodyText)
 	SharedEmailManager().Send(m)
 
 	sess.SwitchToPage(CheckMailPageTemplate, nil)
