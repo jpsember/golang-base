@@ -89,14 +89,12 @@ function processServerResponse(text) {
         // Now that we've rendered the requested elements, restore the focus (if that element still exists)
         // TODO: restore the select range as well
         const f = id_with_focus;
-        if (f != null) {
+        if (f != null && f.url == window.location.href) {
             db("attempting to restore focus to:",f)
             const elem = document.getElementById(f.id)
             if (elem != null) {
                 db("found element")
                 elem.focus()
-                // The selection range doesn't do much
-                elem.setSelectionRange(f.selectionStart,f.selectionEnd)
             }
         }
     }
@@ -148,7 +146,7 @@ function jsFocus(id) {
     id_with_focus = null;
     const x = document.getElementById(id);
     if (x != null) {
-        id_with_focus = {id:id, selectionStart:x.selectionStart, selectionEnd:x.selectionEnd};
+        id_with_focus = {id:id, url:window.location.href};
         db("updated id_with_focus to:",id_with_focus)
     }
 }
