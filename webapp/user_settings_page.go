@@ -56,22 +56,28 @@ func (p UserSettingsPage) generateWidgets(s Session) {
 		m.Col(12)
 		{
 			s.PushStateProvider(p.editor.WidgetStateProvider)
-			Todo("How do I add static text?  I.e., non-editable text field?")
+			Todo("?How do I add static text?  I.e., non-editable text field?")
 			m.Label(p.user.Name()).AddText()
 			m.Label("Password").Id(User_Password).AddPassword(p.listenerValidatePwd)
 
 			// The verify password isn't part of the User object
 			s.PushStateProvider(NewStateProvider("", NewJSMap()))
-			p.pwdVerify = m.Label("Password Again").AddPassword(p.listenerValidatePwdVerify)
+			// We supply a specific id just for ease of debugging
+			p.pwdVerify = m.Label("Password Again").Id("pwd_verify").AddPassword(p.listenerValidatePwdVerify)
 			s.PopStateProvider()
 
-			m.Label("Email").Id(User_Email).AddInput(p.validateEmail)
-			m.Size(SizeTiny).Label("We will never share your email address with anyone.").AddText()
+      // Removing some elements to concentrate on the problem
+			if false {
+				m.Label("Email").Id(User_Email).AddInput(p.validateEmail)
+				m.Size(SizeTiny).Label("We will never share your email address with anyone.").AddText()
+			}
 			s.PopStateProvider()
 		}
 		m.Col(6)
 		m.AddSpace()
-		m.Label("Ok").AddButton(p.okListener)
+		if false {
+			m.Label("Ok").AddButton(p.okListener)
+		}
 	}
 	m.Close()
 

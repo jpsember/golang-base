@@ -4,6 +4,8 @@ const request_key_info = 'i'
 
 const _db = true && warning("db is true")
 
+let id_with_focus = ""
+
 function pr() {
     const args = arguments
     let s = ""
@@ -81,11 +83,18 @@ function processServerResponse(text) {
 
             // We would like to preserve the focus on this element, if it had it
 
-            for (let child of elem.children) {
-                 pr("child",child.id,"selectionStart:",child.selectionStart,"end:",child.selectionEnd)
-            }
-
             elem.outerHTML = markup;
+        }
+
+        // Now that we've rendered the requested elements, restore the focus (if that element still exists)
+        // TODO: restore the select range as well
+        if (id_with_focus != "") {
+            db("attempting to restore focus to:",id_with_focus)
+            const elem = document.getElementById(id_with_focus)
+            if (elem != null) {
+                db("found element")
+                elem.focus()
+            }
         }
     }
 
@@ -107,17 +116,20 @@ function makeAjaxCall(...args) {
     const xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function () {
         if (this.readyState == 4 && this.status == 200) {
+            db("processServerResponse")
             processServerResponse(this.responseText)
         }
     };
+    db("makeAjaxCall",args)
     xhttp.open('GET', url);
     xhttp.send();
 }
 
-// An onChange event has occurred within an input field;
+// An onchange event has occurred within an input field;
 // send widget id and value back to server; process response
 function jsVal(id) {
     db("jsVal",id)
+
     // see https://tobiasahlin.com/blog/move-from-jquery-to-vanilla-javascript
     // to add back in some useful jquery functions
     // The Widget id has id "<id>"
@@ -125,6 +137,12 @@ function jsVal(id) {
     const auxId = id + '.aux'
     const x = document.getElementById(auxId);
     makeAjaxCall(request_key_widget,id,request_key_value,x.value)
+}
+
+// An onfocus event has occurred within an input field
+function jsFocus(id) {
+    db("jsFocus",id)
+    id_with_focus = id
 }
 
 // An onchange event has occurred within a file upload.

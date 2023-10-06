@@ -83,7 +83,11 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	m.A(`" type=`, QUO, Ternary(w.Password, "password", "text"), ` id="`, auxId, `" value="`)
 	m.A(ESCAPED, s.WidgetStringValue(w))
-	m.A(`" onchange="jsVal('`, id, `')"`).TgClose()
+
+	m.A(`" onchange="jsVal('`, id, `')"`)
+  // Set this id as the element that has the focus.  Note we are using auxId, for the actual <input> element, not its containing widget <div>
+	m.A(` onfocus="jsFocus('`, auxId, `')"`)
+	m.TgClose()
 
 	if hasProblem {
 		m.Comment("Problem")
