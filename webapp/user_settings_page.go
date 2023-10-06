@@ -9,36 +9,43 @@ import (
 // There are a lot of common elements with this page and the create_user page.
 
 type UserSettingsPageStruct struct {
-	editor DataEditor
-	strict bool
-	user   User
+	editor       DataEditor
+	strict       bool
+	user         User
+	resetPwdFlag bool
 }
 
 type UserSettingsPage = *UserSettingsPageStruct
 
 var UserSettingsPageTemplate = &UserSettingsPageStruct{}
 
-func newUserSettingsPage(session Session) UserSettingsPage {
-	t := &UserSettingsPageStruct{}
-	t.user = OptSessionUser(session)
+func (p UserSettingsPage) prepare(session Session) {
+	p.user = OptSessionUser(session)
 
 	// Set the editor to the current user info
 
-	m := t.user.ToJson().AsJSMap()
+	m := p.user.ToJson().AsJSMap()
 	ss := DefaultSignUpState.Parse(m).(SignUpState).ToBuilder()
-	Todo("only clear the password if args told us to")
-	ss.SetPassword("").SetPasswordVerify("")
-	t.editor = NewDataEditor(ss)
-
-	t.generateWidgets(session)
-	return t
+	if p.resetPwdFlag {
+		Todo("only clear the password if args told us to")
+		ss.SetPassword("").SetPasswordVerify("")
+	}
+	p.editor = NewDataEditor(ss)
+	p.generateWidgets(session)
 }
 
-func (p UserSettingsPage) Name() string   { return "usersettings" }
+func (p UserSettingsPage) Name() string { return "usersettings" }
+
 func (p UserSettingsPage) Args() []string { return nil }
+
 func (p UserSettingsPage) ConstructPage(s Session, args PageArgs) Page {
+	pr := PrIf("user_settings, ConstructPage", true)
+	pr("args:", args)
+	t := &UserSettingsPageStruct{}
+	t.resetPwdFlag = args.ReadIf("resetpwd")
 	if args.CheckDone() {
-		return newUserSettingsPage(s)
+		t.prepare(s)
+		return t
 	}
 	return nil
 }
@@ -47,23 +54,25 @@ func (p UserSettingsPage) generateWidgets(s Session) {
 	m := GenerateHeader(s, p)
 	m.Label("Sign Up Page").Size(SizeLarge).AddHeading()
 
-	s.PushStateProvider(p.editor.WidgetStateProvider)
 	m.Col(6).Open()
 	{
 		m.Col(12)
-		Todo("How do I add static text?  I.e., non-editable text field?")
-		m.Label(p.user.Name()).AddText()
-		m.Label("Password").Id(SignUpState_Password).AddPassword(p.listenerValidatePwd)
-		m.Label("Password Again").Id(SignUpState_PasswordVerify).AddPassword(p.listenerValidatePwdVerify)
-		m.Label("Email").Id(SignUpState_Email).AddInput(p.validateEmail)
-		m.Size(SizeTiny).Label("We will never share your email address with anyone.").AddText()
+		{
+			s.PushStateProvider(p.editor.WidgetStateProvider)
+			Todo("How do I add static text?  I.e., non-editable text field?")
+			m.Label(p.user.Name()).AddText()
+			m.Label("Password").Id(SignUpState_Password).AddPassword(p.listenerValidatePwd)
+			m.Label("Password Again").Id(SignUpState_PasswordVerify).AddPassword(p.listenerValidatePwdVerify)
+			m.Label("Email").Id(SignUpState_Email).AddInput(p.validateEmail)
+			m.Size(SizeTiny).Label("We will never share your email address with anyone.").AddText()
+			s.PopStateProvider()
+		}
 		m.Col(6)
 		m.AddSpace()
 		m.Label("Ok").AddButton(p.okListener)
 	}
 	m.Close()
 
-	s.PopStateProvider()
 }
 
 // ------------------------------------------------------------------------------------

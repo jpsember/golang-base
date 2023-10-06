@@ -19,6 +19,7 @@ var ResetPasswordPageTemplate = &ResetPasswordPageStruct{}
 // ------------------------------------------------------------------------------------
 
 type ResetPasswordPageStruct struct {
+	alert AlertWidget
 }
 
 type ResetPasswordPage = *ResetPasswordPageStruct
@@ -28,8 +29,10 @@ func (p ResetPasswordPage) Name() string {
 }
 
 func (p ResetPasswordPage) ConstructPage(s Session, args PageArgs) Page {
-	pr := PrIf("ConstructPage", true)
+	pr := PrIf("ResetPasswordPage.ConstructPage", true)
 	pr("args:", args)
+
+	Todo("!Have an alert page that returns to sign in, or home page")
 
 	if args.Done() {
 		return nil
@@ -56,8 +59,7 @@ func (p ResetPasswordPage) ConstructPage(s Session, args PageArgs) Page {
 		return nil
 	}
 
-	Todo("Include an argument to clear the password")
-	page := UserSettingsPageTemplate.ConstructPage(s, NewPageArgs(nil))
+	page := UserSettingsPageTemplate.ConstructPage(s, PageArgsWith("resetpwd"))
 	CheckState(page != nil)
 	return page
 }
@@ -65,25 +67,17 @@ func (p ResetPasswordPage) ConstructPage(s Session, args PageArgs) Page {
 func (p ResetPasswordPage) Args() []string { return nil }
 
 func (p ResetPasswordPage) generateWidgets(s Session) {
-	//m := GenerateHeader(s, p)
-	//AddUserHeaderWidget(s)
-	//
-	//m.Open()
-	//{
-	//	m.Col(12)
-	//	p.emailWidget = m.Label("Email").Id(SignUpState_Email).AddInput(p.validateEmail)
-	//}
-	//m.Close()
-	//m.Open()
-	//{
-	//	m.Label("Send Change Password Link").AddButton(p.sendLinkListener)
-	//}
-	//m.Close()
-}
+	m := GenerateHeader(s, p)
 
-//func (p ResetPasswordPage) validateEmail(s Session, widget InputWidget, value string) (string, error) {
-//	return ValidateEmailAddress(value, 0)
-//}
+	m.Open()
+
+	Todo("Have widgetManager support for Alerts")
+	p.alert = NewAlertWidget("info", AlertInfo)
+	//alertWidget.SetVisible(false)
+	m.Add(alertWidget)
+
+	m.Close()
+}
 
 func (p ResetPasswordPage) reportError(sess Session, widget Widget, err error, errorMessage ...any) bool {
 	if err == nil {
@@ -96,84 +90,3 @@ func (p ResetPasswordPage) reportError(sess Session, widget Widget, err error, e
 	sess.SetProblem(widget, msg)
 	return true
 }
-
-//var userNotFoundError = Error("No such user")
-//var internalErrMsg = "Sorry, an internal error occurred."
-//
-//func (p ResetPasswordPage) sendLinkListener(sess Session, widget Widget, arg string) {
-//	pr := PrIf("ResetPasswordPage.sendLinkListener", false)
-//
-//	p.strict = true
-//	errcount := sess.ValidateAndCountErrors(sess.PageWidget)
-//	p.strict = false
-//
-//	pr("error count:", errcount)
-//	if errcount != 0 {
-//		return
-//	}
-//
-//	emailAddr := sess.WidgetStringValue(p.emailWidget)
-//	Todo("?Massage email address to put in lower case etc")
-//
-//	user, err2 := ReadUserWithEmail(emailAddr)
-//	if p.reportError(sess, p.emailWidget, err2, internalErrMsg) {
-//		return
-//	}
-//
-//	if user.Id() == 0 {
-//		p.reportError(sess, p.emailWidget, userNotFoundError, "Sorry, that email doesn't belong to any registered users.")
-//		return
-//	}
-//	Todo("send an email with a reset password link")
-//
-//	var forgottenPassword ForgottenPassword
-//	{
-//		var err error
-//
-//		var oldRecord ForgottenPassword
-//		oldRecord, err = ReadForgottenPasswordWithUserId(user.Id())
-//		if p.reportError(sess, p.emailWidget, err) {
-//			return
-//		}
-//
-//		Alert("!Is it safe to call delete with a zero id?")
-//		if true || oldRecord.Id() != 0 {
-//			DeleteForgottenPassword(oldRecord.Id())
-//		}
-//
-//		forgottenPassword, err = CreateForgottenPasswordWithSecret(RandomSessionId())
-//		if p.reportError(sess, p.emailWidget, err, p.emailWidget) {
-//			return
-//		}
-//
-//		forgottenPassword = forgottenPassword.ToBuilder().SetUserId(user.Id()).SetCreationTimeMs(CurrentTimeMs()).Build()
-//		err = UpdateForgottenPassword(forgottenPassword)
-//		if p.reportError(sess, p.emailWidget, err, err) {
-//			return
-//		}
-//	}
-//
-//	Todo("html email is not rendering properly")
-//
-//	var bodyText string
-//	{
-//		s := strings.Builder{}
-//		//<html><head><meta charset=3D"utf-8"><title>Capital vs. labor under Biden</t=
-//		//itle>
-//
-//		s.WriteString(`
-//<html><head><title>Reset Password Link</title></head><body>
-//Hello, ` + user.Name() + `!
-//
-//Click here to <a href="` + ProjStructure.BaseUrl() + `/reset_password/` + forgottenPassword.Secret() + `>Reset password</a>
-//
-//</body>
-//`)
-//		bodyText = s.String()
-//	}
-//
-//	m := NewEmail().SetToAddress(user.Email()).SetSubject("Reset Password Link").SetBody(bodyText)
-//	SharedEmailManager().Send(m)
-//
-//	sess.SwitchToPage(CheckMailPageTemplate, nil)
-//}

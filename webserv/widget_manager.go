@@ -58,6 +58,7 @@ func (m WidgetManager) Get(id string) Widget {
 // ------------------------------------------------------------------------------------
 
 func (m WidgetManager) Id(id string) WidgetManager {
+	Todo("!this name conflicts with Session.SessionId")
 	v := m.IdPrefix() + id
 	AssertNoDots(v)
 	m.pendingId = v

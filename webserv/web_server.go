@@ -9,12 +9,15 @@ import (
 // This function must be threadsafe!
 func DetermineSession(manager SessionManager, w http.ResponseWriter, req *http.Request, createIfNone bool) Session {
 
+	pr := PrIf("DetermineSession", true)
 	const sessionCookieName = "session_cookie"
 
 	// Determine what session this is, by examining cookies
 	var session Session
 	cookies := req.Cookies()
+	pr("getting cookies for request:", req.URL)
 	for _, c := range cookies {
+		pr("cookie:", c.Name, "value:", c.Value)
 		if c.Name == sessionCookieName {
 			sessionId := c.Value
 			session = manager.FindSession(sessionId)
@@ -23,6 +26,7 @@ func DetermineSession(manager SessionManager, w http.ResponseWriter, req *http.R
 			break
 		}
 	}
+	pr("...done cookies")
 
 	// If no session was found, create one, and send a cookie
 	if session == nil && createIfNone {
@@ -32,6 +36,7 @@ func DetermineSession(manager SessionManager, w http.ResponseWriter, req *http.R
 			Value:  session.SessionId,
 			MaxAge: 1200, // 20 minutes
 		}
+		pr("creating session:", session.SessionId)
 		http.SetCookie(w, cookie)
 	}
 	return session

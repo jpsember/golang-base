@@ -130,6 +130,7 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 	pr := PrIf("JServer.handle", true)
 	pr("JServer handler, request:", req.RequestURI)
 
+	Todo("?Maybe don't construct a session for *every* request")
 	// We don't know what the session is yet, so we don't have a lock on it...
 	sess := DetermineSession(j.SessionManager, w, req, true)
 	// It seems awkward to initialize this at session construction time, so set it here...
@@ -140,11 +141,11 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 	defer sess.ReleaseLockAndDiscardRequest()
 
 	sess.PrepareForHandlingRequest(w, req)
-	pr("session id:", sess.Id, "page widget:", sess.PageWidget)
+	pr("session id:", sess.SessionId, "page widget:", sess.PageWidget)
 
 	// If session hasn't been prepared yet, do so.
 	if sess.PageWidget == nil {
-		pr(VERT_SP, "constructing page widget")
+		pr(VERT_SP, "constructing page widget for session:", sess.SessionId)
 
 		// Open a container for the entire page
 		sess.PageWidget = sess.RebuildPageWidget()

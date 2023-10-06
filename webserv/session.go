@@ -138,12 +138,15 @@ func ParseSession(source JSEntity) Session {
 
 // Prepare for serving a client request from this session's user. Acquire a lock on this session.
 func (s Session) HandleAjaxRequest() {
+	Alert("I think the page isn't getting plotted")
+	Pr(VERT_SP, "handleAjaxStart")
 	s.parseAjaxRequest()
 	if false && Alert("dumping") {
 		Pr("Query:", INDENT, s.request.URL.Query())
 	}
 	s.auxHandleAjax()
 	s.sendAjaxResponse()
+	Pr("handleAjaxEnd", VERT_SP)
 }
 
 func (s Session) HandleUploadRequest(widgetId string) {
@@ -278,7 +281,7 @@ func (s Session) parseAjaxRequest() {
 }
 
 func (s Session) auxHandleAjax() {
-	pr := PrIf("auxHandleAjax", false)
+	pr := PrIf("auxHandleAjax", true)
 	pr(VERT_SP, "Session.auxHandleAjax")
 
 	didSomething := false
@@ -313,7 +316,9 @@ func (s Session) auxHandleAjax() {
 
 	widget := s.Opt(id)
 	if widget == nil {
-		pr("no widget with id", Quoted(id), "found to handle value", Quoted(widgetValueExpr))
+		Pr("no widget with id", Quoted(id), "found to handle value", Quoted(widgetValueExpr))
+		Pr("state provider:", s.stateProvider)
+		Pr("widget map:", INDENT, s.widgetMap)
 		return
 	}
 	pr("found widget with id:", id, "and type:", TypeOf(widget))

@@ -82,7 +82,7 @@ func (r PageRequester) Process(s Session, path string) {
 	pr("remaining args:", remainingArgs)
 
 	s.rebuildAndDisplayNewPage(func(s2 Session) Page {
-		pr := PrIf("rebuildAndDisplayNewPage func", true)
+		pr := PrIf("rebuildAndDisplayNewPage func", false)
 		pr("constructing page from template", templatePage.Name())
 		page := templatePage.ConstructPage(s, remainingArgs)
 		if page == nil {

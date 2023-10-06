@@ -17,6 +17,8 @@ func PageArgsWith(args ...any) PageArgs {
 	for _, a := range args {
 		var s string
 		switch t := a.(type) {
+		case string:
+			s = t
 		case int:
 			s = IntToString(t)
 		}
@@ -47,14 +49,17 @@ func (p PageArgs) Done() bool {
 }
 
 func (p PageArgs) Next() string {
+	value := p.Peek()
+	if value != "" {
+		p.cursor++
+	}
+	return value
+}
+
+func (p PageArgs) Peek() string {
 	var result string
-	if !p.Problem() {
-		if p.Done() {
-			p.SetProblem()
-		} else {
-			result = p.args[p.cursor]
-			p.cursor++
-		}
+	if !p.Problem() && !p.Done() {
+		return p.args[p.cursor]
 	}
 	return result
 }
@@ -62,6 +67,7 @@ func (p PageArgs) Next() string {
 func (p PageArgs) Problem() bool {
 	return p.problem
 }
+
 func (p PageArgs) SetProblem() {
 	p.problem = true
 }
@@ -88,4 +94,12 @@ func (p PageArgs) PositiveInt() int {
 		p.SetProblem()
 	}
 	return result
+}
+
+func (p PageArgs) ReadIf(value string) bool {
+	if p.Peek() == value {
+		p.Next()
+		return true
+	}
+	return false
 }
