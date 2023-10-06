@@ -4,7 +4,7 @@ const request_key_info = 'i'
 
 const _db = true && warning("db is true")
 
-let id_with_focus = ""
+let id_with_focus = null;
 
 function pr() {
     const args = arguments
@@ -88,12 +88,15 @@ function processServerResponse(text) {
 
         // Now that we've rendered the requested elements, restore the focus (if that element still exists)
         // TODO: restore the select range as well
-        if (id_with_focus != "") {
-            db("attempting to restore focus to:",id_with_focus)
-            const elem = document.getElementById(id_with_focus)
+        const f = id_with_focus;
+        if (f != null) {
+            db("attempting to restore focus to:",f)
+            const elem = document.getElementById(f.id)
             if (elem != null) {
                 db("found element")
                 elem.focus()
+                // The selection range doesn't do much
+                elem.setSelectionRange(f.selectionStart,f.selectionEnd)
             }
         }
     }
@@ -142,7 +145,12 @@ function jsVal(id) {
 // An onfocus event has occurred within an input field
 function jsFocus(id) {
     db("jsFocus",id)
-    id_with_focus = id
+    id_with_focus = null;
+    const x = document.getElementById(id);
+    if (x != null) {
+        id_with_focus = {id:id, selectionStart:x.selectionStart, selectionEnd:x.selectionEnd};
+        db("updated id_with_focus to:",id_with_focus)
+    }
 }
 
 // An onchange event has occurred within a file upload.
