@@ -130,7 +130,6 @@ function makeAjaxCall(...args) {
 // send widget id and value back to server; process response
 function jsVal(id) {
     db("jsVal",id)
-
     // see https://tobiasahlin.com/blog/move-from-jquery-to-vanilla-javascript
     // to add back in some useful jquery functions
     // The Widget id has id "<id>"
