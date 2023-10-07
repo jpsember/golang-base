@@ -45,11 +45,11 @@ func HomeDirM() Path {
 
 func TempFile(prefix string) (Path, error) {
 	if prefix == "" {
-		prefix = "jefftemp_*"
+		prefix = "jefftemp_"
 	}
 	path := EmptyPath
 	f, err := os.CreateTemp("", prefix)
-	if err != nil {
+	if err == nil {
 		path, err = NewPath(f.Name())
 	}
 	return path, err
@@ -272,10 +272,11 @@ func (path Path) NonEmpty() bool {
 	return !path.Empty()
 }
 
-func (path Path) EnsureExists(message ...any) {
+func (path Path) EnsureExists(message ...any) Path {
 	if !path.Exists() {
 		BadArg(JoinLists([]any{"File doesn't exist:", path, ";"}, message))
 	}
+	return path
 }
 
 func (path Path) IsAbs() bool {
