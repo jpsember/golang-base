@@ -587,11 +587,15 @@ func processAlertForMultipleSessions(info alertInfo) bool {
 }
 
 func CurrentTimeMs() int64 {
-	return time.Now().Unix()
+	return time.Now().UnixMilli()
 }
 
 func SleepMs(ms int) {
-	time.Sleep(time.Millisecond * time.Duration(ms))
+	time.Sleep(MsToDuration(ms))
+}
+
+func MsToDuration(ms int) time.Duration {
+	return time.Duration(ms) * time.Millisecond
 }
 
 // Convert an array of a particular type to an array of any.
@@ -1086,3 +1090,10 @@ func trunc(x string) string {
 	}
 	return x
 }
+
+const (
+	JMs   = 1
+	JSec  = JMs * 1000
+	JMin  = JSec * 60
+	JHour = JMin * 60
+)

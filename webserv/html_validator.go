@@ -26,6 +26,7 @@ type HTMLValidatorStruct struct {
 	cacheResults  JSMap
 	cachePath     Path
 	lock          sync.RWMutex
+	modified      bool
 }
 
 type HTMLValidator = *HTMLValidatorStruct
@@ -38,6 +39,7 @@ func SharedHTMLValidator() HTMLValidator {
 			validatorPath: ProjectDirM().JoinM("validator/vnu.jar").EnsureExists(),
 			cachePath:     ProjectDirM().JoinM("validator/cached_results.json"),
 		}
+		SharedBackgroundTaskManager().Add("html_validator", JSec*1, sharedHTMLValidator.flushResults)
 	}
 	return sharedHTMLValidator
 }
@@ -56,7 +58,7 @@ func (h HTMLValidator) Validate(content string) (JSMap, error) {
 }
 func (h HTMLValidator) auxValidate(content string, useCache bool) (JSMap, error) {
 
-	pr := PrIf("HTMLValidator.Validate", true)
+	pr := PrIf("HTMLValidator.Validate", false)
 
 	var cache JSMap
 	key := ""
@@ -115,12 +117,7 @@ func (h HTMLValidator) auxValidate(content string, useCache bool) (JSMap, error)
 		h.lock.Lock()
 		cache.Put(key, results)
 		pr("storing results in cache:", key)
-		h.lock.Unlock()
-
-		// Save results every so often
-		Todo("!save results infrequently")
-		h.lock.Lock()
-		h.cachePath.WriteStringM(h.cacheResults.CompactString())
+		h.modified = true
 		h.lock.Unlock()
 	}
 
@@ -134,4 +131,17 @@ func (h HTMLValidator) cachedResults() JSMap {
 		h.lock.Unlock()
 	}
 	return h.cacheResults
+}
+
+func (h HTMLValidator) flushResults() {
+	pr := PrIf("HTMLValidator.flushResults", true)
+	if !h.modified {
+		return
+	}
+	pr("modified:", h.modified)
+	h.lock.Lock()
+	defer h.lock.Unlock()
+	h.cachePath.WriteStringM(h.cacheResults.CompactString())
+	pr("...wrote results", INDENT, h.cacheResults)
+	h.modified = false
 }

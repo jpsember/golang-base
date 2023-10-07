@@ -37,6 +37,8 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AnimalOper) Perform(app *App) {
+	SharedBackgroundTaskManager().Start()
+
 	ClearAlertHistory(false)
 	{
 		f := NewPathM("project_structure.json")

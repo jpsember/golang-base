@@ -147,6 +147,7 @@ func (a *App) Start() {
 }
 
 func (a *App) auxStart() {
+	defer SharedBackgroundTaskManager().Stop()
 	args := os.Args[1:]
 
 	if a.testArgs != nil {
