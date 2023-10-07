@@ -38,6 +38,7 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 
 func (oper AnimalOper) Perform(app *App) {
 	SharedBackgroundTaskManager().Start()
+	//SharedHTMLValidator().DiscardCache()
 
 	ClearAlertHistory(false)
 	{

@@ -27,6 +27,7 @@ type HTMLValidatorStruct struct {
 	cachePath     Path
 	lock          sync.RWMutex
 	modified      bool
+	discardCache  bool
 }
 
 type HTMLValidator = *HTMLValidatorStruct
@@ -42,6 +43,15 @@ func SharedHTMLValidator() HTMLValidator {
 		SharedBackgroundTaskManager().Add("html_validator", JSec*1, sharedHTMLValidator.flushResults)
 	}
 	return sharedHTMLValidator
+}
+
+func (h HTMLValidator) DiscardCache() HTMLValidator {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+	h.cachePath.DeleteFileM()
+	h.cacheResults = NewJSMap()
+	h.modified = true
+	return h
 }
 
 func HashOfString(s string) int {
@@ -103,7 +113,6 @@ func (h HTMLValidator) auxValidate(content string, useCache bool) (JSMap, error)
 		defer tempFile.DeleteFileM()
 	}
 	tempFile.WriteStringM(content)
-	Todo("have it return just a jsmap")
 	output, err := MakeSysCall("java", "-jar", h.validatorPath.String(), "--stdout", "--asciiquotes", "--no-langdetect", "--format", "json", tempFile.String())
 
 	results := JSMapFromStringM(output)
@@ -134,7 +143,7 @@ func (h HTMLValidator) cachedResults() JSMap {
 }
 
 func (h HTMLValidator) flushResults() {
-	pr := PrIf("HTMLValidator.flushResults", true)
+	pr := PrIf("HTMLValidator.flushResults", false)
 	if !h.modified {
 		return
 	}

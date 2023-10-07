@@ -133,7 +133,7 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 		}
 
 		m.Comment("animal image")
-		m.A(`<img src="`, imgUrl, `" `, clickArg)
+		m.A(`<img src="`, imgUrl, `" alt="animal image" `, clickArg)
 
 		PlotImageSizeMarkup(s, m, IPointZero) //AnimalPicSizeNormal.ScaledBy(0.4))
 
@@ -143,7 +143,8 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 		m.Comments("title and summary")
 		m.TgOpen(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`).TgContent()
 		{
-			m.TgOpen(`h6 class="card-title"`).TgContent()
+			Todo("This used to be h6, but due to validation problem, changed to div:")
+			m.TgOpen(`div class="card-title"`).TgContent()
 			{
 				// Render the name as the first child
 				RenderWidget(w.children[ci], s, m)
@@ -152,7 +153,8 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 			m.TgClose()
 
 			// Render the second child
-			m.TgOpen(`p class="card-text"`).Style(`font-size:75%;`).TgContent()
+      Alert("this used to be a <p>, but to fix validation is now <div>")
+			m.TgOpen(`div class="card-text"`).Style(`font-size:75%;`).TgContent()
 			{
 				RenderWidget(w.children[ci], s, m)
 				ci++

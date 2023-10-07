@@ -12,6 +12,7 @@ import (
 
 var dbPr = PrIf("", false)
 
+var ValidateWidgetMarkup = true && Alert("ValidateWidgetMarkup is true")
 var loggedInUsersSet = NewSet[int]()
 var loggedInUsersSetLock sync.RWMutex
 
@@ -378,7 +379,16 @@ func (s Session) processRepaintFlags(w Widget) {
 	if w.IsRepaint() {
 		m := NewMarkupBuilder()
 		RenderWidget(w, s, m)
-		s.repaintWidgetMarkupMap.Put(w.Id(), m.String())
+		content := m.String()
+		if ValidateWidgetMarkup {
+			mp, err := SharedHTMLValidator().Validate(content)
+			if err != nil {
+				Pr(VERT_SP, "Markup failed validation:", INDENT, content)
+				Pr(mp)
+				BadState("failed validation")
+			}
+		}
+		s.repaintWidgetMarkupMap.Put(w.Id(), content)
 		w.ClearRepaint()
 	} else {
 		for _, c := range w.Children() {

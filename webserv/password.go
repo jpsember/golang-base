@@ -63,7 +63,7 @@ func HashPasswordWithSalt(password string, salt int) []byte {
 }
 
 func VerifyPassword(salt int, validHash []byte, password string) bool {
-	active := true
+	active := false
 	pr := PrIf("VerifyPassword", active)
 
 	if !isPwdLegalLength([]byte(password)) {
