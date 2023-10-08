@@ -27,7 +27,6 @@ type HTMLValidatorStruct struct {
 	cachePath     Path
 	lock          sync.RWMutex
 	modified      bool
-	discardCache  bool
 }
 
 type HTMLValidator = *HTMLValidatorStruct
@@ -45,20 +44,12 @@ func SharedHTMLValidator() HTMLValidator {
 	return sharedHTMLValidator
 }
 
-func (h HTMLValidator) DiscardCache() HTMLValidator {
-	h.lock.Lock()
-	defer h.lock.Unlock()
-	h.cachePath.DeleteFileM()
-	h.cacheResults = NewJSMap()
-	h.modified = true
-	return h
-}
-
 func HashOfString(s string) int {
 	h := fnv.New32a()
 	h.Write([]byte(s))
 	return int(h.Sum32() & 0xffffffff)
 }
+
 func (h HTMLValidator) ValidateWithoutCache(content string) (JSMap, error) {
 	return h.auxValidate(content, false)
 }
