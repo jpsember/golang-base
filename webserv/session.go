@@ -12,56 +12,7 @@ import (
 
 var dbPr = PrIf("", false)
 
-var ValidateWidgetMarkup = true && Alert("ValidateWidgetMarkup is true")
-var loggedInUsersSet = NewSet[int]()
-var loggedInUsersSetLock sync.RWMutex
-
-func IsUserLoggedIn(userId int) bool {
-	loggedInUsersSetLock.Lock()
-	defer loggedInUsersSetLock.Unlock()
-	result := loggedInUsersSet.Contains(userId)
-	dbPr("IsUserLoggedIn:", userId, result)
-	return result
-}
-
-func TryRegisteringUserAsLoggedIn(userId int, loggedInState bool) bool {
-	loggedInUsersSetLock.Lock()
-	defer loggedInUsersSetLock.Unlock()
-	currentState := loggedInUsersSet.Contains(userId)
-	changed := currentState != loggedInState
-	if changed {
-		if loggedInState {
-			loggedInUsersSet.Add(userId)
-			dbPr("Registering user as logged in:", userId)
-
-		} else {
-			loggedInUsersSet.Remove(userId)
-			dbPr("Unregistring user as logged in:", userId)
-		}
-	}
-	return changed
-}
-
-func LogUserOut(userId int) bool {
-	loggedInUsersSetLock.Lock()
-	defer loggedInUsersSetLock.Unlock()
-	wasLoggedIn := loggedInUsersSet.Contains(userId)
-	if wasLoggedIn {
-		loggedInUsersSet.Remove(userId)
-		dbPr("LogUserOut, Unregistring user as logged in:", userId)
-	}
-	return wasLoggedIn
-}
-
-func DiscardAllSessions(sessionManager SessionManager) {
-	loggedInUsersSetLock.Lock()
-	defer loggedInUsersSetLock.Unlock()
-
-	Alert("Discarding all sessions")
-	sessionManager.DiscardAllSessions()
-	dbPr("DiscardAllSessions, cleared")
-	loggedInUsersSet.Clear()
-}
+var ValidateWidgetMarkup = false && Alert("ValidateWidgetMarkup is true")
 
 type Session = *SessionStruct
 
@@ -114,6 +65,56 @@ func NewSession() Session {
 	Todo("?The Session should have WidgetManager embedded within it, so we can call through to its methods")
 	return &s
 }
+
+func DiscardAllSessions(sessionManager SessionManager) {
+	loggedInUsersSetLock.Lock()
+	defer loggedInUsersSetLock.Unlock()
+
+	Alert("Discarding all sessions")
+	sessionManager.DiscardAllSessions()
+	dbPr("DiscardAllSessions, cleared")
+	loggedInUsersSet.Clear()
+}
+
+func IsUserLoggedIn(userId int) bool {
+	loggedInUsersSetLock.Lock()
+	defer loggedInUsersSetLock.Unlock()
+	result := loggedInUsersSet.Contains(userId)
+	dbPr("IsUserLoggedIn:", userId, result)
+	return result
+}
+
+func TryRegisteringUserAsLoggedIn(userId int, loggedInState bool) bool {
+	loggedInUsersSetLock.Lock()
+	defer loggedInUsersSetLock.Unlock()
+	currentState := loggedInUsersSet.Contains(userId)
+	changed := currentState != loggedInState
+	if changed {
+		if loggedInState {
+			loggedInUsersSet.Add(userId)
+			dbPr("Registering user as logged in:", userId)
+
+		} else {
+			loggedInUsersSet.Remove(userId)
+			dbPr("Unregistring user as logged in:", userId)
+		}
+	}
+	return changed
+}
+
+func LogUserOut(userId int) bool {
+	loggedInUsersSetLock.Lock()
+	defer loggedInUsersSetLock.Unlock()
+	wasLoggedIn := loggedInUsersSet.Contains(userId)
+	if wasLoggedIn {
+		loggedInUsersSet.Remove(userId)
+		dbPr("LogUserOut, Unregistring user as logged in:", userId)
+	}
+	return wasLoggedIn
+}
+
+var loggedInUsersSet = NewSet[int]()
+var loggedInUsersSetLock sync.RWMutex
 
 func (s Session) PrependId(id string) string {
 	return s.baseStateProvider().Prefix + id

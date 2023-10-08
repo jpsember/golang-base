@@ -13,14 +13,16 @@ import (
 // ------------------------------------------------------------------------------------
 
 type GalleryPageStruct struct {
-	fooMap JSMap
-	list   ListWidget
-	editor DataEditor
+	fooMap   JSMap
+	list     ListWidget
+	editor   DataEditor
+	ourState JSMap
 }
 
-func NewGalleryPage(sess Session) Page {
+func newGalleryPage(sess Session) Page {
 	t := &GalleryPageStruct{
-		fooMap: NewJSMap().Put("bar", "hello"),
+		fooMap:   NewJSMap().Put("bar", "hello"),
+		ourState: NewJSMap(),
 	}
 	if sess != nil {
 		t.generateWidgets(sess)
@@ -30,13 +32,19 @@ func NewGalleryPage(sess Session) Page {
 
 const GalleryPageName = "gallery"
 
-var GalleryPageTemplate = NewGalleryPage(nil)
+var GalleryPageTemplate = &GalleryPageStruct{}
 
 func (p GalleryPage) ConstructPage(s Session, args PageArgs) Page {
-	if args.CheckDone() {
-		return NewGalleryPage(s)
+	if !args.CheckDone() {
+		return nil
 	}
-	return nil
+	// Note: changing 'this' to operate on the new page, as the original 'this' was just a template
+	p = &GalleryPageStruct{
+		fooMap:   NewJSMap().Put("bar", "hello"),
+		ourState: NewJSMap(),
+	}
+	p.generateWidgets(s)
+	return p
 }
 
 func (p GalleryPage) Name() string {
@@ -213,13 +221,14 @@ Multiple line feeds:
 		m.AddText()
 
 		m.Col(4)
+		sess.PushStateProvider(NewStateProvider("", p.ourState))
 		m.Label("Animal").Id("zebra").AddInput(zebraListener)
+		sess.PopStateProvider()
 	}
 	m.Close()
 
 	if !trim {
 		AddUserHeaderWidget(sess)
-
 	}
 
 }

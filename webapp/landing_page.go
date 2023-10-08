@@ -69,7 +69,6 @@ func (p LandingPage) generateWidgets(sess Session) {
 }
 
 func (p LandingPage) validateUserName(s Session, widget InputWidget, name string) (string, error) {
-	Pr("validate user name for session")
 	return ValidateUserName(name, p.validateFlag())
 }
 
