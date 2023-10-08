@@ -37,7 +37,7 @@ type SessionStruct struct {
 
 	app any // ServerApp is stored here, will clean up later
 
-	stateProvider   *WidgetStateProviderStruct
+	//stateProvider   *WidgetStateProviderStruct
 	listenerContext any
 
 	// Current request variables
@@ -117,7 +117,11 @@ var loggedInUsersSet = NewSet[int]()
 var loggedInUsersSetLock sync.RWMutex
 
 func (s Session) PrependId(id string) string {
-	return s.baseStateProvider().Prefix + id
+	p := s.StateProvider()
+	if p == nil {
+		return id
+	}
+	return p.Prefix + id
 }
 
 func (s Session) PrepareForHandlingRequest(w http.ResponseWriter, req *http.Request) {
@@ -316,7 +320,7 @@ func (s Session) auxHandleAjax() {
 	widget := s.Opt(id)
 	if widget == nil {
 		Pr("no widget with id", Quoted(id), "found to handle value", Quoted(widgetValueExpr))
-		Pr("state provider:", s.stateProvider)
+		Pr("state provider:", s.StateProvider())
 		Pr("widget map:", INDENT, s.widgetMap)
 		return
 	}
@@ -356,6 +360,7 @@ func (s Session) UpdateValueAndProblem(widget Widget, optionalValue any, err err
 	if !s.exists(widget.Id()) {
 		return
 	}
+	Pr("updateValueAndProblem, widget id:", widget.Id(), "err:", err)
 	// Always update the problem, in case we are clearing a previous error
 	s.SetProblem(widget, err)
 }
@@ -497,9 +502,12 @@ func (s Session) SetProblem(widget Widget, problem any) {
 			BadArg("<1Unsupported type")
 		}
 	}
-
-	key := widgetProblemKey(widget)
 	p := s.provider(widget)
+	if p == nil {
+		CheckState(text == "", "no state provider")
+		return
+	}
+	key := widgetProblemKey(widget)
 	state := p.State
 	existingProblem := state.OptString(key, "")
 	if existingProblem != text {
@@ -598,13 +606,13 @@ func compileId(prefix string, id string) string {
 	return out
 }
 
-func (s Session) baseStateProvider() WidgetStateProvider {
-	return s.stateProvider
-}
-
-func (s Session) setBaseStateProvider(p WidgetStateProvider) {
-	s.stateProvider = p
-}
+//func (s Session) baseStateProvider() WidgetStateProvider {
+//	return s.stateProvider
+//}
+//
+//func (s Session) setBaseStateProvider(p WidgetStateProvider) {
+//	s.stateProvider = p
+//}
 
 // ------------------------------------------------------------------------------------
 // Reading widget state values
@@ -644,7 +652,7 @@ func (s Session) provider(w Widget) WidgetStateProvider {
 	Todo("The Session state provider methods should maybe be deleted, and use only the WidgetManager ones")
 	p := w.StateProvider()
 	if p == nil {
-		p = s.baseStateProvider()
+		p = s.StateProvider()
 	}
 	return p
 }

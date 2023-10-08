@@ -55,10 +55,11 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string)
 		// Forward the message to that widget
 		Todo("!How do we distinguish between value actions (like text fields) and button presses?")
 		// Set up the same state provider that we did when rendering the widget
-		savedStateProvider := sess.baseStateProvider()
-		sess.setBaseStateProvider(w.constructStateProvider(sess, elementId, savedStateProvider.Prefix))
+		//savedStateProvider := sess.baseStateProvider()
+		currentProvider := sess.StateProvider()
+		sess.PushStateProvider(w.constructStateProvider(sess, elementId, currentProvider.Prefix))
 		sess.ProcessWidgetValue(sourceWidget, remainder, elementId)
-		sess.setBaseStateProvider(savedStateProvider)
+		sess.PopStateProvider()
 		// Fall through to return nil, nil
 	}
 	return nil, nil
@@ -169,17 +170,23 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 			// While rendering this list's items, we will replace any existing default state provider with
 			// the list's one.  Save the current default state provider here, for later restoration.
-			savedStateProvider := s.baseStateProvider()
-			pr(VERT_SP, "saved pv:", INDENT, savedStateProvider)
+			prefix := ""
+			sp := s.StateProvider()
+			if sp != nil {
+				prefix = sp.Prefix
+			}
+			pr(VERT_SP, "saved pv:", INDENT, sp)
 
 			for _, id := range elementIds {
-				s.setBaseStateProvider(w.constructStateProvider(s, id, savedStateProvider.Prefix))
+				s.PushStateProvider(w.constructStateProvider(s, id, prefix))
+				//s.setBaseStateProvider(w.constructStateProvider(s, id, savedStateProvider.Prefix))
 				// Note that we are not calling RenderWidget(), which would not draw anything since the
 				// list item widget has been marked as detached
 				w.itemWidget.RenderTo(s, m)
+				s.PopStateProvider()
 			}
 			// Restore the default state provider to what it was before we rendered the items.
-			s.setBaseStateProvider(savedStateProvider)
+			//s.setBaseStateProvider(savedStateProvider)
 		}
 		m.TgClose()
 	}
