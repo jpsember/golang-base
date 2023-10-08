@@ -64,7 +64,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	trim := false && Alert("removing most widgets")
 
 	m := GenerateHeader(sess, p)
-
+	m.PushStateProvider(NewStateProvider("", p.ourState))
 	if !trim {
 		alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 		alertWidget.SetVisible(false)
@@ -222,7 +222,7 @@ Multiple line feeds:
 
 		m.Col(4)
 		sess.PushStateProvider(NewStateProvider("", p.ourState))
-		m.Label("Animal").Id("zebra").AddInput(zebraListener)
+		m.Label("Animal").Id("zebra").AddInput(p.zebraListener)
 		sess.PopStateProvider()
 	}
 	m.Close()
@@ -230,7 +230,7 @@ Multiple line feeds:
 	if !trim {
 		AddUserHeaderWidget(sess)
 	}
-
+	sess.PopStateProvider()
 }
 
 func birdListener(s Session, widget InputWidget, newVal string) (string, error) {
@@ -242,13 +242,13 @@ func birdListener(s Session, widget InputWidget, newVal string) (string, error) 
 	return newVal, err
 }
 
-func zebraListener(s Session, widget InputWidget, newVal string) (string, error) {
+func (p GalleryPage) zebraListener(s Session, widget InputWidget, newVal string) (string, error) {
 
 	// Increment the alert class, and update its message
 	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
 	alertWidget.SetVisible(newVal != "")
 
-	s.State.Put(alertWidget.Id(),
+	s.SetWidgetValue(alertWidget,
 		strings.TrimSpace(newVal+" "+
 			RandomText(myRand, 55, false)))
 	alertWidget.Repaint()

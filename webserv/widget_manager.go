@@ -275,6 +275,7 @@ func (m WidgetManager) auxAddInput(listener InputWidgetListener, password bool) 
 	id := m.ConsumeOptionalPendingId()
 	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()), listener, password)
 	m.Add(t)
+	t.StateProvider().AssertValid()
 	return t
 }
 

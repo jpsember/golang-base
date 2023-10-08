@@ -15,6 +15,16 @@ func (pv WidgetStateProvider) String() string {
 	return "{SP " + Quoted(pv.Prefix) + " state:" + Truncated(pv.State.CompactString()) + " }"
 }
 
+func (pv WidgetStateProvider) AssertValid() WidgetStateProvider {
+	if pv.State == nil {
+		BadState("attempt to use null state provider")
+	}
+	//if pv == NullStateProvider {
+	//	BadState("attempt to use NullStateProvider")
+	//}
+	return pv
+}
+
 func NewStateProvider(prefix string, state JSEntity) WidgetStateProvider {
 	return &WidgetStateProviderStruct{Prefix: prefix, State: state.AsJSMap()}
 }
@@ -40,3 +50,5 @@ func readStateStringValue(p WidgetStateProvider, id string) string {
 	}
 	return p.State.OptString(key, "")
 }
+
+//var NullStateProvider = &WidgetStateProviderStruct{}

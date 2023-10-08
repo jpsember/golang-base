@@ -13,6 +13,7 @@ type LandingPageStruct struct {
 	strict         bool
 	nameWidget     Widget
 	passwordWidget Widget
+	widgetState    JSMap
 }
 
 type LandingPage = *LandingPageStruct
@@ -22,28 +23,31 @@ func (p LandingPage) Name() string {
 }
 
 func (p LandingPage) ConstructPage(s Session, args PageArgs) Page {
-	if args.CheckDone() {
-		user := OptSessionUser(s)
-		if user.Id() == 0 {
-			return newLandingPage(s)
+	for {
+		if !args.CheckDone() {
+			break
 		}
+		user := OptSessionUser(s)
+		if user.Id() != 0 {
+			break
+		}
+		t := &LandingPageStruct{
+			widgetState: NewJSMap(),
+			editor:      NewDataEditor(NewLandingState()),
+		}
+		t.generateWidgets(s)
+		return t
 	}
 	return nil
 }
 
 func (p LandingPage) Args() []string { return nil }
 
-func newLandingPage(s Session) Page {
-	t := &LandingPageStruct{}
-	if s != nil {
-		t.editor = NewDataEditor(NewLandingState())
-		t.generateWidgets(s)
-	}
-	return t
-}
-
 func (p LandingPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)
+
+	Todo("Have convenience method to push state provider given jsmap only")
+	sess.PushStateProvider(NewStateProvider("", p.widgetState))
 
 	m.Label("gallery").Align(AlignRight).Size(SizeTiny).AddButton(p.galleryListener)
 	m.Col(6)
@@ -66,6 +70,8 @@ func (p LandingPage) generateWidgets(sess Session) {
 		m.Label("Sign Up").AddButton(p.signUpListener)
 	}
 	m.Close()
+	sess.PopStateProvider()
+
 }
 
 func (p LandingPage) validateUserName(s Session, widget InputWidget, name string) (string, error) {

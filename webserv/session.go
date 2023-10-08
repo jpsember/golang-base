@@ -30,7 +30,7 @@ type SessionStruct struct {
 	// lock for making request handling thread safe; we synchronize a particular session's requests
 	lock sync.RWMutex
 	// JSMap containing widget values, other user session state
-	State JSMap
+	//State JSMap
 
 	BrowserInfo webserv_data.ClientInfo
 	debugPage   Page // Used only to get the current page's name for rendering in the user header
@@ -54,12 +54,12 @@ type SessionStruct struct {
 
 func NewSession() Session {
 	s := SessionStruct{
-		State:       NewJSMap(),
+		//State:       NewJSMap(),
 		BrowserInfo: webserv_data.DefaultClientInfo,
 		appData:     make(map[string]any),
 	}
 	s.InitializeWidgetManager()
-	s.setBaseStateProvider(NewStateProvider("", s.State))
+	//s.setBaseStateProvider(NullStateProvider)
 	Todo("!Restore user session from filesystem/database")
 	Todo("?ClientInfo (browser info) not sent soon enough")
 	Todo("?The Session should have WidgetManager embedded within it, so we can call through to its methods")
@@ -476,6 +476,9 @@ var prProb = PrIf("Widget Problems", false)
 func (s Session) WidgetProblem(w Widget) string {
 	pr := prProb
 	p := s.provider(w)
+	if p == nil {
+		return ""
+	}
 	result := readStateStringValue(p, widgetProblemKey(w))
 	pr("problem for", w.Id(), "is:", QUO, result)
 	return result
@@ -638,12 +641,10 @@ func (s Session) SetWidgetValue(w Widget, value any) {
 }
 
 func (s Session) provider(w Widget) WidgetStateProvider {
+	Todo("The Session state provider methods should maybe be deleted, and use only the WidgetManager ones")
 	p := w.StateProvider()
 	if p == nil {
 		p = s.baseStateProvider()
-	}
-	if p.State == nil {
-		BadState("no state in state provider!")
 	}
 	return p
 }
@@ -687,7 +688,6 @@ func (s Session) ValidateAndCountErrors(widget Widget) int {
 func (s Session) WidgetErrorCount(widget Widget) int {
 	Todo("?Use 's' instead of 'sess' everywhere")
 	count := 0
-
 	problemText := s.WidgetProblem(widget)
 	if problemText != "" {
 		count++
