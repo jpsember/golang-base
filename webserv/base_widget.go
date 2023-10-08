@@ -184,6 +184,9 @@ func (w BaseWidget) setStateProvider(p WidgetStateProvider) {
 			w.Log("setStateProvider:", p, Caller())
 		}
 	}
+	if Alert("logging:") {
+		Pr("id", w.Id(), "setting state provider:", p)
+	}
 	w.stateProvider = p
 }
 

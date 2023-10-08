@@ -56,7 +56,8 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string)
 		Todo("!How do we distinguish between value actions (like text fields) and button presses?")
 		// Set up the same state provider that we did when rendering the widget
 		//savedStateProvider := sess.baseStateProvider()
-		currentProvider := sess.StateProvider()
+		currentProvider := w.StateProvider()
+		//sess.StateProvider()
 		sess.PushStateProvider(w.constructStateProvider(sess, elementId, currentProvider.Prefix))
 		sess.ProcessWidgetValue(sourceWidget, remainder, elementId)
 		sess.PopStateProvider()
@@ -82,10 +83,6 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget 
 	w.LowListen = w.listListenWrapper
 	w.pagePrefix = id + ".page_"
 	return &w
-}
-
-func (w ListWidget) ItemWidget() Widget {
-	return w.itemWidget
 }
 
 func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
@@ -141,6 +138,7 @@ func (w ListWidget) constructStateProvider(s Session, elementId int, oldPrefix s
 	cached := w.cachedStateProviders[elementId]
 	if cached == nil {
 		pv := w.list.ItemStateProvider(s, elementId)
+		Alert("is it ok to have periods here?  Maybe colons instead?")
 		cached = NewStateProvider(w.Id()+"."+IntToString(elementId)+"."+oldPrefix, pv.State)
 		w.cachedStateProviders[elementId] = cached
 	}
@@ -148,6 +146,7 @@ func (w ListWidget) constructStateProvider(s Session, elementId int, oldPrefix s
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
+	Alert("The gallery list items are no longer rendering since I refactored the state provider stuff")
 	pr := PrIf("ListWidget.RenderTo", false)
 	pr("ListWidget.RenderTo")
 	m.Comment("ListWidget")
@@ -168,17 +167,18 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			elementIds := w.list.GetPageElements()
 			pr("rendering page #:", w.list.CurrentPage(), "element ids:", elementIds)
 
-			// While rendering this list's items, we will replace any existing default state provider with
-			// the list's one.  Save the current default state provider here, for later restoration.
+			// While rendering this list's items, we will set the state provider to one for each item.
 			prefix := ""
-			sp := s.StateProvider()
+			sp := w.StateProvider()
 			if sp != nil {
 				prefix = sp.Prefix
 			}
+			Pr("Rendering list", w.Id(), "state provider:", sp)
 			pr(VERT_SP, "saved pv:", INDENT, sp)
 
 			for _, id := range elementIds {
 				s.PushStateProvider(w.constructStateProvider(s, id, prefix))
+				Pr("rendering element, state provider:", s.StateProvider())
 				//s.setBaseStateProvider(w.constructStateProvider(s, id, savedStateProvider.Prefix))
 				// Note that we are not calling RenderWidget(), which would not draw anything since the
 				// list item widget has been marked as detached

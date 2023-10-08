@@ -130,8 +130,10 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	if !trim {
 		listItemWidget := m.Open()
+		Pr("opening gallery list item widget, state provider:", listItemWidget.StateProvider())
 		m.Id("foo_text").Height(3).AddText()
 		m.Close()
+		Pr("adding list...")
 
 		p.list = m.AddList(NewGalleryListImplementation(), listItemWidget)
 		if trim {
@@ -374,11 +376,12 @@ func NewGalleryListImplementation() GalleryListImplementation {
 	return t
 }
 
-func (g GalleryListImplementation) listItemRenderer(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
-	m.TgOpen(`div class="col-sm-4"`).TgContent()
-	m.A(ESCAPED, ToString("#", elementId, g.names[elementId]))
-	m.TgClose()
-}
+//func (g GalleryListImplementation) listItemRenderer(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
+//	Pr("Gallery listItemRenderer, element id:", elementId)
+//	m.TgOpen(`div class="col-sm-4"`).TgContent()
+//	m.A(ESCAPED, ToString("#", elementId, g.names[elementId]))
+//	m.TgClose()
+//}
 
 func (g GalleryListImplementation) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
 	json := NewJSMap()

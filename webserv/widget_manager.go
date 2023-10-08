@@ -290,6 +290,7 @@ func (m WidgetManager) AddList(list ListInterface, itemWidget Widget) ListWidget
 	itemWidget.SetDetached(true)
 	id := m.ConsumeOptionalPendingId()
 	t := NewListWidget(id, list, itemWidget)
+	Pr("AddList, id:", id, ",state provider:", m.StateProvider())
 	m.Add(t)
 	return t
 }
@@ -298,23 +299,23 @@ func (m WidgetManager) AddList(list ListInterface, itemWidget Widget) ListWidget
 // The label can either be expressed as a string (static content),
 // or an id (dynamic content, read from session state).  If static, there should *not* be
 // a pending id.
-func (m WidgetManager) getStaticContentAndId() (string, string) {
+func (m WidgetManager) getStaticContentAndId() (string, string, bool) {
 	staticContent := m.consumePendingLabel()
 	hasStaticContent := staticContent != ""
 	if hasStaticContent {
 		CheckState(m.pendingId == "", "specify id OR static content")
 	}
 	id := m.ConsumeOptionalPendingId()
-	return staticContent, id
+	return staticContent, id, hasStaticContent
 }
 
 func (m WidgetManager) AddHeading() HeadingWidget {
-	staticContent, id := m.getStaticContentAndId()
+	staticContent, id, wasStatic := m.getStaticContentAndId()
 	w := NewHeadingWidget(id)
 	w.SetSize(m.consumePendingSize())
 	Todo("!Setting WidgetSize seems to have no effect on headings")
 	w.SetAlign(m.consumePendingAlign())
-	if staticContent != "" {
+	if wasStatic {
 		w.SetStaticContent(staticContent)
 	}
 	m.Add(w)
@@ -322,10 +323,10 @@ func (m WidgetManager) AddHeading() HeadingWidget {
 }
 
 func (m WidgetManager) AddText() TextWidget {
-	staticContent, id := m.getStaticContentAndId()
+	staticContent, id, wasStatic := m.getStaticContentAndId()
 	w := NewTextWidget(id, m.consumePendingSize(), m.consumePendingHeight())
-	w.setStateProvider(m.StateProvider())
-	if staticContent != "" {
+	Pr("adding text, id:", id, "setting state provider:", m.StateProvider())
+	if wasStatic {
 		w.SetStaticContent(staticContent)
 	}
 	m.Add(w)
