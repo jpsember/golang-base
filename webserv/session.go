@@ -121,7 +121,6 @@ func (s Session) PrependId(id string) string {
 	if p == nil {
 		return id
 	}
-	Pr("prepending prefix", p.Prefix, "to id:", id)
 	return p.Prefix + id
 }
 
@@ -607,14 +606,6 @@ func compileId(prefix string, id string) string {
 	return out
 }
 
-//func (s Session) baseStateProvider() WidgetStateProvider {
-//	return s.stateProvider
-//}
-//
-//func (s Session) setBaseStateProvider(p WidgetStateProvider) {
-//	s.stateProvider = p
-//}
-
 // ------------------------------------------------------------------------------------
 // Reading widget state values
 // ------------------------------------------------------------------------------------
@@ -622,21 +613,24 @@ func compileId(prefix string, id string) string {
 func (s Session) WidgetStringValue(w Widget) string {
 	pr := PrIf("WidgetStringValue", true)
 
-	// If the session has a stacked state provider and its (non-empty) prefix matches this widget's id,
-	// take state from that instead.
+	// If the session's state provider has a non-empty prefix that matches this widget's id,
+	// take the state from that provider instead (after removing the prefix).
+
 	id := w.Id()
 	p := s.provider(w)
+
+	Todo("Can we embed this prefix business within s.provider(...)?")
 	pr(VERT_SP, "id:", id, "provider:", p)
 
-	state := s.stackedState()
-	pr("stacked state:", state.StateProvider)
+	stackedProvider := s.StateProvider()
+	pr("session state provider:", stackedProvider)
 
-	if state.IdPrefix != "" {
-		effectiveId, hadPrefix := TrimIfPrefix(id, state.StateProvider.Prefix)
+	if stackedProvider.Prefix != "" {
+		effectiveId, hadPrefix := TrimIfPrefix(id, stackedProvider.Prefix)
 		pr("TrimIfPrefix produced:", effectiveId, hadPrefix)
 		if hadPrefix {
 			id = effectiveId
-			p = state.StateProvider
+			p = stackedProvider
 			pr("using override state provider:", p)
 		}
 	}
@@ -672,13 +666,11 @@ func (s Session) SetWidgetValue(w Widget, value any) {
 }
 
 func (s Session) provider(w Widget) WidgetStateProvider {
-	Todo("The Session state provider methods should maybe be deleted, and use only the WidgetManager ones")
+	Todo("!The Session state provider methods should maybe be deleted, and use only the WidgetManager ones")
 	p := w.StateProvider()
+	CheckState(p != nil, "expected widget to ALWAYS have a state provider")
 	if p == nil {
 		p = s.StateProvider()
-		if p == nil {
-			BadState("there is no session state provider for id:", w.Id())
-		}
 	}
 	return p
 }

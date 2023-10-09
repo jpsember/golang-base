@@ -15,6 +15,11 @@ type mgrState struct {
 	pendingChildColumns int
 }
 
+var mgrStateDefault = mgrState{
+	DebugTag:      "<bottom of stack>",
+	StateProvider: NewStateProvider("", NewJSMap()),
+}
+
 type WidgetManagerObj struct {
 	widgetMap          WidgetMap
 	stack              []mgrState
@@ -34,7 +39,8 @@ func (m WidgetManager) InitializeWidgetManager() {
 }
 
 func (m WidgetManager) initStateStack() {
-	m.stack = []mgrState{{}}
+	// Add a sentinel value so the stack is never empty
+	m.stack = []mgrState{mgrStateDefault}
 }
 
 type WidgetManager = *WidgetManagerObj
@@ -299,7 +305,6 @@ func (m WidgetManager) AddList(list ListInterface, itemWidget Widget) ListWidget
 	itemWidget.SetDetached(true)
 	id := m.ConsumeOptionalPendingId()
 	t := NewListWidget(id, list, itemWidget)
-	Pr("AddList, id:", id, ",state provider:", m.StateProvider())
 	m.Add(t)
 	return t
 }
@@ -333,7 +338,6 @@ func (m WidgetManager) AddHeading() HeadingWidget {
 
 func (m WidgetManager) AddText() TextWidget {
 	staticContent, id, wasStatic := m.getStaticContentAndId()
-	Pr("AddText, id:", id)
 	w := NewTextWidget(id, m.consumePendingSize(), m.consumePendingHeight())
 	if wasStatic {
 		w.SetStaticContent(staticContent)

@@ -136,9 +136,7 @@ func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, ta
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
-	Alert("The gallery list items are no longer rendering since I refactored the state provider stuff")
-
-	pr := PrIf("ListWidget.RenderTo", true)
+	pr := PrIf("ListWidget.RenderTo", false)
 	pr("ListWidget.RenderTo; id", w.Id())
 
 	m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent()
@@ -160,8 +158,9 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			pr("rendering page #:", w.list.CurrentPage(), "element ids:", elementIds)
 
 			// While rendering this list's items, we will set the state provider to one for each item.
-
 			pr("item prefix:", w.list.ItemPrefix())
+
+			CheckState(len(s.stack) == 2, "Expected two items on state stack: default item, plus one for list renderer")
 
 			for _, id := range elementIds {
 				sp := w.constructStateProvider(s, id)
@@ -179,8 +178,6 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				s.PopIdPrefix()
 				s.PopStateProvider()
 			}
-			// Restore the default state provider to what it was before we rendered the items.
-			//s.setBaseStateProvider(savedStateProvider)
 		}
 		m.TgClose()
 	}
