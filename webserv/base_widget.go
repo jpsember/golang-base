@@ -185,6 +185,11 @@ func (w BaseWidget) setStateProvider(p WidgetStateProvider) {
 		}
 	}
 	w.stateProvider = p
+	if Alert("!Verifying not using default state map") {
+		if w.Id() != "page" && p.State.HasKey("!") {
+			Alert("<1#50Widget is using default state map:", w.Id(), INDENT, Callers(2, 5))
+		}
+	}
 }
 
 func (w BaseWidget) Log(args ...any) {

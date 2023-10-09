@@ -37,24 +37,28 @@ func (p FeedPage) generateWidgets(s Session) {
 
 	AddUserHeaderWidget(s)
 
-	// For now, write the code as one big function; split up later once structure is more apparent.
-	var cardWidget AnimalCard
 	{
-		// Construct the list item widget
-		w := NewAnimalCard(m, DefaultAnimal,
-			func(sess Session, widget AnimalCard, arg string) {
-				animalId := sess.Context().(int)
-				Pr("card listener, animal id:", animalId, "arg:", arg)
-				p.attemptSelectAnimal(sess, animalId)
-			},
-			"", nil)
+		m.PushStateMap(NewJSMap())
+		// For now, write the code as one big function; split up later once structure is more apparent.
+		var cardWidget AnimalCard
+		{
+			// Construct the list item widget
+			w := NewAnimalCard(m, DefaultAnimal,
+				func(sess Session, widget AnimalCard, arg string) {
+					animalId := sess.Context().(int)
+					Pr("card listener, animal id:", animalId, "arg:", arg)
+					p.attemptSelectAnimal(sess, animalId)
+				},
+				"", nil)
 
-		cardWidget = w
+			cardWidget = w
+		}
+		m.Add(cardWidget)
+
+		animalList := NewAnimalList(getAnimals(), cardWidget)
+		m.AddList(animalList, cardWidget)
+		m.PopStateMap()
 	}
-	m.Add(cardWidget)
-
-	animalList := NewAnimalList(getAnimals(), cardWidget)
-	m.AddList(animalList, cardWidget)
 	m.EndConstruction(debug)
 }
 

@@ -32,7 +32,7 @@ func (a AnimalList) ItemStateProvider(s Session, elementId int) WidgetStateProvi
 	anim := ReadAnimalIgnoreError(elementId)
 	CheckState(anim.Id() != 0, "no animal available")
 	a.cardWidget.SetAnimal(anim)
-	return NewStateProvider(a.cardWidget.ChildIdPrefix, anim.ToJson())
+	return NewStateProvider(a.cardWidget.ChildIdPrefix, anim.ToJson().AsJSMap())
 }
 
 func (a AnimalList) ItemPrefix() string {

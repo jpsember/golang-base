@@ -76,7 +76,7 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 		// Note that we do *don't* set any state providers until we know what this prefix is.  Specifically,
 		// we don't create a state provider at construction time.
 		w.ChildIdPrefix = m.AllocateAnonymousId("card_children:")
-		m.PushStateProvider(NewStateProvider(w.ChildIdPrefix, w.cardAnimal.ToJson()))
+		m.PushStateProvider(NewStateProvider(w.ChildIdPrefix, w.cardAnimal.ToJson().AsJSMap()))
 	}
 
 	m.OpenContainer(w)
@@ -143,7 +143,7 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 		m.Comments("title and summary")
 		m.TgOpen(`div class="card-body" style="max-height:8em; padding-top:.5em;  padding-bottom:.2em;"`).TgContent()
 		{
-			Todo("This used to be h6, but due to validation problem, changed to div:")
+			Todo("!This used to be h6, but due to validation problem, changed to div:")
 			m.TgOpen(`div class="card-title"`).TgContent()
 			{
 				// Render the name as the first child
@@ -153,7 +153,7 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 			m.TgClose()
 
 			// Render the second child
-      Alert("this used to be a <p>, but to fix validation is now <div>")
+			Alert("!this used to be a <p>, but to fix validation is now <div>")
 			m.TgOpen(`div class="card-text"`).Style(`font-size:75%;`).TgContent()
 			{
 				RenderWidget(w.children[ci], s, m)

@@ -55,9 +55,6 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string)
 		// Forward the message to that widget
 		Todo("!How do we distinguish between value actions (like text fields) and button presses?")
 		// Set up the same state provider that we did when rendering the widget
-		//savedStateProvider := sess.baseStateProvider()
-		//currentProvider := w.StateProvider()
-		//sess.StateProvider()
 		sess.PushStateProvider(w.constructStateProvider(sess, elementId))
 		sess.ProcessWidgetValue(sourceWidget, remainder, elementId)
 		sess.PopStateProvider()
@@ -193,8 +190,6 @@ func (w ListWidget) constructStateProvider(s Session, elementId int) WidgetState
 	cached := w.cachedStateProviders[elementId]
 	if cached == nil {
 		pv := w.list.ItemStateProvider(s, elementId)
-		Alert("is it ok to have periods here?  Maybe colons instead?")
-		Alert("Is the element id required anywhere? Maybe to prevent multiple appearances of the same id?")
 		cached = NewStateProvider(w.list.ItemPrefix(), pv.State)
 		w.cachedStateProviders[elementId] = cached
 	}

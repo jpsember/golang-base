@@ -57,7 +57,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	trim2 := false && Alert("removing some widgets")
 
 	m := GenerateHeader(sess, p)
-	m.PushStateProvider(NewStateProvider("", p.ourState))
+	m.PushStateMap(p.ourState)
 
 	// ------------------------------------------------------------------------------------
 	// The list
@@ -94,6 +94,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		} else {
 			m.Open()
 			p.editor = NewDataEditor(anim)
+
 			m.Id("foo").Label("Photo").AddFileUpload(p.uploadListener)
 
 			// The image widget will have the same id as the animal field that is to store its photo blob id.
@@ -175,7 +176,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 			m.Open()
 
-			m.PushStateProvider(NewStateProvider("", p.fooMap))
+			m.PushStateMap(p.fooMap)
 			m.PushIdPrefix("")
 			{
 
@@ -230,7 +231,7 @@ Multiple line feeds:
 			m.AddText()
 
 			m.Col(4)
-			sess.PushStateProvider(NewStateProvider("", p.ourState))
+			sess.PushStateMap(p.ourState)
 			m.Label("Animal").Id("zebra").AddInput(p.zebraListener)
 			sess.PopStateProvider()
 		}

@@ -18,35 +18,6 @@ func (pv WidgetStateProvider) String() string {
 	return "{Prefix " + Quoted(pv.Prefix) + " state:" + Truncated(pv.State.CompactString()) + " }"
 }
 
-func (pv WidgetStateProvider) AssertValid() WidgetStateProvider {
-	if pv.State == nil {
-		BadState("attempt to use null state provider")
-	}
-	return pv
-}
-
-func NewStateProvider(prefix string, state JSEntity) WidgetStateProvider {
-	return &WidgetStateProviderStruct{Prefix: prefix, State: state.AsJSMap()}
-}
-
-// Read widget value; assumed to be an int.
-func readStateIntValue(p WidgetStateProvider, id string) int {
-	return p.State.OptInt(compileId(p.Prefix, id), 0)
-}
-
-// Read widget value; assumed to be a bool.
-func readStateBoolValue(p WidgetStateProvider, id string) bool {
-	return p.State.OptBool(compileId(p.Prefix, id), false)
-}
-
-// Read widget value; assumed to be a string.
-func readStateStringValue(p WidgetStateProvider, id string) string {
-	key := compileId(p.Prefix, id)
-	if false && Alert("checking for non-existent key") {
-		if !p.State.HasKey(key) {
-			Pr("State has no key", QUO, key, " (id ", QUO, id, "), state:", INDENT, p.State)
-			Pr("prefix:", p.Prefix)
-		}
-	}
-	return p.State.OptString(key, "")
+func NewStateProvider(prefix string, state JSMap) WidgetStateProvider {
+	return &WidgetStateProviderStruct{Prefix: prefix, State: state}
 }

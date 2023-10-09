@@ -69,8 +69,8 @@ const (
 	AlignRight
 )
 
-func widgetProblemKey(w Widget) string {
-	return w.Id() + ".problem"
+func widgetProblemKey(widgetId string) string {
+	return widgetId + ".problem"
 }
 
 // Call w.RenderTo(...) iff the widget is visible, otherwise render an empty div with the widget's id.
@@ -79,7 +79,6 @@ func RenderWidget(w Widget, s Session, m MarkupBuilder) {
 		return
 	}
 	if !w.Visible() {
-		Todo("!is it ok to render this as a void tag? Apparently not")
 		w.Log("RenderWidget, not visible;")
 		i := m.Len()
 		m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent().TgClose()

@@ -46,8 +46,8 @@ func (p LandingPage) Args() []string { return nil }
 func (p LandingPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)
 
-	Todo("Have convenience method to push state provider given jsmap only")
-	sess.PushStateProvider(NewStateProvider("", p.widgetState))
+	Pr("generate widgets for landing page")
+	sess.PushStateMap(p.widgetState)
 
 	m.Label("gallery").Align(AlignRight).Size(SizeTiny).AddButton(p.galleryListener)
 	m.Col(6)

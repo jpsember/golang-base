@@ -61,18 +61,18 @@ func (p UserSettingsPage) generateWidgets(s Session) {
 			m.Label("Password").Id(User_Password).AddPassword(p.listenerValidatePwd)
 
 			// The verify password isn't part of the User object
-			s.PushStateProvider(NewStateProvider("", NewJSMap()))
+			s.PushStateMap(NewJSMap())
 			// We supply a specific id just for ease of debugging
 			p.pwdVerify = m.Label("Password Again").Id("pwd_verify").AddPassword(p.listenerValidatePwdVerify)
 			s.PopStateProvider()
-				m.Label("Email").Id(User_Email).AddInput(p.validateEmail)
-				m.Size(SizeTiny).Label("We will never share your email address with anyone.").AddText()
+			m.Label("Email").Id(User_Email).AddInput(p.validateEmail)
+			m.Size(SizeTiny).Label("We will never share your email address with anyone.").AddText()
 			s.PopStateProvider()
 		}
 		m.Col(6)
 		m.AddSpace()
-    // Issue #90; maybe place above widgets within a minimum-sized div, so button row doesn't change position?  Or put buttons above?  Or to the side?
-			m.Label("Ok").AddButton(p.okListener)
+		// Issue #90; maybe place above widgets within a minimum-sized div, so button row doesn't change position?  Or put buttons above?  Or to the side?
+		m.Label("Ok").AddButton(p.okListener)
 	}
 	m.Close()
 

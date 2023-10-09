@@ -8,7 +8,7 @@ import (
 type mgrState struct {
 	Parent        Widget
 	StateProvider WidgetStateProvider
-	// Not to be confused with StateProvider.Prefix, this is an optional prefix to be prepended to the
+	// Not to be confused with stackedStateProvider.Prefix, this is an optional prefix to be prepended to the
 	// id when adding widgets:
 	IdPrefix            string
 	DebugTag            string
@@ -17,7 +17,7 @@ type mgrState struct {
 
 var mgrStateDefault = mgrState{
 	DebugTag:      "<bottom of stack>",
-	StateProvider: NewStateProvider("", NewJSMap()),
+	StateProvider: NewStateProvider("", NewJSMap().Put("!", "This is the default state provider")),
 }
 
 type WidgetManagerObj struct {
@@ -169,10 +169,8 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		}
 		m.widgetMap[id] = widget
 	}
-	// Set its state provider, if it doesn't already have one
-	if widget.StateProvider() == nil {
-		widget.setStateProvider(m.StateProvider())
-	}
+
+	widget.setStateProvider(m.stackedStateProvider())
 
 	state := m.stackedState()
 	parent := state.Parent
@@ -193,7 +191,7 @@ func (m WidgetManager) stackedState() *mgrState {
 }
 
 func (s *mgrState) String() string {
-	return NewJSMap().Put("IdPrefix", s.IdPrefix).Put("StateProvider", s.StateProvider.String()).CompactString()
+	return NewJSMap().Put("IdPrefix", s.IdPrefix).Put("stackedStateProvider", s.StateProvider.String()).CompactString()
 }
 
 // Have subsequent WidgetManager operations operate on a particular container widget.
@@ -279,9 +277,11 @@ func (m WidgetManager) AddInput(listener InputWidgetListener) InputWidget {
 
 // The ButtonWidgetListener will receive message USER_HEADER_ACTION_xxxx.
 func (m WidgetManager) AddUserHeader(listener ButtonWidgetListener) UserHeaderWidget {
+	m.PushStateMap(NewJSMap())
 	w := NewUserHeaderWidget(m.ConsumeOptionalPendingId(), listener)
 	w.BgndImageMarkup = `style=" height:50px; background-image:url('app_header.jpg'); background-repeat: no-repeat;"`
 	m.Add(w)
+	m.PopStateProvider()
 	return w
 }
 
@@ -289,8 +289,6 @@ func (m WidgetManager) auxAddInput(listener InputWidgetListener, password bool) 
 	id := m.ConsumeOptionalPendingId()
 	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()), listener, password)
 	m.Add(t)
-	Todo("is this still required?")
-	t.StateProvider().AssertValid()
 	return t
 }
 
@@ -442,6 +440,10 @@ func (m WidgetManager) PushContainer(container Widget) WidgetManager {
 	return m
 }
 
+func (m WidgetManager) PushStateMap(jsmap JSMap) {
+	m.PushStateProvider(NewStateProvider("", jsmap))
+}
+
 func (m WidgetManager) PushStateProvider(p WidgetStateProvider) {
 	itm := *m.stackedState()
 	itm.StateProvider = p
@@ -452,7 +454,11 @@ func (m WidgetManager) PopStateProvider() {
 	m.popStack(tag_provider)
 }
 
-func (m WidgetManager) StateProvider() WidgetStateProvider {
+func (m WidgetManager) PopStateMap() {
+	m.PopStateProvider()
+}
+
+func (m WidgetManager) stackedStateProvider() WidgetStateProvider {
 	return m.stackedState().StateProvider
 }
 

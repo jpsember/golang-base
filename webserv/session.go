@@ -29,15 +29,12 @@ type SessionStruct struct {
 	PageWidget Widget
 	// lock for making request handling thread safe; we synchronize a particular session's requests
 	lock sync.RWMutex
-	// JSMap containing widget values, other user session state
-	//State JSMap
 
 	BrowserInfo webserv_data.ClientInfo
 	debugPage   Page // Used only to get the current page's name for rendering in the user header
 
 	app any // ServerApp is stored here, will clean up later
 
-	//stateProvider   *WidgetStateProviderStruct
 	listenerContext any
 
 	// Current request variables
@@ -62,7 +59,6 @@ func NewSession() Session {
 	//s.setBaseStateProvider(NullStateProvider)
 	Todo("!Restore user session from filesystem/database")
 	Todo("?ClientInfo (browser info) not sent soon enough")
-	Todo("?The Session should have WidgetManager embedded within it, so we can call through to its methods")
 	return &s
 }
 
@@ -117,7 +113,7 @@ var loggedInUsersSet = NewSet[int]()
 var loggedInUsersSetLock sync.RWMutex
 
 func (s Session) PrependId(id string) string {
-	p := s.StateProvider()
+	p := s.stackedStateProvider()
 	if p == nil {
 		return id
 	}
@@ -320,7 +316,7 @@ func (s Session) auxHandleAjax() {
 	widget := s.Opt(id)
 	if widget == nil {
 		Pr("no widget with id", Quoted(id), "found to handle value", Quoted(widgetValueExpr))
-		Pr("state provider:", s.StateProvider())
+		Pr("state provider:", s.stackedStateProvider())
 		Pr("widget map:", INDENT, s.widgetMap)
 		return
 	}
@@ -360,7 +356,6 @@ func (s Session) UpdateValueAndProblem(widget Widget, optionalValue any, err err
 	if !s.exists(widget.Id()) {
 		return
 	}
-	Pr("updateValueAndProblem, widget id:", widget.Id(), "err:", err)
 	// Always update the problem, in case we are clearing a previous error
 	s.SetProblem(widget, err)
 }
@@ -480,11 +475,9 @@ var prProb = PrIf("Widget Problems", false)
 // Read widget problem.  Returns an empty string if it hasn't got one.
 func (s Session) WidgetProblem(w Widget) string {
 	pr := prProb
-	p := s.provider(w)
-	if p == nil {
-		return ""
-	}
-	result := readStateStringValue(p, widgetProblemKey(w))
+	id, p := s.getStateProvider(w)
+	key := compileId(p.Prefix, widgetProblemKey(id))
+	result := p.State.OptString(key, "")
 	pr("problem for", w.Id(), "is:", QUO, result)
 	return result
 }
@@ -502,12 +495,8 @@ func (s Session) SetProblem(widget Widget, problem any) {
 			BadArg("<1Unsupported type")
 		}
 	}
-	p := s.provider(widget)
-	if p == nil {
-		CheckState(text == "", "no state provider")
-		return
-	}
-	key := widgetProblemKey(widget)
+	id, p := s.getStateProvider(widget)
+	key := widgetProblemKey(id)
 	state := p.State
 	existingProblem := state.OptString(key, "")
 	if existingProblem != text {
@@ -609,20 +598,23 @@ func compileId(prefix string, id string) string {
 // ------------------------------------------------------------------------------------
 // Reading widget state values
 // ------------------------------------------------------------------------------------
-// Read widget value; assumed to be a string.
-func (s Session) WidgetStringValue(w Widget) string {
-	pr := PrIf("WidgetStringValue", true)
+
+func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
+	pr := PrIf("getStateProvider", false)
 
 	// If the session's state provider has a non-empty prefix that matches this widget's id,
 	// take the state from that provider instead (after removing the prefix).
 
 	id := w.Id()
-	p := s.provider(w)
+	p := w.StateProvider()
+	CheckState(p != nil, "widgets should ALWAYS have a state provider")
 
-	Todo("Can we embed this prefix business within s.provider(...)?")
 	pr(VERT_SP, "id:", id, "provider:", p)
 
-	stackedProvider := s.StateProvider()
+	stackedProvider := s.stackedStateProvider()
+	//if stackedProvider.State.HasKey("!") {
+	//	Alert("#50Working with default state provider for widget:", w.Id(), INDENT, Callers(2, 8))
+	//}
 	pr("session state provider:", stackedProvider)
 
 	if stackedProvider.Prefix != "" {
@@ -634,28 +626,37 @@ func (s Session) WidgetStringValue(w Widget) string {
 			pr("using override state provider:", p)
 		}
 	}
+	return id, p
+}
 
-	result := readStateStringValue(p, id)
-	pr("result:", result)
-	return result
+// Read widget value; assumed to be a string.
+func (s Session) WidgetStringValue(w Widget) string {
+	id, p := s.getStateProvider(w)
+	key := compileId(p.Prefix, id)
+	if false && Alert("checking for non-existent key") {
+		if !p.State.HasKey(key) {
+			Pr("State has no key", QUO, key, " (id ", QUO, id, "), state:", INDENT, p.State)
+			Pr("prefix:", p.Prefix)
+		}
+	}
+	return p.State.OptString(key, "")
 }
 
 // Read widget value; assumed to be an int.
 func (s Session) WidgetIntValue(w Widget) int {
-	p := s.provider(w)
-	return readStateIntValue(p, w.Id())
+	id, p := s.getStateProvider(w)
+	return p.State.OptInt(compileId(p.Prefix, id), 0)
 }
 
 // Read widget value; assumed to be a bool.
 func (s Session) WidgetBoolValue(w Widget) bool {
-	p := s.provider(w)
-	return readStateBoolValue(p, w.Id())
+	id, p := s.getStateProvider(w)
+	return p.State.OptBool(compileId(p.Prefix, id), false)
 }
 
 func (s Session) SetWidgetValue(w Widget, value any) {
 	pr := PrIf("SetWidgetValue", false)
-	p := s.provider(w)
-	id := compileId(p.Prefix, w.Id())
+	id, p := s.getStateProvider(w)
 	oldVal := p.State.OptUnsafe(id)
 	changed := value != oldVal
 	pr("old:", oldVal, "new:", value, "changed:", changed)
@@ -665,45 +666,30 @@ func (s Session) SetWidgetValue(w Widget, value any) {
 	}
 }
 
-func (s Session) provider(w Widget) WidgetStateProvider {
-	Todo("!The Session state provider methods should maybe be deleted, and use only the WidgetManager ones")
-	p := w.StateProvider()
-	CheckState(p != nil, "expected widget to ALWAYS have a state provider")
-	if p == nil {
-		p = s.StateProvider()
-	}
-	return p
-}
-
 // Get the context for the current listener.  For list items, this will be the list element id.
 func (s Session) Context() any {
 	return s.listenerContext
 }
 
 // This merges a couple of separate functions, to reduce the complexity.
-func (m Session) rebuildAndDisplayNewPage(pageProvider func(s Session) Page) {
+func (s Session) rebuildAndDisplayNewPage(pageProvider func(Session) Page) {
 	// Dispose of any existing widgets
-	m.widgetMap = make(map[string]Widget)
+	s.widgetMap = make(map[string]Widget)
 
 	// Build a new page widget
-	m.PageWidget = m.Id(WidgetIdPage).Open()
-	m.Close()
+	s.PageWidget = s.Id(WidgetIdPage).Open()
+	s.Close()
 
 	// Get the new page (it is now safe to construct, as the old widgets are gone)
-	page := pageProvider(m)
+	page := pageProvider(s)
 	CheckState(page != nil, "no page was provided")
-	m.debugPage = page
-	//Pr(VERT_SP, "changed page to", page.Name(), INDENT, Callers(1, 5), VERT_SP)
+	s.debugPage = page
 
 	// Display the new page
 	Todo("!Verify that this works for normal refreshes as well as ajax operations")
-	m.PageWidget.Repaint()
+	s.PageWidget.Repaint()
 
-	//func (s Session) constructPathFromPage(page Page) string {
-	m.browserURLExpr = "/" + page.Name() + "/" + strings.Join(page.Args(), "/")
-	//return result
-	//}
-	//	m.browserURLExpr = m.constructPathFromPage(page)
+	s.browserURLExpr = "/" + page.Name() + "/" + strings.Join(page.Args(), "/")
 }
 
 func (s Session) ValidateAndCountErrors(widget Widget) int {
