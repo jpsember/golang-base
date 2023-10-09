@@ -19,16 +19,7 @@ type GalleryPageStruct struct {
 	ourState JSMap
 }
 
-func newGalleryPage(sess Session) Page {
-	t := &GalleryPageStruct{
-		fooMap:   NewJSMap().Put("bar", "hello"),
-		ourState: NewJSMap(),
-	}
-	if sess != nil {
-		t.generateWidgets(sess)
-	}
-	return t
-}
+const galleryItemPrefix = "gallery_item:"
 
 const GalleryPageName = "gallery"
 
@@ -63,86 +54,104 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	trim := false && Alert("removing most widgets")
 
+	trim2 := true && Alert("removing some widgets")
+
 	m := GenerateHeader(sess, p)
 	m.PushStateProvider(NewStateProvider("", p.ourState))
-	if !trim {
-		alertWidget = NewAlertWidget("sample_alert", AlertInfo)
-		alertWidget.SetVisible(false)
-		m.Add(alertWidget)
-	}
 
-	anim := ReadAnimalIgnoreError(3)
-	if anim.Id() == 0 {
-		Alert("No animals available")
-	} else {
-		m.Open()
-		p.editor = NewDataEditor(anim)
-		m.Id("foo").Label("Photo").AddFileUpload(p.uploadListener)
-
-		// The image widget will have the same id as the animal field that is to store its photo blob id.
-		//
-		imgWidget := m.Id(Animal_PhotoThumbnail).AddImage()
-		imgWidget.SetSize(AnimalPicSizeNormal, 0.3)
-
-		Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
-
-		Todo("!give widgets values (state) in this way wherever appropriate")
-
-		imgWidget.URLProvider = func(s Session) string {
-			// We are storing the image's blob id in the animal's photo_thumbnail field,
-			// so we can use the editor's embedded JSMap to access it.
-			imageId := p.editor.GetInt(Animal_PhotoThumbnail)
-			pr("provideURL, image id read from state:", imageId)
-			url := ""
-			if imageId != 0 {
-				url = SharedWebCache.GetBlobURL(imageId)
-				pr("read into cache, url:", url)
-			}
-			return url
-		}
-		m.Close()
-	}
-
-	m.Open()
-	{
-		m.Col(6)
-
-		x := m.Label("hello").AddText()
-		//x.SetTrace(true)
-		x.SetVisible(false)
-		m.Label("Toggle Visibility").AddButton(func(s Session, w Widget, arg string) {
-			newState := !x.Visible()
-			Pr("setting x visible:", newState)
-			x.SetVisible(newState)
-			x.Repaint()
-		})
-	}
-	m.Close()
-
-	m.Open()
-	{
-		m.Label("In HTML and CSS, background color is denoted by " +
-			"the background-color property. To add or " +
-			"change background color in HTML,").Size(SizeSmall).Height(5).AddText()
-
-	}
-	m.Close()
+	// ------------------------------------------------------------------------------------
+	// The list
+	// ------------------------------------------------------------------------------------
 
 	if !trim {
 		listItemWidget := m.Open()
+		// Assuming that we want all widgets within the item to take their state from the list item,
+		// push the item prefix here.  (The list renderer will actually render a larger prefix that includes it.)
+		//m.PushIdPrefix(galleryItemPrefix)
+		Alert("The comments above are outdated. We don't push a prefix when constructing the list item... the prefix will be added when it is later rendered")
 		Pr("opening gallery list item widget, state provider:", listItemWidget.StateProvider())
 		m.Id("foo_text").Height(3).AddText()
+		//m.PopIdPrefix()
 		m.Close()
 		Pr("adding list...")
 
 		p.list = m.AddList(NewGalleryListImplementation(), listItemWidget)
-		if trim {
+		if trim { //|| trim2 {
 			p.list.WithPageControls = false
 		}
 		Todo("!Add support for empty list items, to pad out page to full size")
 	}
 
-	if !trim {
+	// ------------------------------------------------------------------------------------
+
+	if !(trim || trim2) {
+		alertWidget = NewAlertWidget("sample_alert", AlertInfo)
+		alertWidget.SetVisible(false)
+		m.Add(alertWidget)
+	}
+
+	if !trim2 {
+		anim := ReadAnimalIgnoreError(3)
+		if anim.Id() == 0 {
+			Alert("No animals available")
+		} else {
+			m.Open()
+			p.editor = NewDataEditor(anim)
+			m.Id("foo").Label("Photo").AddFileUpload(p.uploadListener)
+
+			// The image widget will have the same id as the animal field that is to store its photo blob id.
+			//
+			imgWidget := m.Id(Animal_PhotoThumbnail).AddImage()
+			imgWidget.SetSize(AnimalPicSizeNormal, 0.3)
+
+			Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
+
+			Todo("!give widgets values (state) in this way wherever appropriate")
+
+			imgWidget.URLProvider = func(s Session) string {
+				// We are storing the image's blob id in the animal's photo_thumbnail field,
+				// so we can use the editor's embedded JSMap to access it.
+				imageId := p.editor.GetInt(Animal_PhotoThumbnail)
+				pr("provideURL, image id read from state:", imageId)
+				url := ""
+				if imageId != 0 {
+					url = SharedWebCache.GetBlobURL(imageId)
+					pr("read into cache, url:", url)
+				}
+				return url
+			}
+			m.Close()
+		}
+	}
+
+	if !trim2 {
+		m.Open()
+		{
+			m.Col(6)
+
+			x := m.Label("hello").AddText()
+			//x.SetTrace(true)
+			x.SetVisible(false)
+			m.Label("Toggle Visibility").AddButton(func(s Session, w Widget, arg string) {
+				newState := !x.Visible()
+				Pr("setting x visible:", newState)
+				x.SetVisible(newState)
+				x.Repaint()
+			})
+		}
+		m.Close()
+
+		m.Open()
+		{
+			m.Label("In HTML and CSS, background color is denoted by " +
+				"the background-color property. To add or " +
+				"change background color in HTML,").Size(SizeSmall).Height(5).AddText()
+
+		}
+		m.Close()
+	}
+
+	if !(trim || trim2) {
 		m.Open()
 
 		m.Id("fred").Label(`Fred`).AddButton(buttonListener)
@@ -186,50 +195,52 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.Close()
 	}
 
-	// Open a container for all these various columns so we restore the default when it closes
-	m.Open()
-	{
-		m.Col(4)
-		m.Label("uniform delta").AddText()
-		m.Col(8)
-		m.Id("x58").Label(`Disabled`).AddButton(buttonListener).SetEnabled(false)
-
-		m.Col(2).AddSpace()
-		m.Col(3).Id("yz").Label(`Enabled`).AddButton(buttonListener)
-
-		m.Col(3).AddSpace()
-		m.Col(4).AddSpace()
-
-		m.Col(6)
-		m.Label("Bird").Id("bird")
-		m.AddInput(birdListener)
-
-		m.Col(6)
+	if !trim2 {
+		// Open a container for all these various columns so we restore the default when it closes
 		m.Open()
-		m.Id("x59").Label(`Label for X59`).AddCheckbox(p.checkboxListener)
-		m.Id("x60").Label(`With fruit`).AddSwitch(p.checkboxListener)
-		m.Close()
+		{
+			m.Col(4)
+			m.Label("uniform delta").AddText()
+			m.Col(8)
+			m.Id("x58").Label(`Disabled`).AddButton(buttonListener).SetEnabled(false)
 
-		m.Col(4)
-		m.Id("launch").Label(`Launch`).AddButton(buttonListener)
+			m.Col(2).AddSpace()
+			m.Col(3).Id("yz").Label(`Enabled`).AddButton(buttonListener)
 
-		m.Col(8)
-		m.Label(`Sample text; is 5 < 26? A line feed
+			m.Col(3).AddSpace()
+			m.Col(4).AddSpace()
+
+			m.Col(6)
+			m.Label("Bird").Id("bird")
+			m.AddInput(birdListener)
+
+			m.Col(6)
+			m.Open()
+			m.Id("x59").Label(`Label for X59`).AddCheckbox(p.checkboxListener)
+			m.Id("x60").Label(`With fruit`).AddSwitch(p.checkboxListener)
+			m.Close()
+
+			m.Col(4)
+			m.Id("launch").Label(`Launch`).AddButton(buttonListener)
+
+			m.Col(8)
+			m.Label(`Sample text; is 5 < 26? A line feed
 "Quoted string"
 Multiple line feeds:
 
 
    an indented final line`)
-		m.AddText()
+			m.AddText()
 
-		m.Col(4)
-		sess.PushStateProvider(NewStateProvider("", p.ourState))
-		m.Label("Animal").Id("zebra").AddInput(p.zebraListener)
-		sess.PopStateProvider()
+			m.Col(4)
+			sess.PushStateProvider(NewStateProvider("", p.ourState))
+			m.Label("Animal").Id("zebra").AddInput(p.zebraListener)
+			sess.PopStateProvider()
+		}
+		m.Close()
+
 	}
-	m.Close()
-
-	if !trim {
+	if !(trim || trim2) {
 		AddUserHeaderWidget(sess)
 	}
 	sess.PopStateProvider()
@@ -387,4 +398,8 @@ func (g GalleryListImplementation) ItemStateProvider(s Session, elementId int) W
 	json := NewJSMap()
 	json.Put("foo_text", ToString("Item #", elementId, g.names[elementId]))
 	return NewStateProvider("", json)
+}
+
+func (g GalleryListImplementation) ItemPrefix() string {
+	return galleryItemPrefix
 }

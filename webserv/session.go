@@ -121,6 +121,7 @@ func (s Session) PrependId(id string) string {
 	if p == nil {
 		return id
 	}
+	Pr("prepending prefix", p.Prefix, "to id:", id)
 	return p.Prefix + id
 }
 
@@ -619,8 +620,11 @@ func compileId(prefix string, id string) string {
 // ------------------------------------------------------------------------------------
 // Read widget value; assumed to be a string.
 func (s Session) WidgetStringValue(w Widget) string {
+	Die("maybe don't always store state provider with widget, and rely on stacked versions?")
 	p := s.provider(w)
-	return readStateStringValue(p, w.Id())
+	result := readStateStringValue(p, w.Id())
+	Pr("WidgetStringValue, widget id:", w.Id(), "provider:", p, "result:", result)
+	return result
 }
 
 // Read widget value; assumed to be an int.

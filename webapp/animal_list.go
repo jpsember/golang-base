@@ -34,3 +34,7 @@ func (a AnimalList) ItemStateProvider(s Session, elementId int) WidgetStateProvi
 	a.cardWidget.SetAnimal(anim)
 	return NewStateProvider(a.cardWidget.ChildIdPrefix, anim.ToJson())
 }
+
+func (a AnimalList) ItemPrefix() string {
+	return "animallist:"
+}

@@ -12,7 +12,10 @@ type WidgetStateProviderStruct struct {
 type WidgetStateProvider = *WidgetStateProviderStruct
 
 func (pv WidgetStateProvider) String() string {
-	return "{SP " + Quoted(pv.Prefix) + " state:" + Truncated(pv.State.CompactString()) + " }"
+	if pv == nil {
+		return "<nil>"
+	}
+	return "{Prefix " + Quoted(pv.Prefix) + " state:" + Truncated(pv.State.CompactString()) + " }"
 }
 
 func (pv WidgetStateProvider) AssertValid() WidgetStateProvider {

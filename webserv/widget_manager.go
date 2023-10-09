@@ -60,6 +60,7 @@ func (m WidgetManager) Get(id string) Widget {
 func (m WidgetManager) Id(id string) WidgetManager {
 	Todo("!this name conflicts with Session.SessionId")
 	v := m.IdPrefix() + id
+	Pr("Id(), with prefix:", v)
 	AssertNoDots(v)
 	m.pendingId = v
 	return m
@@ -178,8 +179,14 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	return m
 }
 
+func (m WidgetManager) DebugStackedState() *mgrState { return m.stackedState() }
+
 func (m WidgetManager) stackedState() *mgrState {
 	return &m.stack[len(m.stack)-1]
+}
+
+func (s *mgrState) String() string {
+	return NewJSMap().Put("IdPrefix", s.IdPrefix).Put("StateProvider", s.StateProvider.String()).CompactString()
 }
 
 // Have subsequent WidgetManager operations operate on a particular container widget.
@@ -324,8 +331,8 @@ func (m WidgetManager) AddHeading() HeadingWidget {
 
 func (m WidgetManager) AddText() TextWidget {
 	staticContent, id, wasStatic := m.getStaticContentAndId()
+	Pr("AddText, id:", id)
 	w := NewTextWidget(id, m.consumePendingSize(), m.consumePendingHeight())
-	Pr("adding text, id:", id, "setting state provider:", m.StateProvider())
 	if wasStatic {
 		w.SetStaticContent(staticContent)
 	}
@@ -444,9 +451,15 @@ func (m WidgetManager) StateProvider() WidgetStateProvider {
 }
 
 func (m WidgetManager) PushIdPrefix(prefix string) {
+	Pr(VERT_SP, "PushIdPrefix:", prefix)
+	//Todo("We need to make a COPY of the top of stack?")
 	itm := *m.stackedState()
+	//Pr("stacked state:", INDENT, m.stackedState())
+	//Pr("as copied item:", INDENT, itm)
 	itm.IdPrefix = prefix
+	//Pr("after modifying copy, stacked:", INDENT, m.stackedState())
 	m.pushState(itm, tag_prefix)
+	Pr("Pushed copy, state:", INDENT, m.stackedState())
 }
 
 func (m WidgetManager) PopIdPrefix() {

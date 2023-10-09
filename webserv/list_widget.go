@@ -56,9 +56,9 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string)
 		Todo("!How do we distinguish between value actions (like text fields) and button presses?")
 		// Set up the same state provider that we did when rendering the widget
 		//savedStateProvider := sess.baseStateProvider()
-		currentProvider := w.StateProvider()
+		//currentProvider := w.StateProvider()
 		//sess.StateProvider()
-		sess.PushStateProvider(w.constructStateProvider(sess, elementId, currentProvider.Prefix))
+		sess.PushStateProvider(w.constructStateProvider(sess, elementId))
 		sess.ProcessWidgetValue(sourceWidget, remainder, elementId)
 		sess.PopStateProvider()
 		// Fall through to return nil, nil
@@ -134,24 +134,16 @@ func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, ta
 	m.A(`">`, label, `</a></li>`, CR)
 }
 
-func (w ListWidget) constructStateProvider(s Session, elementId int, oldPrefix string) WidgetStateProvider {
-	cached := w.cachedStateProviders[elementId]
-	if cached == nil {
-		pv := w.list.ItemStateProvider(s, elementId)
-		Alert("is it ok to have periods here?  Maybe colons instead?")
-		cached = NewStateProvider(w.Id()+"."+IntToString(elementId)+"."+oldPrefix, pv.State)
-		w.cachedStateProviders[elementId] = cached
-	}
-	return cached
-}
-
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
+
 	Alert("The gallery list items are no longer rendering since I refactored the state provider stuff")
-	pr := PrIf("ListWidget.RenderTo", false)
-	pr("ListWidget.RenderTo")
-	m.Comment("ListWidget")
+
+	pr := PrIf("ListWidget.RenderTo", true)
+	pr("ListWidget.RenderTo; id", w.Id())
 
 	m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent()
+
+	m.Comment("ListWidget")
 
 	// Discard any previously cached state providers, and
 	// cache those we are about to construct (so we don't ask client
@@ -168,21 +160,23 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			pr("rendering page #:", w.list.CurrentPage(), "element ids:", elementIds)
 
 			// While rendering this list's items, we will set the state provider to one for each item.
-			prefix := ""
-			sp := w.StateProvider()
-			if sp != nil {
-				prefix = sp.Prefix
-			}
-			Pr("Rendering list", w.Id(), "state provider:", sp)
-			pr(VERT_SP, "saved pv:", INDENT, sp)
+
+			pr("item prefix:", w.list.ItemPrefix())
 
 			for _, id := range elementIds {
-				s.PushStateProvider(w.constructStateProvider(s, id, prefix))
-				Pr("rendering element, state provider:", s.StateProvider())
-				//s.setBaseStateProvider(w.constructStateProvider(s, id, savedStateProvider.Prefix))
+				sp := w.constructStateProvider(s, id)
+				pr("pushing state provider:", sp)
+				s.PushStateProvider(sp)
+				// We want each rendered widget to have a unique id, so push "<element id>:" as a *rendering* prefix
+				s.PushIdPrefix(IntToString(id) + ":")
+				// If we push the state provider AFTER the id prefix, it doesn't work! Why?
 				// Note that we are not calling RenderWidget(), which would not draw anything since the
 				// list item widget has been marked as detached
+				x := m.Len()
+				pr("what is the state?", INDENT, s.DebugStackedState())
 				w.itemWidget.RenderTo(s, m)
+				pr("rendered item, markup:", INDENT, m.String()[x:])
+				s.PopIdPrefix()
 				s.PopStateProvider()
 			}
 			// Restore the default state provider to what it was before we rendered the items.
@@ -196,6 +190,18 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	}
 
 	m.TgClose()
+}
+
+func (w ListWidget) constructStateProvider(s Session, elementId int) WidgetStateProvider {
+	cached := w.cachedStateProviders[elementId]
+	if cached == nil {
+		pv := w.list.ItemStateProvider(s, elementId)
+		Alert("is it ok to have periods here?  Maybe colons instead?")
+		Alert("Is the element id required anywhere? Maybe to prevent multiple appearances of the same id?")
+		cached = NewStateProvider(w.list.ItemPrefix(), pv.State)
+		w.cachedStateProviders[elementId] = cached
+	}
+	return cached
 }
 
 // Process a possible pagniation control event.
