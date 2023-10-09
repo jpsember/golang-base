@@ -6,8 +6,10 @@ import (
 )
 
 type mgrState struct {
-	Parent              Widget
-	StateProvider       WidgetStateProvider
+	Parent        Widget
+	StateProvider WidgetStateProvider
+	// Not to be confused with StateProvider.Prefix, this is an optional prefix to be prepended to the
+	// id when adding widgets:
 	IdPrefix            string
 	DebugTag            string
 	pendingChildColumns int
@@ -60,7 +62,6 @@ func (m WidgetManager) Get(id string) Widget {
 func (m WidgetManager) Id(id string) WidgetManager {
 	Todo("!this name conflicts with Session.SessionId")
 	v := m.IdPrefix() + id
-	Pr("Id(), with prefix:", v)
 	AssertNoDots(v)
 	m.pendingId = v
 	return m
@@ -282,6 +283,7 @@ func (m WidgetManager) auxAddInput(listener InputWidgetListener, password bool) 
 	id := m.ConsumeOptionalPendingId()
 	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()), listener, password)
 	m.Add(t)
+	Todo("is this still required?")
 	t.StateProvider().AssertValid()
 	return t
 }
@@ -451,15 +453,9 @@ func (m WidgetManager) StateProvider() WidgetStateProvider {
 }
 
 func (m WidgetManager) PushIdPrefix(prefix string) {
-	Pr(VERT_SP, "PushIdPrefix:", prefix)
-	//Todo("We need to make a COPY of the top of stack?")
 	itm := *m.stackedState()
-	//Pr("stacked state:", INDENT, m.stackedState())
-	//Pr("as copied item:", INDENT, itm)
 	itm.IdPrefix = prefix
-	//Pr("after modifying copy, stacked:", INDENT, m.stackedState())
 	m.pushState(itm, tag_prefix)
-	Pr("Pushed copy, state:", INDENT, m.stackedState())
 }
 
 func (m WidgetManager) PopIdPrefix() {

@@ -54,7 +54,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	trim := false && Alert("removing most widgets")
 
-	trim2 := true && Alert("removing some widgets")
+	trim2 := false && Alert("removing some widgets")
 
 	m := GenerateHeader(sess, p)
 	m.PushStateProvider(NewStateProvider("", p.ourState))
@@ -66,14 +66,11 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	if !trim {
 		listItemWidget := m.Open()
 		// Assuming that we want all widgets within the item to take their state from the list item,
-		// push the item prefix here.  (The list renderer will actually render a larger prefix that includes it.)
-		//m.PushIdPrefix(galleryItemPrefix)
-		Alert("The comments above are outdated. We don't push a prefix when constructing the list item... the prefix will be added when it is later rendered")
-		Pr("opening gallery list item widget, state provider:", listItemWidget.StateProvider())
+		// push the item prefix here.
+		m.PushIdPrefix(galleryItemPrefix)
 		m.Id("foo_text").Height(3).AddText()
-		//m.PopIdPrefix()
+		m.PopIdPrefix()
 		m.Close()
-		Pr("adding list...")
 
 		p.list = m.AddList(NewGalleryListImplementation(), listItemWidget)
 		if trim { //|| trim2 {

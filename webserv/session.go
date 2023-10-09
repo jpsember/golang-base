@@ -620,10 +620,29 @@ func compileId(prefix string, id string) string {
 // ------------------------------------------------------------------------------------
 // Read widget value; assumed to be a string.
 func (s Session) WidgetStringValue(w Widget) string {
-	Die("maybe don't always store state provider with widget, and rely on stacked versions?")
+	pr := PrIf("WidgetStringValue", true)
+
+	// If the session has a stacked state provider and its (non-empty) prefix matches this widget's id,
+	// take state from that instead.
+	id := w.Id()
 	p := s.provider(w)
-	result := readStateStringValue(p, w.Id())
-	Pr("WidgetStringValue, widget id:", w.Id(), "provider:", p, "result:", result)
+	pr(VERT_SP, "id:", id, "provider:", p)
+
+	state := s.stackedState()
+	pr("stacked state:", state.StateProvider)
+
+	if state.IdPrefix != "" {
+		effectiveId, hadPrefix := TrimIfPrefix(id, state.StateProvider.Prefix)
+		pr("TrimIfPrefix produced:", effectiveId, hadPrefix)
+		if hadPrefix {
+			id = effectiveId
+			p = state.StateProvider
+			pr("using override state provider:", p)
+		}
+	}
+
+	result := readStateStringValue(p, id)
+	pr("result:", result)
 	return result
 }
 
@@ -657,6 +676,9 @@ func (s Session) provider(w Widget) WidgetStateProvider {
 	p := w.StateProvider()
 	if p == nil {
 		p = s.StateProvider()
+		if p == nil {
+			BadState("there is no session state provider for id:", w.Id())
+		}
 	}
 	return p
 }

@@ -22,9 +22,6 @@ func (pv WidgetStateProvider) AssertValid() WidgetStateProvider {
 	if pv.State == nil {
 		BadState("attempt to use null state provider")
 	}
-	//if pv == NullStateProvider {
-	//	BadState("attempt to use NullStateProvider")
-	//}
 	return pv
 }
 
@@ -53,5 +50,3 @@ func readStateStringValue(p WidgetStateProvider, id string) string {
 	}
 	return p.State.OptString(key, "")
 }
-
-//var NullStateProvider = &WidgetStateProviderStruct{}
