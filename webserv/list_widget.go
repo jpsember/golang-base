@@ -164,9 +164,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				pr("pushing state provider:", sp)
 				s.PushStateProvider(sp)
 				// We want each rendered widget to have a unique id, so push "<element id>:" as a *rendering* prefix
-        Alert("The element_id is NOT being rendered as an id prefix!")
 				s.PushIdPrefix(IntToString(id) + ":")
-				//Pr(VERT_SP, "pushed prefix:", s.IdPrefix())
 				// If we push the state provider AFTER the id prefix, it doesn't work! Why?
 				// Note that we are not calling RenderWidget(), which would not draw anything since the
 				// list item widget has been marked as detached

@@ -47,7 +47,8 @@ func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	// The outermost element must have the widget's id!  Or chaos happens during repainting.
 
-	m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent()
+	prependedId := s.PrependId(w.Id())
+	m.TgOpen(`div id='`).A(prependedId, `'`).TgContent()
 	m.Comment("image")
 
 	{
@@ -65,7 +66,8 @@ func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 
 		clickArg := ""
 		if w.clickListener != nil {
-			clickArg = ` onclick="jsButton('` + w.Id() + `')"`
+		zz send something other than an id?
+    clickArg = ` onclick="jsButton('` + prependedId + `')"`
 		}
 
 		m.A(`<img src="`, imageSource, `" alt="`, w.escapedAltLabel, `"`, clickArg)

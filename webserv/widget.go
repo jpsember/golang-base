@@ -81,7 +81,7 @@ func RenderWidget(w Widget, s Session, m MarkupBuilder) {
 	if !w.Visible() {
 		w.Log("RenderWidget, not visible;")
 		i := m.Len()
-		m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent().TgClose()
+		m.TgOpen(`div id=`).A(QUO, s.PrependId(w.Id())).TgContent().TgClose()
 		w.Log("Markup:", INDENT, m.String()[i:])
 	} else {
 		w.RenderTo(s, m)

@@ -120,9 +120,6 @@ func (s Session) PrependId(id string) string {
 	if strings.HasSuffix(id, pref) {
 		Alert("<1#50Id already has prefix:", id, pref, INDENT, Callers(1, 4))
 	}
-	if Alert("trying WITHOUT prefixing") {
-		return id
-	}
 	return pref + id
 }
 
