@@ -150,41 +150,42 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 		m.Id("fred").Label(`Fred`).AddButton(buttonListener)
 
-		{
-			m.Col(4)
-
-			cardListener := func(sess Session, widget AnimalCard, arg string) {
-				Pr("card listener, animal id:", widget.Animal().Id(), "arg:", arg)
-			}
-			cardButtonListener := func(sess Session, widget AnimalCard, arg string) {
-				Pr("card button listener, name:", widget.Animal().Name(), "arg:", arg)
-			}
-
-			Todo("We need to create a state provider for cards, when not in list (list handles that already somehow)")
-
-			// Create a new card that will contain other widgets
-			c1 := NewAnimalCard(m, ReadAnimalIgnoreError(3), cardListener, "Hello", cardButtonListener)
-			//c1.SetTrace(true)
-
-			m.Add(c1)
-			m.Add(
-				NewAnimalCard(m, ReadAnimalIgnoreError(4), nil, "Bop", cardButtonListener))
-
-			m.Open()
-
-			m.PushStateMap(p.fooMap)
-			m.PushIdPrefix("")
-			{
-
-				m.Col(4)
-				m.Label("Static text.").Height(5).AddText()
-				m.Id("bar").Label("Bar:").AddInput(p.fooListener)
-			}
-			m.PopIdPrefix()
-			m.PopStateProvider()
-			m.Close()
-
-		}
+		Todo("!Consider reinstating individual cards (not part of a list)")
+		//{
+		//	m.Col(4)
+		//
+		//	cardListener := func(sess Session, widget AnimalCard, arg string) {
+		//		Pr("card listener, animal id:", widget.Animal().Id(), "arg:", arg)
+		//	}
+		//	cardButtonListener := func(sess Session, widget AnimalCard, arg string) {
+		//		Pr("card button listener, name:", widget.Animal().Name(), "arg:", arg)
+		//	}
+		//
+		//	Todo("We need to create a state provider for cards, when not in list (list handles that already somehow)")
+		//
+		//	// Create a new card that will contain other widgets
+		//	c1 := NewAnimalCard(m, ReadAnimalIgnoreError(3), cardListener, "Hello", cardButtonListener)
+		//	//c1.SetTrace(true)
+		//
+		//	m.Add(c1)
+		//	m.Add(
+		//		NewAnimalCard(m, ReadAnimalIgnoreError(4), nil, "Bop", cardButtonListener))
+		//
+		//	m.Open()
+		//
+		//	m.PushStateMap(p.fooMap)
+		//	m.PushIdPrefix("")
+		//	{
+		//
+		//		m.Col(4)
+		//		m.Label("Static text.").Height(5).AddText()
+		//		m.Id("bar").Label("Bar:").AddInput(p.fooListener)
+		//	}
+		//	m.PopIdPrefix()
+		//	m.PopStateProvider()
+		//	m.Close()
+		//
+		//}
 
 		m.Close()
 	}

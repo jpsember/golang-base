@@ -8,12 +8,10 @@ import (
 
 type AnimalCardStruct struct {
 	BaseWidgetObj
-	cardAnimal     Animal
 	cardListener   CardWidgetListener
 	buttonListener CardWidgetListener
 	buttonLabel    string
 	children       []Widget
-	ChildIdPrefix  string
 }
 
 type AnimalCard = *AnimalCardStruct
@@ -21,23 +19,15 @@ type AnimalCard = *AnimalCardStruct
 // Note: If card is a list item, the widget's Animal() might not be accurate!
 type CardWidgetListener func(sess Session, widget AnimalCard, arg string)
 
-func (w AnimalCard) Animal() Animal {
-	return w.cardAnimal
-}
-
-func NewAnimalCard(m WidgetManager, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) AnimalCard {
+func NewAnimalCard(m WidgetManager, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) AnimalCard {
 	Todo("!Not sure we will need card buttons")
 
-	Todo("Can we think of a card as a list item widget?")
 	widgetId := m.ConsumeOptionalPendingId()
-
-	// An animal id of zero can be used for constructing a template (e.g., list item widget)
 
 	// If a button is requested, it must have a listener
 	CheckArg((buttonLabel == "") == (buttonListener == nil))
 
 	w := AnimalCardStruct{
-		cardAnimal:     animal,
 		cardListener:   cardListener,
 		buttonLabel:    buttonLabel,
 		buttonListener: buttonListener,
@@ -63,42 +53,25 @@ func (w AnimalCard) ourButtonListener(sess Session, widget Widget, arg string) {
 	w.buttonListener(sess, w, arg)
 }
 
+const animalCardItemPrefix = "animal_item:"
+
 func (w AnimalCard) AddChildren(m WidgetManager) {
 	pr := PrIf("", false)
 	pr("adding children to new card")
 
-	// If we were given an actual animal, give this card's children a default state provider.
-	// Otherwise, it is (presumably) being used as a list item widget, and the list interface's
-	// ItemStateProvider will make this unnecessary (and it will in fact not work if we
-	// modify the prefix).
-	if w.cardAnimal.Id() != 0 {
-		// Determine a unique prefix for this card's fields.
-		// Note that we do *don't* set any state providers until we know what this prefix is.  Specifically,
-		// we don't create a state provider at construction time.
-		w.ChildIdPrefix = m.AllocateAnonymousId("card_children:")
-		m.PushStateProvider(NewStateProvider(w.ChildIdPrefix, w.cardAnimal.ToJson().AsJSMap()))
-	}
-
 	m.OpenContainer(w)
-	if w.ChildIdPrefix != "" {
-		m.PushIdPrefix(w.ChildIdPrefix)
-	}
+
+	Todo("!Make animalCardItemPrefix a parameter in case we want multiple lists")
+	m.PushIdPrefix(animalCardItemPrefix)
 	{
-		c1 := m.Id("name").Size(SizeTiny).AddHeading()
-		c2 := m.Id("summary").AddText()
-		c1.SetTrace(false)
-		c2.SetTrace(false)
+		m.Id(Animal_Name).Size(SizeTiny).AddHeading()
+		m.Id(Animal_Summary).AddText()
 	}
 	if w.buttonLabel != "" {
 		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.ourButtonListener)
 	}
-	if w.ChildIdPrefix != "" {
-		m.PopIdPrefix()
-	}
+	m.PopIdPrefix()
 	m.Close()
-	if w.cardAnimal.Id() != 0 {
-		m.PopStateProvider()
-	}
 
 	pr("done adding children")
 }
@@ -107,41 +80,40 @@ func (w AnimalCard) AddChild(c Widget, manager WidgetManager) {
 	w.children = append(w.children, c)
 }
 
-func (w AnimalCard) SetAnimal(anim Animal) {
-	w.cardAnimal = anim
-}
-
 func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 	ci := 0
 	cimax := len(w.children)
 
 	// Open a bootstrap card
-	animal := w.cardAnimal
 	m.Comments("Animal Card")
 
 	m.TgOpen(`div class="card bg-light mb-3"`).Style(`width:14em`).TgContent()
 	{
-		imgUrl := "unknown"
-		photoId := animal.PhotoThumbnail()
-		if photoId == 0 {
-			Alert("#50Animal has no photo")
-		} else {
-			imgUrl = SharedWebCache.GetBlobURL(photoId)
-		}
 
-		// If there's a card listener, treat the image as a big button returning the card's id
-		clickArg := ""
-		if w.cardListener != nil {
-			clickId := s.PrependId(w.Id())
-			clickArg = ` onclick="jsButton('` + clickId + `')"`
-		}
+		Todo("Use an image widget to render the photo")
 
-		m.Comment("animal image")
-		m.A(`<img src="`, imgUrl, `" alt="animal image" `, clickArg)
-
-		PlotImageSizeMarkup(s, m, IPointZero) //AnimalPicSizeNormal.ScaledBy(0.4))
-
-		m.A(`>`).Cr()
+		//imgUrl := "unknown"
+		//var photoId int
+		////photoId := animal.PhotoThumbnail()
+		//if photoId == 0 {
+		//	Alert("#50Animal has no photo")
+		//} else {
+		//	imgUrl = SharedWebCache.GetBlobURL(photoId)
+		//}
+		//
+		//// If there's a card listener, treat the image as a big button returning the card's id
+		//clickArg := ""
+		//if w.cardListener != nil {
+		//	clickId := s.PrependId(w.Id())
+		//	clickArg = ` onclick="jsButton('` + clickId + `')"`
+		//}
+		//
+		//m.Comment("animal image")
+		//m.A(`<img src="`, imgUrl, `" alt="animal image" `, clickArg)
+		//
+		//PlotImageSizeMarkup(s, m, IPointZero) //AnimalPicSizeNormal.ScaledBy(0.4))
+		//
+		//m.A(`>`).Cr()
 
 		// Display title and brief summary
 		m.Comments("title and summary")
@@ -168,6 +140,10 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 		m.TgClose()
 
 		m.Comments(`Progress towards goal, controls`)
+		var campaignBalance, campaignTarget int
+
+		Todo("add widgets for the campaign balance")
+
 		m.TgOpen(`div class="card-body"`).TgContent()
 		{
 			m.Comments("progress-container")
@@ -179,7 +155,7 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 			m.TgClose()
 			m.TgOpen(`div class="progress-text"`).TgContent()
 			{
-				m.A(ESCAPED, CurrencyToString(animal.CampaignBalance())+` raised of `+CurrencyToString(animal.CampaignTarget())+` goal`)
+				m.A(ESCAPED, CurrencyToString(campaignBalance)+` raised of `+CurrencyToString(campaignTarget)+` goal`)
 			}
 			m.TgClose()
 

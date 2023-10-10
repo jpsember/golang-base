@@ -49,7 +49,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 
 	var cardWidget AnimalCard
 	{
-		w := NewAnimalCard(m, DefaultAnimal,
+		w := NewAnimalCard(m,
 			func(sess Session, widget AnimalCard, arg string) {
 				animalId := sess.Context().(int)
 				p.attemptSelectAnimal(sess, animalId)

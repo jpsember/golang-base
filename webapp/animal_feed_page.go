@@ -48,7 +48,7 @@ func (p FeedPage) generateWidgets(s Session) {
 		// For now, write the code as one big function; split up later once structure is more apparent.
 
 		// Construct the list item widget
-		cardWidget := NewAnimalCard(m, DefaultAnimal,
+		cardWidget := NewAnimalCard(m,
 			func(sess Session, widget AnimalCard, arg string) {
 				animalId := sess.Context().(int)
 				Pr("card listener, animal id:", animalId, "arg:", arg)

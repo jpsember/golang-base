@@ -31,10 +31,11 @@ func NewAnimalList(animalIds []int, cardWidget AnimalCard) AnimalList {
 func (a AnimalList) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
 	anim := ReadAnimalIgnoreError(elementId)
 	CheckState(anim.Id() != 0, "no animal available")
-	a.cardWidget.SetAnimal(anim)
-	return NewStateProvider(a.cardWidget.ChildIdPrefix, anim.ToJson().AsJSMap())
+
+	json := anim.ToJson().AsJSMap()
+	return NewStateProvider(a.ItemPrefix(), json)
 }
 
 func (a AnimalList) ItemPrefix() string {
-	return animalFeedListPrefix
+	return animalCardItemPrefix
 }
