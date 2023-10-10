@@ -47,6 +47,7 @@ var myRand = NewJSRand().SetSeed(1234)
 
 func (p GalleryPage) generateWidgets(sess Session) {
 	pr := PrIf("GalleryPage.generateWidgets", false)
+	pr("generateWidgets")
 
 	trim := false && Alert("removing most widgets")
 
@@ -95,25 +96,13 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 			// The image widget will have the same id as the animal field that is to store its photo blob id.
 			//
-			imgWidget := m.Id(Animal_PhotoThumbnail).AddImage()
+			imgWidget := m.Id(Animal_PhotoThumbnail).AddImage(p.imgUrlProvider)
 			imgWidget.SetSize(AnimalPicSizeNormal, 0.3)
 
 			Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
 
 			Todo("!give widgets values (state) in this way wherever appropriate")
 
-			imgWidget.URLProvider = func(s Session) string {
-				// We are storing the image's blob id in the animal's photo_thumbnail field,
-				// so we can use the editor's embedded JSMap to access it.
-				imageId := p.editor.GetInt(Animal_PhotoThumbnail)
-				pr("provideURL, image id read from state:", imageId)
-				url := ""
-				if imageId != 0 {
-					url = SharedWebCache.GetBlobURL(imageId)
-					pr("read into cache, url:", url)
-				}
-				return url
-			}
 			m.Close()
 		}
 	}
@@ -239,6 +228,20 @@ Multiple line feeds:
 		AddUserHeaderWidget(sess)
 	}
 	sess.PopStateProvider()
+}
+
+func (p GalleryPage) imgUrlProvider(s Session) string {
+	pr := PrIf("imgURLProvider", false)
+	// We are storing the image's blob id in the animal's photo_thumbnail field,
+	// so we can use the editor's embedded JSMap to access it.
+	imageId := p.editor.GetInt(Animal_PhotoThumbnail)
+	pr("provideURL, image id read from state:", imageId)
+	url := ""
+	if imageId != 0 {
+		url = SharedWebCache.GetBlobURL(imageId)
+		pr("read into cache, url:", url)
+	}
+	return url
 }
 
 func birdListener(s Session, widget InputWidget, newVal string) (string, error) {

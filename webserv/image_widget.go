@@ -9,14 +9,18 @@ type ImageURLProvider func(s Session) string
 
 type ImageWidgetObj struct {
 	BaseWidgetObj
-	URLProvider ImageURLProvider
-	fixedSize   IPoint // If not (0,0), size to display image as
+	urlProvider     ImageURLProvider
+	fixedSize       IPoint // If not (0,0), size to display image as
+	escapedAltLabel string
 }
 
 type ImageWidget = *ImageWidgetObj
 
-func NewImageWidget(id string) ImageWidget {
-	t := &ImageWidgetObj{}
+func NewImageWidget(id string, urlProvider ImageURLProvider) ImageWidget {
+	t := &ImageWidgetObj{
+		escapedAltLabel: Escaped("unknown image"),
+		urlProvider:     urlProvider,
+	}
 	t.InitBase(id)
 	return t
 }
@@ -38,8 +42,8 @@ func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 	{
 		var imageSource string
 
-		if w.URLProvider != nil {
-			imageSource = w.URLProvider(s)
+		if w.urlProvider != nil {
+			imageSource = w.urlProvider(s)
 			pr("url provider returned image source:", imageSource)
 			if imageSource == "" {
 				imageSource = "https://upload.wikimedia.org/wikipedia/en/a/a9/Example.jpg"
@@ -48,7 +52,7 @@ func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 			pr("no URLProvider!")
 		}
 
-		m.A(`<img src="`, imageSource, `" alt="uploaded image"`)
+		m.A(`<img src="`, imageSource, `" alt="`, w.escapedAltLabel, `"`)
 
 		PlotImageSizeMarkup(s, m, w.fixedSize)
 		if w.fixedSize.IsPositive() {

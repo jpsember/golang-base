@@ -15,6 +15,13 @@ type AnimalCardStruct struct {
 	children       []Widget
 }
 
+const (
+	acchild_photothumbnail = iota
+	acchild_name
+	acchild_summary
+	acchild_button
+)
+
 type AnimalCard = *AnimalCardStruct
 
 // Note: If card is a list item, the widget's Animal() might not be accurate!
@@ -63,6 +70,7 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 
 	m.PushIdPrefix(w.itemPrefix)
 	{
+		m.Id(Animal_PhotoThumbnail).AddImage(w.imageURLProvider)
 		m.Id(Animal_Name).Size(SizeTiny).AddHeading()
 		m.Id(Animal_Summary).AddText()
 	}
@@ -80,8 +88,6 @@ func (w AnimalCard) AddChild(c Widget, manager WidgetManager) {
 }
 
 func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
-	ci := 0
-	cimax := len(w.children)
 
 	// Open a bootstrap card
 	m.Comments("Animal Card")
@@ -89,17 +95,10 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 	m.TgOpen(`div class="card bg-light mb-3"`).Style(`width:14em`).TgContent()
 	{
 
-		Todo("Use an image widget to render the photo")
+		RenderWidget(w.children[acchild_photothumbnail], s, m)
 
-		//imgUrl := "unknown"
-		//var photoId int
-		////photoId := animal.PhotoThumbnail()
-		//if photoId == 0 {
-		//	Alert("#50Animal has no photo")
-		//} else {
-		//	imgUrl = SharedWebCache.GetBlobURL(photoId)
-		//}
-		//
+		Todo("add option to make images clickable")
+
 		//// If there's a card listener, treat the image as a big button returning the card's id
 		//clickArg := ""
 		//if w.cardListener != nil {
@@ -120,20 +119,13 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 		{
 			Todo("!This used to be h6, but due to validation problem, changed to div:")
 			m.TgOpen(`div class="card-title"`).TgContent()
-			{
-				// Render the name as the first child
-				RenderWidget(w.children[ci], s, m)
-				ci++
-			}
+			RenderWidget(w.children[acchild_name], s, m)
 			m.TgClose()
 
-			// Render the second child
+			// Summary
 			Alert("!this used to be a <p>, but to fix validation is now <div>")
 			m.TgOpen(`div class="card-text"`).Style(`font-size:75%;`).TgContent()
-			{
-				RenderWidget(w.children[ci], s, m)
-				ci++
-			}
+			RenderWidget(w.children[acchild_summary], s, m)
 			m.TgClose()
 		}
 		m.TgClose()
@@ -160,20 +152,29 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 
 			// If there's a button, render it
 
-			if ci < cimax {
+			if len(w.children) > acchild_button {
 				m.Comments("right-justified button")
 				m.TgOpen(`div`).A(` class="row"`).TgContent()
 				{
 					m.TgOpen(`div`).A(` class="d-grid justify-content-md-end"`).TgContent()
-					RenderWidget(w.children[ci], s, m)
-					ci++
+					RenderWidget(w.children[acchild_button], s, m)
 					m.TgClose()
 				}
 				m.TgClose()
-				ci++
 			}
 		}
 		m.TgClose()
 	}
 	m.TgClose()
+}
+
+func (w AnimalCard) imageURLProvider(s Session) string {
+	imgUrl := "unknown"
+	photoId := s.WidgetIntValue(w.children[acchild_photothumbnail])
+	if photoId == 0 {
+		Alert("#50Animal has no photo")
+	} else {
+		imgUrl = SharedWebCache.GetBlobURL(photoId)
+	}
+	return imgUrl
 }

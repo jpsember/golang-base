@@ -166,8 +166,7 @@ func (p AnimalDetailPage) generateForEditing(m Session) {
 	p.uploadPicWidget =
 		m.Label("Photo").AddFileUpload(p.uploadPhotoListener)
 
-	imgWidget := m.Id(Animal_PhotoThumbnail).AddImage()
-	imgWidget.URLProvider = p.provideURL
+	imgWidget := m.Id(Animal_PhotoThumbnail).AddImage(p.provideURL)
 	// Scale the photos based on browser resolution
 	imgWidget.SetSize(AnimalPicSizeNormal, 0.6)
 	p.imgWidget = imgWidget
@@ -196,8 +195,7 @@ func (p AnimalDetailPage) generateForViewing(m Session) {
 
 	m.Open()
 	Todo("extract common widget creation between manager/donor")
-	imgWidget := m.Id(Animal_PhotoThumbnail).AddImage()
-	imgWidget.URLProvider = p.provideURL
+	imgWidget := m.Id(Animal_PhotoThumbnail).AddImage(p.provideURL)
 
 	// Scale the photos based on browser resolution
 	imgWidget.SetSize(AnimalPicSizeNormal, 0.6)

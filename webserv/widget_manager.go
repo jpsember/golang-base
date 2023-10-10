@@ -371,8 +371,8 @@ func (m WidgetManager) AddFileUpload(listener FileUploadWidgetListener) FileUplo
 	return w
 }
 
-func (m WidgetManager) AddImage() ImageWidget {
-	w := NewImageWidget(m.consumePendingId())
+func (m WidgetManager) AddImage(urlProvider ImageURLProvider) ImageWidget {
+	w := NewImageWidget(m.consumePendingId(), urlProvider)
 	m.Add(w)
 	return w
 }
