@@ -6,7 +6,6 @@ import (
 	. "github.com/jpsember/golang-base/webserv"
 )
 
-// A Widget that displays editable text
 type AnimalCardStruct struct {
 	BaseWidgetObj
 	cardAnimal     Animal
@@ -29,6 +28,7 @@ func (w AnimalCard) Animal() Animal {
 func NewAnimalCard(m WidgetManager, animal Animal, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) AnimalCard {
 	Todo("!Not sure we will need card buttons")
 
+	Todo("Can we think of a card as a list item widget?")
 	widgetId := m.ConsumeOptionalPendingId()
 
 	// An animal id of zero can be used for constructing a template (e.g., list item widget)
@@ -80,7 +80,9 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 	}
 
 	m.OpenContainer(w)
-	m.PushIdPrefix(w.ChildIdPrefix)
+	if w.ChildIdPrefix != "" {
+		m.PushIdPrefix(w.ChildIdPrefix)
+	}
 	{
 		c1 := m.Id("name").Size(SizeTiny).AddHeading()
 		c2 := m.Id("summary").AddText()
@@ -90,7 +92,9 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 	if w.buttonLabel != "" {
 		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.ourButtonListener)
 	}
-	m.PopIdPrefix()
+	if w.ChildIdPrefix != "" {
+		m.PopIdPrefix()
+	}
 	m.Close()
 	if w.cardAnimal.Id() != 0 {
 		m.PopStateProvider()

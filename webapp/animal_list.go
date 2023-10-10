@@ -36,5 +36,5 @@ func (a AnimalList) ItemStateProvider(s Session, elementId int) WidgetStateProvi
 }
 
 func (a AnimalList) ItemPrefix() string {
-	return "animallist:"
+	return animalFeedListPrefix
 }

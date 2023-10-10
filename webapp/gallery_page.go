@@ -19,10 +19,6 @@ type GalleryPageStruct struct {
 	ourState JSMap
 }
 
-const galleryItemPrefix = "gallery_item:"
-
-const GalleryPageName = "gallery"
-
 var GalleryPageTemplate = &GalleryPageStruct{}
 
 func (p GalleryPage) ConstructPage(s Session, args PageArgs) Page {
@@ -39,7 +35,7 @@ func (p GalleryPage) ConstructPage(s Session, args PageArgs) Page {
 }
 
 func (p GalleryPage) Name() string {
-	return GalleryPageName
+	return "gallery"
 }
 
 func (p GalleryPage) Args() []string { return nil }
@@ -365,6 +361,8 @@ func (p GalleryPage) fooListener(sess Session, widget InputWidget, value string)
 // List
 // ------------------------------------------------------------------------------------
 
+const galleryItemPrefix = "gallery_item:"
+
 type GalleryListImplementationStruct struct {
 	BasicListStruct
 	names []string
@@ -384,13 +382,6 @@ func NewGalleryListImplementation() GalleryListImplementation {
 	}
 	return t
 }
-
-//func (g GalleryListImplementation) listItemRenderer(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
-//	Pr("Gallery listItemRenderer, element id:", elementId)
-//	m.TgOpen(`div class="col-sm-4"`).TgContent()
-//	m.A(ESCAPED, ToString("#", elementId, g.names[elementId]))
-//	m.TgClose()
-//}
 
 func (g GalleryListImplementation) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
 	json := NewJSMap()
