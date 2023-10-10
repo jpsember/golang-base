@@ -47,9 +47,12 @@ func (p ManagerPage) generateWidgets(sess Session) {
 
 	// Construct a list, and a card to use as the list item widget
 
+	const itemPrefix = "manager_item:"
+
 	var cardWidget AnimalCard
 	{
-		w := NewAnimalCard(m,
+
+		w := NewAnimalCard(m, itemPrefix,
 			func(sess Session, widget AnimalCard, arg string) {
 				animalId := sess.Context().(int)
 				p.attemptSelectAnimal(sess, animalId)
@@ -59,7 +62,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	}
 
 	managerId := SessionUser(sess).Id()
-	animalList := NewAnimalList(getManagerAnimals(managerId), cardWidget)
+	animalList := NewAnimalList(getManagerAnimals(managerId), cardWidget, "manager_item:")
 
 	Todo("!document how the list forwards clicks related to items on to the list listener")
 	m.AddList(animalList, cardWidget)

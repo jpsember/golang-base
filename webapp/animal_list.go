@@ -9,15 +9,17 @@ import (
 type AnimalListStruct struct {
 	BasicListStruct
 	cardWidget AnimalCard
+	itemPrefix string
 }
 
 type AnimalList = *AnimalListStruct
 
-func NewAnimalList(animalIds []int, cardWidget AnimalCard) AnimalList {
+func NewAnimalList(animalIds []int, cardWidget AnimalCard, itemPrefix string) AnimalList {
 	CheckArg(cardWidget != nil)
 	CheckArg(animalIds != nil)
 	t := &AnimalListStruct{
 		cardWidget: cardWidget,
+		itemPrefix: itemPrefix,
 	}
 	b := &t.BasicListStruct
 	if Experiment {
@@ -37,5 +39,5 @@ func (a AnimalList) ItemStateProvider(s Session, elementId int) WidgetStateProvi
 }
 
 func (a AnimalList) ItemPrefix() string {
-	return animalCardItemPrefix
+	return a.itemPrefix
 }

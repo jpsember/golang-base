@@ -8,6 +8,7 @@ import (
 
 type AnimalCardStruct struct {
 	BaseWidgetObj
+	itemPrefix     string
 	cardListener   CardWidgetListener
 	buttonListener CardWidgetListener
 	buttonLabel    string
@@ -19,7 +20,7 @@ type AnimalCard = *AnimalCardStruct
 // Note: If card is a list item, the widget's Animal() might not be accurate!
 type CardWidgetListener func(sess Session, widget AnimalCard, arg string)
 
-func NewAnimalCard(m WidgetManager, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) AnimalCard {
+func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) AnimalCard {
 	Todo("!Not sure we will need card buttons")
 
 	widgetId := m.ConsumeOptionalPendingId()
@@ -29,6 +30,7 @@ func NewAnimalCard(m WidgetManager, cardListener CardWidgetListener, buttonLabel
 
 	w := AnimalCardStruct{
 		cardListener:   cardListener,
+		itemPrefix:     itemPrefix,
 		buttonLabel:    buttonLabel,
 		buttonListener: buttonListener,
 	}
@@ -53,16 +55,13 @@ func (w AnimalCard) ourButtonListener(sess Session, widget Widget, arg string) {
 	w.buttonListener(sess, w, arg)
 }
 
-const animalCardItemPrefix = "animal_item:"
-
 func (w AnimalCard) AddChildren(m WidgetManager) {
 	pr := PrIf("", false)
 	pr("adding children to new card")
 
 	m.OpenContainer(w)
 
-	Todo("!Make animalCardItemPrefix a parameter in case we want multiple lists")
-	m.PushIdPrefix(animalCardItemPrefix)
+	m.PushIdPrefix(w.itemPrefix)
 	{
 		m.Id(Animal_Name).Size(SizeTiny).AddHeading()
 		m.Id(Animal_Summary).AddText()

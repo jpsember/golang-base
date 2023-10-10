@@ -40,15 +40,10 @@ func (p FeedPage) generateWidgets(s Session) {
 	AddUserHeaderWidget(s)
 
 	{
-		// We need to push the prefix *after* opening the card widget!
-
-		m.PushIdPrefix(animalFeedListPrefix)
-
-		//m.PushStateMap(NewJSMap())
-		// For now, write the code as one big function; split up later once structure is more apparent.
+		const itemPrefix = "feed_item:"
 
 		// Construct the list item widget
-		cardWidget := NewAnimalCard(m,
+		cardWidget := NewAnimalCard(m, itemPrefix,
 			func(sess Session, widget AnimalCard, arg string) {
 				animalId := sess.Context().(int)
 				Pr("card listener, animal id:", animalId, "arg:", arg)
@@ -57,11 +52,9 @@ func (p FeedPage) generateWidgets(s Session) {
 			"", nil)
 
 		m.Add(cardWidget)
-		m.PopIdPrefix()
 
-		animalList := NewAnimalList(getAnimals(), cardWidget)
+		animalList := NewAnimalList(getAnimals(), cardWidget, itemPrefix)
 		m.AddList(animalList, cardWidget)
-		//m.PopStateMap()
 
 	}
 	m.EndConstruction(debug)
