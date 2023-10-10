@@ -115,12 +115,12 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			x := m.Label("hello").AddText()
 			//x.SetTrace(true)
 			x.SetVisible(false)
-			m.Label("Toggle Visibility").AddButton(func(s Session, w Widget, arg string) {
+			m.Label("Toggle Visibility").Listener(func(s Session, w Widget, arg string) {
 				newState := !x.Visible()
 				Pr("setting x visible:", newState)
 				x.SetVisible(newState)
 				x.Repaint()
-			})
+			}).AddBtn()
 		}
 		m.Close()
 
@@ -137,7 +137,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	if !(trim || trim2) {
 		m.Open()
 
-		m.Id("fred").Label(`Fred`).AddButton(buttonListener)
+		m.Id("fred").Label(`Fred`).Listener(buttonListener).AddBtn()
 
 		Todo("!Consider reinstating individual cards (not part of a list)")
 		//{
@@ -186,10 +186,10 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			m.Col(4)
 			m.Label("uniform delta").AddText()
 			m.Col(8)
-			m.Id("x58").Label(`Disabled`).AddButton(buttonListener).SetEnabled(false)
+			m.Id("x58").Label(`Disabled`).Listener(buttonListener).AddBtn().SetEnabled(false)
 
 			m.Col(2).AddSpace()
-			m.Col(3).Id("yz").Label(`Enabled`).AddButton(buttonListener)
+			m.Col(3).Id("yz").Label(`Enabled`).Listener(buttonListener).AddBtn()
 
 			m.Col(3).AddSpace()
 			m.Col(4).AddSpace()
@@ -205,7 +205,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			m.Close()
 
 			m.Col(4)
-			m.Id("launch").Label(`Launch`).AddButton(buttonListener)
+			m.Id("launch").Label(`Launch`).Listener(buttonListener).AddBtn()
 
 			m.Col(8)
 			m.Label(`Sample text; is 5 < 26? A line feed

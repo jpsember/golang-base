@@ -4,6 +4,10 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
+// This (and other widget listeners) can call Session.Context() to get the context, if any.  For
+// list widgets, the context will return the element id.
+type ButtonWidgetListener func(sess *SessionStruct, widget Widget, message string)
+
 type ButtonWidgetObj struct {
 	BaseWidgetObj
 	Label    HtmlString
@@ -32,10 +36,6 @@ func (b ButtonWidget) buttonListenWrapper(sess Session, widget Widget, value str
 func doNothingButtonListener(sess Session, widget Widget, message string) {
 	Alert("<1#50Button has no listener yet:", widget.Id(), "message:", message)
 }
-
-// This (and other widget listeners) can call Session.Context() to get the context, if any.  For
-// list widgets, the context will return the element id.
-type ButtonWidgetListener func(sess Session, widget Widget, message string)
 
 func RenderButton(s Session, m MarkupBuilder, w_BaseId string, actionId string, enabled bool, w_Label any, w_size WidgetSize, w_align WidgetAlign, vertPadding int) {
 	vertPaddingExpr := `py-` + IntToString(vertPadding)

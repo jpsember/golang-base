@@ -12,14 +12,20 @@ type ImageWidgetObj struct {
 	urlProvider     ImageURLProvider
 	fixedSize       IPoint // If not (0,0), size to display image as
 	escapedAltLabel string
+	clickListener   ButtonWidgetListener
 }
 
 type ImageWidget = *ImageWidgetObj
 
-func NewImageWidget(id string, urlProvider ImageURLProvider) ImageWidget {
+func NewImageWidget(id string, urlProvider ImageURLProvider, clickListener ButtonWidgetListener) ImageWidget {
 	t := &ImageWidgetObj{
 		escapedAltLabel: Escaped("unknown image"),
 		urlProvider:     urlProvider,
+		clickListener:   clickListener,
+	}
+	if clickListener != nil {
+		Alert("how do we add the listener?")
+		t.LowListen = t.imageListenWrapper
 	}
 	t.InitBase(id)
 	return t
@@ -28,6 +34,11 @@ func NewImageWidget(id string, urlProvider ImageURLProvider) ImageWidget {
 // Set the size that the image will occupy.  This size will be scaled by the user's screen resolution.
 func (w ImageWidget) SetSize(originalSize IPoint, scaleFactor float64) {
 	w.fixedSize = originalSize.ScaledBy(scaleFactor)
+}
+
+func (w ImageWidget) imageListenWrapper(sess Session, widget Widget, value string) (any, error) {
+	w.clickListener(sess, widget, value)
+	return nil, nil
 }
 
 func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
@@ -52,7 +63,12 @@ func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 			pr("no URLProvider!")
 		}
 
-		m.A(`<img src="`, imageSource, `" alt="`, w.escapedAltLabel, `"`)
+		clickArg := ""
+		if w.clickListener != nil {
+			clickArg = ` onclick="jsButton('` + w.Id() + `')"`
+		}
+
+		m.A(`<img src="`, imageSource, `" alt="`, w.escapedAltLabel, `"`, clickArg)
 
 		PlotImageSizeMarkup(s, m, w.fixedSize)
 		if w.fixedSize.IsPositive() {

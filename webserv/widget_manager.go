@@ -21,14 +21,15 @@ var mgrStateDefault = mgrState{
 }
 
 type WidgetManagerObj struct {
-	widgetMap          WidgetMap
-	stack              []mgrState
-	pendingSize        WidgetSize
-	pendingAlign       WidgetAlign
-	pendingHeight      int
-	pendingId          string
-	pendingLabel       string
-	anonymousIdCounter int
+	widgetMap            WidgetMap
+	stack                []mgrState
+	pendingSize          WidgetSize
+	pendingAlign         WidgetAlign
+	pendingHeight        int
+	pendingId            string
+	pendingLabel         string
+	pendingClickListener ButtonWidgetListener
+	anonymousIdCounter   int
 }
 
 func (m WidgetManager) InitializeWidgetManager() {
@@ -73,12 +74,19 @@ func (m WidgetManager) Id(id string) WidgetManager {
 	return m
 }
 
+func (m WidgetManager) ConsumeOptionalPendingClickListener() ButtonWidgetListener {
+	listener := m.pendingClickListener
+	m.pendingClickListener = nil
+	return listener
+}
+
 func (m WidgetManager) consumePendingId() string {
 	id := m.pendingId
 	CheckNonEmpty(id, "no pending id")
 	m.pendingId = ""
 	return id
 }
+
 func (m WidgetManager) ConsumeOptionalPendingId() string {
 	id := m.pendingId
 	if id != "" {
@@ -150,12 +158,18 @@ func verifyUsed(flag bool, name string) {
 	BadState("unused value:", name)
 }
 
+func (m WidgetManager) Listener(listener ButtonWidgetListener) WidgetManager {
+	m.pendingClickListener = listener
+	return m
+}
+
 func (m WidgetManager) clearPendingComponentFields() {
 	// If some values were not used, issue warnings
 	verifyUsed(m.pendingLabel == "", "pendingLabel")
 	verifyUsed(m.pendingSize == SizeDefault, "pendingSize")
 	verifyUsed(m.pendingAlign == AlignDefault, "pendingAlign")
 	verifyUsed(m.pendingHeight == 0, "pendingHeight")
+	verifyUsed(m.pendingClickListener == nil, "pendingClickListener")
 }
 
 /**
@@ -344,8 +358,8 @@ func (m WidgetManager) AddText() TextWidget {
 	return w
 }
 
-func (m WidgetManager) AddButton(listener ButtonWidgetListener) ButtonWidget {
-	w := NewButtonWidget(m.ConsumeOptionalPendingId(), listener)
+func (m WidgetManager) AddBtn() ButtonWidget {
+	w := NewButtonWidget(m.ConsumeOptionalPendingId(), m.ConsumeOptionalPendingClickListener())
 	w.SetSize(m.consumePendingSize())
 	w.SetAlign(m.consumePendingAlign())
 	w.Label = NewHtmlString(m.consumePendingLabel())
@@ -372,7 +386,7 @@ func (m WidgetManager) AddFileUpload(listener FileUploadWidgetListener) FileUplo
 }
 
 func (m WidgetManager) AddImage(urlProvider ImageURLProvider) ImageWidget {
-	w := NewImageWidget(m.consumePendingId(), urlProvider)
+	w := NewImageWidget(m.consumePendingId(), urlProvider, m.ConsumeOptionalPendingClickListener())
 	m.Add(w)
 	return w
 }

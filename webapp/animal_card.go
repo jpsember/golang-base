@@ -9,8 +9,8 @@ import (
 type AnimalCardStruct struct {
 	BaseWidgetObj
 	itemPrefix     string
-	cardListener   CardWidgetListener
-	buttonListener CardWidgetListener
+	cardListener   ButtonWidgetListener
+	buttonListener ButtonWidgetListener
 	buttonLabel    string
 	children       []Widget
 }
@@ -24,12 +24,9 @@ const (
 
 type AnimalCard = *AnimalCardStruct
 
-// Note: If card is a list item, the widget's Animal() might not be accurate!
-type CardWidgetListener func(sess Session, widget AnimalCard, arg string)
-
-func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener CardWidgetListener, buttonLabel string, buttonListener CardWidgetListener) AnimalCard {
+func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener ButtonWidgetListener, buttonLabel string, buttonListener ButtonWidgetListener) AnimalCard {
 	Todo("!Not sure we will need card buttons")
-
+	Todo("The feed_item: prefix is duplicated within the card widget ids")
 	widgetId := m.ConsumeOptionalPendingId()
 
 	// If a button is requested, it must have a listener
@@ -70,12 +67,20 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 
 	m.PushIdPrefix(w.itemPrefix)
 	{
+		// Wrap the card listener so we can process it as a list item...?
+
+		m.Listener(func(s Session, w2 Widget, msg string) {
+			Pr("image listener within animal card")
+			w.ourButtonListener(s, w2, msg)
+		})
+
 		m.Id(Animal_PhotoThumbnail).AddImage(w.imageURLProvider)
+
 		m.Id(Animal_Name).Size(SizeTiny).AddHeading()
 		m.Id(Animal_Summary).AddText()
 	}
 	if w.buttonLabel != "" {
-		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).AddButton(w.ourButtonListener)
+		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).Listener(w.ourButtonListener).AddBtn()
 	}
 	m.PopIdPrefix()
 	m.Close()

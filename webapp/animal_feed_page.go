@@ -29,8 +29,6 @@ func (p FeedPage) ConstructPage(s Session, args PageArgs) Page {
 	return nil
 }
 
-const animalFeedListPrefix = "animalfeed:"
-
 func (p FeedPage) Args() []string { return nil }
 
 func (p FeedPage) generateWidgets(s Session) {
@@ -44,7 +42,7 @@ func (p FeedPage) generateWidgets(s Session) {
 
 		// Construct the list item widget
 		cardWidget := NewAnimalCard(m, itemPrefix,
-			func(sess Session, widget AnimalCard, arg string) {
+			func(sess Session, widget Widget, arg string) {
 				animalId := sess.Context().(int)
 				Pr("card listener, animal id:", animalId, "arg:", arg)
 				p.attemptSelectAnimal(sess, animalId)

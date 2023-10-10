@@ -32,19 +32,24 @@ var textSize = map[WidgetSize]string{
 }
 
 func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
+	pr := PrIf("TextWidget.RenderTo", true)
 	var textContent string
 	if w.staticContent != nil {
 		textContent = w.staticContent.(string)
 		w.Log("RenderTo, staticContent:", w.staticContent)
 	} else {
-		w.Log("RenderTo, reading widget string value; state provider:", w.stateProvider, "id:", w.Id())
+		pr("RenderTo, reading widget string value; state provider:", w.stateProvider, "id:", w.Id())
 		textContent = s.WidgetStringValue(w)
 	}
 	w.Log("...text value:", Quoted(textContent))
 
 	h := NewHtmlString(textContent)
 
-	m.TgOpen(`div id=`).A(QUO, s.PrependId(w.Id()))
+	Alert("Do we really want to prepend the id here?")
+	Alert("The StateProvider.prefix is overloaded; 1) add prefix to widget id when rendering; 2) interpret to change semantics on events (list)")
+	prefixedId := s.PrependId(w.Id())
+
+	m.TgOpen(`div id=`).A(QUO, prefixedId)
 
 	if w.size != SizeDefault && w.size != SizeMedium {
 		m.Style(`font-size:`, textSize[w.size], `em;`)

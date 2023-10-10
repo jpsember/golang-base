@@ -64,7 +64,7 @@ func (p ForgotPasswordPage) generateWidgets(s Session) {
 	m.Close()
 	m.Open()
 	{
-		m.Label("Send Change Password Link").AddButton(p.sendLinkListener)
+		m.Label("Send Change Password Link").Listener(p.sendLinkListener).AddBtn()
 	}
 	m.Close()
 }

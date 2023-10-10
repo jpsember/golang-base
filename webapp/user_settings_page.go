@@ -72,7 +72,7 @@ func (p UserSettingsPage) generateWidgets(s Session) {
 		m.Col(6)
 		m.AddSpace()
 		// Issue #90; maybe place above widgets within a minimum-sized div, so button row doesn't change position?  Or put buttons above?  Or to the side?
-		m.Label("Ok").AddButton(p.okListener)
+		m.Label("Ok").Listener(p.okListener).AddBtn()
 	}
 	m.Close()
 

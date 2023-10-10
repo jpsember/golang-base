@@ -113,11 +113,17 @@ var loggedInUsersSet = NewSet[int]()
 var loggedInUsersSetLock sync.RWMutex
 
 func (s Session) PrependId(id string) string {
-	p := s.stackedStateProvider()
-	if p == nil {
+	pref := s.IdPrefix()
+	if pref == "" {
 		return id
 	}
-	return p.Prefix + id
+	if strings.HasSuffix(id, pref) {
+		Alert("<1#50Id already has prefix:", id, pref, INDENT, Callers(1, 4))
+	}
+	if Alert("trying WITHOUT prefixing") {
+		return id
+	}
+	return pref + id
 }
 
 func (s Session) PrepareForHandlingRequest(w http.ResponseWriter, req *http.Request) {
@@ -602,7 +608,7 @@ func compileId(prefix string, id string) string {
 func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 	pr := PrIf("getStateProvider", false)
 
-	// If the session's state provider has a non-empty prefix that matches this widget's id,
+	// If the session's stacked state provider has a non-empty prefix that matches this widget's id,
 	// take the state from that provider instead (after removing the prefix).
 
 	id := w.Id()
@@ -612,9 +618,6 @@ func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 	pr(VERT_SP, "id:", id, "provider:", p)
 
 	stackedProvider := s.stackedStateProvider()
-	//if stackedProvider.State.HasKey("!") {
-	//	Alert("#50Working with default state provider for widget:", w.Id(), INDENT, Callers(2, 8))
-	//}
 	pr("session state provider:", stackedProvider)
 
 	if stackedProvider.Prefix != "" {

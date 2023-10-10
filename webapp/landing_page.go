@@ -49,7 +49,7 @@ func (p LandingPage) generateWidgets(sess Session) {
 	Pr("generate widgets for landing page")
 	sess.PushStateMap(p.widgetState)
 
-	m.Label("gallery").Align(AlignRight).Size(SizeTiny).AddButton(p.galleryListener)
+	m.Label("gallery").Align(AlignRight).Size(SizeTiny).Listener(p.galleryListener).AddBtn()
 	m.Col(6)
 	m.Open()
 	{
@@ -59,15 +59,15 @@ func (p LandingPage) generateWidgets(sess Session) {
 		m.Open()
 		m.Col(6)
 		{
-			m.Label("Sign In").AddButton(p.signInListener)
-			m.Label("I forgot my password").Size(SizeTiny).AddButton(p.forgotPwdListener)
+			m.Label("Sign In").Listener(p.signInListener).AddBtn()
+			m.Label("I forgot my password").Size(SizeTiny).Listener(p.forgotPwdListener).AddBtn()
 		}
 		m.Close()
 	}
 	m.Close()
 	m.Open()
 	{
-		m.Label("Sign Up").AddButton(p.signUpListener)
+		m.Label("Sign Up").Listener(p.signUpListener).AddBtn()
 	}
 	m.Close()
 	sess.PopStateProvider()

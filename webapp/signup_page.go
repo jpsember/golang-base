@@ -57,7 +57,7 @@ func (p SignUpPage) generateWidgets(s Session) {
 		m.Size(SizeTiny).Label("We will never share your email address with anyone.").AddText()
 		m.Col(6)
 		m.AddSpace()
-		m.Label("Sign Up").AddButton(p.signUpListener)
+		m.Label("Sign Up").Listener(p.signUpListener).AddBtn()
 	}
 	m.Close()
 

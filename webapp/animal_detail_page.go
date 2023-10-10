@@ -153,11 +153,11 @@ func (p AnimalDetailPage) generateForEditing(m Session) {
 
 		m.Col(6)
 		if p.animalId != 0 {
-			m.Label("Done").AddButton(p.doneEditListener)
-			m.Label("Abort").AddButton(p.abortEditListener)
+			m.Label("Done").Listener(p.doneEditListener).AddBtn()
+			m.Label("Abort").Listener(p.abortEditListener).AddBtn()
 		} else {
-			m.Label("Create").AddButton(p.createAnimalButtonListener)
-			m.Label("Abort").AddButton(p.abortEditListener)
+			m.Label("Create").Listener(p.createAnimalButtonListener).AddBtn()
+			m.Label("Abort").Listener(p.abortEditListener).AddBtn()
 		}
 	}
 	m.Close()
@@ -188,7 +188,7 @@ func (p AnimalDetailPage) generateForViewing(m Session) {
 		//m.Size(SizeTiny).Label("Additional paragraphs to appear on the 'details' view.").AddText()
 		//
 		m.Col(6)
-		m.Label("Done").AddButton(p.doneViewListener)
+		m.Label("Done").Listener(p.doneViewListener).AddBtn()
 
 	}
 	m.Close()

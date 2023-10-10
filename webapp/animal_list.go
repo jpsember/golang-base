@@ -35,7 +35,8 @@ func (a AnimalList) ItemStateProvider(s Session, elementId int) WidgetStateProvi
 	CheckState(anim.Id() != 0, "no animal available")
 
 	json := anim.ToJson().AsJSMap()
-	return NewStateProvider(a.ItemPrefix(), json)
+	Todo("Do we want to include the item prefix here?")
+	return NewStateProvider("" /*a.ItemPrefix(),*/, json)
 }
 
 func (a AnimalList) ItemPrefix() string {

@@ -41,7 +41,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	// Row of buttons at top.
 	m.Open()
 	{
-		m.Label("New Animal").AddButton(p.newAnimalListener)
+		m.Label("New Animal").Listener(p.newAnimalListener).AddBtn()
 	}
 	m.Close()
 
@@ -53,7 +53,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	{
 
 		w := NewAnimalCard(m, itemPrefix,
-			func(sess Session, widget AnimalCard, arg string) {
+			func(sess Session, widget Widget, arg string) {
 				animalId := sess.Context().(int)
 				p.attemptSelectAnimal(sess, animalId)
 			}, "", nil)
