@@ -71,9 +71,8 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 
 		m.Listener(func(s Session, w2 Widget, msg string) {
 			Pr("image listener within animal card")
-			w.ourButtonListener(s, w2, msg)
+			w.cardListener(s, w2, msg)
 		})
-
 		m.Id(Animal_PhotoThumbnail).AddImage(w.imageURLProvider)
 
 		m.Id(Animal_Name).Size(SizeTiny).AddHeading()
@@ -99,24 +98,7 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 
 	m.TgOpen(`div class="card bg-light mb-3"`).Style(`width:14em`).TgContent()
 	{
-
 		RenderWidget(w.children[acchild_photothumbnail], s, m)
-
-		Todo("add option to make images clickable")
-
-		//// If there's a card listener, treat the image as a big button returning the card's id
-		//clickArg := ""
-		//if w.cardListener != nil {
-		//	clickId := s.PrependId(w.Id())
-		//	clickArg = ` onclick="jsButton('` + clickId + `')"`
-		//}
-		//
-		//m.Comment("animal image")
-		//m.A(`<img src="`, imgUrl, `" alt="animal image" `, clickArg)
-		//
-		//PlotImageSizeMarkup(s, m, IPointZero) //AnimalPicSizeNormal.ScaledBy(0.4))
-		//
-		//m.A(`>`).Cr()
 
 		// Display title and brief summary
 		m.Comments("title and summary")

@@ -307,14 +307,17 @@ func (s Session) auxHandleAjax() {
 		return
 	}
 
-	// See if the id expression has the form <widget id> '.' <remainder>.
-	// If so, treat <remainder>. as prefix for widget value
+	// We will assume that any periods in the widgetIdExpr serve to separate the widget id from additional context
 
 	id, remainder := ExtractFirstDotArg(widgetIdExpr)
 	pr("id:", id, "remainder:", remainder)
 
 	widgetValueExpr := s.ajaxWidgetValue
 	s.ajaxWidgetValue = "" // To emphasize that we are done with this field
+
+	// look for a period separating the widget id from context (additional arguments)
+
+	Todo("Is the old context still needed?")
 
 	widget := s.Opt(id)
 	if widget == nil {

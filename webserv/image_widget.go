@@ -66,8 +66,7 @@ func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 
 		clickArg := ""
 		if w.clickListener != nil {
-		zz send something other than an id?
-    clickArg = ` onclick="jsButton('` + prependedId + `')"`
+			clickArg = ` onclick="jsButton('` + s.ClickPrefix() + w.Id() + `')"`
 		}
 
 		m.A(`<img src="`, imageSource, `" alt="`, w.escapedAltLabel, `"`, clickArg)

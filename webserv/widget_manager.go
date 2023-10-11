@@ -13,6 +13,7 @@ type mgrState struct {
 	IdPrefix            string
 	DebugTag            string
 	pendingChildColumns int
+	clickTargetPrefix   string // prefix to add to onpress arguments
 }
 
 var mgrStateDefault = mgrState{
@@ -205,7 +206,7 @@ func (m WidgetManager) stackedState() *mgrState {
 }
 
 func (s *mgrState) String() string {
-	return NewJSMap().Put("IdPrefix", s.IdPrefix).Put("stackedStateProvider", s.StateProvider.String()).CompactString()
+	return NewJSMap().Put("IdPrefix", s.IdPrefix).Put("StateProvider", s.StateProvider.String()).Put("clickpref", s.clickTargetPrefix).CompactString()
 }
 
 // Have subsequent WidgetManager operations operate on a particular container widget.
@@ -245,15 +246,22 @@ func (m WidgetManager) OpenContainer(widget Widget) Widget {
 }
 
 func (m WidgetManager) pushState(state mgrState, tag string) {
+	if debStack {
+		Pr(Callers(1, 4))
+		Pr("pushState:", tag, INDENT, m.dumpStateStack(len(m.stack)))
+	}
 	state.DebugTag = tag
 	m.stack = append(m.stack, state)
 }
 
 const (
-	tag_container = "container"
-	tag_prefix    = "prefix"
-	tag_provider  = "provider"
+	tag_container   = "container"
+	tag_prefix      = "prefix"
+	tag_provider    = "provider"
+	tag_clickprefix = "clickprefix"
 )
+
+var debStack = false && Alert("debug stack")
 
 // Pop the active container from the stack.
 func (m WidgetManager) Close() WidgetManager {
@@ -262,6 +270,10 @@ func (m WidgetManager) Close() WidgetManager {
 }
 
 func (m WidgetManager) popStack(tag string) {
+	if debStack {
+		Pr(Callers(1, 4))
+		Pr("popStack:", tag, INDENT, m.dumpStateStack(len(m.stack)))
+	}
 	top := m.stackedState()
 	if top.DebugTag != tag {
 		BadState("attempt to pop state stack, tag is:", top.DebugTag, "but expected:", tag)
@@ -489,6 +501,20 @@ func (m WidgetManager) PopIdPrefix() {
 
 func (m WidgetManager) IdPrefix() string {
 	return m.stackedState().IdPrefix
+}
+
+func (m WidgetManager) PushClickPrefix(prefix string) {
+	itm := *m.stackedState()
+	itm.clickTargetPrefix = prefix + itm.clickTargetPrefix
+	m.pushState(itm, tag_clickprefix)
+}
+
+func (m WidgetManager) PopClickPrefix() {
+	m.popStack(tag_clickprefix)
+}
+
+func (m WidgetManager) ClickPrefix() string {
+	return m.stackedState().clickTargetPrefix
 }
 
 // Debug method to verify that various push/pop operations of the state stack are balanced.

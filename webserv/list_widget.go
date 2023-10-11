@@ -15,9 +15,9 @@ type ListWidgetStruct struct {
 }
 
 func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string) (any, error) {
-	pr := PrIf("list_widget.LowLevel listener", false)
-	pr("value:", QUO, value, "caller:", Caller())
-
+	pr := PrIf("list_widget.LowLevel listener", true)
+	pr(VERT_SP, "value:", QUO, value, "caller:", Caller())
+	pr("stack size:", len(sess.stack))
 	b := widget.(ListWidget)
 
 	// See if this is an event from the page controls
@@ -163,15 +163,22 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				sp := w.constructStateProvider(s, id)
 				pr("pushing state provider:", sp)
 				s.PushStateProvider(sp)
-				// We want each rendered widget to have a unique id, so push "<element id>:" as a *rendering* prefix
-				s.PushIdPrefix(IntToString(id) + ":")
+
+				elementIdStr := IntToString(id)
+				// We want each rendered widget to have a unique id, so include "<element id>:" as a *rendering* prefix
+				s.PushIdPrefix(elementIdStr + ":")
 				// If we push the state provider AFTER the id prefix, it doesn't work! Why?
 				// Note that we are not calling RenderWidget(), which would not draw anything since the
 				// list item widget has been marked as detached
+
+				// Periods are used to separate widget id from context
+				s.PushClickPrefix(w.Id() + "." + elementIdStr + ".")
+
 				x := m.Len()
-				pr("what is the state?", INDENT, s.DebugStackedState())
 				w.itemWidget.RenderTo(s, m)
 				pr("rendered item, markup:", INDENT, m.String()[x:])
+
+				s.PopClickPrefix()
 				s.PopIdPrefix()
 				s.PopStateProvider()
 			}
