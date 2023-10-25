@@ -36,12 +36,12 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 	var textContent string
 	if w.staticContent != nil {
 		textContent = w.staticContent.(string)
-		w.Log("RenderTo, staticContent:", w.staticContent)
+		pr("staticContent:", w.staticContent)
 	} else {
-		pr("RenderTo, reading widget string value; state provider:", w.stateProvider, "id:", w.Id())
+		pr("RenderTo, widget id:", w.Id(), "reading string value; state provider:", w.stateProvider)
 		textContent = s.WidgetStringValue(w)
 	}
-	w.Log("...text value:", Quoted(textContent))
+	pr("text content:", QUO, textContent)
 
 	h := NewHtmlString(textContent)
 

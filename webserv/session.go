@@ -346,7 +346,7 @@ func (s Session) auxHandleAjax() {
 
 func (s Session) ProcessWidgetValue(widget Widget, value string, context any) {
 	pr := PrIf("Session.ProcessWidgetValue", false)
-	pr("widget", widget.Id(), "value", QUO, value, "context", context)
+	pr(VERT_SP, "widget", widget.Id(), "value", QUO, value, "context", context)
 	s.listenerContext = context
 	updatedValue, err := widget.LowListener()(s, widget, value)
 	s.listenerContext = nil
@@ -574,6 +574,8 @@ func (s Session) SwitchToPage(template Page, args PageArgs) {
 	if args == nil {
 		args = NewPageArgs(nil)
 	}
+
+	Todo("We should defer doing the switching until we're done handling the current ajax call")
 	s.rebuildAndDisplayNewPage(func(s Session) Page {
 		return template.ConstructPage(s, args)
 	})
@@ -615,7 +617,7 @@ func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 	p := w.StateProvider()
 	CheckState(p != nil, "widgets should ALWAYS have a state provider")
 
-	pr(VERT_SP, "id:", id, "provider:", p)
+	pr("id:", id, "provider:", p)
 
 	stackedProvider := s.stackedStateProvider()
 	pr("session state provider:", stackedProvider)

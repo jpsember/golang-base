@@ -245,15 +245,6 @@ func (m WidgetManager) OpenContainer(widget Widget) Widget {
 	return widget
 }
 
-func (m WidgetManager) pushState(state mgrState, tag string) {
-	if debStack {
-		Pr(Callers(1, 4))
-		Pr("pushState:", tag, INDENT, m.dumpStateStack(len(m.stack)))
-	}
-	state.DebugTag = tag
-	m.stack = append(m.stack, state)
-}
-
 const (
 	tag_container   = "container"
 	tag_prefix      = "prefix"
@@ -267,6 +258,15 @@ var debStack = false && Alert("debug stack")
 func (m WidgetManager) Close() WidgetManager {
 	m.popStack(tag_container)
 	return m
+}
+
+func (m WidgetManager) pushState(state mgrState, tag string) {
+	if debStack {
+		Pr(Callers(1, 4))
+		Pr("pushState:", tag, INDENT, m.dumpStateStack(len(m.stack)))
+	}
+	state.DebugTag = tag
+	m.stack = append(m.stack, state)
 }
 
 func (m WidgetManager) popStack(tag string) {

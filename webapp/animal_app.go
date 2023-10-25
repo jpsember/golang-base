@@ -71,6 +71,7 @@ func (oper AnimalOper) Perform(app *App) {
 	s.BlobCache = SharedWebCache
 
 	// Every several runs, remind to discard tabs
+	Todo("this reminder isn't necessary now that I have added an app shortcut to 'close other tabs' (^s)")
 	if oper.DevMode() {
 		k := ProjectDirM().JoinM("._SKIP_counter")
 		m := JSMapFromFileIfExistsM(k)
