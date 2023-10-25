@@ -18,6 +18,11 @@ type Session = *SessionStruct
 
 type PostRequestEvent func()
 
+type PendingPage struct {
+	template Page
+	args     PageArgs
+}
+
 type SessionStruct struct {
 	WidgetManagerObj
 	SessionId string
@@ -47,6 +52,7 @@ type SessionStruct struct {
 	browserURLExpr         string // If not nil, client browser should push this onto the history
 	repaintWidgetMarkupMap JSMap  // Used only during repainting; the map of widget ids -> markup to be repainted by client
 	postRequestEvents      []PostRequestEvent
+	pendingPage            *PendingPage
 }
 
 func NewSession() Session {
@@ -148,6 +154,8 @@ func (s Session) HandleAjaxRequest() {
 		Pr("Query:", INDENT, s.request.URL.Query())
 	}
 	s.auxHandleAjax()
+	Todo("!Do we possibly need to do this during a non-ajax interaction?")
+	s.ProcessPendingPage()
 	s.sendAjaxResponse()
 }
 
@@ -570,6 +578,17 @@ func (s Session) DeleteSessionData(key string) {
 func (s Session) SwitchToPage(template Page, args PageArgs) {
 	pr := PrIf("SwitchToPage", false)
 	pr("page:", template.Name(), "from:", Caller())
+	s.pendingPage = &PendingPage{template: template, args: args}
+}
+
+func (s Session) ProcessPendingPage() {
+	x := s.pendingPage
+	s.pendingPage = nil
+	if x == nil {
+		return
+	}
+	args := x.args
+	template := x.template
 
 	if args == nil {
 		args = NewPageArgs(nil)
