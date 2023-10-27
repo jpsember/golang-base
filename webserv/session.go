@@ -594,7 +594,6 @@ func (s Session) ProcessPendingPage() {
 		args = NewPageArgs(nil)
 	}
 
-	Todo("We should defer doing the switching until we're done handling the current ajax call")
 	s.rebuildAndDisplayNewPage(func(s Session) Page {
 		return template.ConstructPage(s, args)
 	})

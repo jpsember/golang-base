@@ -28,7 +28,7 @@ var EditAnimalPageTemplate = &AnimalDetailPageStruct{name: "edit"}
 var ViewAnimalPageTemplate = &AnimalDetailPageStruct{name: "view"}
 
 func (p AnimalDetailPage) ConstructPage(s Session, args PageArgs) Page {
-	pr := PrIf("AnimDetailPage.ConstructPage", true)
+	pr := PrIf("AnimDetailPage.ConstructPage", false)
 	pr("args:", args)
 
 	// Construct a copy of the template
@@ -94,7 +94,6 @@ func (p AnimalDetailPage) prepareAnimal() {
 		BadState(err)
 	}
 	p.editor = NewDataEditor(anim)
-	Alert("prepare animal:", anim)
 }
 
 func (p AnimalDetailPage) viewing() bool {

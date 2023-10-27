@@ -15,7 +15,7 @@ type ListWidgetStruct struct {
 }
 
 func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string) (any, error) {
-	pr := PrIf("list_widget.LowLevel listener", true)
+	pr := PrIf("list_widget.LowLevel listener", false)
 	pr(VERT_SP, "value:", QUO, value, "caller:", Caller())
 	pr("stack size:", len(sess.stack))
 	b := widget.(ListWidget)
@@ -56,7 +56,7 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string)
 		Todo("!How do we distinguish between value actions (like text fields) and button presses?")
 		// Set up the same state provider that we did when rendering the widget
 		sess.PushStateProvider(w.constructStateProvider(sess, elementId))
-    Todo("This is causing a crash, as we are sometimes *changing pages* during this call, which re-initializes the stack and whatnot")
+		Todo("This is causing a crash, as we are sometimes *changing pages* during this call, which re-initializes the stack and whatnot")
 		sess.ProcessWidgetValue(sourceWidget, remainder, elementId)
 		sess.PopStateProvider()
 		// Fall through to return nil, nil

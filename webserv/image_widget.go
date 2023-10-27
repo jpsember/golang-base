@@ -24,7 +24,7 @@ func NewImageWidget(id string, urlProvider ImageURLProvider, clickListener Butto
 		clickListener:   clickListener,
 	}
 	if clickListener != nil {
-		Alert("how do we add the listener?")
+		Alert("?how do we add the listener?")
 		t.LowListen = t.imageListenWrapper
 	}
 	t.InitBase(id)
