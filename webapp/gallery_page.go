@@ -86,7 +86,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	}
 
 	// ------------------------------------------------------------------------------------
-	// To widget sets displaying a couple of data objects, each set with a unique prefix
+	// Two widget sets displaying a couple of data objects, each set with a unique prefix
 	// ------------------------------------------------------------------------------------
 
 	{
