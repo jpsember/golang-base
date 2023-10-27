@@ -65,7 +65,7 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 
 	m.OpenContainer(w)
 
-	m.PushIdPrefix(w.itemPrefix)
+	m.PushWrapper(w.itemPrefix)
 	{
 		// Wrap the card listener so we can process it as a list item...?
 
@@ -81,7 +81,7 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 	if w.buttonLabel != "" {
 		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).Listener(w.ourButtonListener).AddBtn()
 	}
-	m.PopIdPrefix()
+	m.PopWrapper()
 	m.Close()
 
 	pr("done adding children")

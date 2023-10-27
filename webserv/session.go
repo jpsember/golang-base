@@ -118,16 +118,9 @@ func LogUserOut(userId int) bool {
 var loggedInUsersSet = NewSet[int]()
 var loggedInUsersSetLock sync.RWMutex
 
-// Deprecated.  Issue 97.
 func (s Session) PrependId(id string) string {
-	pref := s.IdPrefix()
-	if pref == "" {
-		return id
-	}
-	if strings.HasSuffix(id, pref) {
-		Alert("<1#50Id already has prefix:", id, pref, INDENT, Callers(1, 4))
-	}
-	return pref + id
+	Todo("use ApplyWrapper instead")
+	return s.ApplyWrapper(id)
 }
 
 func (s Session) PrepareForHandlingRequest(w http.ResponseWriter, req *http.Request) {

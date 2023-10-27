@@ -22,7 +22,7 @@ func NewAnimalList(animalIds []int, cardWidget AnimalCard, itemPrefix string) An
 		itemPrefix: itemPrefix,
 	}
 	b := &t.BasicListStruct
-	if Experiment {
+	if Issue97 {
 		animalIds = ClampedSlice(animalIds, 0, 2)
 	}
 	b.ElementIds = animalIds

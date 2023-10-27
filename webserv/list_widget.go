@@ -137,7 +137,7 @@ func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, ta
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
-	pr := PrIf("ListWidget.RenderTo", false)
+	pr := PrIf("ListWidget.RenderTo", true)
 	pr("ListWidget.RenderTo; id", w.Id())
 
 	m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent()
@@ -165,13 +165,14 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 			for _, id := range elementIds {
 				sp := w.constructStateProvider(s, id)
+				Alert("Maybe we need to combine pushStateProvider/PushWrapper somehow?")
 				pr("pushing state provider:", sp)
 				s.PushStateProvider(sp)
 
 				// We want each rendered list item to have a unique id, so wrap the "template" list items' widgets with
 				// an appropriate prefix
 
-				Pr(VERT_SP, "pushing wrapper for listWidget", w.Id())
+				pr("pushing wrapper for listWidget", w.Id())
 				s.PushWrapper(w.Id(), id)
 
 				//elementIdStr := IntToString(id)

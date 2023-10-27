@@ -64,9 +64,9 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		listItemWidget := m.Open()
 		// Assuming that we want all widgets within the item to take their state from the list item,
 		// push the item prefix here.
-		m.PushIdPrefix(galleryItemPrefix)
+		m.PushWrapper(galleryItemPrefix)
 		m.Id("foo_text").Height(3).AddText()
-		m.PopIdPrefix()
+		m.PopWrapper()
 		m.Close()
 
 		p.list = m.AddList(NewGalleryListImplementation(), listItemWidget)

@@ -424,7 +424,7 @@ func (m WidgetManager) checkboxHelper(listener CheckboxWidgetListener, switchFla
 
 func (m WidgetManager) AllocateAnonymousId(debugInfo string) string {
 	m.anonymousIdCounter++
-	result := m.IdPrefix() + "z" + IntToString(m.anonymousIdCounter)
+	result := m.ApplyWrapper("z" + IntToString(m.anonymousIdCounter))
 	if debugInfo != "" {
 		result += "_" + debugInfo + "_"
 	}
@@ -505,35 +505,19 @@ func parseWrapperArgs(args ...any) []string {
 		default:
 			BadArg("can't process arg", Info(arg))
 		}
+		CheckArg(!strings.HasSuffix(asStr, ":"), args)
 		argsAsStrings = append(argsAsStrings, asStr)
 	}
 	return argsAsStrings
-	//result := strings.Join(argsAsStrings, ":")
-	//return result
 }
+
 func (m WidgetManager) PushWrapper(args ...any) {
 	pr := PrIf("PushWrapper", true)
-	//var argsAsStrings []string
-	//for _, arg := range args {
-	//	var asStr string
-	//	switch v := arg.(type) {
-	//	case string:
-	//		asStr = v
-	//	case int:
-	//		asStr = IntToString(v)
-	//	default:
-	//		BadArg("can't process arg", Info(arg))
-	//	}
-	// result := parse	argsAsStrings = append(argsAsStrings, asStr)
-	//}
 	argsArray := parseWrapperArgs(args...)
 	result := joinArgs(argsArray)
 	pr("args:", args, "result:", result)
-
-	//strings.Join(argsArray,":")
-	//)strings.Join(argsAsStrings, ":")
-	Pr("PushWrapper:", QUO, result)
 	itm := *m.stackedState()
+	CheckArg(!strings.Contains(result, "::"), QUO, result, "args:", args)
 	itm.WrapperPrefix = result
 	m.pushState(itm, tag_wrapperPrefix)
 }
@@ -553,24 +537,8 @@ func (m WidgetManager) ApplyWrapper(args ...any) string {
 	if pref != "" {
 		result = pref + ":" + result
 	}
+	CheckArg(!strings.Contains(result, "::"), QUO, result, "args:", args, "wrapperPrefix:", pref)
 	return result
-}
-
-// Deprecated.  Issue 97.
-func (m WidgetManager) PushIdPrefix(prefix string) {
-	itm := *m.stackedState()
-	itm.IdPrefix = prefix
-	m.pushState(itm, tag_prefix)
-}
-
-// Deprecated.  Issue 97.
-func (m WidgetManager) PopIdPrefix() {
-	m.popStack(tag_prefix)
-}
-
-// Deprecated.  Issue 97.
-func (m WidgetManager) IdPrefix() string {
-	return m.stackedState().IdPrefix
 }
 
 // Deprecated.  Issue 97.

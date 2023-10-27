@@ -38,7 +38,8 @@ func (p FeedPage) generateWidgets(s Session) {
 	AddUserHeaderWidget(s)
 
 	{
-		const itemPrefix = "feed_item:"
+		Todo("Is itemPrefix required, if we are going to be pushing wrappers for list items?")
+		const itemPrefix = "feed_item"
 
 		// Construct the list item widget
 		cardWidget := NewAnimalCard(m, itemPrefix,
