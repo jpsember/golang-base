@@ -17,16 +17,19 @@ type GalleryPageStruct struct {
 	list     ListWidget
 	editor   DataEditor
 	ourState JSMap
+
+	editorA DataEditor
+	editorB DataEditor
 }
 
 var GalleryPageTemplate = &GalleryPageStruct{}
 
-func (p GalleryPage) ConstructPage(s Session, args PageArgs) Page {
+func (template GalleryPage) ConstructPage(s Session, args PageArgs) Page {
 	if !args.CheckDone() {
 		return nil
 	}
 	// Note: changing 'this' to operate on the new page, as the original 'this' was just a template
-	p = &GalleryPageStruct{
+	p := &GalleryPageStruct{
 		fooMap:   NewJSMap().Put("bar", "hello"),
 		ourState: NewJSMap(),
 	}
@@ -44,6 +47,12 @@ func (p GalleryPage) Args() []string { return nil }
 
 var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
+
+func (p GalleryPage) nameListener(sess Session, widget InputWidget, value string) (string, error) {
+	Pr("name listener for:", widget.Id(), "value:", value)
+	Pr("current names:", p.editorA.State.GetString("name"), p.editorB.State.GetString("name"))
+	return value, nil
+}
 
 func (p GalleryPage) generateWidgets(sess Session) {
 	pr := PrIf("GalleryPage.generateWidgets", false)
@@ -74,6 +83,27 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			p.list.WithPageControls = false
 		}
 		Todo("!Add support for empty list items, to pad out page to full size")
+	}
+
+	// ------------------------------------------------------------------------------------
+	// To widget sets displaying a couple of data objects, each set with a unique prefix
+	// ------------------------------------------------------------------------------------
+
+	{
+		m.Open()
+		p.editorA = NewDataEditorWithPrefix(NewAnimal().SetName("Bruce"), "a_")
+		p.editorB = NewDataEditorWithPrefix(NewAnimal().SetName("Clark"), "b_")
+
+		Todo("I want to be able to push a prefix here, built into the editor, so the widgets have distinct ids *BUT* still read the values using the standard keys, e.g. 'name'")
+		sess.PushStateProvider(p.editorA.WidgetStateProvider)
+		m.Label("Name A").Id(Animal_Name).AddInput(p.nameListener)
+		sess.PopStateProvider()
+
+		sess.PushStateProvider(p.editorA.WidgetStateProvider)
+		m.Label("Name B").Id(Animal_Name).AddInput(p.nameListener)
+		sess.PopStateProvider()
+
+		m.Close()
 	}
 
 	// ------------------------------------------------------------------------------------

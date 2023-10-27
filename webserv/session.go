@@ -633,7 +633,7 @@ func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 		result = w.StateProvider()
 		CheckState(result != nil, "widgets should ALWAYS have a state provider")
 	}
-	return result
+	return w.Id(), result
 }
 
 // Read widget value; assumed to be a string.

@@ -12,14 +12,18 @@ type DataEditorStruct struct {
 
 type DataEditor = *DataEditorStruct
 
-func NewDataEditor(data DataClass) DataEditor {
+func NewDataEditorWithPrefix(data DataClass, prefix string) DataEditor {
 	j := data.ToJson().AsJSMap()
 	t := &DataEditorStruct{
 		parser:              data,
 		JSMap:               j,
-		WidgetStateProvider: NewStateProvider("", j),
+		WidgetStateProvider: NewStateProvider(prefix, j),
 	}
 	return t
+}
+
+func NewDataEditor(data DataClass) DataEditor {
+	return NewDataEditorWithPrefix(data, "")
 }
 
 func (d DataEditor) Read() DataClass {
