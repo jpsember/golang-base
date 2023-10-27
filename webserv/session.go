@@ -662,8 +662,13 @@ func (s Session) WidgetStringValue(w Widget) string {
 
 // Read widget value; assumed to be an int.
 func (s Session) WidgetIntValue(w Widget) int {
+	Pr("WidgetIntValue for widget:", w.Id())
 	id, p := s.getStateProvider(w)
-	return p.State.OptInt(compileId(p.Prefix, id), 0)
+	Pr("id:", id, "state provider:", p)
+	var key string
+	key = compileId(p.Prefix, id)
+	Pr("key:", key, "state:", p.State)
+	return p.State.OptInt(key, 0)
 }
 
 // Read widget value; assumed to be a bool.

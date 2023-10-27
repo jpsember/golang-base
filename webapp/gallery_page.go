@@ -64,9 +64,9 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		listItemWidget := m.Open()
 		// Assuming that we want all widgets within the item to take their state from the list item,
 		// push the item prefix here.
-		m.PushWrapper(galleryItemPrefix)
+		//m.PushWrapper(galleryItemPrefix)
 		m.Id("foo_text").Height(3).AddText()
-		m.PopWrapper()
+		//m.PopWrapper()
 		m.Close()
 
 		p.list = m.AddList(NewGalleryListImplementation(), listItemWidget)
@@ -365,8 +365,6 @@ func (p GalleryPage) fooListener(sess Session, widget InputWidget, value string)
 // List
 // ------------------------------------------------------------------------------------
 
-const galleryItemPrefix = "gallery_item:"
-
 type GalleryListImplementationStruct struct {
 	BasicListStruct
 	names []string
@@ -391,8 +389,4 @@ func (g GalleryListImplementation) ItemStateProvider(s Session, elementId int) W
 	json := NewJSMap()
 	json.Put("foo_text", ToString("Item #", elementId, g.names[elementId]))
 	return NewStateProvider("", json)
-}
-
-func (g GalleryListImplementation) ItemPrefix() string {
-	return galleryItemPrefix
 }

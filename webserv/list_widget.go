@@ -158,22 +158,22 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			elementIds := w.list.GetPageElements()
 			pr("rendering page #:", w.list.CurrentPage(), "element ids:", elementIds)
 
-			// While rendering this list's items, we will set the state provider to one for each item.
-			pr("item prefix:", w.list.ItemPrefix())
+			//// While rendering this list's items, we will set the state provider to one for each item.
+			//pr("item prefix:", w.list.ItemPrefix())
 
 			CheckState(len(s.stack) == 2, "Expected two items on state stack: default item, plus one for list renderer")
 
 			for _, id := range elementIds {
-				sp := w.constructStateProvider(s, id)
-				Alert("Maybe we need to combine pushStateProvider/PushWrapper somehow?")
-				pr("pushing state provider:", sp)
-				s.PushStateProvider(sp)
-
 				// We want each rendered list item to have a unique id, so wrap the "template" list items' widgets with
 				// an appropriate prefix
 
 				pr("pushing wrapper for listWidget", w.Id())
 				s.PushWrapper(w.Id(), id)
+
+				sp := w.constructStateProvider(s, id)
+				Alert("Maybe we need to combine pushStateProvider/PushWrapper somehow?")
+				pr("pushing state provider:", sp)
+				s.PushStateProvider(sp)
 
 				//elementIdStr := IntToString(id)
 				//// We want each rendered widget to have a unique id, so include "<element id>:" as a *rendering* prefix
@@ -187,12 +187,15 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 				x := m.Len()
 				w.itemWidget.RenderTo(s, m)
-				pr("rendered item, markup:", INDENT, m.String()[x:])
+				if !Alert("NOT logging markup") {
+					pr("rendered item, markup:", INDENT, m.String()[x:])
+				}
 
-				//	s.PopClickPrefix()
-				s.PopWrapper()
 				//s.PopIdPrefix()
 				s.PopStateProvider()
+				//	s.PopClickPrefix()
+				s.PopWrapper()
+
 			}
 		}
 		m.TgClose()
@@ -209,7 +212,7 @@ func (w ListWidget) constructStateProvider(s Session, elementId int) WidgetState
 	cached := w.cachedStateProviders[elementId]
 	if cached == nil {
 		pv := w.list.ItemStateProvider(s, elementId)
-		cached = NewStateProvider(w.list.ItemPrefix(), pv.State)
+		cached = NewStateProvider("", pv.State)
 		w.cachedStateProviders[elementId] = cached
 	}
 	return cached
