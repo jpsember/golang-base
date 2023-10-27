@@ -17,6 +17,8 @@ type GalleryPageStruct struct {
 	list     ListWidget
 	editor   DataEditor
 	ourState JSMap
+	editorA  DataEditor
+	editorB  DataEditor
 }
 
 var GalleryPageTemplate = &GalleryPageStruct{}
@@ -74,6 +76,32 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			p.list.WithPageControls = false
 		}
 		Todo("!Add support for empty list items, to pad out page to full size")
+	}
+
+	// ------------------------------------------------------------------------------------
+	// Two widget sets displaying a couple of data objects, each set with a unique prefix
+	// ------------------------------------------------------------------------------------
+
+	{
+		m.Open()
+		p.editorA = NewDataEditor(NewAnimal().SetName("Bruce"))
+		p.editorB = NewDataEditor(NewAnimal().SetName("Clark"))
+
+		sess.PushIdPrefix("a_")
+		Todo("I want to be able to push a prefix here, built into the editor, so the widgets have distinct ids *BUT* still read the values using the standard keys, e.g. 'name'")
+		sess.PushStateProvider(p.editorA.WidgetStateProvider)
+		m.Label("Name A").Id(Animal_Name).AddInput(p.nameListener)
+		sess.PopStateProvider()
+		sess.PopIdPrefix()
+
+		sess.PushIdPrefix("b_")
+
+		sess.PushStateProvider(p.editorA.WidgetStateProvider)
+		m.Label("Name B").Id(Animal_Name).AddInput(p.nameListener)
+		sess.PopStateProvider()
+		sess.PopIdPrefix()
+	
+		m.Close()
 	}
 
 	// ------------------------------------------------------------------------------------
