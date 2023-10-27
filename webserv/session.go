@@ -623,24 +623,17 @@ func compileId(prefix string, id string) string {
 func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 	pr := PrIf("getStateProvider", false)
 
-	// If the session's stacked state provider has a non-empty prefix that matches this widget's id,
-	// take the state from that provider instead (after removing the prefix).
-
-	id := w.Id()
-	p := w.StateProvider()
-	CheckState(p != nil, "widgets should ALWAYS have a state provider")
-
-	pr("id:", id, "provider:", p)
-
+	var result WidgetStateProvider
+	// If there's a stacked state provider, use that one instead of the widget's
 	stackedProvider := s.stackedStateProvider()
-	pr("session state provider:", stackedProvider)
-
-	Alert("!But what if the value is the default value?  We won't be getting the value here")
-  // Maybe just use this if the stacked provider exists, regardless of whether it has a key?
-	if stackedProvider.State.HasKey(id) {
-		return id, stackedProvider
+	if stackedProvider != nil {
+		pr("stacked provider was non-nil:", stackedProvider)
+		result = stackedProvider
+	} else {
+		result = w.StateProvider()
+		CheckState(result != nil, "widgets should ALWAYS have a state provider")
 	}
-	return id, p
+	return result
 }
 
 // Read widget value; assumed to be a string.
