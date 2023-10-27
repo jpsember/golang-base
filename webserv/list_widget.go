@@ -77,6 +77,9 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget 
 		itemWidget:       itemWidget,
 		WithPageControls: true,
 	}
+	if Issue97 {
+		w.WithPageControls = false
+	}
 	w.InitBase(id)
 	w.LowListen = w.listListenWrapper
 	w.pagePrefix = id + ".page_"
@@ -165,22 +168,29 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				pr("pushing state provider:", sp)
 				s.PushStateProvider(sp)
 
-				elementIdStr := IntToString(id)
-				// We want each rendered widget to have a unique id, so include "<element id>:" as a *rendering* prefix
-				s.PushIdPrefix(elementIdStr + ":")
+				// We want each rendered list item to have a unique id, so wrap the "template" list items' widgets with
+				// an appropriate prefix
+
+				Pr(VERT_SP, "pushing wrapper for listWidget", w.Id())
+				s.PushWrapper(w.Id(), id)
+
+				//elementIdStr := IntToString(id)
+				//// We want each rendered widget to have a unique id, so include "<element id>:" as a *rendering* prefix
+				//s.PushIdPrefix(elementIdStr + ":")
 				// If we push the state provider AFTER the id prefix, it doesn't work! Why?
 				// Note that we are not calling RenderWidget(), which would not draw anything since the
 				// list item widget has been marked as detached
 
 				// Periods are used to separate widget id from context
-				s.PushClickPrefix(w.Id() + "." + elementIdStr + ".")
+				//	s.PushClickPrefix(w.Id() + "." + elementIdStr + ".")
 
 				x := m.Len()
 				w.itemWidget.RenderTo(s, m)
 				pr("rendered item, markup:", INDENT, m.String()[x:])
 
-				s.PopClickPrefix()
-				s.PopIdPrefix()
+				//	s.PopClickPrefix()
+				s.PopWrapper()
+				//s.PopIdPrefix()
 				s.PopStateProvider()
 			}
 		}

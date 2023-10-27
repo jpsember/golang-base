@@ -8,6 +8,8 @@ import (
 type mgrState struct {
 	Parent        Widget
 	StateProvider WidgetStateProvider
+
+	WrapperPrefix string
 	// Not to be confused with stackedStateProvider.Prefix, this is an optional prefix to be prepended to the
 	// id when adding widgets:
 	IdPrefix            string
@@ -69,7 +71,8 @@ func (m WidgetManager) Get(id string) Widget {
 
 func (m WidgetManager) Id(id string) WidgetManager {
 	Todo("!this name conflicts with Session.SessionId")
-	v := m.IdPrefix() + id
+	v := m.ApplyWrapper(id)
+	//v := m.IdPrefix() + id
 	AssertNoDots(v)
 	m.pendingId = v
 	return m
@@ -246,10 +249,11 @@ func (m WidgetManager) OpenContainer(widget Widget) Widget {
 }
 
 const (
-	tag_container   = "container"
-	tag_prefix      = "prefix"
-	tag_provider    = "provider"
-	tag_clickprefix = "clickprefix"
+	tag_container     = "container"
+	tag_wrapperPrefix = "wrapper_prefix"
+	tag_prefix        = "prefix"
+	tag_provider      = "provider"
+	tag_clickprefix   = "clickprefix"
 )
 
 var debStack = false && Alert("debug stack")
@@ -487,6 +491,69 @@ func (m WidgetManager) PopStateMap() {
 
 func (m WidgetManager) stackedStateProvider() WidgetStateProvider {
 	return m.stackedState().StateProvider
+}
+
+func parseWrapperArgs(args ...any) []string {
+	var argsAsStrings []string
+	for _, arg := range args {
+		var asStr string
+		switch v := arg.(type) {
+		case string:
+			asStr = v
+		case int:
+			asStr = IntToString(v)
+		default:
+			BadArg("can't process arg", Info(arg))
+		}
+		argsAsStrings = append(argsAsStrings, asStr)
+	}
+	return argsAsStrings
+	//result := strings.Join(argsAsStrings, ":")
+	//return result
+}
+func (m WidgetManager) PushWrapper(args ...any) {
+	pr := PrIf("PushWrapper", true)
+	//var argsAsStrings []string
+	//for _, arg := range args {
+	//	var asStr string
+	//	switch v := arg.(type) {
+	//	case string:
+	//		asStr = v
+	//	case int:
+	//		asStr = IntToString(v)
+	//	default:
+	//		BadArg("can't process arg", Info(arg))
+	//	}
+	// result := parse	argsAsStrings = append(argsAsStrings, asStr)
+	//}
+	argsArray := parseWrapperArgs(args...)
+	result := joinArgs(argsArray)
+	pr("args:", args, "result:", result)
+
+	//strings.Join(argsArray,":")
+	//)strings.Join(argsAsStrings, ":")
+	Pr("PushWrapper:", QUO, result)
+	itm := *m.stackedState()
+	itm.WrapperPrefix = result
+	m.pushState(itm, tag_wrapperPrefix)
+}
+
+func joinArgs(args []string) string {
+	return strings.Join(args, ":")
+}
+
+func (m WidgetManager) PopWrapper() {
+	m.popStack(tag_wrapperPrefix)
+}
+
+func (m WidgetManager) ApplyWrapper(args ...any) string {
+	result := joinArgs(parseWrapperArgs(args...))
+	itm := *m.stackedState()
+	pref := itm.WrapperPrefix
+	if pref != "" {
+		result = pref + ":" + result
+	}
+	return result
 }
 
 // Deprecated.  Issue 97.
