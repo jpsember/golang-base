@@ -26,7 +26,7 @@ type AnimalCard = *AnimalCardStruct
 
 func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener ButtonWidgetListener, buttonLabel string, buttonListener ButtonWidgetListener) AnimalCard {
 	Todo("!Not sure we will need card buttons")
-	Todo("The feed_item: prefix is duplicated within the card widget ids")
+	Todo("!The feed_item: prefix is duplicated within the card widget ids")
 	widgetId := m.ConsumeOptionalPendingId()
 
 	// If a button is requested, it must have a listener
@@ -120,7 +120,7 @@ func (w AnimalCard) RenderTo(s Session, m MarkupBuilder) {
 		m.Comments(`Progress towards goal, controls`)
 		var campaignBalance, campaignTarget int
 
-		Todo("add widgets for the campaign balance")
+		Todo("!add widgets for the campaign balance")
 
 		m.TgOpen(`div class="card-body"`).TgContent()
 		{

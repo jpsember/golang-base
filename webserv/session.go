@@ -118,6 +118,7 @@ func LogUserOut(userId int) bool {
 var loggedInUsersSet = NewSet[int]()
 var loggedInUsersSetLock sync.RWMutex
 
+// Deprecated.  Issue 97.
 func (s Session) PrependId(id string) string {
 	pref := s.IdPrefix()
 	if pref == "" {
@@ -609,6 +610,7 @@ func SessionApp(s Session) ServerApp {
 // Accessing widget values
 // ------------------------------------------------------------------------------------
 
+// Deprecated.  Issue 97.
 // If the id has the prefix, remove it.
 func compileId(prefix string, id string) string {
 	var out string

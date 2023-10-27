@@ -74,6 +74,8 @@ func NotImplemented(message ...any) {
 	auxAbort(1, "Not implemented", message...)
 }
 
+var Issue97 = Alert("issue97 in effect")
+
 func isNil(value any) bool {
 	return value == nil
 }

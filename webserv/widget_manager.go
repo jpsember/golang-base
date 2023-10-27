@@ -489,30 +489,36 @@ func (m WidgetManager) stackedStateProvider() WidgetStateProvider {
 	return m.stackedState().StateProvider
 }
 
+// Deprecated.  Issue 97.
 func (m WidgetManager) PushIdPrefix(prefix string) {
 	itm := *m.stackedState()
 	itm.IdPrefix = prefix
 	m.pushState(itm, tag_prefix)
 }
 
+// Deprecated.  Issue 97.
 func (m WidgetManager) PopIdPrefix() {
 	m.popStack(tag_prefix)
 }
 
+// Deprecated.  Issue 97.
 func (m WidgetManager) IdPrefix() string {
 	return m.stackedState().IdPrefix
 }
 
+// Deprecated.  Issue 97.
 func (m WidgetManager) PushClickPrefix(prefix string) {
 	itm := *m.stackedState()
 	itm.clickTargetPrefix = prefix + itm.clickTargetPrefix
 	m.pushState(itm, tag_clickprefix)
 }
 
+// Deprecated.  Issue 97.
 func (m WidgetManager) PopClickPrefix() {
 	m.popStack(tag_clickprefix)
 }
 
+// Deprecated.  Issue 97.
 func (m WidgetManager) ClickPrefix() string {
 	return m.stackedState().clickTargetPrefix
 }

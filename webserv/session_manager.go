@@ -16,7 +16,7 @@ type SessionManager interface {
 }
 
 func RandomSessionId() string {
-	debug := Alert("using smaller session ids for development")
+	debug := Alert("!using smaller session ids for development")
 	var idLength = 32
 	if debug {
 		idLength = 3

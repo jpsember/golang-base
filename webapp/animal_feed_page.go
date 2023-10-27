@@ -45,6 +45,10 @@ func (p FeedPage) generateWidgets(s Session) {
 			func(sess Session, widget Widget, arg string) {
 				animalId := sess.Context().(int)
 				Pr("card listener, animal id:", animalId, "arg:", arg)
+				if Issue97 {
+					Pr(VERT_SP, "...(not selecting the animal)")
+					return
+				}
 				p.attemptSelectAnimal(sess, animalId)
 			},
 			"", nil)

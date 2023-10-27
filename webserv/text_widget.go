@@ -45,7 +45,7 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	h := NewHtmlString(textContent)
 
-	Alert("The StateProvider.prefix is overloaded; 1) add prefix to widget id when rendering; 2) interpret to change semantics on events (list)")
+	Alert("!The StateProvider.prefix is overloaded; 1) add prefix to widget id when rendering; 2) interpret to change semantics on events (list)")
 	prefixedId := s.PrependId(w.Id())
 
 	m.TgOpen(`div id=`).A(QUO, prefixedId)
