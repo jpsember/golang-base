@@ -8,7 +8,6 @@ import (
 
 type AnimalCardStruct struct {
 	BaseWidgetObj
-	itemPrefix     string
 	cardListener   ButtonWidgetListener
 	buttonListener ButtonWidgetListener
 	buttonLabel    string
@@ -24,7 +23,7 @@ const (
 
 type AnimalCard = *AnimalCardStruct
 
-func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener ButtonWidgetListener, buttonLabel string, buttonListener ButtonWidgetListener) AnimalCard {
+func NewAnimalCard(m WidgetManager, cardListener ButtonWidgetListener, buttonLabel string, buttonListener ButtonWidgetListener) AnimalCard {
 	Todo("!Not sure we will need card buttons")
 	Todo("!The feed_item: prefix is duplicated within the card widget ids")
 	widgetId := m.ConsumeOptionalPendingId()
@@ -34,7 +33,6 @@ func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener ButtonWidget
 
 	w := AnimalCardStruct{
 		cardListener:   cardListener,
-		itemPrefix:     itemPrefix,
 		buttonLabel:    buttonLabel,
 		buttonListener: buttonListener,
 	}
@@ -65,7 +63,6 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 
 	m.OpenContainer(w)
 
-	m.PushWrapper(w.itemPrefix)
 	{
 		// Wrap the card listener so we can process it as a list item...?
 
@@ -81,7 +78,6 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 	if w.buttonLabel != "" {
 		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).Listener(w.ourButtonListener).AddBtn()
 	}
-	m.PopWrapper()
 	m.Close()
 
 	pr("done adding children")

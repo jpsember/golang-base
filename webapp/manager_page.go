@@ -52,7 +52,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	var cardWidget AnimalCard
 	{
 
-		w := NewAnimalCard(m, itemPrefix,
+		w := NewAnimalCard(m,
 			func(sess Session, widget Widget, arg string) {
 				animalId := sess.Context().(int)
 				p.attemptSelectAnimal(sess, animalId)

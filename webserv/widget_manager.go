@@ -475,9 +475,25 @@ func (m WidgetManager) PushStateMap(jsmap JSMap) {
 	m.PushStateProvider(NewStateProvider("", jsmap))
 }
 
+func concatPrefixes(a string, b string) string {
+	if a == "" {
+		return b
+	}
+	if b == "" {
+		return a
+	}
+	return a + ":" + b
+}
+
 func (m WidgetManager) PushStateProvider(p WidgetStateProvider) {
 	itm := *m.stackedState()
-	itm.StateProvider = p
+	// If there's a stacked wrapper prefix, prepend it to the state provider's prefix
+	adjustedPrefix := concatPrefixes(itm.WrapperPrefix, p.Prefix)
+	if adjustedPrefix != p.Prefix {
+		itm.StateProvider = NewStateProvider(adjustedPrefix, p.State)
+	} else {
+		itm.StateProvider = p
+	}
 	m.pushState(itm, tag_provider)
 }
 

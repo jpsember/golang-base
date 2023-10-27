@@ -148,6 +148,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	// cache those we are about to construct (so we don't ask client
 	// to construct them unnecessarily).
 	w.cachedStateProviders = make(map[int]WidgetStateProvider)
+	Alert("!Why do we bother caching the state providers?  Is that a premature optimization?")
 	if w.WithPageControls {
 		w.renderPagination(s, m)
 	}

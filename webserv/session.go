@@ -635,14 +635,10 @@ func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 	stackedProvider := s.stackedStateProvider()
 	pr("session state provider:", stackedProvider)
 
-	if stackedProvider.Prefix != "" {
-		effectiveId, hadPrefix := TrimIfPrefix(id, stackedProvider.Prefix)
-		pr("TrimIfPrefix produced:", effectiveId, hadPrefix)
-		if hadPrefix {
-			id = effectiveId
-			p = stackedProvider
-			pr("using override state provider:", p)
-		}
+	Alert("!But what if the value is the default value?  We won't be getting the value here")
+  // Maybe just use this if the stacked provider exists, regardless of whether it has a key?
+	if stackedProvider.State.HasKey(id) {
+		return id, stackedProvider
 	}
 	return id, p
 }
