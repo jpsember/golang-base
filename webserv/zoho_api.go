@@ -25,7 +25,7 @@ type Zoho = *ZohoStruct
 func PrepareZoho(config ZohoConfig) error {
 	CheckState(sharedZoho == nil)
 	z := &ZohoStruct{}
-	if Alert("limiting actual emails sent") {
+	if Alert("!limiting actual emails sent") {
 		z.maxEmailsSent = 3
 	}
 	z.initConfig(config)

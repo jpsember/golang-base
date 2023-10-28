@@ -13,7 +13,7 @@ const AutoLogInName = "donor1"
 
 var DevAutoLogIn = true && Alert("!Performing auto log in with:", AutoLogInName)
 var DevDatabase = Alert("!Using development database")
-var DevGallery = true && Alert("Showing gallery")
+var DevGallery = true && Alert("!Showing gallery")
 var AllowTestInputs = DevDatabase && false && Alert("!Allowing test inputs (user name, password, etc)")
 var AutoActivateUser = DevDatabase && Alert("?Automatically activating user")
 
@@ -112,7 +112,7 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 		if nm == "" {
 			break
 		}
-		Todo("Auto logging in:", nm)
+		Todo("!Auto logging in:", nm)
 		if oper.autoLoggedIn {
 			break
 		}

@@ -90,7 +90,7 @@ func PopulateDatabase(projStruct ProjectStructure) {
 	}
 
 	// Delete other users
-	if !Alert("not deleting other users") {
+	if !Alert("!not deleting other users") {
 		delList := []int{}
 		iter := UserIterator(0)
 		for iter.HasNext() {

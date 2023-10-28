@@ -8,22 +8,9 @@ import (
 	"strings"
 )
 
-// ------------------------------------------------------------------------------------
-// Page implementation
-// ------------------------------------------------------------------------------------
-
-type GalleryPageStruct struct {
-	alertWidget AlertWidget
-	fooMap      JSMap
-	list        ListWidget
-	editor      DataEditor
-	ourState    JSMap
-	editorA     DataEditor
-	editorB     DataEditor
-}
-
 const (
-	GList = false
+	GDistinctDataObjects = true
+	GList                = false
 	GListPager
 	GAlert      = false
 	GUploadPic  = false
@@ -33,19 +20,28 @@ const (
 	GUserHeader = false
 )
 
+type GalleryPageStruct struct {
+	alertWidget AlertWidget
+	list        ListWidget
+	editor      DataEditor
+	ourState    JSMap
+	editorA     DataEditor
+	editorB     DataEditor
+	rand        JSRand
+}
+
 var GalleryPageTemplate = &GalleryPageStruct{}
 
 func (p GalleryPage) ConstructPage(s Session, args PageArgs) Page {
 	if !args.CheckDone() {
 		return nil
 	}
-	// Note: changing 'this' to operate on the new page, as the original 'this' was just a template
-	p = &GalleryPageStruct{
-		fooMap:   NewJSMap().Put("bar", "hello"),
+	x := &GalleryPageStruct{
+		rand:     NewJSRand().SetSeed(1234),
 		ourState: NewJSMap(),
 	}
-	p.generateWidgets(s)
-	return p
+	x.generateWidgets(s)
+	return x
 }
 
 func (p GalleryPage) Name() string {
@@ -55,14 +51,6 @@ func (p GalleryPage) Name() string {
 func (p GalleryPage) Args() []string { return nil }
 
 // ------------------------------------------------------------------------------------
-
-var myRand = NewJSRand().SetSeed(1234)
-
-func (p GalleryPage) nameListener(sess Session, widget InputWidget, value string) (string, error) {
-	Pr("name listener for:", widget.Id(), "value:", value)
-	Pr("current names:", p.editorA.State.GetString("name"), p.editorB.State.GetString("name"))
-	return value, nil
-}
 
 func (p GalleryPage) generateWidgets(sess Session) {
 	pr := PrIf("GalleryPage.generateWidgets", false)
@@ -93,20 +81,26 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	// Two widget sets displaying a couple of data objects, each set with a unique prefix
 	// ------------------------------------------------------------------------------------
 
-	{
+	if GDistinctDataObjects {
 		m.Open()
 		p.editorA = NewDataEditorWithPrefix(NewAnimal().SetName("Bruce"), "a_")
 		p.editorB = NewDataEditor(NewAnimal().SetName("Clark"))
 
+		nameListener := func(sess Session, widget InputWidget, value string) (string, error) {
+			Pr("name listener for:", widget.Id(), "value:", value)
+			Pr("current names:", p.editorA.State.GetString("name"), p.editorB.State.GetString("name"))
+			return value, nil
+		}
+
 		Todo("I want to be able to push a prefix here, built into the editor, so the widgets have distinct ids *BUT* still read the values using the standard keys, e.g. 'name'")
 		sess.PushStateProvider(p.editorA.WidgetStateProvider)
-		m.Label("Name A").Id(Animal_Name).AddInput(p.nameListener)
+		m.Label("Name A").Id(Animal_Name).AddInput(nameListener)
 		sess.PopStateProvider()
 
 		// I am pushing a prefix b_ here, otherwise it conflicts with the 'bare' id "name" generated above
 		sess.PushIdPrefix("b_")
 		sess.PushStateProvider(p.editorB.WidgetStateProvider)
-		m.Label("Name B").Id(Animal_Name).AddInput(p.nameListener)
+		m.Label("Name B").Id(Animal_Name).AddInput(nameListener)
 		sess.PopStateProvider()
 		sess.PopIdPrefix()
 
@@ -133,7 +127,22 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 			// The image widget will have the same id as the animal field that is to store its photo blob id.
 			//
-			imgWidget := m.Id(Animal_PhotoThumbnail).AddImage(p.imgUrlProvider)
+
+			var imgUrlProvider = func(s Session) string {
+				pr := PrIf("imgURLProvider", false)
+				// We are storing the image's blob id in the animal's photo_thumbnail field,
+				// so we can use the editor's embedded JSMap to access it.
+				imageId := p.editor.GetInt(Animal_PhotoThumbnail)
+				pr("provideURL, image id read from state:", imageId)
+				url := ""
+				if imageId != 0 {
+					url = SharedWebCache.GetBlobURL(imageId)
+					pr("read into cache, url:", url)
+				}
+				return url
+			}
+
+			imgWidget := m.Id(Animal_PhotoThumbnail).AddImage(imgUrlProvider)
 			imgWidget.SetSize(AnimalPicSizeNormal, 0.3)
 
 			Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
@@ -173,78 +182,61 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.Close()
 	}
 
-	if false {
-		m.Open()
-
-		m.Id("fred").Label(`Fred`).Listener(p.buttonListener).AddBtn()
-
-		Todo("!Consider reinstating individual cards (not part of a list)")
-		//{
-		//	m.Col(4)
-		//
-		//	cardListener := func(sess Session, widget AnimalCard, arg string) {
-		//		Pr("card listener, animal id:", widget.Animal().Id(), "arg:", arg)
-		//	}
-		//	cardButtonListener := func(sess Session, widget AnimalCard, arg string) {
-		//		Pr("card button listener, name:", widget.Animal().Name(), "arg:", arg)
-		//	}
-		//
-		//	Todo("We need to create a state provider for cards, when not in list (list handles that already somehow)")
-		//
-		//	// Create a new card that will contain other widgets
-		//	c1 := NewAnimalCard(m, ReadAnimalIgnoreError(3), cardListener, "Hello", cardButtonListener)
-		//	//c1.SetTrace(true)
-		//
-		//	m.Add(c1)
-		//	m.Add(
-		//		NewAnimalCard(m, ReadAnimalIgnoreError(4), nil, "Bop", cardButtonListener))
-		//
-		//	m.Open()
-		//
-		//	m.PushStateMap(p.fooMap)
-		//	m.PushIdPrefix("")
-		//	{
-		//
-		//		m.Col(4)
-		//		m.Label("Static text.").Height(5).AddText()
-		//		m.Id("bar").Label("Bar:").AddInput(p.fooListener)
-		//	}
-		//	m.PopIdPrefix()
-		//	m.PopStateProvider()
-		//	m.Close()
-		//
-		//}
-
-		m.Close()
-	}
-
 	if GColumns {
+
+		buttonListener := func(s Session, widget Widget, arg string) {
+			Pr("buttonListener, widget:", widget.Id(), "arg:", arg)
+			wid := widget.Id()
+			newVal := "Clicked: " + wid
+
+			if GAlert {
+				w := p.alertWidget
+				// Increment the alert class, and update its message
+				w.Class = (w.Class + 1) % AlertTotal
+				w.SetVisible(true)
+				s.SetWidgetValue(w, newVal)
+			}
+		}
+
 		// Open a container for all these various columns so we restore the default when it closes
 		m.Open()
 		{
 			m.Col(4)
 			m.Label("uniform delta").AddText()
 			m.Col(8)
-			m.Id("x58").Label(`Disabled`).Listener(p.buttonListener).AddBtn().SetEnabled(false)
+			m.Id("x58").Label(`Disabled`).Listener(buttonListener).AddBtn().SetEnabled(false)
 
 			m.Col(2).AddSpace()
-			m.Col(3).Id("yz").Label(`Enabled`).Listener(p.buttonListener).AddBtn()
+			m.Col(3).Id("yz").Label(`Enabled`).Listener(buttonListener).AddBtn()
 
 			m.Col(3).AddSpace()
 			m.Col(4).AddSpace()
 
 			m.Col(6)
 			m.Label("Bird").Id("bird")
+			var birdListener = func(s Session, widget InputWidget, newVal string) (string, error) {
+				var err error
+				Todo("?can we have sessions produce listener functions with appropriate handling of sess any?")
+				if newVal == "parrot" {
+					err = Error("No parrots, please!")
+				}
+				return newVal, err
+			}
 			m.AddInput(birdListener)
 
 			m.Col(6)
 			m.Open()
-			m.Id("x59").Label(`Label for X59`).AddCheckbox(p.checkboxListener)
-			m.Id("x60").Label(`With fruit`).AddSwitch(p.checkboxListener)
+
+			cbListener := func(s Session, widget CheckboxWidget, state bool) (bool, error) {
+				Pr("gallery, id", widget.Id(), "new state:", state)
+				return state, nil
+			}
+			m.Id("x59").Label(`Label for X59`).AddCheckbox(cbListener)
+			m.Id("x60").Label(`With fruit`).AddSwitch(cbListener)
 			m.Close()
 
 			m.Col(4)
-			m.Id("launch").Label(`Launch`).Listener(p.buttonListener).AddBtn()
+			m.Id("launch").Label(`Launch`).Listener(buttonListener).AddBtn()
 
 			m.Col(8)
 			m.Label(`Sample text; is 5 < 26? A line feed
@@ -257,7 +249,24 @@ Multiple line feeds:
 
 			m.Col(4)
 			sess.PushStateMap(p.ourState)
-			m.Label("Animal").Id("zebra").AddInput(p.zebraListener)
+
+			var zebraListener = func(s Session, widget InputWidget, newVal string) (string, error) {
+
+				if GAlert {
+					w := p.alertWidget
+					// Increment the alert class, and update its message
+					w.Class = (w.Class + 1) % AlertTotal
+					w.SetVisible(newVal != "")
+
+					s.SetWidgetValue(w,
+						strings.TrimSpace(newVal+" "+
+							RandomText(p.rand, 55, false)))
+					w.Repaint()
+				}
+				return newVal, nil
+			}
+
+			m.Label("Animal").Id("zebra").AddInput(zebraListener)
 			sess.PopStateProvider()
 		}
 		m.Close()
@@ -269,65 +278,7 @@ Multiple line feeds:
 	sess.PopStateProvider()
 }
 
-func (p GalleryPage) imgUrlProvider(s Session) string {
-	pr := PrIf("imgURLProvider", false)
-	// We are storing the image's blob id in the animal's photo_thumbnail field,
-	// so we can use the editor's embedded JSMap to access it.
-	imageId := p.editor.GetInt(Animal_PhotoThumbnail)
-	pr("provideURL, image id read from state:", imageId)
-	url := ""
-	if imageId != 0 {
-		url = SharedWebCache.GetBlobURL(imageId)
-		pr("read into cache, url:", url)
-	}
-	return url
-}
-
-func birdListener(s Session, widget InputWidget, newVal string) (string, error) {
-	var err error
-	Todo("?can we have sessions produce listener functions with appropriate handling of sess any?")
-	if newVal == "parrot" {
-		err = Error("No parrots, please!")
-	}
-	return newVal, err
-}
-
-func (p GalleryPage) zebraListener(s Session, widget InputWidget, newVal string) (string, error) {
-
-	if GAlert {
-		w := p.alertWidget
-		// Increment the alert class, and update its message
-		w.Class = (w.Class + 1) % AlertTotal
-		w.SetVisible(newVal != "")
-
-		s.SetWidgetValue(w,
-			strings.TrimSpace(newVal+" "+
-				RandomText(myRand, 55, false)))
-		w.Repaint()
-	}
-	return newVal, nil
-}
-
-func (p GalleryPage) buttonListener(s Session, widget Widget, arg string) {
-	Pr("buttonListener, widget:", widget.Id(), "arg:", arg)
-	wid := widget.Id()
-	newVal := "Clicked: " + wid
-
-	if GAlert {
-		w := p.alertWidget
-		// Increment the alert class, and update its message
-		w.Class = (w.Class + 1) % AlertTotal
-		w.SetVisible(true)
-		s.SetWidgetValue(w, newVal)
-	}
-}
-
-func (p GalleryPage) checkboxListener(s Session, widget CheckboxWidget, state bool) (bool, error) {
-	Pr("gallery, id", widget.Id(), "new state:", state)
-	return state, nil
-}
-
-func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, value []byte) error {
+func (p GalleryPage) uploadListener(s Session, source FileUpload, value []byte) error {
 	pr := PrIf("Gallery.uploadListener", true)
 
 	//pr("who called this?", Callers(0, 8))
@@ -398,12 +349,6 @@ func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, valu
 		s.Get(Animal_PhotoThumbnail).Repaint()
 	}
 	return errOut
-}
-
-func (p GalleryPage) fooListener(sess Session, widget InputWidget, value string) (string, error) {
-	Todo("Clarify prefix role in provider, widget ids, and resolve confusion about add/subtract prefix")
-	Pr("fooListener, id:", widget.Id(), "value:", value, CR, "current map:", INDENT, p.fooMap)
-	return value, nil
 }
 
 // ------------------------------------------------------------------------------------
