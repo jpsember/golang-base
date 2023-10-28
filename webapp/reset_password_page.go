@@ -74,7 +74,7 @@ func (p ResetPasswordPage) generateWidgets(s Session) {
 	Todo("Have widgetManager support for Alerts")
 	p.alert = NewAlertWidget("info", AlertInfo)
 	//alertWidget.SetVisible(false)
-	m.Add(alertWidget)
+	m.Add(p.alert)
 
 	m.Close()
 }

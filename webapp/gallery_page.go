@@ -13,13 +13,25 @@ import (
 // ------------------------------------------------------------------------------------
 
 type GalleryPageStruct struct {
-	fooMap   JSMap
-	list     ListWidget
-	editor   DataEditor
-	ourState JSMap
-	editorA  DataEditor
-	editorB  DataEditor
+	alertWidget AlertWidget
+	fooMap      JSMap
+	list        ListWidget
+	editor      DataEditor
+	ourState    JSMap
+	editorA     DataEditor
+	editorB     DataEditor
 }
+
+const (
+	GList = false
+	GListPager
+	GAlert      = false
+	GUploadPic  = false
+	GVisibility = false
+	GTextArea   = false
+	GColumns    = false
+	GUserHeader = false
+)
 
 var GalleryPageTemplate = &GalleryPageStruct{}
 
@@ -44,16 +56,17 @@ func (p GalleryPage) Args() []string { return nil }
 
 // ------------------------------------------------------------------------------------
 
-var alertWidget AlertWidget
 var myRand = NewJSRand().SetSeed(1234)
+
+func (p GalleryPage) nameListener(sess Session, widget InputWidget, value string) (string, error) {
+	Pr("name listener for:", widget.Id(), "value:", value)
+	Pr("current names:", p.editorA.State.GetString("name"), p.editorB.State.GetString("name"))
+	return value, nil
+}
 
 func (p GalleryPage) generateWidgets(sess Session) {
 	pr := PrIf("GalleryPage.generateWidgets", false)
 	pr("generateWidgets")
-
-	trim := false && Alert("removing most widgets")
-
-	trim2 := false && Alert("removing some widgets")
 
 	m := GenerateHeader(sess, p)
 	m.PushStateMap(p.ourState)
@@ -62,7 +75,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	// The list
 	// ------------------------------------------------------------------------------------
 
-	if !trim {
+	if GList {
 		listItemWidget := m.Open()
 		// Assuming that we want all widgets within the item to take their state from the list item,
 		// push the item prefix here.
@@ -72,9 +85,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.Close()
 
 		p.list = m.AddList(NewGalleryListImplementation(), listItemWidget)
-		if trim { //|| trim2 {
-			p.list.WithPageControls = false
-		}
+		p.list.WithPageControls = GListPager
 		Todo("!Add support for empty list items, to pad out page to full size")
 	}
 
@@ -84,35 +95,33 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	{
 		m.Open()
-		p.editorA = NewDataEditor(NewAnimal().SetName("Bruce"))
+		p.editorA = NewDataEditorWithPrefix(NewAnimal().SetName("Bruce"), "a_")
 		p.editorB = NewDataEditor(NewAnimal().SetName("Clark"))
 
-		sess.PushIdPrefix("a_")
 		Todo("I want to be able to push a prefix here, built into the editor, so the widgets have distinct ids *BUT* still read the values using the standard keys, e.g. 'name'")
 		sess.PushStateProvider(p.editorA.WidgetStateProvider)
 		m.Label("Name A").Id(Animal_Name).AddInput(p.nameListener)
 		sess.PopStateProvider()
-		sess.PopIdPrefix()
 
+		// I am pushing a prefix b_ here, otherwise it conflicts with the 'bare' id "name" generated above
 		sess.PushIdPrefix("b_")
-
-		sess.PushStateProvider(p.editorA.WidgetStateProvider)
+		sess.PushStateProvider(p.editorB.WidgetStateProvider)
 		m.Label("Name B").Id(Animal_Name).AddInput(p.nameListener)
 		sess.PopStateProvider()
 		sess.PopIdPrefix()
-	
+
 		m.Close()
 	}
 
 	// ------------------------------------------------------------------------------------
 
-	if !(trim || trim2) {
-		alertWidget = NewAlertWidget("sample_alert", AlertInfo)
-		alertWidget.SetVisible(false)
-		m.Add(alertWidget)
+	if GAlert {
+		p.alertWidget = NewAlertWidget("sample_alert", AlertInfo)
+		p.alertWidget.SetVisible(false)
+		m.Add(p.alertWidget)
 	}
 
-	if !trim2 {
+	if GUploadPic {
 		anim := ReadAnimalIgnoreError(3)
 		if anim.Id() == 0 {
 			Alert("No animals available")
@@ -135,7 +144,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		}
 	}
 
-	if !trim2 {
+	if GVisibility {
 		m.Open()
 		{
 			m.Col(6)
@@ -151,7 +160,9 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			}).AddBtn()
 		}
 		m.Close()
+	}
 
+	if GTextArea {
 		m.Open()
 		{
 			m.Label("In HTML and CSS, background color is denoted by " +
@@ -162,10 +173,10 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.Close()
 	}
 
-	if !(trim || trim2) {
+	if false {
 		m.Open()
 
-		m.Id("fred").Label(`Fred`).Listener(buttonListener).AddBtn()
+		m.Id("fred").Label(`Fred`).Listener(p.buttonListener).AddBtn()
 
 		Todo("!Consider reinstating individual cards (not part of a list)")
 		//{
@@ -207,17 +218,17 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.Close()
 	}
 
-	if !trim2 {
+	if GColumns {
 		// Open a container for all these various columns so we restore the default when it closes
 		m.Open()
 		{
 			m.Col(4)
 			m.Label("uniform delta").AddText()
 			m.Col(8)
-			m.Id("x58").Label(`Disabled`).Listener(buttonListener).AddBtn().SetEnabled(false)
+			m.Id("x58").Label(`Disabled`).Listener(p.buttonListener).AddBtn().SetEnabled(false)
 
 			m.Col(2).AddSpace()
-			m.Col(3).Id("yz").Label(`Enabled`).Listener(buttonListener).AddBtn()
+			m.Col(3).Id("yz").Label(`Enabled`).Listener(p.buttonListener).AddBtn()
 
 			m.Col(3).AddSpace()
 			m.Col(4).AddSpace()
@@ -233,7 +244,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			m.Close()
 
 			m.Col(4)
-			m.Id("launch").Label(`Launch`).Listener(buttonListener).AddBtn()
+			m.Id("launch").Label(`Launch`).Listener(p.buttonListener).AddBtn()
 
 			m.Col(8)
 			m.Label(`Sample text; is 5 < 26? A line feed
@@ -252,7 +263,7 @@ Multiple line feeds:
 		m.Close()
 
 	}
-	if !(trim || trim2) {
+	if GUserHeader {
 		AddUserHeaderWidget(sess)
 	}
 	sess.PopStateProvider()
@@ -283,26 +294,32 @@ func birdListener(s Session, widget InputWidget, newVal string) (string, error) 
 
 func (p GalleryPage) zebraListener(s Session, widget InputWidget, newVal string) (string, error) {
 
-	// Increment the alert class, and update its message
-	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
-	alertWidget.SetVisible(newVal != "")
+	if GAlert {
+		w := p.alertWidget
+		// Increment the alert class, and update its message
+		w.Class = (w.Class + 1) % AlertTotal
+		w.SetVisible(newVal != "")
 
-	s.SetWidgetValue(alertWidget,
-		strings.TrimSpace(newVal+" "+
-			RandomText(myRand, 55, false)))
-	alertWidget.Repaint()
+		s.SetWidgetValue(w,
+			strings.TrimSpace(newVal+" "+
+				RandomText(myRand, 55, false)))
+		w.Repaint()
+	}
 	return newVal, nil
 }
 
-func buttonListener(s Session, widget Widget, arg string) {
+func (p GalleryPage) buttonListener(s Session, widget Widget, arg string) {
 	Pr("buttonListener, widget:", widget.Id(), "arg:", arg)
 	wid := widget.Id()
 	newVal := "Clicked: " + wid
 
-	// Increment the alert class, and update its message
-	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
-	alertWidget.SetVisible(true)
-	s.SetWidgetValue(alertWidget, newVal)
+	if GAlert {
+		w := p.alertWidget
+		// Increment the alert class, and update its message
+		w.Class = (w.Class + 1) % AlertTotal
+		w.SetVisible(true)
+		s.SetWidgetValue(w, newVal)
+	}
 }
 
 func (p GalleryPage) checkboxListener(s Session, widget CheckboxWidget, state bool) (bool, error) {
