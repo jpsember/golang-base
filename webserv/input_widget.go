@@ -34,9 +34,13 @@ func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, p
 }
 
 func inputListenWrapper(sess Session, widget Widget, value string) (any, error) {
+	pr := PrIf("inputListenWrapper", true)
 	inp := widget.(InputWidget)
 	value = strings.TrimSpace(value)
+	pr("widget id:", widget.Id(), "value:", QUO, value)
 	result, err := inp.listener(sess, inp, value)
+	pr("after calling client listener, result:", QUO, result, "err:", err)
+	pr("callers:", Callers(0, 5))
 	return result, err
 }
 

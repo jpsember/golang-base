@@ -353,7 +353,7 @@ func (s Session) auxHandleAjax() {
 }
 
 func (s Session) ProcessWidgetValue(widget Widget, value string, context any) {
-	pr := PrIf("Session.ProcessWidgetValue", false)
+	pr := PrIf("Session.ProcessWidgetValue", true)
 	pr(VERT_SP, "widget", widget.Id(), "value", QUO, value, "context", context)
 	s.listenerContext = context
 	updatedValue, err := widget.LowListener()(s, widget, value)
@@ -363,11 +363,14 @@ func (s Session) ProcessWidgetValue(widget Widget, value string, context any) {
 }
 
 func (s Session) UpdateValueAndProblem(widget Widget, optionalValue any, err error) {
+	pr := PrIf("UpdateValueAndProblem", true)
+	pr("UpdateValueAndProblem, id:", widget.Id(), "optionalValue:", QUO, optionalValue, "err:", err)
 	if optionalValue != nil {
 		s.SetWidgetValue(widget, optionalValue)
 	}
 	// If the widget no longer exists, we may have changed pages...
 	if !s.exists(widget.Id()) {
+		pr("widget doesn't exist!")
 		return
 	}
 	// Always update the problem, in case we are clearing a previous error
@@ -678,13 +681,15 @@ func (s Session) WidgetBoolValue(w Widget) bool {
 }
 
 func (s Session) SetWidgetValue(w Widget, value any) {
-	pr := PrIf("SetWidgetValue", false)
+	pr := PrIf("SetWidgetValue", true)
 	id, p := s.getStateProvider(w)
+	pr("state provider, state:", p.State)
 	oldVal := p.State.OptUnsafe(id)
 	changed := value != oldVal
 	pr("old:", oldVal, "new:", value, "changed:", changed)
 	if changed {
 		p.State.Put(id, value)
+		pr("repainting", p.State)
 		w.Repaint()
 	}
 }

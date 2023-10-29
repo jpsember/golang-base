@@ -23,7 +23,7 @@ const (
 type GalleryPageStruct struct {
 	alertWidget AlertWidget
 	list        ListWidget
-	editor      DataEditor
+	picEditor   DataEditor
 	ourState    JSMap
 	editorA     DataEditor
 	editorB     DataEditor
@@ -83,16 +83,16 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	if GDistinctDataObjects {
 		m.Open()
-		p.editorA = NewDataEditorWithPrefix(NewAnimal().SetName("Bruce"), "a_")
-		p.editorB = NewDataEditorWithPrefix(NewAnimal().SetName("Clark"), "b_")
+		p.editorA = NewDataEditorWithPrefix(NewAnimal().SetName("Andy"), "a_")
+		p.editorB = NewDataEditorWithPrefix(NewAnimal().SetName("Brian"), "b_")
 
 		nameListener := func(sess Session, widget InputWidget, value string) (string, error) {
-			Pr("name listener for:", widget.Id(), "value:", value)
-			Pr("current names:", p.editor.StateProvider.State.GetString("name"), p.editorB.StateProvider.State.GetString("name"))
+			pr := PrIf("nameListener", true)
+			pr("name listener for:", widget.Id(), "value:", value)
+			pr("current names:", p.editorA.StateProvider.State.GetString("name"), p.editorB.StateProvider.State.GetString("name"))
 			return value, nil
 		}
 
-		Todo("I want to be able to push a prefix here, built into the editor, so the widgets have distinct ids *BUT* still read the values using the standard keys, e.g. 'name'")
 		sess.PushEditor(p.editorA)
 		m.Label("Name A").Id(Animal_Name).AddInput(nameListener)
 		sess.PopEditor()
@@ -118,7 +118,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			Alert("No animals available")
 		} else {
 			m.Open()
-			p.editor = NewDataEditor(anim)
+			p.picEditor = NewDataEditor(anim)
 
 			m.Id("foo").Label("Photo").AddFileUpload(p.uploadListener)
 
@@ -129,7 +129,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 				pr := PrIf("imgURLProvider", false)
 				// We are storing the image's blob id in the animal's photo_thumbnail field,
 				// so we can use the editor's embedded JSMap to access it.
-				imageId := p.editor.GetInt(Animal_PhotoThumbnail)
+				imageId := p.picEditor.GetInt(Animal_PhotoThumbnail)
 				pr("provideURL, image id read from state:", imageId)
 				url := ""
 				if imageId != 0 {
@@ -342,7 +342,7 @@ func (p GalleryPage) uploadListener(s Session, source FileUpload, value []byte) 
 		}
 		errOut = Error(problem)
 	} else {
-		p.editor.Put(Animal_PhotoThumbnail, imageId)
+		p.picEditor.Put(Animal_PhotoThumbnail, imageId)
 		s.Get(Animal_PhotoThumbnail).Repaint()
 	}
 	return errOut

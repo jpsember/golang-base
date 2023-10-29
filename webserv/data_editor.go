@@ -2,10 +2,11 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"strings"
 )
 
 type DataEditorStruct struct {
-	JSMap
+	JSMap         // embedded JSMap so we can modify object fields directly (e.g. editor.PutInt(...))
 	StateProvider WidgetStateProvider
 	parser        DataClass
 }
@@ -18,17 +19,19 @@ func NewDataEditor(data DataClass) DataEditor {
 
 func NewDataEditorWithPrefix(data DataClass, prefix string) DataEditor {
 	Todo("!Make StateProvider an embedded struct")
-	Todo("!Editor doesn't need an explicit JSMap, instead it can use the embedded WidgetStateProvider's")
-	j := data.ToJson().AsJSMap()
+	if prefix != "" {
+		CheckArg(strings.HasSuffix(prefix, ":"), "expected prefix to end with ':'")
+	}
+	dataAsJson := data.ToJson().AsJSMap()
 	t := &DataEditorStruct{
 		parser:        data,
-		JSMap:         j,
-		StateProvider: NewStateProvider(prefix, j),
+		JSMap:         dataAsJson,
+		StateProvider: NewStateProvider(prefix, dataAsJson),
 	}
 	return t
 }
 
 func (d DataEditor) Read() DataClass {
-	result := d.parser.Parse(d)
+	result := d.parser.Parse(d.StateProvider.State)
 	return result
 }
