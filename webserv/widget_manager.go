@@ -249,6 +249,7 @@ const (
 	tag_container   = "container"
 	tag_prefix      = "prefix"
 	tag_provider    = "provider"
+	tag_editor      = "editor"
 	tag_clickprefix = "clickprefix"
 )
 
@@ -469,6 +470,18 @@ func (m WidgetManager) PushContainer(container Widget) WidgetManager {
 
 func (m WidgetManager) PushStateMap(jsmap JSMap) {
 	m.PushStateProvider(NewStateProvider("", jsmap))
+}
+
+func (m WidgetManager) PushEditor(editor DataEditor) {
+	itm := *m.stackedState()
+	Alert("!The state provider has a prefix... does the editor need a prefix as a separate field?")
+	itm.IdPrefix = editor.StateProvider.Prefix
+	itm.StateProvider = editor.StateProvider
+	m.pushState(itm, tag_editor)
+}
+
+func (m WidgetManager) PopEditor() {
+	m.popStack(tag_editor)
 }
 
 func (m WidgetManager) PushStateProvider(p WidgetStateProvider) {

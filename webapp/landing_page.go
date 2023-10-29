@@ -88,7 +88,7 @@ func (p LandingPage) validateFlag() ValidateFlag {
 
 func (p LandingPage) signInListener(s Session, widget Widget, arg string) {
 	pr := PrIf("LandingPage.signInListener", false)
-	pr("state:", INDENT, p.editor.State)
+	pr("state:", INDENT, p.editor.StateProvider.State)
 
 	// Re-validate all the widgets in 'strict' mode.
 	p.strict = true

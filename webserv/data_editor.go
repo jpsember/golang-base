@@ -6,8 +6,8 @@ import (
 
 type DataEditorStruct struct {
 	JSMap
-	WidgetStateProvider
-	parser DataClass
+	StateProvider WidgetStateProvider
+	parser        DataClass
 }
 
 type DataEditor = *DataEditorStruct
@@ -17,11 +17,13 @@ func NewDataEditor(data DataClass) DataEditor {
 }
 
 func NewDataEditorWithPrefix(data DataClass, prefix string) DataEditor {
+	Todo("!Make StateProvider an embedded struct")
+	Todo("!Editor doesn't need an explicit JSMap, instead it can use the embedded WidgetStateProvider's")
 	j := data.ToJson().AsJSMap()
 	t := &DataEditorStruct{
-		parser:              data,
-		JSMap:               j,
-		WidgetStateProvider: NewStateProvider(prefix, j),
+		parser:        data,
+		JSMap:         j,
+		StateProvider: NewStateProvider(prefix, j),
 	}
 	return t
 }

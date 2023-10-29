@@ -55,7 +55,7 @@ func (p UserSettingsPage) generateWidgets(s Session) {
 	{
 		m.Col(12)
 		{
-			s.PushStateProvider(p.editor.WidgetStateProvider)
+			s.PushEditor(p.editor)
 			Todo("?How do I add static text?  I.e., non-editable text field?")
 			m.Label(p.user.Name()).AddText()
 			m.Label("Password").Id(User_Password).AddPassword(p.listenerValidatePwd)
@@ -67,7 +67,7 @@ func (p UserSettingsPage) generateWidgets(s Session) {
 			s.PopStateProvider()
 			m.Label("Email").Id(User_Email).AddInput(p.validateEmail)
 			m.Size(SizeTiny).Label("We will never share your email address with anyone.").AddText()
-			s.PopStateProvider()
+			s.PopEditor()
 		}
 		m.Col(6)
 		m.AddSpace()
@@ -109,7 +109,7 @@ func (p UserSettingsPage) listenerValidatePwdVerify(s Session, widget InputWidge
 	} else {
 		value1 := p.editor.GetString(User_Password)
 		pr("password value:", QUO, value1)
-		pr("editor state:", INDENT, p.editor.State)
+		pr("editor state:", INDENT, p.editor.StateProvider.State)
 		err, value = replaceWithTestInput(err, value, "a", value1)
 		if value1 != value {
 			err = Ternary(value == "", ErrorEmptyUserPassword, ErrorUserPasswordsDontMatch)
@@ -125,7 +125,7 @@ func (p UserSettingsPage) validateEmail(s Session, widget InputWidget, value str
 
 func (p UserSettingsPage) okListener(s Session, widget Widget, arg string) {
 	pr := PrIf("okListener", true)
-	pr("state:", INDENT, p.editor.State)
+	pr("state:", INDENT, p.editor.StateProvider.State)
 
 	// Re-validate all the widgets in 'strict' mode.
 	p.strict = true
@@ -133,7 +133,7 @@ func (p UserSettingsPage) okListener(s Session, widget Widget, arg string) {
 	p.strict = false
 
 	pr("after validating page;")
-	pr("state:", INDENT, p.editor.State)
+	pr("state:", INDENT, p.editor.StateProvider.State)
 
 	pr("error count:", errcount)
 	if errcount != 0 {

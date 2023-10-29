@@ -84,25 +84,22 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	if GDistinctDataObjects {
 		m.Open()
 		p.editorA = NewDataEditorWithPrefix(NewAnimal().SetName("Bruce"), "a_")
-		p.editorB = NewDataEditor(NewAnimal().SetName("Clark"))
+		p.editorB = NewDataEditorWithPrefix(NewAnimal().SetName("Clark"), "b_")
 
 		nameListener := func(sess Session, widget InputWidget, value string) (string, error) {
 			Pr("name listener for:", widget.Id(), "value:", value)
-			Pr("current names:", p.editorA.State.GetString("name"), p.editorB.State.GetString("name"))
+			Pr("current names:", p.editor.StateProvider.State.GetString("name"), p.editorB.StateProvider.State.GetString("name"))
 			return value, nil
 		}
 
 		Todo("I want to be able to push a prefix here, built into the editor, so the widgets have distinct ids *BUT* still read the values using the standard keys, e.g. 'name'")
-		sess.PushStateProvider(p.editorA.WidgetStateProvider)
+		sess.PushEditor(p.editorA)
 		m.Label("Name A").Id(Animal_Name).AddInput(nameListener)
-		sess.PopStateProvider()
+		sess.PopEditor()
 
-		// I am pushing a prefix b_ here, otherwise it conflicts with the 'bare' id "name" generated above
-		sess.PushIdPrefix("b_")
-		sess.PushStateProvider(p.editorB.WidgetStateProvider)
+		sess.PushEditor(p.editorB)
 		m.Label("Name B").Id(Animal_Name).AddInput(nameListener)
-		sess.PopStateProvider()
-		sess.PopIdPrefix()
+		sess.PopEditor()
 
 		m.Close()
 	}
