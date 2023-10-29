@@ -12,6 +12,84 @@ type ListWidgetStruct struct {
 	WithPageControls     bool
 	cachedStateProviders map[int]WidgetStateProvider
 }
+type ListWidget = *ListWidgetStruct
+
+// Construct a ListWidget.
+//
+// itemWidget : this is a widget that will be rendered for each displayed item
+func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget {
+	Todo("!Have option to wrap list items in a clickable div")
+	CheckArg(itemWidget != nil, "No itemWidget given")
+	w := ListWidgetStruct{
+		list:             list,
+		itemWidget:       itemWidget,
+		WithPageControls: true,
+	}
+	w.InitBase(id)
+	w.LowListen = w.listListenWrapper
+	w.pagePrefix = id + ".page_"
+	return &w
+}
+
+func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
+
+	pr := PrIf("ListWidget.RenderTo", false)
+	pr("ListWidget.RenderTo; id", w.Id())
+
+	m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent()
+
+	m.Comment("ListWidget")
+
+	// Discard any previously cached state providers, and
+	// cache those we are about to construct (so we don't ask client
+	// to construct them unnecessarily).
+	w.cachedStateProviders = make(map[int]WidgetStateProvider)
+	if w.WithPageControls {
+		w.renderPagination(s, m)
+	}
+
+	m.TgOpen(`div class="row"`).TgContent()
+	{
+		elementIds := w.list.GetPageElements()
+		pr("rendering page #:", w.list.CurrentPage(), "element ids:", elementIds)
+
+		// While rendering this list's items, we will set the state provider to one for each item.
+		pr("item prefix:", w.list.ItemPrefix())
+
+		CheckState(len(s.stack) == 2, "Expected two items on state stack: default item, plus one for list renderer")
+
+		for _, id := range elementIds {
+			sp := w.constructStateProvider(s, id)
+			pr("pushing state provider:", sp)
+			s.PushStateProvider(sp)
+
+			elementIdStr := IntToString(id)
+			// We want each rendered widget to have a unique id, so include "<element id>:" as a *rendering* prefix
+			s.PushIdPrefix(elementIdStr + ":")
+			// If we push the state provider AFTER the id prefix, it doesn't work! Why?
+			// Note that we are not calling RenderWidget(), which would not draw anything since the
+			// list item widget has been marked as detached
+
+			// Periods are used to separate widget id from context
+			s.PushClickPrefix(w.Id() + "." + elementIdStr + ".")
+
+			x := m.Len()
+			w.itemWidget.RenderTo(s, m)
+			pr("rendered item, markup:", INDENT, m.String()[x:])
+
+			s.PopClickPrefix()
+			s.PopIdPrefix()
+			s.PopStateProvider()
+		}
+	}
+	m.TgClose()
+
+	if w.WithPageControls {
+		w.renderPagination(s, m)
+	}
+
+	m.TgClose()
+}
 
 func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string) (any, error) {
 	pr := PrIf("list_widget.LowLevel listener", false)
@@ -62,87 +140,6 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string)
 		// Fall through to return nil, nil
 	}
 	return nil, nil
-}
-
-type ListWidget = *ListWidgetStruct
-
-// Construct a ListWidget.
-//
-// itemWidget : this is a widget that will be rendered for each displayed item
-func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget {
-	Todo("!Have option to wrap list items in a clickable div")
-	CheckArg(itemWidget != nil, "No itemWidget given")
-	w := ListWidgetStruct{
-		list:             list,
-		itemWidget:       itemWidget,
-		WithPageControls: true,
-	}
-	w.InitBase(id)
-	w.LowListen = w.listListenWrapper
-	w.pagePrefix = id + ".page_"
-	return &w
-}
-
-func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-
-	pr := PrIf("ListWidget.RenderTo", false)
-	pr("ListWidget.RenderTo; id", w.Id())
-
-	m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent()
-
-	m.Comment("ListWidget")
-
-	// Discard any previously cached state providers, and
-	// cache those we are about to construct (so we don't ask client
-	// to construct them unnecessarily).
-	w.cachedStateProviders = make(map[int]WidgetStateProvider)
-	if w.WithPageControls {
-		w.renderPagination(s, m)
-	}
-
-	{
-		m.TgOpen(`div class="row"`).TgContent()
-		{
-			elementIds := w.list.GetPageElements()
-			pr("rendering page #:", w.list.CurrentPage(), "element ids:", elementIds)
-
-			// While rendering this list's items, we will set the state provider to one for each item.
-			pr("item prefix:", w.list.ItemPrefix())
-
-			CheckState(len(s.stack) == 2, "Expected two items on state stack: default item, plus one for list renderer")
-
-			for _, id := range elementIds {
-				sp := w.constructStateProvider(s, id)
-				pr("pushing state provider:", sp)
-				s.PushStateProvider(sp)
-
-				elementIdStr := IntToString(id)
-				// We want each rendered widget to have a unique id, so include "<element id>:" as a *rendering* prefix
-				s.PushIdPrefix(elementIdStr + ":")
-				// If we push the state provider AFTER the id prefix, it doesn't work! Why?
-				// Note that we are not calling RenderWidget(), which would not draw anything since the
-				// list item widget has been marked as detached
-
-				// Periods are used to separate widget id from context
-				s.PushClickPrefix(w.Id() + "." + elementIdStr + ".")
-
-				x := m.Len()
-				w.itemWidget.RenderTo(s, m)
-				pr("rendered item, markup:", INDENT, m.String()[x:])
-
-				s.PopClickPrefix()
-				s.PopIdPrefix()
-				s.PopStateProvider()
-			}
-		}
-		m.TgClose()
-	}
-
-	if w.WithPageControls {
-		w.renderPagination(s, m)
-	}
-
-	m.TgClose()
 }
 
 func (w ListWidget) constructStateProvider(s Session, elementId int) WidgetStateProvider {
