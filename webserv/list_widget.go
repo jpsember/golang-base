@@ -4,7 +4,6 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
-// A Widget that displays editable text
 type ListWidgetStruct struct {
 	BaseWidgetObj
 	list                 ListInterface
@@ -26,6 +25,7 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string)
 		return nil, nil
 	}
 
+	Todo("Change syntax of list item arguments to use colons : instead of periods .")
 	// We expect a value to be <element id> ['.' <remainder>]*
 
 	elementIdStr, remainder := ExtractFirstDotArg(value)

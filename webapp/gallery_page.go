@@ -10,14 +10,15 @@ import (
 
 const (
 	GDistinctDataObjects = true
-	GList                = false
-	GListPager
-	GAlert      = false
-	GUploadPic  = false
-	GVisibility = false
-	GTextArea   = false
-	GColumns    = false
-	GUserHeader = false
+	GList                = true
+	GListMultiItems      = false
+	GListPager           = false
+	GAlert               = false
+	GUploadPic           = false
+	GVisibility          = false
+	GTextArea            = false
+	GColumns             = false
+	GUserHeader          = false
 )
 
 type GalleryPageStruct struct {
@@ -367,7 +368,8 @@ func NewGalleryListImplementation() GalleryListImplementation {
 	t := &GalleryListImplementationStruct{}
 	t.ElementsPerPage = 3
 	j := NewJSRand().SetSeed(1965)
-	for i := 0; i < 50; i++ {
+	maxItems := Ternary(GListMultiItems, 50, 1)
+	for i := 0; i < maxItems; i++ {
 		t.names = append(t.names, RandomText(j, 12, false))
 		t.ElementIds = append(t.ElementIds, i)
 	}

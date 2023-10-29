@@ -113,6 +113,7 @@ func DotJoin(args ...string) string {
 
 // Extract the first argument from a dotted expression (xxxx.yyyy.zzzz) and return xxxx, yyyy.zzzz; or "","" if none exist
 func ExtractFirstDotArg(expr string) (string, string) {
+	Todo("Use colon delimeters instead")
 	pr := PrIf("ExtractFirstDotArg", false)
 	pr("ExtractFirstDotArg")
 	var arg, remainder string

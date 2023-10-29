@@ -642,7 +642,8 @@ func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 	pr("id:", id, "provider:", p)
 
 	key := id
-	if Todo("Can we eliminate this and just treat a prefix as a maximal substring ending with ':'?") {
+	if false && Todo("Can we eliminate this and just treat a prefix as a maximal substring ending with ':'?") {
+		Alert("Not for list items, apparently")
 
 		i := strings.LastIndexByte(id, ':')
 		if i >= 0 {
@@ -651,7 +652,7 @@ func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 		}
 	} else {
 		stackedProvider := s.stackedStateProvider()
-		pr("session state provider:", stackedProvider)
+		pr("stacked state provider:", stackedProvider)
 
 		if stackedProvider.Prefix != "" {
 			effectiveId, hadPrefix := TrimIfPrefix(id, stackedProvider.Prefix)
