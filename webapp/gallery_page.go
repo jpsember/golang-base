@@ -83,8 +83,8 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	if GDistinctDataObjects {
 		m.Open()
-		p.editorA = NewDataEditorWithPrefix(NewAnimal().SetName("Andy"), "a_")
-		p.editorB = NewDataEditorWithPrefix(NewAnimal().SetName("Brian"), "b_")
+		p.editorA = NewDataEditorWithPrefix(NewAnimal().SetName("Andy"), "a:")
+		p.editorB = NewDataEditorWithPrefix(NewAnimal().SetName("Brian"), "b:")
 
 		nameListener := func(sess Session, widget InputWidget, value string) (string, error) {
 			pr := PrIf("nameListener", true)
