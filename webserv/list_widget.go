@@ -83,55 +83,6 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget 
 	return &w
 }
 
-func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
-	np := w.list.TotalPages()
-
-	if np < 2 {
-		return
-	}
-
-	windowSize := MinInt(np, 5)
-	windowStart := Clamp(w.list.CurrentPage()-windowSize/2, 0, np-windowSize)
-	windowStop := Clamp(windowStart+windowSize, 0, np-1)
-
-	m.TgOpen(`div class="row"`).TgContent()
-	{
-		m.TgOpen(`nav aria-label="Page navigation"`).TgContent()
-		{
-			m.TgOpen(`ul class="pagination d-flex justify-content-center"`).TgContent()
-			{
-				w.renderPagePiece(s, m, `&lt;&lt;`, 0, true)
-				w.renderPagePiece(s, m, `&lt;`, w.list.CurrentPage()-1, true)
-
-				for i := windowStart; i <= windowStop; i++ {
-					w.renderPagePiece(s, m, IntToString(i+1), i, false)
-				}
-				w.renderPagePiece(s, m, `&gt;`, w.list.CurrentPage()+1, true)
-				w.renderPagePiece(s, m, `&gt;&gt;`, np-1, true)
-			}
-			m.TgClose()
-		}
-		m.TgClose()
-	}
-	m.TgClose()
-}
-
-func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, targetPage int, edges bool) {
-
-	m.A(`<li class="page-item"><a class="page-link`)
-	targetPage = Clamp(targetPage, 0, w.list.TotalPages()-1)
-	if w.list.CurrentPage() == targetPage {
-		if edges {
-			m.A(` disabled`)
-		} else {
-			m.A(` active`)
-		}
-	} else {
-		m.A(`" onclick="jsButton('`, s.PrependId(w.pagePrefix), targetPage, `')`)
-	}
-	m.A(`">`, label, `</a></li>`, CR)
-}
-
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	pr := PrIf("ListWidget.RenderTo", false)
@@ -202,6 +153,58 @@ func (w ListWidget) constructStateProvider(s Session, elementId int) WidgetState
 		w.cachedStateProviders[elementId] = cached
 	}
 	return cached
+}
+
+// ------------------------------------------------------------------------------------
+// Pagination
+// ------------------------------------------------------------------------------------
+
+func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
+	np := w.list.TotalPages()
+
+	if np < 2 {
+		return
+	}
+
+	windowSize := MinInt(np, 5)
+	windowStart := Clamp(w.list.CurrentPage()-windowSize/2, 0, np-windowSize)
+	windowStop := Clamp(windowStart+windowSize, 0, np-1)
+
+	m.TgOpen(`div class="row"`).TgContent()
+	{
+		m.TgOpen(`nav aria-label="Page navigation"`).TgContent()
+		{
+			m.TgOpen(`ul class="pagination d-flex justify-content-center"`).TgContent()
+			{
+				w.renderPagePiece(s, m, `&lt;&lt;`, 0, true)
+				w.renderPagePiece(s, m, `&lt;`, w.list.CurrentPage()-1, true)
+
+				for i := windowStart; i <= windowStop; i++ {
+					w.renderPagePiece(s, m, IntToString(i+1), i, false)
+				}
+				w.renderPagePiece(s, m, `&gt;`, w.list.CurrentPage()+1, true)
+				w.renderPagePiece(s, m, `&gt;&gt;`, np-1, true)
+			}
+			m.TgClose()
+		}
+		m.TgClose()
+	}
+	m.TgClose()
+}
+
+func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, targetPage int, edges bool) {
+	m.A(`<li class="page-item"><a class="page-link`)
+	targetPage = Clamp(targetPage, 0, w.list.TotalPages()-1)
+	if w.list.CurrentPage() == targetPage {
+		if edges {
+			m.A(` disabled`)
+		} else {
+			m.A(` active`)
+		}
+	} else {
+		m.A(`" onclick="jsButton('`, s.PrependId(w.pagePrefix), targetPage, `')`)
+	}
+	m.A(`">`, label, `</a></li>`, CR)
 }
 
 // Process a possible pagniation control event.
