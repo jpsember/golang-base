@@ -10,9 +10,9 @@ import (
 
 const (
 	GDistinctDataObjects = true
-	GList                = false
-	GListMultiItems      = false
-	GListPager           = false
+	GList                = true
+	GListMultiItems      = true
+	GListPager           = true
 	GAlert               = false
 	GUploadPic           = false
 	GVisibility          = false
@@ -66,10 +66,15 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	if GList {
 		listItemWidget := m.Open()
+		// We want all the list item widgets to get there state from the list itself,
+		// so push an empty state map here (to negate the effect of pushing the 'ourState' map above)
+
+		m.PushStateMap(nil)
 		// Assuming that we want all widgets within the item to take their state from the list item,
 		// push the item prefix here.
 		//m.PushIdPrefix(galleryItemPrefix)
 		m.Id("foo_text").Height(3).AddText()
+		m.PopStateMap()
 		//m.PopIdPrefix()
 		m.Close()
 

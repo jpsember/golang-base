@@ -158,11 +158,12 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string)
 }
 
 func (w ListWidget) constructStateProvider(s Session, elementId int) WidgetStateProvider {
+	pr := PrIf("list_widget.constructStateProvider", true)
 	cached := w.cachedStateProviders[elementId]
 	if cached == nil {
 		pv := w.list.ItemStateProvider(s, elementId)
 		cached = NewStateProvider("", pv.State)
-		Alert("constructed item state provider:", cached)
+		pr("constructed:", cached)
 		w.cachedStateProviders[elementId] = cached
 	}
 	return cached

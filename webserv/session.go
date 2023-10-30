@@ -509,7 +509,7 @@ var prProb = PrIf("Widget Problems", false)
 func (s Session) WidgetProblem(w Widget) string {
 	pr := prProb
 	id, p := s.getStateProvider(w)
-	key := compileId("", widgetProblemKey(id))
+	key := widgetProblemKey(id)
 	result := p.State.OptString(key, "")
 	pr("problem for", w.Id(), "is:", QUO, result)
 	return result
@@ -628,19 +628,6 @@ func SessionApp(s Session) ServerApp {
 // Accessing widget values
 // ------------------------------------------------------------------------------------
 
-// If the id has the prefix, remove it.
-func compileId(prefix string, id string) string {
-	Alert("This func now does nothing, as prefix is always empty")
-	var out string
-	if result, removed := TrimIfPrefix(id, prefix); removed {
-		out = result
-	} else {
-		out = id
-	}
-	//Pr("compileId, prefix:", Quoted(prefix), "id:", id, "returning:", out)
-	return out
-}
-
 func extractKeyFromWidgetId(id string) string {
 	var result string
 	CheckArg(id != "")
@@ -662,8 +649,7 @@ func extractKeyFromWidgetId(id string) string {
 func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 	pr := PrIf("getStateProvider", true)
 
-	// If the session's stacked state provider has a non-empty prefix that matches this widget's id,
-	// take the state from that provider instead (after removing the prefix).
+	// If widget's own state provider has no state, use the one on the stack
 
 	id := w.Id()
 	key := extractKeyFromWidgetId(id)
@@ -673,6 +659,7 @@ func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 	// Use the widget's state, if one is defined; otherwise, stacked state
 	p := w.StateProvider()
 	if p.State == nil {
+		pr("using stacked state provider")
 		p = s.stackedStateProvider()
 	}
 
@@ -683,7 +670,7 @@ func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 // Read widget value; assumed to be a string.
 func (s Session) WidgetStringValue(w Widget) string {
 	id, p := s.getStateProvider(w)
-	key := compileId("", id)
+	key := id
 	if false && Alert("checking for non-existent key") {
 		if !p.State.HasKey(key) {
 			Pr("State has no key", QUO, key, " (id ", QUO, id, "), state:", INDENT, p.State)
@@ -695,13 +682,13 @@ func (s Session) WidgetStringValue(w Widget) string {
 // Read widget value; assumed to be an int.
 func (s Session) WidgetIntValue(w Widget) int {
 	id, p := s.getStateProvider(w)
-	return p.State.OptInt(compileId("", id), 0)
+	return p.State.OptInt(id, 0)
 }
 
 // Read widget value; assumed to be a bool.
 func (s Session) WidgetBoolValue(w Widget) bool {
 	id, p := s.getStateProvider(w)
-	return p.State.OptBool(compileId("", id), false)
+	return p.State.OptBool(id, false)
 }
 
 func (s Session) SetWidgetValue(w Widget, value any) {
