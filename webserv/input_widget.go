@@ -52,6 +52,14 @@ func dummyInputWidgetListener(sess Session, widget InputWidget, value string) (s
 }
 
 func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
+
+	debug := true
+	pr := PrIf("input_widget.RenderTo", debug)
+	if debug {
+		pr(VERT_SP, "widget id:", w.Id())
+		pr("stacked state:", INDENT, s.StateStackToJson())
+	}
+
 	// While <input> are span tags, our widget should be considered a block element
 
 	// The outermost element must have id "foo", since we will be replacing that id's outerhtml

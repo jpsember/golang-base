@@ -18,6 +18,17 @@ func (pv WidgetStateProvider) String() string {
 	return "{Prefix " + Quoted(pv.Prefix) + " state:" + Truncated(pv.State.CompactString()) + " }"
 }
 
+func (pv WidgetStateProvider) ToJson() JSMap {
+	m := NewJSMap()
+	if pv.Prefix != "" {
+		m.Put("prefix", pv.Prefix)
+	}
+	if !pv.State.HasKey("!") && pv.State.Size() != 0 {
+		m.Put("state", pv.State)
+	}
+	return m
+}
+
 func NewStateProvider(prefix string, state JSMap) WidgetStateProvider {
 	return &WidgetStateProviderStruct{Prefix: prefix, State: state}
 }

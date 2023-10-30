@@ -32,7 +32,7 @@ var textSize = map[WidgetSize]string{
 }
 
 func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf("TextWidget.RenderTo", false)
+	pr := PrIf("TextWidget.RenderTo", true)
 	var textContent string
 	if w.staticContent != nil {
 		textContent = w.staticContent.(string)

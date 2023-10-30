@@ -6,6 +6,7 @@ import (
 	"github.com/jpsember/golang-base/webserv/gen/webserv_data"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"sync"
 )
@@ -119,14 +120,29 @@ var loggedInUsersSet = NewSet[int]()
 var loggedInUsersSetLock sync.RWMutex
 
 func (s Session) PrependId(id string) string {
+	var result string
 	pref := s.IdPrefix()
 	if pref == "" {
-		return id
+		result = id
+	} else {
+		if strings.HasSuffix(id, pref) {
+			Alert("<1#50Id already has prefix:", id, pref, INDENT, Callers(1, 4))
+		}
+		result = pref + id
 	}
-	if strings.HasSuffix(id, pref) {
-		Alert("<1#50Id already has prefix:", id, pref, INDENT, Callers(1, 4))
+	return ValidateHTMLId(result)
+}
+
+// ID and NAME tokens must begin with a letter ([A-Za-z]) and may be followed by any number of letters,
+//
+//	digits ([0-9]), hyphens ("-"), underscores ("_"), colons (":"), and periods (".").
+var validHTMLIdExpr = CheckOkWith(regexp.Compile(`^[A-Za-z](?:[A-Za-z0-9\-_:.])*$`))
+
+func ValidateHTMLId(id string) string {
+	if !validHTMLIdExpr.MatchString(id) {
+		BadArg("Invalid id:", QUO, id)
 	}
-	return pref + id
+	return id
 }
 
 func (s Session) PrepareForHandlingRequest(w http.ResponseWriter, req *http.Request) {
@@ -642,6 +658,15 @@ func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 	pr("id:", id, "provider:", p)
 
 	key := id
+
+	//if Alert("trying something") {
+	//	// If the widget has the default state provider, use the stacked one
+	//	if p.State.HasKey("!") {
+	//		p = s.stackedStateProvider()
+	//	}
+	//	return key, p
+	//}
+
 	if false && Todo("Can we eliminate this and just treat a prefix as a maximal substring ending with ':'?") {
 		Alert("Not for list items, apparently")
 

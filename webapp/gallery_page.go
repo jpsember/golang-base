@@ -10,9 +10,9 @@ import (
 
 const (
 	GDistinctDataObjects = true
-	GList                = true
-	GListMultiItems      = true
-	GListPager           = true
+	GList                = false
+	GListMultiItems      = false
+	GListPager           = false
 	GAlert               = false
 	GUploadPic           = false
 	GVisibility          = false
@@ -68,12 +68,12 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		listItemWidget := m.Open()
 		// Assuming that we want all widgets within the item to take their state from the list item,
 		// push the item prefix here.
-		m.PushIdPrefix(galleryItemPrefix)
+		//m.PushIdPrefix(galleryItemPrefix)
 		m.Id("foo_text").Height(3).AddText()
-		m.PopIdPrefix()
+		//m.PopIdPrefix()
 		m.Close()
 
-		p.list = m.AddList(NewGalleryListImplementation(), listItemWidget)
+		p.list = m.Id("pets").AddList(NewGalleryListImplementation(), listItemWidget)
 		p.list.WithPageControls = GListPager
 		Todo("!Add support for empty list items, to pad out page to full size")
 	}
@@ -382,6 +382,7 @@ func (g GalleryListImplementation) ItemStateProvider(s Session, elementId int) W
 	return NewStateProvider("", json)
 }
 
-func (g GalleryListImplementation) ItemPrefix() string {
-	return galleryItemPrefix
-}
+//
+//func (g GalleryListImplementation) ItemPrefix() string {
+//	return galleryItemPrefix
+//}

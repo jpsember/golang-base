@@ -12,9 +12,6 @@ type ListInterface interface {
 	CurrentPage() int
 	TotalPages() int
 	SetCurrentPage(pageNumber int)
-	// Ids within a list widget's ItemWidget that have this prefix will be redirected to the list item renderer's
-	// state provider.
-	ItemPrefix() string
 	// ItemStateProvider constructs a state provider xi for item i.
 	ItemStateProvider(s Session, elementId int) WidgetStateProvider
 }

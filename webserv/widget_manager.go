@@ -282,6 +282,26 @@ func (m WidgetManager) popStack(tag string) {
 	_, m.stack = PopLast(m.stack)
 }
 
+func (m WidgetManager) StateStackToJson() JSMap {
+	result := NewJSMap()
+	for _, x := range m.stack {
+		mp := NewJSMap()
+		if x.IdPrefix != "" {
+			mp.Put("id_prefix", x.IdPrefix)
+		}
+		mp.Put("debug_tag", x.DebugTag)
+		if x.clickTargetPrefix != "" {
+			mp.Put("click_pref", x.clickTargetPrefix)
+		}
+		m2 := x.StateProvider.ToJson()
+		if m2.Size() != 0 {
+			mp.Put("state_prov", m2)
+		}
+		result.PutNumbered(mp)
+	}
+	return result
+}
+
 func (m WidgetManager) dumpStateStack(cursor int) string {
 	sb := strings.Builder{}
 	for index, x := range m.stack {
@@ -421,7 +441,7 @@ func (m WidgetManager) checkboxHelper(listener CheckboxWidgetListener, switchFla
 
 func (m WidgetManager) AllocateAnonymousId(debugInfo string) string {
 	m.anonymousIdCounter++
-	result := m.IdPrefix() + "z" + IntToString(m.anonymousIdCounter)
+	result := m.IdPrefix() + "z_" + IntToString(m.anonymousIdCounter)
 	if debugInfo != "" {
 		result += "_" + debugInfo + "_"
 	}
