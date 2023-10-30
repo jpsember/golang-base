@@ -66,17 +66,15 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	if GList {
 		listItemWidget := m.Open()
+
 		// We want all the list item widgets to get there state from the list itself,
 		// so push an empty state map here (to negate the effect of pushing the 'ourState' map above)
-
 		Todo("This works, but is a code smell")
 		m.PushStateMap(nil)
-		// Assuming that we want all widgets within the item to take their state from the list item,
-		// push the item prefix here.
-		//m.PushIdPrefix(galleryItemPrefix)
+
 		m.Id("foo_text").Height(3).AddText()
+
 		m.PopStateMap()
-		//m.PopIdPrefix()
 		m.Close()
 
 		p.list = m.Id("pets").AddList(NewGalleryListImplementation(), listItemWidget)
@@ -96,7 +94,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		nameListener := func(sess Session, widget InputWidget, value string) (string, error) {
 			pr := PrIf("nameListener", true)
 			pr("name listener for:", widget.Id(), "value:", value)
-			pr("current names:", p.editorA.StateProvider.GetString("name"), p.editorB.StateProvider.GetString("name"))
+			pr("current names:", p.editorA.GetString("name"), p.editorB.GetString("name"))
 			return value, nil
 		}
 

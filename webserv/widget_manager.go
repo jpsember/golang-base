@@ -494,7 +494,7 @@ func (m WidgetManager) PushStateMap(jsmap JSMap) {
 func (m WidgetManager) PushEditor(editor DataEditor) {
 	itm := *m.stackedState()
 	itm.IdPrefix = editor.Prefix
-	itm.StateProvider = editor.StateProvider
+	itm.StateProvider = editor.JSMap
 	m.pushState(itm, tag_editor)
 }
 
