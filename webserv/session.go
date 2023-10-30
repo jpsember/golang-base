@@ -41,7 +41,7 @@ type SessionStruct struct {
 
 	app any // ServerApp is stored here, will clean up later
 
-	listenerContext any
+	listenerContext []string
 
 	// Current request variables
 	ResponseWriter         http.ResponseWriter
@@ -322,8 +322,12 @@ func (s Session) auxHandleAjax() {
 	// We can now assume that the request consists of a single widget id, and perhaps a single value
 	// for that widget
 
+	widgetValueExpr := s.ajaxWidgetValue
+	s.ajaxWidgetValue = "" // To emphasize that we are done with this field
+	pr("widgetValueExpr:", QUO, widgetValueExpr)
+
 	widgetIdExpr := s.ajaxWidgetId
-	pr("widgetIdExpr:", widgetIdExpr)
+	pr("widgetIdExpr:", QUO, widgetIdExpr)
 	if widgetIdExpr == "" {
 		if !didSomething {
 			s.SetRequestProblem("widget id was empty")
@@ -333,18 +337,16 @@ func (s Session) auxHandleAjax() {
 
 	// We will assume that any periods in the widgetIdExpr serve to separate the widget id from additional context
 
-	id, remainder := ExtractFirstDotArg(widgetIdExpr)
-	pr("id:", id, "remainder:", remainder)
+	id := widgetIdExpr
+	//id, remainder := ExtractFirstDotArg(widgetIdExpr)
+	//pr("after parsing id expression, id:", QUO, id, "remainder:", remainder)
 
-	widgetValueExpr := s.ajaxWidgetValue
-	s.ajaxWidgetValue = "" // To emphasize that we are done with this field
+	Todo("!Is the old context still needed?")
 
-	Todo("Is the old context still needed?")
-
-	colonArgs := extractColonSeparatedArgs(id)
+	colonArgs, indices := extractColonSeparatedArgs(id)
 
 	var widget Widget
-	var args []colonArg
+	var args []string
 	{
 		for j := len(colonArgs); j >= 0; j-- {
 			var candidate string
@@ -352,7 +354,7 @@ func (s Session) auxHandleAjax() {
 			if j == len(colonArgs) {
 				candidate = id
 			} else {
-				candidate = id[0 : colonArgs[j].index-1]
+				candidate = id[0 : indices[j]-1]
 			}
 			pr("....looking for widget with id:", QUO, candidate, "and args:", args)
 			widget = s.Opt(candidate)
@@ -369,6 +371,7 @@ func (s Session) auxHandleAjax() {
 		Pr("widget map:", INDENT, s.widgetMap)
 		return
 	}
+
 	Todo("Do something with args:", args)
 	pr(VERT_SP, "found widget with id:", QUO, widget.Id(), "and type:", TypeOf(widget), "args:", args, VERT_SP)
 
@@ -376,6 +379,7 @@ func (s Session) auxHandleAjax() {
 		s.SetRequestProblem("widget is disabled", widget)
 		return
 	}
+
 	Todo("!maybe check the lowlistener inside the ProcessWidgetValue func instead?")
 	if widget.LowListener() == nil {
 		Alert("#50Widget has no low-level listener:", Info(widget))
@@ -384,20 +388,16 @@ func (s Session) auxHandleAjax() {
 
 	// We are juggling two values:  the remainder from the id, and the ajaxValue.
 	// We will join them together (where they exist) with '.'
-	value := DotJoin(remainder, widgetValueExpr)
-	pr(VERT_SP, "processing widget value, widget:", widget.Id(), "value:", QUO, value, VERT_SP)
-	s.ProcessWidgetValue(widget, value, nil)
+	value := widgetValueExpr
+	pr(VERT_SP, "processing widget value, widget:", QUO, widget.Id(), "value:", QUO, value, "args:", args, VERT_SP)
+	s.ProcessWidgetValue(widget, value, args)
 }
 
-type colonArg struct {
-	value string
-	index int
-}
-
-func extractColonSeparatedArgs(expr string) []colonArg {
-	pr := PrIf("extractColonSeparatedArgs", true)
+func extractColonSeparatedArgs(expr string) ([]string, []int) {
+	pr := PrIf("extractColonSeparatedArgs", false)
 	pr("expr:", QUO, expr)
-	var result []colonArg
+	var result []string
+	var indices []int
 	lastIndex := 0
 	cursor := 0
 	cmax := len(expr)
@@ -405,23 +405,26 @@ func extractColonSeparatedArgs(expr string) []colonArg {
 		newCursor := cursor + 1
 		pr("cursor:", cursor, "remaining chars:", expr[cursor:])
 		if expr[cursor] == ':' {
-			result = append(result, colonArg{
-				index: lastIndex,
-				value: expr[lastIndex:cursor],
-			})
+			result = append(result, expr[lastIndex:cursor])
+			indices = append(indices, lastIndex)
 			lastIndex = newCursor
 		}
 		cursor = newCursor
 	}
-	result = append(result, colonArg{index: lastIndex, value: expr[lastIndex:]})
-	pr("returning:", result)
-	return result
+	result = append(result, expr[lastIndex:cursor])
+	indices = append(indices, lastIndex)
+
+	//result = append(result, colonArg{index: lastIndex, value: expr[lastIndex:]})
+	pr("returning:", result, indices)
+	return result, indices
 }
 
-func (s Session) ProcessWidgetValue(widget Widget, value string, context any) {
+func (s Session) ProcessWidgetValue(widget Widget, value string, args []string) {
+	//REFACTOR TO ACCEPT 'colon' ARGUMENTS (as distinct strings)
+
 	pr := PrIf("Session.ProcessWidgetValue", true)
-	pr(VERT_SP, "widget", widget.Id(), "value", QUO, value, "context", context)
-	s.listenerContext = context
+	pr(VERT_SP, "widget", widget.Id(), "value", QUO, value, "args", args)
+	s.listenerContext = args
 	updatedValue, err := widget.LowListener()(s, widget, value)
 	s.listenerContext = nil
 	pr("LowListener returned updatedValue:", updatedValue, "err:", err)

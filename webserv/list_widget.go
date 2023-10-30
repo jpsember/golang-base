@@ -34,7 +34,7 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget 
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-	debug := true
+	debug := false
 	pr := PrIf("ListWidget.RenderTo", debug)
 	pr("ListWidget.RenderTo; id", QUO, w.Id(), "itemPrefix:", QUO, w.itemPrefix)
 
@@ -107,7 +107,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 }
 
 func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string) (any, error) {
-	pr := PrIf("list_widget.LowLevel listener", false)
+	pr := PrIf("list_widget.LowLevel listener", true)
 	pr(VERT_SP, "value:", QUO, value, "caller:", Caller())
 	pr("stack size:", len(sess.stack))
 	b := widget.(ListWidget)
@@ -150,7 +150,7 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string)
 		// Set up the same state provider that we did when rendering the widget
 		sess.PushStateProvider(w.constructStateProvider(sess, elementId))
 		Todo("This is causing a crash, as we are sometimes *changing pages* during this call, which re-initializes the stack and whatnot")
-		sess.ProcessWidgetValue(sourceWidget, remainder, elementId)
+		sess.ProcessWidgetValue(sourceWidget, remainder, nil) // elementId)
 		sess.PopStateProvider()
 		// Fall through to return nil, nil
 	}

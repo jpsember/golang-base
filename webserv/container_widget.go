@@ -83,7 +83,6 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 		}
 
 		if w.clickListener != nil {
-			Pr(VERT_SP, "container", w.Id(), " click listener:", w.clickListener)
 			m.A(` onclick="jsButton('`, s.ClickPrefix(), w.Id(), `')"`)
 		}
 
