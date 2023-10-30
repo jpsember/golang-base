@@ -307,7 +307,7 @@ func (s Session) parseAjaxRequest() {
 }
 
 func (s Session) auxHandleAjax() {
-	pr := PrIf("auxHandleAjax", false)
+	pr := PrIf("auxHandleAjax", true)
 	pr("start handling")
 
 	didSomething := false
@@ -341,8 +341,27 @@ func (s Session) auxHandleAjax() {
 
 	Todo("Is the old context still needed?")
 
-	Die("Look for id, and if not found, remove suffix ':xxxx'")
-	widget := s.Opt(id)
+	colonArgs := extractColonSeparatedArgs(id)
+
+	var widget Widget
+	var args []colonArg
+	{
+		for j := len(colonArgs); j >= 0; j-- {
+			var candidate string
+			args = colonArgs[j:]
+			if j == len(colonArgs) {
+				candidate = id
+			} else {
+				candidate = id[0 : colonArgs[j].index-1]
+			}
+			pr("....looking for widget with id:", QUO, candidate, "and args:", args)
+			widget = s.Opt(candidate)
+			if widget != nil {
+				pr("................FOUND!")
+				break
+			}
+		}
+	}
 
 	if widget == nil {
 		Pr("no widget with id", Quoted(id), "found to handle value", Quoted(widgetValueExpr))
@@ -350,7 +369,8 @@ func (s Session) auxHandleAjax() {
 		Pr("widget map:", INDENT, s.widgetMap)
 		return
 	}
-	pr("found widget with id:", id, "and type:", TypeOf(widget))
+	Todo("Do something with args:", args)
+	pr(VERT_SP, "found widget with id:", QUO, widget.Id(), "and type:", TypeOf(widget), "args:", args, VERT_SP)
 
 	if !widget.Enabled() {
 		s.SetRequestProblem("widget is disabled", widget)
@@ -365,7 +385,37 @@ func (s Session) auxHandleAjax() {
 	// We are juggling two values:  the remainder from the id, and the ajaxValue.
 	// We will join them together (where they exist) with '.'
 	value := DotJoin(remainder, widgetValueExpr)
+	pr(VERT_SP, "processing widget value, widget:", widget.Id(), "value:", QUO, value, VERT_SP)
 	s.ProcessWidgetValue(widget, value, nil)
+}
+
+type colonArg struct {
+	value string
+	index int
+}
+
+func extractColonSeparatedArgs(expr string) []colonArg {
+	pr := PrIf("extractColonSeparatedArgs", true)
+	pr("expr:", QUO, expr)
+	var result []colonArg
+	lastIndex := 0
+	cursor := 0
+	cmax := len(expr)
+	for cursor < cmax {
+		newCursor := cursor + 1
+		pr("cursor:", cursor, "remaining chars:", expr[cursor:])
+		if expr[cursor] == ':' {
+			result = append(result, colonArg{
+				index: lastIndex,
+				value: expr[lastIndex:cursor],
+			})
+			lastIndex = newCursor
+		}
+		cursor = newCursor
+	}
+	result = append(result, colonArg{index: lastIndex, value: expr[lastIndex:]})
+	pr("returning:", result)
+	return result
 }
 
 func (s Session) ProcessWidgetValue(widget Widget, value string, context any) {
