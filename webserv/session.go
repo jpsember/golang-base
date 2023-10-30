@@ -630,7 +630,7 @@ func SessionApp(s Session) ServerApp {
 
 // If the id has the prefix, remove it.
 func compileId(prefix string, id string) string {
-	Alert("This func now does nothing, as prefix is always empty")ZZ
+	Alert("This func now does nothing, as prefix is always empty")
 	var out string
 	if result, removed := TrimIfPrefix(id, prefix); removed {
 		out = result
