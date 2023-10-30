@@ -106,9 +106,9 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.TgClose()
 }
 
-func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string) (any, error) {
+func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
 	pr := PrIf("list_widget.LowLevel listener", true)
-	pr(VERT_SP, "value:", QUO, value, "caller:", Caller())
+	pr(VERT_SP, "value:", QUO, value, "args:", args, "caller:", Caller())
 	pr("stack size:", len(sess.stack))
 	b := widget.(ListWidget)
 

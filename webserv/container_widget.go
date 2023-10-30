@@ -100,7 +100,7 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.TgClose()
 }
 
-func (w GridWidget) clickListenWrapper(sess Session, widget Widget, value string) (any, error) {
+func (w GridWidget) clickListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
 	w.clickListener(sess, widget, value)
 	return nil, nil
 }

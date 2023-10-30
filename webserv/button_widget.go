@@ -28,7 +28,7 @@ func NewButtonWidget(id string, listener ButtonWidgetListener) ButtonWidget {
 	return b
 }
 
-func (b ButtonWidget) buttonListenWrapper(sess Session, widget Widget, value string) (any, error) {
+func (b ButtonWidget) buttonListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
 	b.listener(sess, widget, value)
 	return nil, nil
 }

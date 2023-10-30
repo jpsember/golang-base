@@ -36,7 +36,7 @@ func (w ImageWidget) SetSize(originalSize IPoint, scaleFactor float64) {
 	w.fixedSize = originalSize.ScaledBy(scaleFactor)
 }
 
-func (w ImageWidget) imageListenWrapper(sess Session, widget Widget, value string) (any, error) {
+func (w ImageWidget) imageListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
 	w.clickListener(sess, widget, value)
 	return nil, nil
 }

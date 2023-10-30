@@ -36,7 +36,7 @@ func NewCheckboxWidget(switchFlag bool, id string, label HtmlString, listener Ch
 	return &w
 }
 
-func checkboxListenWrapper(sess Session, widget Widget, value string) (any, error) {
+func checkboxListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
 	pr := PrIf("checkboxListenWrapper", false)
 	highLevelListener := widget.(CheckboxWidget)
 	boolValue := false

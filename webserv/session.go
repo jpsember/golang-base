@@ -425,7 +425,7 @@ func (s Session) ProcessWidgetValue(widget Widget, value string, args []string) 
 	pr := PrIf("Session.ProcessWidgetValue", true)
 	pr(VERT_SP, "widget", widget.Id(), "value", QUO, value, "args", args)
 	s.listenerContext = args
-	updatedValue, err := widget.LowListener()(s, widget, value)
+	updatedValue, err := widget.LowListener()(s, widget, value, args)
 	s.listenerContext = nil
 	pr("LowListener returned updatedValue:", updatedValue, "err:", err)
 	s.UpdateValueAndProblem(widget, updatedValue, err)
@@ -804,7 +804,7 @@ func (s Session) Validate(widget Widget) {
 		valAsString, applicable := widget.ValidationValue(s)
 		if applicable {
 			pr("...calling low level listener with", QUO, valAsString)
-			updatedValue, err := widget.LowListener()(s, widget, valAsString)
+			updatedValue, err := widget.LowListener()(s, widget, valAsString, nil)
 			pr("updated value, err:", updatedValue, err)
 			if DebugWidgetRepaint {
 				Pr("Session.Validate, widget has changed value to:", QUO, valAsString)
