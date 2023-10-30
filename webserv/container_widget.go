@@ -7,14 +7,21 @@ import (
 // A concrete Widget that can contain others, using Bootstrap's grid system of rows and columns
 type GridWidgetStruct struct {
 	BaseWidgetObj
-	children []Widget
+	children      []Widget
+	clickListener ButtonWidgetListener
 }
 
 type GridWidget = *GridWidgetStruct
 
-func NewContainerWidget(id string) GridWidget {
-	w := GridWidgetStruct{}
+func NewContainerWidget(id string, clickListener ButtonWidgetListener) GridWidget {
+	w := GridWidgetStruct{
+		clickListener: clickListener,
+	}
 	w.InitBase(id)
+	if clickListener != nil {
+		w.LowListen = w.clickListenWrapper
+		Alert("Setting click listener for container:", id)
+	}
 	return &w
 }
 
@@ -58,8 +65,8 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	Todo("!Don't add markup that is outside of the div<widget id>, else it will pile up due to ajax refreshes")
 	m.TgOpen(`div id=`).A(QUO, s.PrependId(w.Id())).TgContent()
 	m.Comments(`GridWidget`, w.IdSummary())
-	
-  anyPlotted := false
+
+	anyPlotted := false
 	for _, child := range w.children {
 		if child.Detached() {
 			continue
@@ -74,6 +81,12 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 			m.Style(`background-color:`, DebugColorForString(child.Id()), `;`)
 			m.Style(`border-style:double;`)
 		}
+
+		if w.clickListener != nil {
+			Pr(VERT_SP, "container", w.Id(), " click listener:", w.clickListener)
+			m.A(` onclick="jsButton('`, s.ClickPrefix(), w.Id(), `')"`)
+		}
+
 		m.TgContent()
 		{
 			verify := m.VerifyBegin()
@@ -86,4 +99,9 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 		m.TgClose().Br()
 	}
 	m.TgClose()
+}
+
+func (w GridWidget) clickListenWrapper(sess Session, widget Widget, value string) (any, error) {
+	w.clickListener(sess, widget, value)
+	return nil, nil
 }

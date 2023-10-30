@@ -339,11 +339,11 @@ func (s Session) auxHandleAjax() {
 	widgetValueExpr := s.ajaxWidgetValue
 	s.ajaxWidgetValue = "" // To emphasize that we are done with this field
 
-	// look for a period separating the widget id from context (additional arguments)
-
 	Todo("Is the old context still needed?")
 
+	Die("Look for id, and if not found, remove suffix ':xxxx'")
 	widget := s.Opt(id)
+
 	if widget == nil {
 		Pr("no widget with id", Quoted(id), "found to handle value", Quoted(widgetValueExpr))
 		Pr("state provider:", s.stackedStateProvider())
@@ -647,7 +647,7 @@ func extractKeyFromWidgetId(id string) string {
 
 // Get the WidgetStateProvider for a widget, and the widget value's key (derived by trimming the prefix if appropriate)
 func (s Session) getStateProvider(w Widget) (string, JSMap) {
-	pr := PrIf("getStateProvider", true)
+	pr := PrIf("getStateProvider", false)
 
 	// If widget's own state provider has no state, use the one on the stack
 

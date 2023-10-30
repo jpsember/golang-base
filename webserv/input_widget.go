@@ -53,7 +53,7 @@ func dummyInputWidgetListener(sess Session, widget InputWidget, value string) (s
 
 func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 
-	debug := true
+	debug := false
 	pr := PrIf("input_widget.RenderTo", debug)
 	if debug {
 		pr(VERT_SP, "widget id:", w.Id())

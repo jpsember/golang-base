@@ -231,7 +231,7 @@ func (m WidgetManager) resetPendingColumns() {
 
 // Add a child GridContainerWidget, and push onto stack as active container
 func (m WidgetManager) Open() Widget {
-	widget := NewContainerWidget(m.ConsumeOptionalPendingId())
+	widget := NewContainerWidget(m.ConsumeOptionalPendingId(), m.ConsumeOptionalPendingClickListener())
 	m.Add(widget)
 	return m.OpenContainer(widget)
 }

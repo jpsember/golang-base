@@ -66,7 +66,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 			// We want each rendered widget to have a unique id, so include "<element id>:" as a *rendering* prefix
 
-			Alert("Calling PushIdPrefix to include prefix with each of the list item's widgets")
+			Alert("!Calling PushIdPrefix to include prefix with each of the list item's widgets")
 			s.PushIdPrefix(elementIdStr)
 
 			sp := w.constructStateProvider(s, id)
@@ -158,7 +158,7 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string)
 }
 
 func (w ListWidget) constructStateProvider(s Session, elementId int) JSMap {
-	pr := PrIf("list_widget.constructStateProvider", true)
+	pr := PrIf("list_widget.constructStateProvider", false)
 	cached := w.cachedStateProviders[elementId]
 	if cached == nil {
 		pv := w.list.ItemStateProvider(s, elementId)

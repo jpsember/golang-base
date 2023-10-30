@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	GDistinctDataObjects = true
+	GDistinctDataObjects = false
 	GList                = true
 	GListMultiItems      = true
-	GListPager           = true
+	GListPager           = false
 	GAlert               = false
 	GUploadPic           = false
 	GVisibility          = false
@@ -65,6 +65,14 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	// ------------------------------------------------------------------------------------
 
 	if GList {
+
+		Alert("Trying to make the entire list item clickable")
+		// Make the whole item clickable...
+
+		m.Listener(func(s Session, w2 Widget, msg string) {
+			Pr("GList item click, msg:", msg)
+		})
+
 		listItemWidget := m.Open()
 
 		// We want all the list item widgets to get there state from the list itself,
