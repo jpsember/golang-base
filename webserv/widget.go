@@ -28,8 +28,8 @@ type Widget interface {
 	AddChildren(manager WidgetManager) // Add any child widgets
 	SetColumns(columns int)            // Set the number of columns the widget occupies in its row
 	Columns() int                      // Get the number of columns the widget occupies in its row
-	StateProvider() WidgetStateProvider
-	setStateProvider(p WidgetStateProvider)
+	StateProvider() JSMap
+	setStateProvider(p JSMap)
 	SetVisible(bool)
 	SetDetached(bool)
 	SetTrace(bool)

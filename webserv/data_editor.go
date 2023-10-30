@@ -7,7 +7,7 @@ import (
 
 type DataEditorStruct struct {
 	JSMap         // embedded JSMap so we can modify object fields directly (e.g. editor.PutInt(...))
-	StateProvider WidgetStateProvider
+	StateProvider JSMap
 	parser        DataClass
 	Prefix        string
 }
@@ -19,6 +19,7 @@ func NewDataEditor(data DataClass) DataEditor {
 }
 
 func NewDataEditorWithPrefix(data DataClass, prefix string) DataEditor {
+	Todo("Does DataEditor need both a JSMap and a StateProvider?")
 	Todo("!Make StateProvider an embedded struct")
 	if prefix != "" {
 		CheckArg(strings.HasSuffix(prefix, ":"), "expected prefix to end with ':'")
@@ -31,13 +32,13 @@ func NewDataEditorWithPrefix(data DataClass, prefix string) DataEditor {
 	t := &DataEditorStruct{
 		parser:        data,
 		JSMap:         dataAsJson,
-		StateProvider: NewStateProvider("", dataAsJson),
+		StateProvider: dataAsJson,
 		Prefix:        prefix,
 	}
 	return t
 }
 
 func (d DataEditor) Read() DataClass {
-	result := d.parser.Parse(d.StateProvider.State)
+	result := d.parser.Parse(d.StateProvider)
 	return result
 }

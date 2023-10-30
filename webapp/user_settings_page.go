@@ -109,7 +109,7 @@ func (p UserSettingsPage) listenerValidatePwdVerify(s Session, widget InputWidge
 	} else {
 		value1 := p.editor.GetString(User_Password)
 		pr("password value:", QUO, value1)
-		pr("editor state:", INDENT, p.editor.StateProvider.State)
+		pr("editor state:", INDENT, p.editor.StateProvider)
 		err, value = replaceWithTestInput(err, value, "a", value1)
 		if value1 != value {
 			err = Ternary(value == "", ErrorEmptyUserPassword, ErrorUserPasswordsDontMatch)
@@ -125,7 +125,7 @@ func (p UserSettingsPage) validateEmail(s Session, widget InputWidget, value str
 
 func (p UserSettingsPage) okListener(s Session, widget Widget, arg string) {
 	pr := PrIf("okListener", true)
-	pr("state:", INDENT, p.editor.StateProvider.State)
+	pr("state:", INDENT, p.editor.StateProvider)
 
 	// Re-validate all the widgets in 'strict' mode.
 	p.strict = true
@@ -133,7 +133,7 @@ func (p UserSettingsPage) okListener(s Session, widget Widget, arg string) {
 	p.strict = false
 
 	pr("after validating page;")
-	pr("state:", INDENT, p.editor.StateProvider.State)
+	pr("state:", INDENT, p.editor.StateProvider)
 
 	pr("error count:", errcount)
 	if errcount != 0 {

@@ -10,7 +10,7 @@ type ListWidgetStruct struct {
 	itemWidget           Widget
 	pagePrefix           string
 	WithPageControls     bool
-	cachedStateProviders map[int]WidgetStateProvider
+	cachedStateProviders map[int]JSMap
 	itemPrefix           string
 }
 type ListWidget = *ListWidgetStruct
@@ -45,7 +45,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	// Discard any previously cached state providers, and
 	// cache those we are about to construct (so we don't ask client
 	// to construct them unnecessarily).
-	w.cachedStateProviders = make(map[int]WidgetStateProvider)
+	w.cachedStateProviders = make(map[int]JSMap)
 	if w.WithPageControls {
 		w.renderPagination(s, m)
 	}
@@ -157,12 +157,12 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string)
 	return nil, nil
 }
 
-func (w ListWidget) constructStateProvider(s Session, elementId int) WidgetStateProvider {
+func (w ListWidget) constructStateProvider(s Session, elementId int) JSMap {
 	pr := PrIf("list_widget.constructStateProvider", true)
 	cached := w.cachedStateProviders[elementId]
 	if cached == nil {
 		pv := w.list.ItemStateProvider(s, elementId)
-		cached = NewStateProvider("", pv.State)
+		cached = pv
 		pr("constructed:", cached)
 		w.cachedStateProviders[elementId] = cached
 	}

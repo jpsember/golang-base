@@ -7,7 +7,7 @@ import (
 
 type mgrState struct {
 	Parent        Widget
-	StateProvider WidgetStateProvider
+	StateProvider JSMap
 	// Not to be confused with stackedStateProvider.Prefix, this is an optional prefix to be prepended to the
 	// id when adding widgets:
 	IdPrefix            string
@@ -17,8 +17,7 @@ type mgrState struct {
 }
 
 var mgrStateDefault = mgrState{
-	DebugTag:      "<bottom of stack>",
-	StateProvider: NewStateProvider("", nil),
+	DebugTag: "<bottom of stack>",
 }
 
 type WidgetManagerObj struct {
@@ -293,8 +292,8 @@ func (m WidgetManager) StateStackToJson() JSMap {
 		if x.clickTargetPrefix != "" {
 			mp.Put("click_pref", x.clickTargetPrefix)
 		}
-		m2 := x.StateProvider.ToJson()
-		if m2.Size() != 0 {
+		m2 := x.StateProvider
+		if m2 != nil {
 			mp.Put("state_prov", m2)
 		}
 		result.PutNumbered(mp)
@@ -489,7 +488,7 @@ func (m WidgetManager) PushContainer(container Widget) WidgetManager {
 }
 
 func (m WidgetManager) PushStateMap(jsmap JSMap) {
-	m.PushStateProvider(NewStateProvider("", jsmap))
+	m.PushStateProvider(jsmap)
 }
 
 func (m WidgetManager) PushEditor(editor DataEditor) {
@@ -503,7 +502,7 @@ func (m WidgetManager) PopEditor() {
 	m.popStack(tag_editor)
 }
 
-func (m WidgetManager) PushStateProvider(p WidgetStateProvider) {
+func (m WidgetManager) PushStateProvider(p JSMap) {
 	itm := *m.stackedState()
 	itm.StateProvider = p
 	m.pushState(itm, tag_provider)
@@ -517,7 +516,7 @@ func (m WidgetManager) PopStateMap() {
 	m.PopStateProvider()
 }
 
-func (m WidgetManager) stackedStateProvider() WidgetStateProvider {
+func (m WidgetManager) stackedStateProvider() JSMap {
 	return m.stackedState().StateProvider
 }
 

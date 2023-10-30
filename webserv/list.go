@@ -13,7 +13,7 @@ type ListInterface interface {
 	TotalPages() int
 	SetCurrentPage(pageNumber int)
 	// ItemStateProvider constructs a state provider xi for item i.
-	ItemStateProvider(s Session, elementId int) WidgetStateProvider
+	ItemStateProvider(s Session, elementId int) JSMap
 }
 
 type ListItemRenderer func(session Session, widget ListWidget, elementId int, m MarkupBuilder)
@@ -57,7 +57,7 @@ func (b BasicList) TotalPages() int {
 }
 
 // A default state provider.
-func (b BasicList) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
+func (b BasicList) ItemStateProvider(s Session, elementId int) JSMap {
 	BadState("No ItemStateProvider available")
 	return nil
 }

@@ -99,7 +99,7 @@ func (p SignUpPage) listenerValidatePwdVerify(s Session, widget InputWidget, val
 	} else {
 		value1 := p.editor.GetString(SignUpState_Password)
 		pr("password value:", QUO, value1)
-		pr("editor state:", INDENT, p.editor.StateProvider.State)
+		pr("editor state:", INDENT, p.editor.StateProvider)
 		err, value = replaceWithTestInput(err, value, "a", value1)
 		if value1 != value {
 			err = Ternary(value == "", ErrorEmptyUserPassword, ErrorUserPasswordsDontMatch)
@@ -115,7 +115,7 @@ func (p SignUpPage) validateEmail(s Session, widget InputWidget, value string) (
 
 func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
 	pr := PrIf("signupListener", false)
-	pr("state:", INDENT, p.editor.StateProvider.State)
+	pr("state:", INDENT, p.editor.StateProvider)
 
 	// Re-validate all the widgets in 'strict' mode.
 	p.strict = true
@@ -123,7 +123,7 @@ func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
 	p.strict = false
 
 	pr("after validating page;")
-	pr("state:", INDENT, p.editor.StateProvider.State)
+	pr("state:", INDENT, p.editor.StateProvider)
 
 	pr("error count:", errcount)
 	if errcount != 0 {
@@ -131,7 +131,7 @@ func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
 	}
 
 	// Construct a user by parsing the signupstate map
-	b := DefaultUser.Parse(p.editor.StateProvider.State).(User).ToBuilder()
+	b := DefaultUser.Parse(p.editor.StateProvider).(User).ToBuilder()
 	b.SetUserClass(UserClassDonor)
 
 	hash, salt := HashPassword(b.Password())

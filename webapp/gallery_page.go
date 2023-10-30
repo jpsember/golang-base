@@ -69,6 +69,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		// We want all the list item widgets to get there state from the list itself,
 		// so push an empty state map here (to negate the effect of pushing the 'ourState' map above)
 
+		Todo("This works, but is a code smell")
 		m.PushStateMap(nil)
 		// Assuming that we want all widgets within the item to take their state from the list item,
 		// push the item prefix here.
@@ -95,7 +96,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		nameListener := func(sess Session, widget InputWidget, value string) (string, error) {
 			pr := PrIf("nameListener", true)
 			pr("name listener for:", widget.Id(), "value:", value)
-			pr("current names:", p.editorA.StateProvider.State.GetString("name"), p.editorB.StateProvider.State.GetString("name"))
+			pr("current names:", p.editorA.StateProvider.GetString("name"), p.editorB.StateProvider.GetString("name"))
 			return value, nil
 		}
 
@@ -381,8 +382,8 @@ func NewGalleryListImplementation() GalleryListImplementation {
 	return t
 }
 
-func (g GalleryListImplementation) ItemStateProvider(s Session, elementId int) WidgetStateProvider {
+func (g GalleryListImplementation) ItemStateProvider(s Session, elementId int) JSMap {
 	json := NewJSMap()
 	json.Put("foo_text", ToString("Item #", elementId, g.names[elementId]))
-	return NewStateProvider("", json)
+	return json
 }

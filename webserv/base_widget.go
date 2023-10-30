@@ -13,7 +13,7 @@ type BaseWidgetObj struct {
 	size          WidgetSize
 	align         WidgetAlign
 	columns       int
-	stateProvider WidgetStateProvider
+	stateProvider JSMap
 	bitFlags      int
 }
 
@@ -178,18 +178,13 @@ func (w BaseWidget) AuxId() string {
 	return w.Id() + ".aux"
 }
 
-func (w BaseWidget) setStateProvider(p WidgetStateProvider) {
+func (w BaseWidget) setStateProvider(p JSMap) {
 	if w.isFlag(wflagTrace) {
 		if p != nil {
 			w.Log("setStateProvider:", p, Caller())
 		}
 	}
 	w.stateProvider = p
-	if false && Alert("!Verifying not using default state map") {
-		if w.Id() != "page" && p.State.HasKey("!") {
-			Alert("<1#50Widget is using default state map:", w.Id(), INDENT, Callers(2, 5))
-		}
-	}
 }
 
 func (w BaseWidget) Log(args ...any) {
@@ -198,6 +193,6 @@ func (w BaseWidget) Log(args ...any) {
 	}
 }
 
-func (w BaseWidget) StateProvider() WidgetStateProvider {
+func (w BaseWidget) StateProvider() JSMap {
 	return w.stateProvider
 }

@@ -510,7 +510,7 @@ func (s Session) WidgetProblem(w Widget) string {
 	pr := prProb
 	id, p := s.getStateProvider(w)
 	key := widgetProblemKey(id)
-	result := p.State.OptString(key, "")
+	result := p.OptString(key, "")
 	pr("problem for", w.Id(), "is:", QUO, result)
 	return result
 }
@@ -530,7 +530,7 @@ func (s Session) SetProblem(widget Widget, problem any) {
 	}
 	id, p := s.getStateProvider(widget)
 	key := widgetProblemKey(id)
-	state := p.State
+	state := p
 	existingProblem := state.OptString(key, "")
 	if existingProblem != text {
 		pr("changing from:", QUO, existingProblem, "to:", QUO, text)
@@ -646,7 +646,7 @@ func extractKeyFromWidgetId(id string) string {
 // ------------------------------------------------------------------------------------
 
 // Get the WidgetStateProvider for a widget, and the widget value's key (derived by trimming the prefix if appropriate)
-func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
+func (s Session) getStateProvider(w Widget) (string, JSMap) {
 	pr := PrIf("getStateProvider", true)
 
 	// If widget's own state provider has no state, use the one on the stack
@@ -654,11 +654,11 @@ func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 	id := w.Id()
 	key := extractKeyFromWidgetId(id)
 
-	pr("id:", id, "key:", key)
+	pr("id:", QUO, id, "key:", QUO, key)
 
 	// Use the widget's state, if one is defined; otherwise, stacked state
 	p := w.StateProvider()
-	if p.State == nil {
+	if p == nil {
 		pr("using stacked state provider")
 		p = s.stackedStateProvider()
 	}
@@ -671,36 +671,31 @@ func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 func (s Session) WidgetStringValue(w Widget) string {
 	id, p := s.getStateProvider(w)
 	key := id
-	if false && Alert("checking for non-existent key") {
-		if !p.State.HasKey(key) {
-			Pr("State has no key", QUO, key, " (id ", QUO, id, "), state:", INDENT, p.State)
-		}
-	}
-	return p.State.OptString(key, "")
+	return p.OptString(key, "")
 }
 
 // Read widget value; assumed to be an int.
 func (s Session) WidgetIntValue(w Widget) int {
 	id, p := s.getStateProvider(w)
-	return p.State.OptInt(id, 0)
+	return p.OptInt(id, 0)
 }
 
 // Read widget value; assumed to be a bool.
 func (s Session) WidgetBoolValue(w Widget) bool {
 	id, p := s.getStateProvider(w)
-	return p.State.OptBool(id, false)
+	return p.OptBool(id, false)
 }
 
 func (s Session) SetWidgetValue(w Widget, value any) {
 	pr := PrIf("SetWidgetValue", true)
 	id, p := s.getStateProvider(w)
-	pr("state provider, state:", p.State)
-	oldVal := p.State.OptUnsafe(id)
+	pr("state provider, state:", p)
+	oldVal := p.OptUnsafe(id)
 	changed := value != oldVal
 	pr("old:", oldVal, "new:", value, "changed:", changed)
 	if changed {
-		p.State.Put(id, value)
-		pr("repainting", p.State)
+		p.Put(id, value)
+		pr("repainting", p)
 		w.Repaint()
 	}
 }
