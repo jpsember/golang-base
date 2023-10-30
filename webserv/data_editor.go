@@ -9,6 +9,7 @@ type DataEditorStruct struct {
 	JSMap         // embedded JSMap so we can modify object fields directly (e.g. editor.PutInt(...))
 	StateProvider WidgetStateProvider
 	parser        DataClass
+	Prefix        string
 }
 
 type DataEditor = *DataEditorStruct
@@ -24,10 +25,14 @@ func NewDataEditorWithPrefix(data DataClass, prefix string) DataEditor {
 	}
 	Todo("!Maybe the prefix, if nonempty, should omit the ':' which is added here?")
 	dataAsJson := data.ToJson().AsJSMap()
+
+	Todo("The prefix should be stored --separately-- from the state provider, to avoid confusion?  Working towards removing prefix from state provider")
+
 	t := &DataEditorStruct{
 		parser:        data,
 		JSMap:         dataAsJson,
-		StateProvider: NewStateProvider(prefix, dataAsJson),
+		StateProvider: NewStateProvider("", dataAsJson),
+		Prefix:        prefix,
 	}
 	return t
 }

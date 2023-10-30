@@ -495,9 +495,7 @@ func (m WidgetManager) PushStateMap(jsmap JSMap) {
 
 func (m WidgetManager) PushEditor(editor DataEditor) {
 	itm := *m.stackedState()
-	Alert("!The state provider has a prefix... does the editor need a prefix as a separate field?")
-	Alert("Setting IdPrefix to the editor's StateProvider prefix, for subsequent widgets")
-	itm.IdPrefix = editor.StateProvider.Prefix
+	itm.IdPrefix = editor.Prefix
 	itm.StateProvider = editor.StateProvider
 	m.pushState(itm, tag_editor)
 }

@@ -161,7 +161,7 @@ func (w ListWidget) constructStateProvider(s Session, elementId int) WidgetState
 	cached := w.cachedStateProviders[elementId]
 	if cached == nil {
 		pv := w.list.ItemStateProvider(s, elementId)
-		cached = NewStateProvider(w.itemPrefix, pv.State)
+		cached = NewStateProvider("", pv.State)
 		Alert("constructed item state provider:", cached)
 		w.cachedStateProviders[elementId] = cached
 	}

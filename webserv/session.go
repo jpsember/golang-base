@@ -509,7 +509,7 @@ var prProb = PrIf("Widget Problems", false)
 func (s Session) WidgetProblem(w Widget) string {
 	pr := prProb
 	id, p := s.getStateProvider(w)
-	key := compileId(p.Prefix, widgetProblemKey(id))
+	key := compileId("", widgetProblemKey(id))
 	result := p.State.OptString(key, "")
 	pr("problem for", w.Id(), "is:", QUO, result)
 	return result
@@ -630,6 +630,7 @@ func SessionApp(s Session) ServerApp {
 
 // If the id has the prefix, remove it.
 func compileId(prefix string, id string) string {
+	Alert("This func now does nothing, as prefix is always empty")ZZ
 	var out string
 	if result, removed := TrimIfPrefix(id, prefix); removed {
 		out = result
@@ -682,11 +683,10 @@ func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 // Read widget value; assumed to be a string.
 func (s Session) WidgetStringValue(w Widget) string {
 	id, p := s.getStateProvider(w)
-	key := compileId(p.Prefix, id)
+	key := compileId("", id)
 	if false && Alert("checking for non-existent key") {
 		if !p.State.HasKey(key) {
 			Pr("State has no key", QUO, key, " (id ", QUO, id, "), state:", INDENT, p.State)
-			Pr("prefix:", p.Prefix)
 		}
 	}
 	return p.State.OptString(key, "")
@@ -695,13 +695,13 @@ func (s Session) WidgetStringValue(w Widget) string {
 // Read widget value; assumed to be an int.
 func (s Session) WidgetIntValue(w Widget) int {
 	id, p := s.getStateProvider(w)
-	return p.State.OptInt(compileId(p.Prefix, id), 0)
+	return p.State.OptInt(compileId("", id), 0)
 }
 
 // Read widget value; assumed to be a bool.
 func (s Session) WidgetBoolValue(w Widget) bool {
 	id, p := s.getStateProvider(w)
-	return p.State.OptBool(compileId(p.Prefix, id), false)
+	return p.State.OptBool(compileId("", id), false)
 }
 
 func (s Session) SetWidgetValue(w Widget, value any) {
