@@ -18,7 +18,7 @@ type mgrState struct {
 
 var mgrStateDefault = mgrState{
 	DebugTag:      "<bottom of stack>",
-	StateProvider: NewStateProvider("", NewJSMap().Put("!", "This is the default state provider")),
+	StateProvider: NewStateProvider("", nil),
 }
 
 type WidgetManagerObj struct {
@@ -489,6 +489,7 @@ func (m WidgetManager) PushContainer(container Widget) WidgetManager {
 }
 
 func (m WidgetManager) PushStateMap(jsmap JSMap) {
+	Todo("Should we be pushing the prefix as well?  Or can we remove the stacked state item prefix?")
 	m.PushStateProvider(NewStateProvider("", jsmap))
 }
 

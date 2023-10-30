@@ -381,8 +381,3 @@ func (g GalleryListImplementation) ItemStateProvider(s Session, elementId int) W
 	json.Put("foo_text", ToString("Item #", elementId, g.names[elementId]))
 	return NewStateProvider("", json)
 }
-
-//
-//func (g GalleryListImplementation) ItemPrefix() string {
-//	return galleryItemPrefix
-//}

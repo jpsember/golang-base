@@ -640,6 +640,19 @@ func compileId(prefix string, id string) string {
 	return out
 }
 
+func extractKeyFromWidgetId(id string) string {
+	var result string
+	CheckArg(id != "")
+	i := strings.LastIndexByte(id, ':')
+	if i >= 0 {
+		result = id[i+1:]
+
+	} else {
+		result = id
+	}
+	return result
+}
+
 // ------------------------------------------------------------------------------------
 // Reading widget state values
 // ------------------------------------------------------------------------------------
@@ -652,42 +665,14 @@ func (s Session) getStateProvider(w Widget) (string, WidgetStateProvider) {
 	// take the state from that provider instead (after removing the prefix).
 
 	id := w.Id()
+	key := extractKeyFromWidgetId(id)
+
+	pr("id:", id, "key:", key)
+
+	// Use the widget's state, if one is defined; otherwise, stacked state
 	p := w.StateProvider()
-	CheckState(p != nil, "widgets should ALWAYS have a state provider")
-
-	pr("id:", id, "provider:", p)
-
-	key := id
-
-	//if Alert("trying something") {
-	//	// If the widget has the default state provider, use the stacked one
-	//	if p.State.HasKey("!") {
-	//		p = s.stackedStateProvider()
-	//	}
-	//	return key, p
-	//}
-
-	if false && Todo("Can we eliminate this and just treat a prefix as a maximal substring ending with ':'?") {
-		Alert("Not for list items, apparently")
-
-		i := strings.LastIndexByte(id, ':')
-		if i >= 0 {
-			key = id[i+1:]
-			pr("extracting key as", QUO, key)
-		}
-	} else {
-		stackedProvider := s.stackedStateProvider()
-		pr("stacked state provider:", stackedProvider)
-
-		if stackedProvider.Prefix != "" {
-			effectiveId, hadPrefix := TrimIfPrefix(id, stackedProvider.Prefix)
-			pr("TrimIfPrefix produced:", effectiveId, hadPrefix)
-			if hadPrefix {
-				key = effectiveId
-				p = stackedProvider
-				pr("using override state provider:", p)
-			}
-		}
+	if p.State == nil {
+		p = s.stackedStateProvider()
 	}
 
 	pr("returning key:", QUO, key, "and provider:", p)

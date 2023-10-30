@@ -23,7 +23,7 @@ func (pv WidgetStateProvider) ToJson() JSMap {
 	if pv.Prefix != "" {
 		m.Put("prefix", pv.Prefix)
 	}
-	if !pv.State.HasKey("!") && pv.State.Size() != 0 {
+	if pv.State != nil {
 		m.Put("state", pv.State)
 	}
 	return m
