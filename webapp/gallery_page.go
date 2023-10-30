@@ -10,7 +10,7 @@ import (
 
 const (
 	GDistinctDataObjects = true
-	GList                = false
+	GList                = true
 	GListMultiItems      = false
 	GListPager           = false
 	GAlert               = false

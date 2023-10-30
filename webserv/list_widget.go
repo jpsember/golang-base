@@ -63,7 +63,10 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 		for _, id := range elementIds {
 
 			elementIdStr := w.itemPrefix + IntToString(id) + ":"
+
 			// We want each rendered widget to have a unique id, so include "<element id>:" as a *rendering* prefix
+
+			Alert("Calling PushIdPrefix to include prefix with each of the list item's widgets")
 			s.PushIdPrefix(elementIdStr)
 
 			sp := w.constructStateProvider(s, id)
