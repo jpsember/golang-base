@@ -39,8 +39,7 @@ func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener ButtonWidget
 		buttonListener: buttonListener,
 	}
 	Todo("!any way of simplifying the LowListener boilerplate here and in other widgets? Using templates perhaps?")
-	Todo("Call w.SetLowListener")
-	w.LowListen = w.lowLevelListener // Only has an effect if cardListener != nil
+	w.SetLowListener(w.lowLevelListener)
 	w.InitBase(widgetId)
 	return &w
 }

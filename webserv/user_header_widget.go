@@ -16,8 +16,7 @@ func NewUserHeaderWidget(id string, listener ButtonWidgetListener) UserHeaderWid
 	t := &UserHeaderWidgetStruct{}
 	t.InitBase(id)
 	t.listener = listener
-	Todo("Call w.SetLowListener")
-	t.LowListen = t.buttonListenWrapper
+	t.SetLowListener(t.buttonListenWrapper)
 	return t
 }
 

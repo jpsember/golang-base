@@ -99,7 +99,6 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				pr("stacked state:", INDENT, s.StateStackToJson())
 			}
 			x := m.Len()
-			pr("itemWidget: does it have a low listener?", INDENT, w.itemWidget, w.itemWidget.LowListener())
 			w.itemWidget.RenderTo(s, m)
 			pr("rendered item, markup:", INDENT, m.String()[x:])
 

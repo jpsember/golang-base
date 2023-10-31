@@ -8,24 +8,18 @@ import (
 type GridWidgetStruct struct {
 	BaseWidgetObj
 	children []Widget
-	//clickListener ButtonWidgetListener
 }
 
 type GridWidget = *GridWidgetStruct
 
 func NewContainerWidget(id string, clickListener ButtonWidgetListener) GridWidget {
-	w := GridWidgetStruct{
-		//	clickListener: clickListener,
-	}
+	w := GridWidgetStruct{}
 	w.InitBase(id)
 	if clickListener != nil {
-		Todo("Call w.SetLowListener")
-		Alert("This code is duplicated in list_widget")
-		w.LowListen = func(sess Session, widget Widget, value string, args []string) (any, error) {
+		w.SetLowListener(func(sess Session, widget Widget, value string, args []string) (any, error) {
 			clickListener(sess, widget, value)
 			return nil, nil
-		}
-		Alert("Setting click listener for container:", id)
+		})
 	}
 	return &w
 }
@@ -104,9 +98,3 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	}
 	m.TgClose()
 }
-
-//
-//func (w GridWidget) clickListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
-//	w.clickListener(sess, widget, value)
-//	return nil, nil
-//}
