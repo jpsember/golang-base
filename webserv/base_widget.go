@@ -79,6 +79,14 @@ func (w BaseWidget) LowListener() LowLevelWidgetListener {
 	return w.LowListen
 }
 
+func (w BaseWidget) SetLowListener(listener LowLevelWidgetListener) {
+	if w.LowListen != nil {
+		Alert("#50Widget already has a LowListener:", QUO, w.Id())
+		return
+	}
+	w.LowListen = listener
+}
+
 func (w BaseWidget) String() string {
 	return "<" + w.Id() + ">"
 }

@@ -29,6 +29,7 @@ func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, p
 		listener: listener,
 	}
 	w.InitBase(id)
+	Todo("Call w.SetLowListener")
 	w.LowListen = inputListenWrapper
 	return &w
 }

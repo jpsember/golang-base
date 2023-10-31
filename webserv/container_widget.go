@@ -7,19 +7,24 @@ import (
 // A concrete Widget that can contain others, using Bootstrap's grid system of rows and columns
 type GridWidgetStruct struct {
 	BaseWidgetObj
-	children      []Widget
-	clickListener ButtonWidgetListener
+	children []Widget
+	//clickListener ButtonWidgetListener
 }
 
 type GridWidget = *GridWidgetStruct
 
 func NewContainerWidget(id string, clickListener ButtonWidgetListener) GridWidget {
 	w := GridWidgetStruct{
-		clickListener: clickListener,
+		//	clickListener: clickListener,
 	}
 	w.InitBase(id)
 	if clickListener != nil {
-		w.LowListen = w.clickListenWrapper
+		Todo("Call w.SetLowListener")
+		Alert("This code is duplicated in list_widget")
+		w.LowListen = func(sess Session, widget Widget, value string, args []string) (any, error) {
+			clickListener(sess, widget, value)
+			return nil, nil
+		}
 		Alert("Setting click listener for container:", id)
 	}
 	return &w
@@ -82,7 +87,7 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 			m.Style(`border-style:double;`)
 		}
 
-		if w.clickListener != nil {
+		if w.LowListen != nil {
 			m.A(` onclick="jsButton('`, s.ClickPrefix(), w.Id(), `')"`)
 		}
 
@@ -100,7 +105,8 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.TgClose()
 }
 
-func (w GridWidget) clickListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
-	w.clickListener(sess, widget, value)
-	return nil, nil
-}
+//
+//func (w GridWidget) clickListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
+//	w.clickListener(sess, widget, value)
+//	return nil, nil
+//}

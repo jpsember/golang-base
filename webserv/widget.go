@@ -13,6 +13,7 @@ type Widget interface {
 	fmt.Stringer
 	Id() string
 	LowListener() LowLevelWidgetListener
+	SetLowListener(listener LowLevelWidgetListener)
 	// Get value as a string, or return false if no validation required. This should be the same value that
 	// can be passed to the LowLevelWidgetListener.  This allows us to validate the widget by simulating
 	// what any listeners would have done with values received via AJAX calls.

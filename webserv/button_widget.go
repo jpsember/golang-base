@@ -24,7 +24,7 @@ func NewButtonWidget(id string, listener ButtonWidgetListener) ButtonWidget {
 		listener: listener,
 	}
 	b.InitBase(id)
-	b.LowListen = b.buttonListenWrapper
+	b.SetLowListener(b.buttonListenWrapper)
 	return b
 }
 

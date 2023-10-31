@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	GDistinctDataObjects = false
+	GDistinctDataObjects = true
 	GList                = true
 	GListMultiItems      = true
 	GListPager           = false
@@ -69,13 +69,16 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		Alert("Trying to make the entire list item clickable")
 		// Make the whole item clickable...
 
-		m.Listener(func(s Session, w2 Widget, msg string) {
-			Pr("GList item click, msg:", msg)
-		})
+		Todo("Add listener to the list item later, when we construct the list itself")
+		if false {
+			m.Listener(func(s Session, w2 Widget, msg string) {
+				Pr("GList item click, msg:", msg)
+			})
+		}
 
 		listItemWidget := m.Open()
 
-		// We want all the list item widgets to get there state from the list itself,
+		// We want all the list item widgets to get their state from the list itself,
 		// so push an empty state map here (to negate the effect of pushing the 'ourState' map above)
 		Todo("This works, but is a code smell")
 		m.PushStateMap(nil)

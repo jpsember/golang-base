@@ -32,13 +32,23 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, listener Li
 	}
 	w.InitBase(id)
 	w.itemPrefix = id + ":"
+	Todo("Call w.SetLowListener")
 	w.LowListen = w.listListenWrapper
 	w.pagePrefix = id + ".page_"
+
+	Todo("Why do we have both the list listener and the list item listener?")
+
+	Pr(VERT_SP, "NewListWidget, listener:", listener, VERT_SP)
+	// If there's an item listener, add it to the item widget
+	if listener != nil {
+		itemWidget.SetLowListener(w.LowListen)
+	}
+
 	return &w
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-	debug := false
+	debug := true
 	pr := PrIf("ListWidget.RenderTo", debug)
 	pr("ListWidget.RenderTo; id", QUO, w.Id(), "itemPrefix:", QUO, w.itemPrefix)
 
@@ -91,6 +101,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 				pr("stacked state:", INDENT, s.StateStackToJson())
 			}
 			x := m.Len()
+			pr("itemWidget: does it have a low listener?", INDENT, w.itemWidget, w.itemWidget.LowListener())
 			w.itemWidget.RenderTo(s, m)
 			pr("rendered item, markup:", INDENT, m.String()[x:])
 
