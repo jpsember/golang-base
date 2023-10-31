@@ -17,7 +17,8 @@ func RandomText(j JSRand, maxLength int, withLinefeeds bool) string {
 		}
 		sb.WriteString(RandomWord(j))
 	}
-	return strings.TrimSpace(sb.String())
+	text := TruncateString(sb.String(), false, maxLength)
+	return strings.TrimSpace(text)
 }
 
 func RandomWord(j JSRand) string {

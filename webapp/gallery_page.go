@@ -108,10 +108,9 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 		m.Listener(
 			func(s Session, w Widget, arg string) {
-				Pr("repainting b")
+				s.SetWidgetValue(b, RandomText(p.rand, 3, false))
 				b.Repaint()
 			}).Label("Repaint B").AddBtn()
-
 		m.Close()
 	}
 

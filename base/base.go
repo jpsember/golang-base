@@ -1083,12 +1083,21 @@ func Truncated(arg any) string {
 		return trunc(ToString(v))
 	}
 }
-func trunc(x string) string {
-	const maxLen = 75
-	if len(x) > maxLen {
-		return x[0:maxLen] + "..."
+
+func TruncateString(str string, addEllipsis bool, maxLength int) string {
+	x := len(str)
+	if x > maxLength {
+		if addEllipsis && maxLength > 3 {
+			str = str[0:maxLength-3] + "..."
+		} else {
+			str = str[0:maxLength]
+		}
 	}
-	return x
+	return str
+}
+
+func trunc(x string) string {
+	return TruncateString(x, true, 75)
 }
 
 const (
