@@ -35,11 +35,10 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, listener Li
 	w.SetLowListener(w.listListenWrapper)
 	w.pagePrefix = id + ".page_"
 
-	Todo("Why do we have both the list listener and the list item listener? Try removing one or the other")
-
-	// If there's an item listener, add it to the item widget
+	// If there's an item listener, add it to the item widget; this is so when the item is rendered, it ends up
+	// calling the ListWidget's listener
 	if listener != nil {
-		itemWidget.SetLowListener(w.LowListen)
+		itemWidget.SetLowListener(w.listListenWrapper)
 	}
 
 	return &w
