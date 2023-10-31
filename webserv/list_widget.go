@@ -35,13 +35,19 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, listener Li
 	w.SetLowListener(w.listListenWrapper)
 	w.pagePrefix = id + ".page_"
 
-	// If there's an item listener, add it to the item widget; this is so when the item is rendered, it ends up
-	// calling the ListWidget's listener
+	// If there's an item listener, add a mock listener to the item widget, so that when the item is rendered,
+	// it will actually end up calling the list's listener instead
 	if listener != nil {
-		itemWidget.SetLowListener(w.listListenWrapper)
+    Todo("Refactor this somehow, maybe just a boolean flag?")
+		itemWidget.SetLowListener(mockLowListener)
 	}
 
 	return &w
+}
+
+var mockLowListener = func(sess Session, widget Widget, value string, args []string) (any, error) {
+	Die("shouldn't actually get called")
+	return nil, nil
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
@@ -91,8 +97,11 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			// list item widget has been marked as detached
 
 			// Periods are used to separate widget id from context
-			Todo("Update the click prefix; do we even need it?")
-			s.PushClickPrefix(elementIdStr)
+			withClickPref := true
+			Todo("Clarify this; why is it required?  Crashes with a bad interface conversion if omitted")
+			if withClickPref {
+				s.PushClickPrefix(elementIdStr)
+			}
 
 			if debug {
 				pr("stacked state:", INDENT, s.StateStackToJson())
@@ -101,7 +110,9 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			w.itemWidget.RenderTo(s, m)
 			pr("rendered item, markup:", INDENT, m.String()[x:])
 
-			s.PopClickPrefix()
+			if withClickPref {
+				s.PopClickPrefix()
+			}
 
 			s.PopStateMap()
 
@@ -118,7 +129,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 }
 
 func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
-	pr := PrIf("list_widget.LowLevel listener", false)
+	pr := PrIf("list_widget.LowLevel listener", true)
 	pr(VERT_SP, "value:", QUO, value, "args:", args, "caller:", Caller())
 	pr("stack size:", len(sess.stack))
 	b := widget.(ListWidget)
