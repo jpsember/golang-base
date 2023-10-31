@@ -22,7 +22,7 @@ type ListWidgetListener func(sess Session, widget *ListWidgetStruct, elementId i
 //
 // itemWidget : this is a widget that will be rendered for each displayed item
 func NewListWidget(id string, list ListInterface, itemWidget Widget, listener ListWidgetListener) ListWidget {
-	Todo("!Have option to wrap list items in a clickable div")
+	Todo("Have option to wrap list items in a clickable div")
 	CheckArg(itemWidget != nil, "No itemWidget given")
 	w := ListWidgetStruct{
 		list:             list,
@@ -38,7 +38,7 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, listener Li
 	// If there's an item listener, add a mock listener to the item widget, so that when the item is rendered,
 	// it will actually end up calling the list's listener instead
 	if listener != nil {
-    Todo("Refactor this somehow, maybe just a boolean flag?")
+		Todo("Refactor this somehow, maybe just a boolean flag?")
 		itemWidget.SetLowListener(mockLowListener)
 	}
 
@@ -79,15 +79,13 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 		for _, id := range elementIds {
 
-			elementIdStr := w.itemPrefix + IntToString(id) + ":"
+			// We want each rendered widget to have a unique id, and also a way to tie the widget to a particular list
+			// item, so construct a suitable prefix
 
-			// We want each rendered widget to have a unique id, so include "<element id>:" as a *rendering* prefix
-
-			Alert("!Calling PushIdPrefix to include prefix with each of the list item's widgets")
-			s.PushIdPrefix(elementIdStr)
+			nestedWidgetsIdPrefix := w.itemPrefix + IntToString(id) + ":"
+			s.PushIdPrefix(nestedWidgetsIdPrefix)
 
 			sp := w.constructStateProvider(s, id)
-			//sp = NewStateProvider(elementIdStr, sp.State)
 
 			pr(VERT_SP, "pushing state provider:", sp)
 			s.PushStateMap(sp)
@@ -99,16 +97,15 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			// Periods are used to separate widget id from context
 			withClickPref := true
 			Todo("Clarify this; why is it required?  Crashes with a bad interface conversion if omitted")
+			Todo("Can we use the id prefix as a click prefix as well?")
 			if withClickPref {
-				s.PushClickPrefix(elementIdStr)
+				s.PushClickPrefix(nestedWidgetsIdPrefix)
 			}
 
 			if debug {
 				pr("stacked state:", INDENT, s.StateStackToJson())
 			}
-			x := m.Len()
 			w.itemWidget.RenderTo(s, m)
-			pr("rendered item, markup:", INDENT, m.String()[x:])
 
 			if withClickPref {
 				s.PopClickPrefix()
@@ -157,7 +154,7 @@ func (w ListWidget) constructStateProvider(s Session, elementId int) JSMap {
 	pr := PrIf("list_widget.constructStateProvider", false)
 	cached := w.cachedStateProviders[elementId]
 	if cached == nil {
-		pv := w.list.ItemStateProvider(s, elementId)
+		pv := w.list.ItemStateMap(s, elementId)
 		cached = pv
 		pr("constructed:", cached)
 		w.cachedStateProviders[elementId] = cached

@@ -74,7 +74,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		glist := NewGalleryListImplementation()
 		var ourListListener ListWidgetListener
 		ourListListener = func(sess Session, widget *ListWidgetStruct, elementId int, args []string) error {
-			Pr("GList event, element:", elementId, "args:", args, "element state:", glist.ItemStateProvider(sess, elementId))
+			Pr("GList event, element:", elementId, "args:", args, "element state:", glist.ItemStateMap(sess, elementId))
 			return nil
 		}
 
@@ -89,8 +89,8 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	if GDistinctDataObjects {
 		m.Open()
-		p.editorA = NewDataEditorWithPrefix(NewAnimal().SetName("Andy"), "a:")
-		p.editorB = NewDataEditorWithPrefix(NewAnimal().SetName("Brian"), "b:")
+		p.editorA = NewDataEditorWithPrefix(NewAnimal().SetName("Andy"), "a")
+		p.editorB = NewDataEditorWithPrefix(NewAnimal().SetName("Brian"), "b")
 
 		nameListener := func(sess Session, widget InputWidget, value string) (string, error) {
 			Pr("GDDistinctDataObjects listener, id:", QUO, widget.Id(), "new value:", QUO, value, "; current names:", INDENT, //
@@ -103,8 +103,14 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		sess.PopEditor()
 
 		sess.PushEditor(p.editorB)
-		m.Label("Name B").Id(Animal_Name).AddInput(nameListener)
+		b := m.Label("Name B").Id(Animal_Name).AddInput(nameListener)
 		sess.PopEditor()
+
+		m.Listener(
+			func(s Session, w Widget, arg string) {
+				Pr("repainting b")
+				b.Repaint()
+			}).Label("Repaint B").AddBtn()
 
 		m.Close()
 	}
@@ -382,7 +388,7 @@ func NewGalleryListImplementation() GalleryListImplementation {
 	return t
 }
 
-func (g GalleryListImplementation) ItemStateProvider(s Session, elementId int) JSMap {
+func (g GalleryListImplementation) ItemStateMap(s Session, elementId int) JSMap {
 	json := NewJSMap()
 	json.Put("foo_text", ToString("Item #", elementId, g.names[elementId]))
 	return json

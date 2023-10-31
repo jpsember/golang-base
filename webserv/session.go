@@ -6,14 +6,13 @@ import (
 	"github.com/jpsember/golang-base/webserv/gen/webserv_data"
 	"io"
 	"net/http"
-	"regexp"
 	"strings"
 	"sync"
 )
 
 var dbPr = PrIf("", false)
 
-var ValidateWidgetMarkup = false && Alert("ValidateWidgetMarkup is true")
+var ValidateWidgetMarkup = true && Alert("ValidateWidgetMarkup is true")
 
 type Session = *SessionStruct
 
@@ -136,7 +135,7 @@ func (s Session) PrependId(id string) string {
 // ID and NAME tokens must begin with a letter ([A-Za-z]) and may be followed by any number of letters,
 //
 //	digits ([0-9]), hyphens ("-"), underscores ("_"), colons (":"), and periods (".").
-var validHTMLIdExpr = CheckOkWith(regexp.Compile(`^[A-Za-z](?:[A-Za-z0-9\-_:.])*$`))
+var validHTMLIdExpr = Regexp(`^[A-Za-z](?:[A-Za-z0-9\-_:.])*$`)
 
 func ValidateHTMLId(id string) string {
 	if !validHTMLIdExpr.MatchString(id) {
@@ -461,7 +460,17 @@ func (s Session) processRepaintFlags(w Widget) {
 		m := NewMarkupBuilder()
 		RenderWidget(w, s, m)
 		content := m.String()
+
 		if ValidateWidgetMarkup {
+
+			// Ensure that the markup starts with a tag, and has "id" as its first property
+			{
+				pattern := Regexp(`^\s*<[a-z]+ id="`)
+				if !pattern.MatchString(content) {
+					BadArg("Widget markup has unexpected structure ('id' should be first property):", INDENT, content)
+				}
+			}
+
 			mp, err := SharedHTMLValidator().Validate(content)
 			if err != nil {
 				Pr(VERT_SP, "Markup failed validation:", INDENT, content)
@@ -555,7 +564,7 @@ var prProb = PrIf("Widget Problems", false)
 // Read widget problem.  Returns an empty string if it hasn't got one.
 func (s Session) WidgetProblem(w Widget) string {
 	pr := prProb
-	id, p := s.getStateProvider(w)
+	id, p := s.getKeyAndStateMap(w)
 	key := widgetProblemKey(id)
 	result := p.OptString(key, "")
 	pr("problem for", w.Id(), "is:", QUO, result)
@@ -575,7 +584,7 @@ func (s Session) SetProblem(widget Widget, problem any) {
 			BadArg("<1Unsupported type")
 		}
 	}
-	id, p := s.getStateProvider(widget)
+	id, p := s.getKeyAndStateMap(widget)
 	if p == nil {
 		if text != "" {
 			BadState("There is no state map to set the error for id", QUO, id, "error:", QUO, text)
@@ -699,9 +708,9 @@ func extractKeyFromWidgetId(id string) string {
 // Reading widget state values
 // ------------------------------------------------------------------------------------
 
-// Get the WidgetStateProvider for a widget, and the widget value's key (derived by trimming the prefix if appropriate)
-func (s Session) getStateProvider(w Widget) (string, JSMap) {
-	pr := PrIf("getStateProvider", false)
+// Get the state map and key for a widget value
+func (s Session) getKeyAndStateMap(w Widget) (string, JSMap) {
+	pr := PrIf("getKeyAndStateMap", false)
 
 	// If widget's own state provider has no state, use the one on the stack
 
@@ -723,26 +732,26 @@ func (s Session) getStateProvider(w Widget) (string, JSMap) {
 
 // Read widget value; assumed to be a string.
 func (s Session) WidgetStringValue(w Widget) string {
-	id, p := s.getStateProvider(w)
+	id, p := s.getKeyAndStateMap(w)
 	key := id
 	return p.OptString(key, "")
 }
 
 // Read widget value; assumed to be an int.
 func (s Session) WidgetIntValue(w Widget) int {
-	id, p := s.getStateProvider(w)
+	id, p := s.getKeyAndStateMap(w)
 	return p.OptInt(id, 0)
 }
 
 // Read widget value; assumed to be a bool.
 func (s Session) WidgetBoolValue(w Widget) bool {
-	id, p := s.getStateProvider(w)
+	id, p := s.getKeyAndStateMap(w)
 	return p.OptBool(id, false)
 }
 
 func (s Session) SetWidgetValue(w Widget, value any) {
 	pr := PrIf("SetWidgetValue", false)
-	id, p := s.getStateProvider(w)
+	id, p := s.getKeyAndStateMap(w)
 	pr("state provider, state:", p)
 	oldVal := p.OptUnsafe(id)
 	changed := value != oldVal

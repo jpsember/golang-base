@@ -19,9 +19,8 @@ func NewDataEditor(data DataClass) DataEditor {
 
 func NewDataEditorWithPrefix(data DataClass, prefix string) DataEditor {
 	if prefix != "" {
-		CheckArg(strings.HasSuffix(prefix, ":"), "expected prefix to end with ':'")
+		CheckArg(!strings.HasSuffix(prefix, ":"), "please omit the ':' suffix on the prefix:", QUO, prefix)
 	}
-	Todo("!Maybe the prefix, if nonempty, should omit the ':' which is added here?")
 	dataAsJson := data.ToJson().AsJSMap()
 
 	t := &DataEditorStruct{

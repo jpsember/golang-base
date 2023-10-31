@@ -345,7 +345,7 @@ func (m WidgetManager) AddList(list ListInterface, itemWidget Widget, listener L
 		BadArg("widget is not visible (detaching will happen by us)")
 	}
 	itemWidget.SetDetached(true)
-	Alert("!The list item subwidgets are not being detached along with the item widget; but maybe we don't care")
+	Alert("The list item subwidgets are not being detached along with the item widget; but maybe we don't care")
 	id := m.ConsumeOptionalPendingId()
 	t := NewListWidget(id, list, itemWidget, listener)
 	m.Add(t)

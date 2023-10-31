@@ -30,7 +30,7 @@ func NewAnimalList(animalIds []int, cardWidget AnimalCard, itemPrefix string) An
 	return t
 }
 
-func (a AnimalList) ItemStateProvider(s Session, elementId int) JSMap {
+func (a AnimalList) ItemStateMap(s Session, elementId int) JSMap {
 	anim := ReadAnimalIgnoreError(elementId)
 	CheckState(anim.Id() != 0, "no animal available")
 
