@@ -85,7 +85,14 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.PopStateMap()
 		m.Close()
 
-		p.list = m.Id("pets").AddList(NewGalleryListImplementation(), listItemWidget)
+		glist := NewGalleryListImplementation()
+		var ourListListener ListWidgetListener
+		ourListListener = func(sess Session, widget *ListWidgetStruct, elementId int, args []string) error {
+			Pr("=========== Gallery list event! Element:", elementId, "args:", args, "element state:", glist.ItemStateProvider(sess, elementId))
+			return nil
+		}
+
+		p.list = m.Id("pets").AddList(glist, listItemWidget, ourListListener)
 		p.list.WithPageControls = GListPager
 		Todo("!Add support for empty list items, to pad out page to full size")
 	}

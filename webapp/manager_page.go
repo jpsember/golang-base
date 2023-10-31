@@ -65,7 +65,8 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	animalList := NewAnimalList(getManagerAnimals(managerId), cardWidget, "manager_item:")
 
 	Todo("!document how the list forwards clicks related to items on to the list listener")
-	m.AddList(animalList, cardWidget)
+	Todo("Add a listener for the animal list")
+	m.AddList(animalList, cardWidget, nil)
 	m.EndConstruction(debug)
 }
 

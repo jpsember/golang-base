@@ -12,19 +12,23 @@ type ListWidgetStruct struct {
 	WithPageControls     bool
 	cachedStateProviders map[int]JSMap
 	itemPrefix           string
+	listItemListener     ListWidgetListener
 }
 type ListWidget = *ListWidgetStruct
+
+type ListWidgetListener func(sess Session, widget *ListWidgetStruct, elementId int, args []string) error
 
 // Construct a ListWidget.
 //
 // itemWidget : this is a widget that will be rendered for each displayed item
-func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget {
+func NewListWidget(id string, list ListInterface, itemWidget Widget, listener ListWidgetListener) ListWidget {
 	Todo("!Have option to wrap list items in a clickable div")
 	CheckArg(itemWidget != nil, "No itemWidget given")
 	w := ListWidgetStruct{
 		list:             list,
 		itemWidget:       itemWidget,
 		WithPageControls: true,
+		listItemListener: listener,
 	}
 	w.InitBase(id)
 	w.itemPrefix = id + ":"
@@ -121,40 +125,53 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string,
 	Todo("Change syntax of list item arguments to use colons : instead of periods .")
 	// We expect a value to be <element id> ['.' <remainder>]*
 
-	elementIdStr, remainder := ExtractFirstDotArg(value)
-	if elementIdStr != "" {
-		elementId, err := ParseInt(elementIdStr)
-		pr("remainder:", remainder, "value:", elementId, "err:", err)
-		if err != nil {
-			Alert("#50 trouble parsing int from:", value)
-			return nil, Error("trouble parsing int from:", QUO, value)
+	var elementId int
+	elementId, remainder, err := ExtractIntFromListenerArgs(args, 0, -1)
+	if err == nil {
+		if w.listItemListener == nil {
+			err = Error("No list item listener for widget", QUO, w.Id())
+		} else {
+			err = w.listItemListener(sess, w, elementId, remainder)
 		}
-		Todo("!Verify that the parsed value matches an id in the list")
-
-		// Look for a widget (presumably within the original ListItem widget) with the extracted id.
-		// If the value is "xxx.yyy.zzz" and we don't find such a widget, look for "xxx.yyy" and pass "zzz" as the value
-
-		var sourceWidget Widget
-		var sourceId string
-		sourceId, remainder = ExtractFirstDotArg(remainder)
-		if sourceId != "" {
-			sourceWidget = sess.Opt(sourceId)
-		}
-
-		if sourceWidget == nil {
-			Alert("#50Can't find source widget(s) for:", Quoted(sourceId), "; original value:", Quoted(value))
-			return nil, Error("can't find widget with id:", QUO, sourceId, "value was:", QUO, value)
-		}
-		// Forward the message to that widget
-		Todo("!How do we distinguish between value actions (like text fields) and button presses?")
-		// Set up the same state provider that we did when rendering the widget
-		sess.PushStateProvider(w.constructStateProvider(sess, elementId))
-		Todo("This is causing a crash, as we are sometimes *changing pages* during this call, which re-initializes the stack and whatnot")
-		sess.ProcessWidgetValue(sourceWidget, remainder, nil) // elementId)
-		sess.PopStateProvider()
-		// Fall through to return nil, nil
 	}
-	return nil, nil
+	return nil, err
+	//
+	////elementIdStr, remainder := ExtractFirstDotArg(value)
+	////if elementIdStr != "" {
+	////	elementId, err := ParseInt(elementIdStr)
+	////	pr("remainder:", remainder, "value:", elementId, "err:", err)
+	////	if err != nil {
+	////		Alert("#50 trouble parsing int from:", value)
+	////		return nil, Error("trouble parsing int from:", QUO, value)
+	////	}
+	//	Todo("!Verify that the parsed value matches an id in the list")
+	//
+	//	// Look for a widget (presumably within the original ListItem widget) with the extracted id.
+	//	// If the value is "xxx.yyy.zzz" and we don't find such a widget, look for "xxx.yyy" and pass "zzz" as the value
+	//
+	//	//var sourceWidget Widget
+	//	//var sourceId string
+	//	//sourceId, remainder = ExtractFirstDotArg(remainder)
+	//	//if sourceId != "" {
+	//	//	sourceWidget = sess.Opt(sourceId)
+	//	//}
+	//	//
+	//	//if sourceWidget == nil {
+	//	//	Alert("#50Can't find source widget(s) for:", Quoted(sourceId), "; original value:", Quoted(value))
+	//	//	return nil, Error("can't find widget with id:", QUO, sourceId, "value was:", QUO, value)
+	//	//}
+	//	//// Forward the message to that widget
+	//	//Todo("!How do we distinguish between value actions (like text fields) and button presses?")
+	//	// Set up the same state provider that we did when rendering the widget
+	//
+	//	elementState := w.constructStateProvider(sess, elementId)
+	//
+	//	Todo("This is causing a crash, as we are sometimes *changing pages* during this call, which re-initializes the stack and whatnot")
+	//	sess.ProcessWidgetValue(w, remainder, nil) // elementId)
+	//	sess.PopStateProvider()
+	//	// Fall through to return nil, nil
+	//}
+	//return nil, nil
 }
 
 func (w ListWidget) constructStateProvider(s Session, elementId int) JSMap {

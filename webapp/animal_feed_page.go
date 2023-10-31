@@ -52,7 +52,8 @@ func (p FeedPage) generateWidgets(s Session) {
 		m.Add(cardWidget)
 
 		animalList := NewAnimalList(getAnimals(), cardWidget, itemPrefix)
-		m.AddList(animalList, cardWidget)
+		Todo("Add a listener for the animal list")
+		m.AddList(animalList, cardWidget, nil)
 
 	}
 	m.EndConstruction(debug)

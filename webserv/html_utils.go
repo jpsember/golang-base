@@ -111,29 +111,32 @@ func DotJoin(args ...string) string {
 	return s.String()
 }
 
-// Extract the first argument from a dotted expression (xxxx.yyyy.zzzz) and return xxxx, yyyy.zzzz; or "","" if none exist
-func ExtractFirstDotArg(expr string) (string, string) {
-	Todo("Use colon delimeters instead")
+var MissingListenerArgError = Error("Missing listener argument")
+var BadListenerIntArgError = Error("Bad listener integer argument")
+
+// Extract the first argument from a list of arguments; return arg, and remaining args
+func ExtractFirstDotArg(args []string) (string, []string, error) {
 	pr := PrIf("ExtractFirstDotArg", false)
 	pr("ExtractFirstDotArg")
-	var arg, remainder string
-	for {
-		pr("expression:", QUO, expr)
-		dotPos := FirstDot(expr)
-		pr("dotPos:", dotPos)
-		if dotPos < 0 {
-			arg, remainder = expr, ""
-			break
+	if len(args) == 0 {
+		return "", nil, MissingListenerArgError
+	}
+	return args[0], args[1:], nil
+}
+
+func ExtractIntFromListenerArgs(args []string, minValue int, maxValue int) (int, []string, error) {
+	arg, rem, err := ExtractFirstDotArg(args)
+	if err == nil {
+		intValue, err2 := ParseInt(arg)
+		err = err2
+		if err == nil {
+			if intValue < minValue || (maxValue > minValue && intValue >= maxValue) {
+				err = BadListenerIntArgError
+			}
 		}
-		// If there's a leading dot, remove it and repeat (so we don't return an empty argument unless there are no more)
-		if dotPos == 0 {
-			pr("leading dot")
-			expr = expr[1:]
-		} else {
-			arg, remainder = expr[0:dotPos], expr[dotPos+1:]
-			break
+		if err == nil {
+			return intValue, rem, nil
 		}
 	}
-	pr("returning:", QUO, arg, QUO, remainder)
-	return arg, remainder
+	return -1, nil, BadListenerIntArgError
 }
