@@ -502,7 +502,9 @@ func (m WidgetManager) PopEditor() {
 	m.popStack(tag_editor)
 }
 
+// Deprecated.
 func (m WidgetManager) PushStateProvider(p JSMap) {
+	Pr("Use PushStateMap instead")
 	itm := *m.stackedState()
 	itm.StateProvider = p
 	m.pushState(itm, tag_provider)

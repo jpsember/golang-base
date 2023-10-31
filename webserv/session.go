@@ -576,6 +576,13 @@ func (s Session) SetProblem(widget Widget, problem any) {
 		}
 	}
 	id, p := s.getStateProvider(widget)
+	if p == nil {
+		if text != "" {
+			BadState("There is no state map to set the error for id", QUO, id, "error:", QUO, text)
+		}
+		return
+	}
+
 	key := widgetProblemKey(id)
 	state := p
 	existingProblem := state.OptString(key, "")

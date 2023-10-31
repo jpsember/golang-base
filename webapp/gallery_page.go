@@ -58,7 +58,6 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	pr("generateWidgets")
 
 	m := GenerateHeader(sess, p)
-	m.PushStateMap(p.ourState)
 
 	// ------------------------------------------------------------------------------------
 	// The list
@@ -67,15 +66,9 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	if GList {
 
 		listItemWidget := m.Open()
-
-		// We want all the list item widgets to get their state from the list itself,
-		// so push an empty state map here (to negate the effect of pushing the 'ourState' map above)
-		Todo("This works, but is a code smell")
-		m.PushStateMap(nil)
-
+		// We want all the list item widgets to get their state from the list itself;
+		// so we haven't pushed a state map yet
 		m.Id("foo_text").Height(3).AddText()
-
-		m.PopStateMap()
 		m.Close()
 
 		glist := NewGalleryListImplementation()
@@ -117,6 +110,8 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	}
 
 	// ------------------------------------------------------------------------------------
+
+	m.PushStateMap(p.ourState)
 
 	if GAlert {
 		p.alertWidget = NewAlertWidget("sample_alert", AlertInfo)
