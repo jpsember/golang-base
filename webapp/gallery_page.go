@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	GDistinctDataObjects = true
+	GDistinctDataObjects = false
 	GList                = true
-	GListMultiItems      = true
+	GListMultiItems      = false
 	GListPager           = false
 	GAlert               = false
 	GUploadPic           = false

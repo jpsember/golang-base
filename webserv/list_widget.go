@@ -95,7 +95,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			// list item widget has been marked as detached
 
 			// Periods are used to separate widget id from context
-			withClickPref := true
+			withClickPref := false
 			Todo("Clarify this; why is it required?  Crashes with a bad interface conversion if omitted")
 			Todo("Can we use the id prefix as a click prefix as well?")
 			if withClickPref {

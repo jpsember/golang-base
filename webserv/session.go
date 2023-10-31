@@ -12,7 +12,7 @@ import (
 
 var dbPr = PrIf("", false)
 
-var ValidateWidgetMarkup = true && Alert("ValidateWidgetMarkup is true")
+var ValidateWidgetMarkup = false && Alert("ValidateWidgetMarkup is true")
 
 type Session = *SessionStruct
 
