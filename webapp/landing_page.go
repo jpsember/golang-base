@@ -70,7 +70,7 @@ func (p LandingPage) generateWidgets(sess Session) {
 		m.Label("Sign Up").Listener(p.signUpListener).AddBtn()
 	}
 	m.Close()
-	sess.PopStateProvider()
+	sess.PopStateMap()
 
 }
 

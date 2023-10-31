@@ -6,11 +6,9 @@ import (
 )
 
 type mgrState struct {
-	Parent        Widget
-	StateProvider JSMap
-	// Not to be confused with stackedStateProvider.Prefix, this is an optional prefix to be prepended to the
-	// id when adding widgets:
-	IdPrefix            string
+	Parent              Widget
+	StateMap            JSMap
+	IdPrefix            string // This is an optional prefix to be prepended to the id when adding widgets
 	DebugTag            string
 	pendingChildColumns int
 	clickTargetPrefix   string // prefix to add to onpress arguments
@@ -205,7 +203,7 @@ func (m WidgetManager) stackedState() *mgrState {
 }
 
 func (s *mgrState) String() string {
-	return NewJSMap().Put("IdPrefix", s.IdPrefix).Put("StateProvider", s.StateProvider.String()).Put("clickpref", s.clickTargetPrefix).CompactString()
+	return NewJSMap().Put("IdPrefix", s.IdPrefix).Put("StateProvider", s.StateMap.String()).Put("clickpref", s.clickTargetPrefix).CompactString()
 }
 
 // Have subsequent WidgetManager operations operate on a particular container widget.
@@ -247,7 +245,7 @@ func (m WidgetManager) OpenContainer(widget Widget) Widget {
 const (
 	tag_container   = "container"
 	tag_prefix      = "prefix"
-	tag_provider    = "provider"
+	tag_statemap    = "statemap"
 	tag_editor      = "editor"
 	tag_clickprefix = "clickprefix"
 )
@@ -292,7 +290,7 @@ func (m WidgetManager) StateStackToJson() JSMap {
 		if x.clickTargetPrefix != "" {
 			mp.Put("click_pref", x.clickTargetPrefix)
 		}
-		m2 := x.StateProvider
+		m2 := x.StateMap
 		if m2 != nil {
 			mp.Put("state_prov", m2)
 		}
@@ -327,7 +325,7 @@ func (m WidgetManager) AddUserHeader(listener ButtonWidgetListener) UserHeaderWi
 	w := NewUserHeaderWidget(m.ConsumeOptionalPendingId(), listener)
 	w.BgndImageMarkup = `style=" height:50px; background-image:url('app_header.jpg'); background-repeat: no-repeat;"`
 	m.Add(w)
-	m.PopStateProvider()
+	m.PopStateMap()
 	return w
 }
 
@@ -488,13 +486,15 @@ func (m WidgetManager) PushContainer(container Widget) WidgetManager {
 }
 
 func (m WidgetManager) PushStateMap(jsmap JSMap) {
-	m.PushStateProvider(jsmap)
+	itm := *m.stackedState()
+	itm.StateMap = jsmap
+	m.pushState(itm, tag_statemap)
 }
 
 func (m WidgetManager) PushEditor(editor DataEditor) {
 	itm := *m.stackedState()
 	itm.IdPrefix = editor.Prefix
-	itm.StateProvider = editor.JSMap
+	itm.StateMap = editor.JSMap
 	m.pushState(itm, tag_editor)
 }
 
@@ -502,24 +502,12 @@ func (m WidgetManager) PopEditor() {
 	m.popStack(tag_editor)
 }
 
-// Deprecated.
-func (m WidgetManager) PushStateProvider(p JSMap) {
-	Pr("Use PushStateMap instead")
-	itm := *m.stackedState()
-	itm.StateProvider = p
-	m.pushState(itm, tag_provider)
-}
-
-func (m WidgetManager) PopStateProvider() {
-	m.popStack(tag_provider)
-}
-
 func (m WidgetManager) PopStateMap() {
-	m.PopStateProvider()
+	m.popStack(tag_statemap)
 }
 
 func (m WidgetManager) stackedStateProvider() JSMap {
-	return m.stackedState().StateProvider
+	return m.stackedState().StateMap
 }
 
 func (m WidgetManager) PushIdPrefix(prefix string) {

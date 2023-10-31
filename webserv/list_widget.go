@@ -84,14 +84,14 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			//sp = NewStateProvider(elementIdStr, sp.State)
 
 			pr(VERT_SP, "pushing state provider:", sp)
-			s.PushStateProvider(sp)
+			s.PushStateMap(sp)
 
 			// If we push the state provider AFTER the id prefix, it doesn't work! Why?
 			// Note that we are not calling RenderWidget(), which would not draw anything since the
 			// list item widget has been marked as detached
 
 			// Periods are used to separate widget id from context
-			Todo("!Update the click prefix; do we even need it?")
+			Todo("Update the click prefix; do we even need it?")
 			s.PushClickPrefix(elementIdStr)
 
 			if debug {
@@ -103,7 +103,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 			s.PopClickPrefix()
 
-			s.PopStateProvider()
+			s.PopStateMap()
 
 			s.PopIdPrefix()
 		}

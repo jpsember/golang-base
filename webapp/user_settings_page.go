@@ -64,7 +64,7 @@ func (p UserSettingsPage) generateWidgets(s Session) {
 			s.PushStateMap(NewJSMap())
 			// We supply a specific id just for ease of debugging
 			p.pwdVerify = m.Label("Password Again").Id("pwd_verify").AddPassword(p.listenerValidatePwdVerify)
-			s.PopStateProvider()
+			s.PopStateMap()
 			m.Label("Email").Id(User_Email).AddInput(p.validateEmail)
 			m.Size(SizeTiny).Label("We will never share your email address with anyone.").AddText()
 			s.PopEditor()

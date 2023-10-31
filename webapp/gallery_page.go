@@ -271,7 +271,7 @@ Multiple line feeds:
 			}
 
 			m.Label("Animal").Id("zebra").AddInput(zebraListener)
-			sess.PopStateProvider()
+			sess.PopStateMap()
 		}
 		m.Close()
 
@@ -279,7 +279,7 @@ Multiple line feeds:
 	if GUserHeader {
 		AddUserHeaderWidget(sess)
 	}
-	sess.PopStateProvider()
+	sess.PopStateMap()
 }
 
 func (p GalleryPage) uploadListener(s Session, source FileUpload, value []byte) error {
