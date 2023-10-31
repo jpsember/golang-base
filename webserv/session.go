@@ -307,7 +307,7 @@ func (s Session) parseAjaxRequest() {
 }
 
 func (s Session) auxHandleAjax() {
-	pr := PrIf("auxHandleAjax", true)
+	pr := PrIf("auxHandleAjax", false)
 	pr("start handling")
 
 	didSomething := false
@@ -372,7 +372,6 @@ func (s Session) auxHandleAjax() {
 		return
 	}
 
-	Todo("Do something with args:", args)
 	pr(VERT_SP, "found widget with id:", QUO, widget.Id(), "and type:", TypeOf(widget), "args:", args, VERT_SP)
 
 	if !widget.Enabled() {
@@ -386,11 +385,8 @@ func (s Session) auxHandleAjax() {
 		return
 	}
 
-	// We are juggling two values:  the remainder from the id, and the ajaxValue.
-	// We will join them together (where they exist) with '.'
-	value := widgetValueExpr
-	pr(VERT_SP, "processing widget value, widget:", QUO, widget.Id(), "value:", QUO, value, "args:", args, VERT_SP)
-	s.ProcessWidgetValue(widget, value, args)
+	pr(VERT_SP, "processing widget value, widget:", QUO, widget.Id(), "value:", QUO, widgetValueExpr, "args:", args, VERT_SP)
+	s.ProcessWidgetValue(widget, widgetValueExpr, args)
 }
 
 func extractColonSeparatedArgs(expr string) ([]string, []int) {
@@ -420,9 +416,7 @@ func extractColonSeparatedArgs(expr string) ([]string, []int) {
 }
 
 func (s Session) ProcessWidgetValue(widget Widget, value string, args []string) {
-	//REFACTOR TO ACCEPT 'colon' ARGUMENTS (as distinct strings)
-
-	pr := PrIf("Session.ProcessWidgetValue", true)
+	pr := PrIf("Session.ProcessWidgetValue", false)
 	pr(VERT_SP, "widget", widget.Id(), "value", QUO, value, "args", args)
 	s.listenerContext = args
 	updatedValue, err := widget.LowListener()(s, widget, value, args)
@@ -432,7 +426,7 @@ func (s Session) ProcessWidgetValue(widget Widget, value string, args []string) 
 }
 
 func (s Session) UpdateValueAndProblem(widget Widget, optionalValue any, err error) {
-	pr := PrIf("UpdateValueAndProblem", true)
+	pr := PrIf("UpdateValueAndProblem", false)
 	pr("UpdateValueAndProblem, id:", widget.Id(), "optionalValue:", QUO, optionalValue, "err:", err)
 	if optionalValue != nil {
 		s.SetWidgetValue(widget, optionalValue)
@@ -740,7 +734,7 @@ func (s Session) WidgetBoolValue(w Widget) bool {
 }
 
 func (s Session) SetWidgetValue(w Widget, value any) {
-	pr := PrIf("SetWidgetValue", true)
+	pr := PrIf("SetWidgetValue", false)
 	id, p := s.getStateProvider(w)
 	pr("state provider, state:", p)
 	oldVal := p.OptUnsafe(id)

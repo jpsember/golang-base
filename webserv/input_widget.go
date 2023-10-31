@@ -29,13 +29,12 @@ func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, p
 		listener: listener,
 	}
 	w.InitBase(id)
-	Todo("Call w.SetLowListener")
-	w.LowListen = inputListenWrapper
+	w.SetLowListener(inputListenWrapper)
 	return &w
 }
 
 func inputListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
-	pr := PrIf("inputListenWrapper", true)
+	pr := PrIf("inputListenWrapper", false)
 	inp := widget.(InputWidget)
 	value = strings.TrimSpace(value)
 	pr("widget id:", widget.Id(), "value:", QUO, value)

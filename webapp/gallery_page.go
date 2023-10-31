@@ -66,16 +66,6 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	if GList {
 
-		Alert("Trying to make the entire list item clickable")
-		// Make the whole item clickable...
-
-		Todo("Add listener to the list item later, when we construct the list itself")
-		if false {
-			m.Listener(func(s Session, w2 Widget, msg string) {
-				Pr("GList item click, msg:", msg)
-			})
-		}
-
 		listItemWidget := m.Open()
 
 		// We want all the list item widgets to get their state from the list itself,
@@ -91,7 +81,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		glist := NewGalleryListImplementation()
 		var ourListListener ListWidgetListener
 		ourListListener = func(sess Session, widget *ListWidgetStruct, elementId int, args []string) error {
-			Pr("=========== Gallery list event! Element:", elementId, "args:", args, "element state:", glist.ItemStateProvider(sess, elementId))
+			Pr("GList event, element:", elementId, "args:", args, "element state:", glist.ItemStateProvider(sess, elementId))
 			return nil
 		}
 
@@ -110,9 +100,8 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		p.editorB = NewDataEditorWithPrefix(NewAnimal().SetName("Brian"), "b:")
 
 		nameListener := func(sess Session, widget InputWidget, value string) (string, error) {
-			pr := PrIf("nameListener", true)
-			pr("name listener for:", widget.Id(), "value:", value)
-			pr("current names:", p.editorA.GetString("name"), p.editorB.GetString("name"))
+			Pr("GDDistinctDataObjects listener, id:", QUO, widget.Id(), "new value:", QUO, value, "; current names:", INDENT, //
+				p.editorA.GetString("name"), CR, p.editorB.GetString("name"))
 			return value, nil
 		}
 
