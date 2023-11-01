@@ -44,7 +44,7 @@ func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener ButtonWidget
 	return &w
 }
 
-func (w AnimalCard) lowLevelListener(sess Session, widget Widget, value string, args []string) (any, error) {
+func (w AnimalCard) lowLevelListener(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
 	pr := PrIf("cardListenWrapper", false)
 	pr("calling listener for id", QUO, w.Id(), "value", QUO, value)
 	Todo("!Is the listener 'value' necessary?")

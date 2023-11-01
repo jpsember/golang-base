@@ -20,7 +20,7 @@ func NewUserHeaderWidget(id string, listener ButtonWidgetListener) UserHeaderWid
 	return t
 }
 
-func (w UserHeaderWidget) buttonListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
+func (w UserHeaderWidget) buttonListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
 	w.listener(sess, widget, value)
 	return nil, nil
 }

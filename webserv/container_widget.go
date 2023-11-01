@@ -16,7 +16,7 @@ func NewContainerWidget(id string, clickListener ButtonWidgetListener) GridWidge
 	w := GridWidgetStruct{}
 	w.InitBase(id)
 	if clickListener != nil {
-		w.SetLowListener(func(sess Session, widget Widget, value string, args []string) (any, error) {
+		w.SetLowListener(func(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
 			clickListener(sess, widget, value)
 			return nil, nil
 		})
@@ -83,9 +83,7 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 		}
 
 		if w.LowListen != nil {
-			m.A(` onclick="jsButton('`, effectiveId,
-				//s.ClickPrefix(), w.Id(),
-				`')"`)
+			m.A(` onclick="jsButton('`, effectiveId, `')"`)
 		}
 
 		m.TgContent()

@@ -36,7 +36,7 @@ func (w ImageWidget) SetSize(originalSize IPoint, scaleFactor float64) {
 	w.fixedSize = originalSize.ScaledBy(scaleFactor)
 }
 
-func (w ImageWidget) imageListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
+func (w ImageWidget) imageListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
 	w.clickListener(sess, widget, value)
 	return nil, nil
 }
@@ -64,12 +64,10 @@ func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {
 			pr("no URLProvider!")
 		}
 
-		clickArg := ""
+		m.A(`<img src="`, imageSource, `" alt="`, w.escapedAltLabel, `"`)
 		if w.clickListener != nil {
-			clickArg = ` onclick="jsButton('` + s.ClickPrefix() + w.Id() + `')"`
+			m.A(` onclick="jsButton('`, prependedId, `')"`)
 		}
-
-		m.A(`<img src="`, imageSource, `" alt="`, w.escapedAltLabel, `"`, clickArg)
 
 		PlotImageSizeMarkup(s, m, w.fixedSize)
 		if w.fixedSize.IsPositive() {

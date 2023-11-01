@@ -14,6 +14,7 @@ const (
 	GListMultiItems      = true
 	GListPager           = true
 	GAlert               = false
+	GClickPic            = true
 	GUploadPic           = false
 	GVisibility          = false
 	GTextArea            = false
@@ -29,6 +30,7 @@ type GalleryPageStruct struct {
 	editorA     DataEditor
 	editorB     DataEditor
 	rand        JSRand
+	clickpic    int
 }
 
 var GalleryPageTemplate = &GalleryPageStruct{}
@@ -73,7 +75,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 		glist := NewGalleryListImplementation()
 		var ourListListener ListWidgetListener
-		ourListListener = func(sess Session, widget *ListWidgetStruct, elementId int, args []string) error {
+		ourListListener = func(sess Session, widget *ListWidgetStruct, elementId int, args WidgetArgs) error {
 			Pr("GList event, element:", elementId, "args:", args, "element state:", glist.ItemStateMap(sess, elementId))
 			return nil
 		}
@@ -111,6 +113,47 @@ func (p GalleryPage) generateWidgets(sess Session) {
 				s.SetWidgetValue(b, RandomText(p.rand, 3, false))
 				b.Repaint()
 			}).Label("Repaint B").AddBtn()
+		m.Close()
+	}
+
+	// ------------------------------------------------------------------------------------
+	// A clickable image; clicking on it changes the image
+	// ------------------------------------------------------------------------------------
+
+	if GClickPic {
+		m.Open()
+
+		var imgUrlProvider = func(s Session) string {
+			pr := PrIf("imgURLProvider", false)
+			// We are storing the image's blob id in the animal's photo_thumbnail field,
+			// so we can use the editor's embedded JSMap to access it.
+			imageId := p.clickpic
+			pr("provideURL, image id read from state:", imageId)
+			url := ""
+			if imageId != 0 {
+				url = SharedWebCache.GetBlobURL(imageId)
+				pr("read into cache, url:", url)
+			}
+			return url
+		}
+
+		var imgWidget ImageWidget
+
+		m.Listener(func(s Session, w Widget, arg string) {
+			for {
+				anim := ReadAnimalIgnoreError(p.rand.Intn(8) + 1)
+				if anim == nil || p.clickpic == anim.PhotoThumbnail() {
+					continue
+				}
+				p.clickpic = anim.PhotoThumbnail()
+				break
+			}
+			imgWidget.Repaint()
+		})
+
+		imgWidget = m.Id("clickpic").AddImage(imgUrlProvider)
+		imgWidget.SetSize(AnimalPicSizeNormal, 0.3)
+
 		m.Close()
 	}
 

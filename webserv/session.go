@@ -334,24 +334,17 @@ func (s Session) auxHandleAjax() {
 		return
 	}
 
-	indices := extractColonSeparatedArgs(id)
+	args := NewWidgetArgs(id)
 
 	var widget Widget
-	var args []string
 	{
-		for j := len(indices) - 1; j >= 0; j-- {
-			candidate := id[0:indices[j]]
-			pr("....looking for widget with id:", QUO, candidate, "and args:", args)
+		for j := args.Count(); j > 0; j-- {
+			candidate := args.Range(0, j)
+			pr("....looking for widget with id:", QUO, candidate)
 			widget = s.Opt(candidate)
 			if widget != nil {
 				pr("................FOUND!")
-				{
-					Todo("This should be a utility function")
-					for j < len(indices)-1 {
-						args = append(args, id[1+indices[j]:indices[j+1]])
-						j++
-					}
-				}
+				args.SetCursor(j)
 				break
 			}
 		}
@@ -380,34 +373,12 @@ func (s Session) auxHandleAjax() {
 	s.ProcessWidgetValue(widget, widgetValueExpr, args)
 }
 
-// Return an array of the indices of colons within a string, plus the length of the string as the last element
-func extractColonSeparatedArgs(expr string) []int {
-	pr := PrIf("extractColonSeparatedArgs", false)
-	pr("expr:", QUO, expr)
-	var result []int
-	//var indices []int
-	//lastIndex := 0
-	cursor := 0
-	cmax := len(expr)
-	for cursor < cmax {
-		newCursor := cursor + 1
-		pr("cursor:", cursor, "remaining chars:", expr[cursor:])
-		if expr[cursor] == ':' {
-			result = append(result, cursor)
-		}
-		cursor = newCursor
-	}
-	result = append(result, cmax)
-	pr("returning:", result)
-	return result
-}
-
-func (s Session) ProcessWidgetValue(widget Widget, value string, args []string) {
+func (s Session) ProcessWidgetValue(widget Widget, value string, args WidgetArgs) {
 	pr := PrIf("Session.ProcessWidgetValue", false)
 	pr("widget", widget.Id(), "value", QUO, value, "args", args)
-	s.listenerContext = args
+	//s.listenerContext = args
 	updatedValue, err := widget.LowListener()(s, widget, value, args)
-	s.listenerContext = nil
+	//s.listenerContext = nil
 	pr("LowListener returned updatedValue:", updatedValue, "err:", err)
 	s.UpdateValueAndProblem(widget, updatedValue, err)
 }
@@ -753,6 +724,7 @@ func (s Session) SetWidgetValue(w Widget, value any) {
 
 // Get the context for the current listener.  For list items, this will be the list element id.
 func (s Session) Context() any {
+	Die("Deprecate context")
 	return s.listenerContext
 }
 

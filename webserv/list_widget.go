@@ -2,6 +2,7 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"math"
 )
 
 type ListWidgetStruct struct {
@@ -16,7 +17,7 @@ type ListWidgetStruct struct {
 }
 type ListWidget = *ListWidgetStruct
 
-type ListWidgetListener func(sess Session, widget *ListWidgetStruct, elementId int, args []string) error
+type ListWidgetListener func(sess Session, widget *ListWidgetStruct, elementId int, args WidgetArgs) error
 
 // Construct a ListWidget.
 //
@@ -45,7 +46,7 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, listener Li
 	return &w
 }
 
-var mockLowListener = func(sess Session, widget Widget, value string, args []string) (any, error) {
+var mockLowListener = func(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
 	Die("shouldn't actually get called")
 	return nil, nil
 }
@@ -94,22 +95,10 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 			// Note that we are not calling RenderWidget(), which would not draw anything since the
 			// list item widget has been marked as detached
 
-			// Periods are used to separate widget id from context
-			withClickPref := false
-			Todo("Clarify this; why is it required?  Crashes with a bad interface conversion if omitted")
-			Todo("Can we use the id prefix as a click prefix as well?")
-			if withClickPref {
-				s.PushClickPrefix(nestedWidgetsIdPrefix)
-			}
-
 			if debug {
 				pr("stacked state:", INDENT, s.StateStackToJson())
 			}
 			w.itemWidget.RenderTo(s, m)
-
-			if withClickPref {
-				s.PopClickPrefix()
-			}
 
 			s.PopStateMap()
 
@@ -125,12 +114,9 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.TgClose()
 }
 
-func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
-	db := true
-	pr := PrIf("list_widget.LowLevel listener", db)
-	if db {
-		pr("value:", QUO, value, "args:", args) //, "callers:", Callers(0, 5))
-	}
+func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
+	pr := PrIf("list_widget.LowLevel listener", true)
+	pr("value:", QUO, value, "args:", args)
 
 	pr("stack size:", len(sess.stack))
 	b := widget.(ListWidget)
@@ -141,18 +127,18 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string,
 		return nil, nil
 	}
 
-	Todo("Refactor this to use colon stuff")
-	var elementId int
-	elementId, remainder, err := ExtractIntFromListenerArgs(args, 0, -1)
-	if err == nil {
+	valid, elementId := args.ReadIntWithinRange(0, math.MaxInt32)
+	var err error
+	if !valid {
+		err = Error("Failed to read element id from", args)
+	} else {
 		if w.listItemListener == nil {
 			err = Error("No list item listener for widget", QUO, w.Id())
 		} else {
-			err = w.listItemListener(sess, w, elementId, remainder)
+			err = w.listItemListener(sess, w, elementId, args)
 		}
 	}
 	return nil, err
-
 }
 
 func (w ListWidget) constructStateProvider(s Session, elementId int) JSMap {
@@ -237,15 +223,15 @@ func ReadIntArgIf(args []string, minValue int, maxValue int) (bool, []string, in
 }
 
 // Process a possible pagniation control event.
-func (w ListWidget) handlePagerClick(sess Session, args []string) bool {
+func (w ListWidget) handlePagerClick(sess Session, args WidgetArgs) bool {
 	pr := PrIf("handlePagerClick", false)
 	pr("handlePagerClick, args:", args)
 	var result bool
 	var pageNumber int
-	result, args = ReadArgIf(args, "page")
+	result = args.ReadIf("page")
 	if result {
-		result, args, pageNumber = ReadIntArgIf(args, 0, w.list.TotalPages())
-		if pageNumber != w.list.CurrentPage() {
+		result, pageNumber = args.ReadIntWithinRange(0, w.list.TotalPages())
+		if result && pageNumber != w.list.CurrentPage() {
 			w.list.SetCurrentPage(pageNumber)
 			w.Repaint()
 		}

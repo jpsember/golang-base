@@ -43,7 +43,7 @@ type Widget interface {
 
 const WidgetIdPage = "page"
 
-type LowLevelWidgetListener func(sess Session, widget Widget, value string, args []string) (optNewWidgetValue any, err error)
+type LowLevelWidgetListener func(sess Session, widget Widget, value string, args WidgetArgs) (optNewWidgetValue any, err error)
 
 type WidgetMap = map[string]Widget
 
