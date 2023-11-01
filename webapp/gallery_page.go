@@ -69,15 +69,43 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 		Alert("The list item has no listener; how does the element id get propagated to the list's listener?")
 		listItemWidget := m.Open()
-		// We want all the list item widgets to get their state from the list itself;
-		// so we haven't pushed a state map yet
-		m.Id("foo_text").Height(3).AddText()
-		m.Close()
 
 		glist := NewGalleryListImplementation()
-		ourListListener := func(sess Session, widget *ListWidgetStruct, elementId int, args WidgetArgs) error {
-			Pr("GList event, element:", elementId, "args:", args, "element state:", glist.ItemStateMap(sess, elementId))
-			return nil
+
+		m.Col(8)
+		// We want all the list item widgets to get their state from the list itself;
+		// so we haven't pushed a state map yet
+
+		Todo("Maybe a better approach is to set a field in the list interface for 'active_element' or some such?")
+		listItemTextListener := func(s Session, widget Widget, args WidgetArgs) {
+			valid, elementId := args.ReadInt()
+			CheckState(valid, "failed to get element from:", args)
+			mp := glist.ItemStateMap(s, elementId)
+			Pr("GList item button event, args:", args, "id:", widget.Id(), "element:", elementId, "state:", mp)
+
+		}
+
+		listItemButtonListener := func(s Session, widget Widget, args WidgetArgs) {
+			valid, elementId := args.ReadInt()
+			CheckState(valid, "failed to get element from:", args)
+			mp := glist.ItemStateMap(s, elementId)
+			Pr("GList item button event, args:", args, "id:", widget.Id(), "element:", elementId, "state:", mp)
+		}
+
+		m.Id("foo_text").Height(3).Listener(listItemTextListener).AddText()
+		m.Col(4)
+
+		Todo("!BasePrinter shouldn't align integers/floats to columns unless an ALIGN flag has been added?")
+
+		m.Id("foo_btn").Listener(listItemButtonListener).Label("Ok").AddBtn()
+		m.Close()
+
+		var ourListListener ListWidgetListener
+		if !Alert("NOT constructing a list widget listener") {
+			ourListListener = func(sess Session, widget *ListWidgetStruct, elementId int, args WidgetArgs) error {
+				Pr("GList event, element:", elementId, "args:", args, "element state:", glist.ItemStateMap(sess, elementId))
+				return nil
+			}
 		}
 
 		p.list = m.Id("pets").AddList(glist, listItemWidget, ourListListener)

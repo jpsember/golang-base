@@ -32,6 +32,15 @@ func NewWidgetArgs(text string) WidgetArgs {
 	return t
 }
 
+func (w WidgetArgs) Add(arg string) {
+	pr := PrIf("WidgetArgs.Add", true)
+	pr("add:", arg, "currently:", w)
+	nt := w.text + ":" + arg
+	w.text = nt
+	w.delim = append(w.delim, len(nt))
+	pr("after:", w)
+}
+
 func (w WidgetArgs) Count() int {
 	return len(w.delim) - 1
 }
@@ -53,14 +62,16 @@ func (w WidgetArgs) arg(i int) string {
 func (w WidgetArgs) String() string {
 	s := strings.Builder{}
 	s.WriteString("[")
-	for i := 0; i < w.Count(); i++ {
+	for i := 0; i <= w.Count(); i++ {
 		s.WriteByte(':')
 		if i == w.cursor {
 			s.WriteByte('>')
 		}
-		s.WriteString(w.arg(i))
+		if i < w.Count() {
+			s.WriteString(w.arg(i))
+		}
 	}
-	s.WriteString(":]")
+	s.WriteString("]")
 	return s.String()
 }
 
@@ -128,4 +139,21 @@ func (w WidgetArgs) Read() (bool, string) {
 		w.cursor++
 	}
 	return exists, value
+}
+
+func (w WidgetArgs) FindWidgetIdAsPrefix(s Session) Widget {
+	pr := PrIf("FindWidgetIdAsPrefix", true)
+	pr("args:", w)
+	for j := w.Count(); j > w.cursor; j-- {
+		candidate := w.Range(w.cursor, j)
+		pr("....looking for widget with id:", QUO, candidate)
+		cid := s.Opt(candidate)
+		if cid != nil {
+			pr("................FOUND, j:", j)
+			w.SetCursor(j)
+			pr("....args being forwarded:", w)
+			return cid
+		}
+	}
+	return nil
 }

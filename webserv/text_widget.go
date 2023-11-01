@@ -12,13 +12,19 @@ type TextWidgetObj struct {
 
 type TextWidget = *TextWidgetObj
 
-func NewTextWidget(id string, size WidgetSize, fixedHeight int) TextWidget {
+func NewTextWidget(id string, size WidgetSize, fixedHeight int, clickListener ButtonWidgetListener) TextWidget {
 	t := &TextWidgetObj{
 		size:        size,
 		fixedHeight: fixedHeight,
 	}
 	t.InitBase(id)
-	//t.SetTrace(true)
+
+	if clickListener != nil {
+		t.SetLowListener(func(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
+			clickListener(sess, widget, args)
+			return nil, nil
+		})
+	}
 	return t
 }
 
@@ -45,10 +51,13 @@ func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	h := NewHtmlString(textContent)
 
-	prefixedId := s.PrependId(w.Id())
+	effectiveId := s.PrependId(w.Id())
 
-	m.TgOpen(`div id=`).A(QUO, prefixedId)
+	m.TgOpen(`div id=`).A(QUO, effectiveId)
 
+	if w.LowListen != nil {
+		m.A(` onclick="jsButton('`, effectiveId, `')"`)
+	}
 	if w.size != SizeDefault && w.size != SizeMedium {
 		m.Style(`font-size:`, textSize[w.size], `em;`)
 	}

@@ -116,6 +116,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
 	pr := PrIf("list_widget.LowLevel listener", true)
+	Todo("!Is the 'value' argument required?")
 	pr(VERT_SP, "value:", QUO, value, "args:", args, VERT_SP)
 
 	pr("stack size:", len(sess.stack))
@@ -128,17 +129,33 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string,
 	}
 
 	valid, elementId := args.ReadIntWithinRange(0, math.MaxInt32)
-	var err error
 	if !valid {
-		err = Error("Failed to read element id from", args)
+		return nil, Error("Failed to read element id from", args)
+	}
+	pr("list element id:", elementId)
+
+	// If there are additional arguments, see if there is a widget id prefix within them
+	auxWidget := args.FindWidgetIdAsPrefix(sess)
+
+	if auxWidget != nil {
+		auxListener := auxWidget.LowListener()
+		if auxListener == nil {
+			BadState("No  listener for widget within list item", QUO, auxWidget.Id())
+		}
+
+		// Add the list element id to the end of the argument list (we parsed it once before, but we have read past it;
+		// we need to make it available to this embedded widget's listener)
+		args.Add(IntToString(elementId))
+
+		auxListener(sess, auxWidget, "????? is this ever useful ????", args)
+		return nil, nil
 	} else {
+
 		if w.listItemListener == nil {
 			BadState("No list item listener for widget", QUO, w.Id())
-		} else {
-			err = w.listItemListener(sess, w, elementId, args)
 		}
+		return nil, w.listItemListener(sess, w, elementId, args)
 	}
-	return nil, err
 }
 
 func (w ListWidget) constructStateProvider(s Session, elementId int) JSMap {

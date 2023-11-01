@@ -17,6 +17,7 @@ type ButtonWidgetObj struct {
 type ButtonWidget = *ButtonWidgetObj
 
 func NewButtonWidget(id string, listener ButtonWidgetListener) ButtonWidget {
+	Todo("Why do we need a separate listener field, in addition to the LowListener?")
 	if listener == nil {
 		listener = doNothingButtonListener
 	}

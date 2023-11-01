@@ -377,7 +377,7 @@ func (m WidgetManager) AddHeading() HeadingWidget {
 
 func (m WidgetManager) AddText() TextWidget {
 	staticContent, id, wasStatic := m.getStaticContentAndId()
-	w := NewTextWidget(id, m.consumePendingSize(), m.consumePendingHeight())
+	w := NewTextWidget(id, m.consumePendingSize(), m.consumePendingHeight(), m.ConsumeOptionalPendingClickListener())
 	if wasStatic {
 		w.SetStaticContent(staticContent)
 	}

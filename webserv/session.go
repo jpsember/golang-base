@@ -304,7 +304,7 @@ func (s Session) parseAjaxRequest() {
 }
 
 func (s Session) auxHandleAjax() {
-	pr := PrIf("auxHandleAjax", false)
+	pr := PrIf("auxHandleAjax", true)
 	pr("start handling")
 
 	didSomething := false
@@ -334,19 +334,7 @@ func (s Session) auxHandleAjax() {
 
 	args := NewWidgetArgs(id)
 
-	var widget Widget
-	{
-		for j := args.Count(); j > 0; j-- {
-			candidate := args.Range(0, j)
-			pr("....looking for widget with id:", QUO, candidate)
-			widget = s.Opt(candidate)
-			if widget != nil {
-				pr("................FOUND!")
-				args.SetCursor(j)
-				break
-			}
-		}
-	}
+	widget := args.FindWidgetIdAsPrefix(s)
 
 	if widget == nil {
 		Pr("no widget with id", Quoted(id), "found to handle value", Quoted(widgetValueExpr))
@@ -372,11 +360,10 @@ func (s Session) auxHandleAjax() {
 }
 
 func (s Session) ProcessWidgetValue(widget Widget, value string, args WidgetArgs) {
-	pr := PrIf("Session.ProcessWidgetValue", false)
+	Todo("!This function can be internal")
+	pr := PrIf("Session.ProcessWidgetValue", true)
 	pr("widget", widget.Id(), "value", QUO, value, "args", args)
-	//s.listenerContext = args
 	updatedValue, err := widget.LowListener()(s, widget, value, args)
-	//s.listenerContext = nil
 	pr("LowListener returned updatedValue:", updatedValue, "err:", err)
 	s.UpdateValueAndProblem(widget, updatedValue, err)
 }
