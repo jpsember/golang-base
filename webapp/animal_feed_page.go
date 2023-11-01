@@ -11,7 +11,8 @@ const FeedPageName = "feed"
 var FeedPageTemplate = &FeedPageStruct{}
 
 type FeedPageStruct struct {
-	animList AnimalList
+	animList       AnimalList
+	animListWidget ListWidget
 }
 
 type FeedPage = *FeedPageStruct
@@ -41,19 +42,18 @@ func (p FeedPage) generateWidgets(s Session) {
 		const itemPrefix = "feed_item:"
 
 		// Construct the list item widget
-		cardWidget := NewAnimalCard(m, itemPrefix, nil, "", nil)
+
+		cardListener := func(sess *SessionStruct, widget Widget, args WidgetArgs) {
+			Alert("Is this an element id, or an item index?")
+			p.attemptSelectAnimal(sess, p.animListWidget.CurrentElement())
+		}
+		cardWidget := NewAnimalCard(m, itemPrefix, cardListener, "", nil)
 
 		m.Add(cardWidget)
 
 		animalList := NewAnimalList(getAnimals(), cardWidget, itemPrefix)
 
-		Todo("add a listener to the card widget")
-		//ourListListener := func(sess Session, widget *ListWidgetStruct, elementId int, args WidgetArgs) error {
-		//	p.attemptSelectAnimal(sess, elementId)
-		//	return nil
-		//}
-
-		m.AddList(animalList, cardWidget)
+		p.animListWidget = m.AddList(animalList, cardWidget)
 	}
 	m.EndConstruction(debug)
 }

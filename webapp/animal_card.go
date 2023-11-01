@@ -68,11 +68,7 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 
 	m.PushIdPrefix(w.itemPrefix)
 	{
-		// Wrap the card listener so we can process it as a list item...?
-
-		m.Listener(func(s Session, w2 Widget, args WidgetArgs) {
-			w.cardListener(s, w2, args)
-		})
+		m.Listener(w.cardListener)
 		m.Id(Animal_PhotoThumbnail).AddImage(w.imageURLProvider)
 
 		m.Id(Animal_Name).Size(SizeTiny).AddHeading()

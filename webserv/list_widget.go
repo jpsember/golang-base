@@ -21,7 +21,6 @@ type ListWidget = *ListWidgetStruct
 //
 // itemWidget : this is a widget that will be rendered for each displayed item
 func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget {
-	Todo("Have option to wrap list items in a clickable div")
 	CheckArg(itemWidget != nil, "No itemWidget given")
 	w := ListWidgetStruct{
 		list:             list,
@@ -42,11 +41,6 @@ func (w ListWidget) CurrentElement() int {
 		BadState("ListWidget has no current element")
 	}
 	return x
-}
-
-var mockLowListener = func(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
-	Die("shouldn't actually get called")
-	return nil, nil
 }
 
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
@@ -214,23 +208,6 @@ func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, ta
 		m.A(`" onclick="jsButton('`, w.pagePrefix, targetPage, `')`)
 	}
 	m.A(`">`, label, `</a></li>`, CR)
-}
-
-func ReadArgIf(args []string, strValue string) (bool, []string) {
-	if len(args) != 0 && args[0] == strValue {
-		return true, args[1:]
-	}
-	return false, args
-}
-
-func ReadIntArgIf(args []string, minValue int, maxValue int) (bool, []string, int) {
-	if len(args) != 0 {
-		value, err := ParseInt(args[0])
-		if err == nil && value >= minValue && value < maxValue {
-			return true, args[1:], value
-		}
-	}
-	return false, args, -1
 }
 
 // Process a possible pagniation control event.
