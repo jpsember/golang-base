@@ -132,13 +132,13 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string,
 	if auxWidget != nil {
 		auxListener := auxWidget.LowListener()
 		if auxListener == nil {
+			// We ought to actually crash only in 'dev' mode, though...
 			BadState("No  listener for widget within list item", QUO, auxWidget.Id())
+			return nil, nil
 		}
-
 		w.currentElement = elementId
-		auxListener(sess, auxWidget, "????? is this ever useful ????", args)
+		auxListener(sess, auxWidget, "", args)
 		w.currentElement = -1
-
 		return nil, nil
 	} else {
 		pr("!!! no auxilliary widget to get listener")

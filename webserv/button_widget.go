@@ -4,8 +4,6 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
-// This (and other widget listeners) can call Session.Context() to get the context, if any.  For
-// list widgets, the context will return the element id.
 type ButtonWidgetListener func(sess *SessionStruct, widget Widget, args WidgetArgs)
 
 type ButtonWidgetObj struct {
