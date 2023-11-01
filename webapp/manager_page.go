@@ -68,7 +68,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 
 	Todo("!document how the list forwards clicks related to items on to the list listener")
 	Todo("Add a listener for the animal list")
-	m.AddList(animalList, cardWidget, nil)
+	m.AddList(animalList, cardWidget)
 	m.EndConstruction(debug)
 }
 

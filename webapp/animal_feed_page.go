@@ -47,12 +47,13 @@ func (p FeedPage) generateWidgets(s Session) {
 
 		animalList := NewAnimalList(getAnimals(), cardWidget, itemPrefix)
 
-		ourListListener := func(sess Session, widget *ListWidgetStruct, elementId int, args WidgetArgs) error {
-			p.attemptSelectAnimal(sess, elementId)
-			return nil
-		}
+		Todo("add a listener to the card widget")
+		//ourListListener := func(sess Session, widget *ListWidgetStruct, elementId int, args WidgetArgs) error {
+		//	p.attemptSelectAnimal(sess, elementId)
+		//	return nil
+		//}
 
-		m.AddList(animalList, cardWidget, ourListListener)
+		m.AddList(animalList, cardWidget)
 	}
 	m.EndConstruction(debug)
 }

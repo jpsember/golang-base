@@ -335,7 +335,7 @@ func (m WidgetManager) AddPassword(listener InputWidgetListener) InputWidget {
 	return m.auxAddInput(listener, true)
 }
 
-func (m WidgetManager) AddList(list ListInterface, itemWidget Widget, listener ListWidgetListener) ListWidget {
+func (m WidgetManager) AddList(list ListInterface, itemWidget Widget) ListWidget {
 	Alert("Can we avoid using a new class ListWidgetListener?")
 	if !itemWidget.Visible() {
 		BadArg("widget is not visible (detaching will happen by us)")
@@ -343,7 +343,7 @@ func (m WidgetManager) AddList(list ListInterface, itemWidget Widget, listener L
 	itemWidget.SetDetached(true)
 	Alert("The list item subwidgets are not being detached along with the item widget; but maybe we don't care")
 	id := m.ConsumeOptionalPendingId()
-	t := NewListWidget(id, list, itemWidget, listener)
+	t := NewListWidget(id, list, itemWidget)
 	m.Add(t)
 	return t
 }

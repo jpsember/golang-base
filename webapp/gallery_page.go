@@ -97,15 +97,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.Id("foo_btn").Listener(listItemButtonListener).Label("Ok").AddBtn()
 		m.Close()
 
-		var ourListListener ListWidgetListener
-		if !Alert("NOT constructing a list widget listener") {
-			ourListListener = func(sess Session, widget *ListWidgetStruct, elementId int, args WidgetArgs) error {
-				Pr("GList event, element:", elementId, "args:", args, "element state:", glist.ItemStateMap(sess, elementId))
-				return nil
-			}
-		}
-
-		p.list = m.Id("pets").AddList(glist, listItemWidget, ourListListener)
+		p.list = m.Id("pets").AddList(glist, listItemWidget)
 		p.list.WithPageControls = GListPager
 		Todo("!Add support for empty list items, to pad out page to full size")
 	}

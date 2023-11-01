@@ -13,38 +13,26 @@ type ListWidgetStruct struct {
 	WithPageControls     bool
 	cachedStateProviders map[int]JSMap
 	itemPrefix           string
-	listItemListener     ListWidgetListener
 	currentElement       int
 }
 type ListWidget = *ListWidgetStruct
 
-type ListWidgetListener func(sess Session, widget *ListWidgetStruct, elementId int, args WidgetArgs) error
-
 // Construct a ListWidget.
 //
 // itemWidget : this is a widget that will be rendered for each displayed item
-func NewListWidget(id string, list ListInterface, itemWidget Widget, listener ListWidgetListener) ListWidget {
+func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget {
 	Todo("Have option to wrap list items in a clickable div")
 	CheckArg(itemWidget != nil, "No itemWidget given")
 	w := ListWidgetStruct{
 		list:             list,
 		itemWidget:       itemWidget,
 		WithPageControls: true,
-		listItemListener: listener,
 		currentElement:   -1,
 	}
 	w.InitBase(id)
 	w.itemPrefix = id + ":"
 	w.SetLowListener(w.listListenWrapper)
 	w.pagePrefix = w.itemPrefix + "page:"
-
-	// If there's an item listener, add a mock listener to the item widget, so that when the item is rendered,
-	// it will actually end up calling the list's listener instead
-	if listener != nil {
-		Todo("Refactor this somehow, maybe just a boolean flag?")
-		itemWidget.SetLowListener(mockLowListener)
-	}
-
 	return &w
 }
 
@@ -159,11 +147,8 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string,
 
 		return nil, nil
 	} else {
-
-		if w.listItemListener == nil {
-			BadState("No list item listener for widget", QUO, w.Id())
-		}
-		return nil, w.listItemListener(sess, w, elementId, args)
+		pr("!!! no auxilliary widget to get listener")
+		return nil, nil
 	}
 }
 
