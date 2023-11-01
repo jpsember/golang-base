@@ -6,7 +6,7 @@ import (
 
 // This (and other widget listeners) can call Session.Context() to get the context, if any.  For
 // list widgets, the context will return the element id.
-type ButtonWidgetListener func(sess *SessionStruct, widget Widget, message string)
+type ButtonWidgetListener func(sess *SessionStruct, widget Widget, args WidgetArgs)
 
 type ButtonWidgetObj struct {
 	BaseWidgetObj
@@ -29,12 +29,12 @@ func NewButtonWidget(id string, listener ButtonWidgetListener) ButtonWidget {
 }
 
 func (b ButtonWidget) buttonListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
-	b.listener(sess, widget, value)
+	b.listener(sess, widget, args)
 	return nil, nil
 }
 
-func doNothingButtonListener(sess Session, widget Widget, message string) {
-	Alert("<1#50Button has no listener yet:", widget.Id(), "message:", message)
+func doNothingButtonListener(sess Session, widget Widget, args WidgetArgs) {
+	Alert("<1#50Button has no listener yet:", widget.Id(), "args:", args)
 }
 
 func RenderButton(s Session, m MarkupBuilder, w_BaseId string, actionId string, enabled bool, w_Label any, w_size WidgetSize, w_align WidgetAlign, vertPadding int) {

@@ -53,9 +53,11 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	{
 
 		w := NewAnimalCard(m, itemPrefix,
-			func(sess Session, widget Widget, arg string) {
-				animalId := sess.Context().(int)
-				p.attemptSelectAnimal(sess, animalId)
+			func(sess Session, widget Widget, args WidgetArgs) {
+				valid, animalId := args.ReadInt()
+				if valid {
+					p.attemptSelectAnimal(sess, animalId)
+				}
 			}, "", nil)
 		cardWidget = w
 		m.Add(w)
@@ -84,7 +86,7 @@ func (p ManagerPage) attemptSelectAnimal(s Session, id int) bool {
 	return true
 }
 
-func (p ManagerPage) newAnimalListener(sess Session, widget Widget, arg string) {
+func (p ManagerPage) newAnimalListener(sess Session, widget Widget, args WidgetArgs) {
 	sess.SwitchToPage(CreateAnimalPageTemplate, nil)
 }
 

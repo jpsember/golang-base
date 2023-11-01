@@ -116,7 +116,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 
 func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
 	pr := PrIf("list_widget.LowLevel listener", true)
-	pr("value:", QUO, value, "args:", args)
+	pr(VERT_SP, "value:", QUO, value, "args:", args, VERT_SP)
 
 	pr("stack size:", len(sess.stack))
 	b := widget.(ListWidget)
@@ -133,7 +133,7 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string,
 		err = Error("Failed to read element id from", args)
 	} else {
 		if w.listItemListener == nil {
-			err = Error("No list item listener for widget", QUO, w.Id())
+			BadState("No list item listener for widget", QUO, w.Id())
 		} else {
 			err = w.listItemListener(sess, w, elementId, args)
 		}

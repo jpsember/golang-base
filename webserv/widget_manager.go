@@ -336,6 +336,7 @@ func (m WidgetManager) AddPassword(listener InputWidgetListener) InputWidget {
 }
 
 func (m WidgetManager) AddList(list ListInterface, itemWidget Widget, listener ListWidgetListener) ListWidget {
+	Alert("Can we avoid using a new class ListWidgetListener?")
 	if !itemWidget.Visible() {
 		BadArg("widget is not visible (detaching will happen by us)")
 	}

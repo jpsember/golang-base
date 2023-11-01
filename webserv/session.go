@@ -40,8 +40,6 @@ type SessionStruct struct {
 
 	app any // ServerApp is stored here, will clean up later
 
-	listenerContext []string
-
 	// Current request variables
 	ResponseWriter         http.ResponseWriter
 	request                *http.Request
@@ -720,12 +718,6 @@ func (s Session) SetWidgetValue(w Widget, value any) {
 		pr("repainting", p)
 		w.Repaint()
 	}
-}
-
-// Get the context for the current listener.  For list items, this will be the list element id.
-func (s Session) Context() any {
-	Die("Deprecate context")
-	return s.listenerContext
 }
 
 // This merges a couple of separate functions, to reduce the complexity.

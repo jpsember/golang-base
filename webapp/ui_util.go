@@ -10,21 +10,24 @@ func AddUserHeaderWidget(s Session) {
 	s.AddUserHeader(ourProcessUserHeaderClick)
 }
 
-func ourProcessUserHeaderClick(sess Session, widget Widget, message string) {
+func ourProcessUserHeaderClick(sess Session, widget Widget, args WidgetArgs) {
 	pr := PrIf("UserHeaderClick", false)
-	pr("message:", message)
+	pr("args:", args)
 	user := OptSessionUser(sess)
-	switch message {
-	case USER_HEADER_ACTION_SIGN_OUT:
-		if user.Id() > 0 {
-			LogOut(sess)
-			sess.SwitchToPage(LandingPageTemplate, nil)
+	valid, message := args.Read()
+	if valid {
+		switch message {
+		case USER_HEADER_ACTION_SIGN_OUT:
+			if user.Id() > 0 {
+				LogOut(sess)
+				sess.SwitchToPage(LandingPageTemplate, nil)
+			}
+			break
+		case USER_HEADER_ACTION_SIGN_IN:
+			if user.Id() == 0 {
+				sess.SwitchToPage(LandingPageTemplate, nil)
+			}
+			break
 		}
-		break
-	case USER_HEADER_ACTION_SIGN_IN:
-		if user.Id() == 0 {
-			sess.SwitchToPage(LandingPageTemplate, nil)
-		}
-		break
 	}
 }

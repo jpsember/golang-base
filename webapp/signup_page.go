@@ -113,7 +113,7 @@ func (p SignUpPage) validateEmail(s Session, widget InputWidget, value string) (
 	return ValidateEmailAddress(value, p.validateFlag())
 }
 
-func (p SignUpPage) signUpListener(s Session, widget Widget, arg string) {
+func (p SignUpPage) signUpListener(s Session, widget Widget, args WidgetArgs) {
 	pr := PrIf("signupListener", false)
 	pr("state:", INDENT, p.editor.JSMap)
 

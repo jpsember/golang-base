@@ -12,9 +12,9 @@ const (
 	GDistinctDataObjects = false
 	GList                = true
 	GListMultiItems      = true
-	GListPager           = true
+	GListPager           = false
 	GAlert               = false
-	GClickPic            = true
+	GClickPic            = false
 	GUploadPic           = false
 	GVisibility          = false
 	GTextArea            = false
@@ -67,6 +67,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	if GList {
 
+		Alert("The list item has no listener; how does the element id get propagated to the list's listener?")
 		listItemWidget := m.Open()
 		// We want all the list item widgets to get their state from the list itself;
 		// so we haven't pushed a state map yet
@@ -74,8 +75,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		m.Close()
 
 		glist := NewGalleryListImplementation()
-		var ourListListener ListWidgetListener
-		ourListListener = func(sess Session, widget *ListWidgetStruct, elementId int, args WidgetArgs) error {
+		ourListListener := func(sess Session, widget *ListWidgetStruct, elementId int, args WidgetArgs) error {
 			Pr("GList event, element:", elementId, "args:", args, "element state:", glist.ItemStateMap(sess, elementId))
 			return nil
 		}
@@ -109,7 +109,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		sess.PopEditor()
 
 		m.Listener(
-			func(s Session, w Widget, arg string) {
+			func(s Session, w Widget, args WidgetArgs) {
 				s.SetWidgetValue(b, RandomText(p.rand, 3, false))
 				b.Repaint()
 			}).Label("Repaint B").AddBtn()
@@ -139,7 +139,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 		var imgWidget ImageWidget
 
-		m.Listener(func(s Session, w Widget, arg string) {
+		m.Listener(func(s Session, w Widget, args WidgetArgs) {
 			for {
 				anim := ReadAnimalIgnoreError(p.rand.Intn(8) + 1)
 				if anim == nil || p.clickpic == anim.PhotoThumbnail() {
@@ -213,7 +213,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			x := m.Label("hello").AddText()
 			//x.SetTrace(true)
 			x.SetVisible(false)
-			m.Label("Toggle Visibility").Listener(func(s Session, w Widget, arg string) {
+			m.Label("Toggle Visibility").Listener(func(s Session, w Widget, args WidgetArgs) {
 				newState := !x.Visible()
 				Pr("setting x visible:", newState)
 				x.SetVisible(newState)
@@ -236,8 +236,8 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	if GColumns {
 
-		buttonListener := func(s Session, widget Widget, arg string) {
-			Pr("buttonListener, widget:", widget.Id(), "arg:", arg)
+		buttonListener := func(s Session, widget Widget, args WidgetArgs) {
+			Pr("buttonListener, widget:", widget.Id(), "args:", args)
 			wid := widget.Id()
 			newVal := "Clicked: " + wid
 

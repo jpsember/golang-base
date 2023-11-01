@@ -37,7 +37,7 @@ func (w ImageWidget) SetSize(originalSize IPoint, scaleFactor float64) {
 }
 
 func (w ImageWidget) imageListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
-	w.clickListener(sess, widget, value)
+	w.clickListener(sess, widget, args)
 	return nil, nil
 }
 

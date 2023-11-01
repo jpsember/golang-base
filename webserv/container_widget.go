@@ -17,7 +17,7 @@ func NewContainerWidget(id string, clickListener ButtonWidgetListener) GridWidge
 	w.InitBase(id)
 	if clickListener != nil {
 		w.SetLowListener(func(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
-			clickListener(sess, widget, value)
+			clickListener(sess, widget, args)
 			return nil, nil
 		})
 	}

@@ -86,7 +86,7 @@ func (p LandingPage) validateFlag() ValidateFlag {
 	return Ternary(p.strict, 0, VALIDATE_EMPTYOK)
 }
 
-func (p LandingPage) signInListener(s Session, widget Widget, arg string) {
+func (p LandingPage) signInListener(s Session, widget Widget, args WidgetArgs) {
 	pr := PrIf("LandingPage.signInListener", false)
 	pr("state:", INDENT, p.editor.JSMap)
 
@@ -128,14 +128,14 @@ func (p LandingPage) signInListener(s Session, widget Widget, arg string) {
 	}
 }
 
-func (p LandingPage) signUpListener(s Session, widget Widget, arg string) {
+func (p LandingPage) signUpListener(s Session, widget Widget, args WidgetArgs) {
 	s.SwitchToPage(SignUpPageTemplate, nil)
 }
 
-func (p LandingPage) galleryListener(s Session, widget Widget, arg string) {
+func (p LandingPage) galleryListener(s Session, widget Widget, args WidgetArgs) {
 	s.SwitchToPage(GalleryPageTemplate, nil)
 }
 
-func (p LandingPage) forgotPwdListener(s Session, widget Widget, arg string) {
+func (p LandingPage) forgotPwdListener(s Session, widget Widget, args WidgetArgs) {
 	s.SwitchToPage(ForgotPasswordPageTemplate, nil)
 }

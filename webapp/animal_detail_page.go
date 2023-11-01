@@ -222,8 +222,8 @@ func (p AnimalDetailPage) animalDetailsListener(sess Session, widget InputWidget
 	return animalInfoListener(value, 200, 2000, p.validateFlag())
 }
 
-func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget, arg string) {
-	pr := PrIf("Create listener", true)
+func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget, args WidgetArgs) {
+	pr := PrIf("Create listener", false)
 
 	if !p.validateAll(s) {
 		return
@@ -258,7 +258,7 @@ func (p AnimalDetailPage) validateAll(s Session) bool {
 	return errcount == 0
 }
 
-func (p AnimalDetailPage) doneEditListener(s Session, widget Widget, arg string) {
+func (p AnimalDetailPage) doneEditListener(s Session, widget Widget, args WidgetArgs) {
 	pr := PrIf("", false)
 
 	if !p.validateAll(s) {
@@ -276,11 +276,11 @@ func (p AnimalDetailPage) doneEditListener(s Session, widget Widget, arg string)
 	p.exit(s)
 }
 
-func (p AnimalDetailPage) doneViewListener(s Session, widget Widget, arg string) {
+func (p AnimalDetailPage) doneViewListener(s Session, widget Widget, args WidgetArgs) {
 	p.exit(s)
 }
 
-func (p AnimalDetailPage) abortEditListener(s Session, widget Widget, arg string) {
+func (p AnimalDetailPage) abortEditListener(s Session, widget Widget, args WidgetArgs) {
 	p.exit(s)
 }
 

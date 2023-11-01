@@ -93,13 +93,39 @@ func (w WidgetArgs) ReadIf(s string) bool {
 }
 
 func (w WidgetArgs) ReadIntWithinRange(minValue int, maxValue int) (bool, int) {
-	exists, arg := w.Peek()
+	exists, value := w.PeekInt()
 	if exists {
-		value, err := ParseInt(arg)
-		if err == nil && value >= minValue && value < maxValue {
+		if value >= minValue && value < maxValue {
 			w.cursor++
 			return true, value
 		}
 	}
 	return false, -1
+}
+
+func (w WidgetArgs) PeekInt() (bool, int) {
+	exists, arg := w.Peek()
+	if exists {
+		value, err := ParseInt(arg)
+		if err == nil {
+			return true, value
+		}
+	}
+	return false, -1
+}
+
+func (w WidgetArgs) ReadInt() (bool, int) {
+	exists, value := w.PeekInt()
+	if exists {
+		w.cursor++
+	}
+	return exists, value
+}
+
+func (w WidgetArgs) Read() (bool, string) {
+	exists, value := w.Peek()
+	if exists {
+		w.cursor++
+	}
+	return exists, value
 }

@@ -88,7 +88,7 @@ func (p ForgotPasswordPage) reportError(sess Session, widget Widget, err error, 
 var userNotFoundError = Error("No such user")
 var internalErrMsg = "Sorry, an internal error occurred."
 
-func (p ForgotPasswordPage) sendLinkListener(sess Session, widget Widget, arg string) {
+func (p ForgotPasswordPage) sendLinkListener(sess Session, widget Widget, args WidgetArgs) {
 	pr := PrIf("ForgotPasswordPage.sendLinkListener", false)
 
 	p.strict = true

@@ -38,8 +38,10 @@ func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener ButtonWidget
 		buttonLabel:    buttonLabel,
 		buttonListener: buttonListener,
 	}
-	Todo("!any way of simplifying the LowListener boilerplate here and in other widgets? Using templates perhaps?")
-	w.SetLowListener(w.lowLevelListener)
+	if cardListener != nil {
+		Todo("!any way of simplifying the LowListener boilerplate here and in other widgets? Using templates perhaps?")
+		w.SetLowListener(w.lowLevelListener)
+	}
 	w.InitBase(widgetId)
 	return &w
 }
@@ -49,14 +51,13 @@ func (w AnimalCard) lowLevelListener(sess Session, widget Widget, value string, 
 	pr("calling listener for id", QUO, w.Id(), "value", QUO, value)
 	Todo("!Is the listener 'value' necessary?")
 	if w.cardListener != nil {
-		w.cardListener(sess, w, value)
+		w.cardListener(sess, w, args)
 	}
 	return nil, nil
 }
 
-func (w AnimalCard) ourButtonListener(sess Session, widget Widget, arg string) {
-	Pr("ourButtonListener called...")
-	w.buttonListener(sess, w, arg)
+func (w AnimalCard) ourButtonListener(sess Session, widget Widget, args WidgetArgs) {
+	w.buttonListener(sess, w, args)
 }
 
 func (w AnimalCard) AddChildren(m WidgetManager) {
@@ -69,9 +70,8 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 	{
 		// Wrap the card listener so we can process it as a list item...?
 
-		m.Listener(func(s Session, w2 Widget, msg string) {
-			Pr("image listener within animal card")
-			w.cardListener(s, w2, msg)
+		m.Listener(func(s Session, w2 Widget, args WidgetArgs) {
+			w.cardListener(s, w2, args)
 		})
 		m.Id(Animal_PhotoThumbnail).AddImage(w.imageURLProvider)
 

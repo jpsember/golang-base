@@ -21,7 +21,7 @@ func NewUserHeaderWidget(id string, listener ButtonWidgetListener) UserHeaderWid
 }
 
 func (w UserHeaderWidget) buttonListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
-	w.listener(sess, widget, value)
+	w.listener(sess, widget, args)
 	return nil, nil
 }
 

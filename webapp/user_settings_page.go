@@ -123,8 +123,8 @@ func (p UserSettingsPage) validateEmail(s Session, widget InputWidget, value str
 	return ValidateEmailAddress(value, p.validateFlag())
 }
 
-func (p UserSettingsPage) okListener(s Session, widget Widget, arg string) {
-	pr := PrIf("okListener", true)
+func (p UserSettingsPage) okListener(s Session, widget Widget, args WidgetArgs) {
+	pr := PrIf("okListener", false)
 	pr("state:", INDENT, p.editor.JSMap)
 
 	// Re-validate all the widgets in 'strict' mode.
