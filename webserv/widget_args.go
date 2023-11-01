@@ -33,6 +33,7 @@ func NewWidgetArgs(text string) WidgetArgs {
 }
 
 func (w WidgetArgs) Add(arg string) {
+	Die("I don't think this is required anymore")
 	pr := PrIf("WidgetArgs.Add", true)
 	pr("add:", arg, "currently:", w)
 	nt := w.text + ":" + arg
@@ -142,7 +143,7 @@ func (w WidgetArgs) Read() (bool, string) {
 }
 
 func (w WidgetArgs) FindWidgetIdAsPrefix(s Session) Widget {
-	pr := PrIf("FindWidgetIdAsPrefix", true)
+	pr := PrIf("FindWidgetIdAsPrefix", false)
 	pr("args:", w)
 	for j := w.Count(); j > w.cursor; j-- {
 		candidate := w.Range(w.cursor, j)

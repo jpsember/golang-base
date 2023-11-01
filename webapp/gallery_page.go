@@ -76,18 +76,15 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		// We want all the list item widgets to get their state from the list itself;
 		// so we haven't pushed a state map yet
 
-		Todo("Maybe a better approach is to set a field in the list interface for 'active_element' or some such?")
 		listItemTextListener := func(s Session, widget Widget, args WidgetArgs) {
-			valid, elementId := args.ReadInt()
-			CheckState(valid, "failed to get element from:", args)
+			elementId := p.list.CurrentElement()
 			mp := glist.ItemStateMap(s, elementId)
 			Pr("GList item button event, args:", args, "id:", widget.Id(), "element:", elementId, "state:", mp)
 
 		}
 
 		listItemButtonListener := func(s Session, widget Widget, args WidgetArgs) {
-			valid, elementId := args.ReadInt()
-			CheckState(valid, "failed to get element from:", args)
+			elementId := p.list.CurrentElement()
 			mp := glist.ItemStateMap(s, elementId)
 			Pr("GList item button event, args:", args, "id:", widget.Id(), "element:", elementId, "state:", mp)
 		}

@@ -14,6 +14,7 @@ type ListWidgetStruct struct {
 	cachedStateProviders map[int]JSMap
 	itemPrefix           string
 	listItemListener     ListWidgetListener
+	currentElement       int
 }
 type ListWidget = *ListWidgetStruct
 
@@ -30,6 +31,7 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, listener Li
 		itemWidget:       itemWidget,
 		WithPageControls: true,
 		listItemListener: listener,
+		currentElement:   -1,
 	}
 	w.InitBase(id)
 	w.itemPrefix = id + ":"
@@ -44,6 +46,14 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, listener Li
 	}
 
 	return &w
+}
+
+func (w ListWidget) CurrentElement() int {
+	x := w.currentElement
+	if x < 0 {
+		BadState("ListWidget has no current element")
+	}
+	return x
 }
 
 var mockLowListener = func(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
@@ -143,11 +153,10 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string,
 			BadState("No  listener for widget within list item", QUO, auxWidget.Id())
 		}
 
-		// Add the list element id to the end of the argument list (we parsed it once before, but we have read past it;
-		// we need to make it available to this embedded widget's listener)
-		args.Add(IntToString(elementId))
-
+		w.currentElement = elementId
 		auxListener(sess, auxWidget, "????? is this ever useful ????", args)
+		w.currentElement = -1
+
 		return nil, nil
 	} else {
 
