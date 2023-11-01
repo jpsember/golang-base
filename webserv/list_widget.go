@@ -33,7 +33,7 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget, listener Li
 	w.InitBase(id)
 	w.itemPrefix = id + ":"
 	w.SetLowListener(w.listListenWrapper)
-	w.pagePrefix = id + ".page_"
+	w.pagePrefix = w.itemPrefix + "page:"
 
 	// If there's an item listener, add a mock listener to the item widget, so that when the item is rendered,
 	// it will actually end up calling the list's listener instead
@@ -126,17 +126,22 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 }
 
 func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string, args []string) (any, error) {
-	pr := PrIf("list_widget.LowLevel listener", true)
-	pr(VERT_SP, "value:", QUO, value, "args:", args, "caller:", Caller())
+	db := true
+	pr := PrIf("list_widget.LowLevel listener", db)
+	if db {
+		pr("value:", QUO, value, "args:", args) //, "callers:", Callers(0, 5))
+	}
+
 	pr("stack size:", len(sess.stack))
 	b := widget.(ListWidget)
 
 	// See if this is an event from the page controls
-	if b.handlePagerClick(sess, value) {
+	if b.handlePagerClick(sess, args) {
 		pr("...page controls handled it")
 		return nil, nil
 	}
 
+	Todo("Refactor this to use colon stuff")
 	var elementId int
 	elementId, remainder, err := ExtractIntFromListenerArgs(args, 0, -1)
 	if err == nil {
@@ -209,36 +214,41 @@ func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, ta
 			m.A(` active`)
 		}
 	} else {
-		m.A(`" onclick="jsButton('`, s.PrependId(w.pagePrefix), targetPage, `')`)
+		m.A(`" onclick="jsButton('`, w.pagePrefix, targetPage, `')`)
 	}
 	m.A(`">`, label, `</a></li>`, CR)
 }
 
-// Process a possible pagniation control event.
-func (w ListWidget) handlePagerClick(sess Session, message string) bool {
-	pr := PrIf("", false)
-	pr("handlePagerClick, message:", message, "pagePrefix:", w.pagePrefix)
-	if page_str, f := TrimIfPrefix(message, "page_"); f {
-		pr("page_str:", page_str)
-		for {
-			i, err := ParseInt(page_str)
-			if ReportIfError(err, "handling click:", message) {
-				break
-			}
-			targetPage := int(i)
-			if targetPage < 0 || targetPage >= w.list.TotalPages() {
-				Alert("#50illegal page requested;", message)
-				break
-			}
-
-			if targetPage == w.list.CurrentPage() {
-				break
-			}
-			w.list.SetCurrentPage(targetPage)
-			w.Repaint()
-			break
-		}
-		return true
+func ReadArgIf(args []string, strValue string) (bool, []string) {
+	if len(args) != 0 && args[0] == strValue {
+		return true, args[1:]
 	}
-	return false
+	return false, args
+}
+
+func ReadIntArgIf(args []string, minValue int, maxValue int) (bool, []string, int) {
+	if len(args) != 0 {
+		value, err := ParseInt(args[0])
+		if err == nil && value >= minValue && value < maxValue {
+			return true, args[1:], value
+		}
+	}
+	return false, args, -1
+}
+
+// Process a possible pagniation control event.
+func (w ListWidget) handlePagerClick(sess Session, args []string) bool {
+	pr := PrIf("handlePagerClick", false)
+	pr("handlePagerClick, args:", args)
+	var result bool
+	var pageNumber int
+	result, args = ReadArgIf(args, "page")
+	if result {
+		result, args, pageNumber = ReadIntArgIf(args, 0, w.list.TotalPages())
+		if pageNumber != w.list.CurrentPage() {
+			w.list.SetCurrentPage(pageNumber)
+			w.Repaint()
+		}
+	}
+	return result
 }

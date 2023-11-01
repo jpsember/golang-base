@@ -61,8 +61,9 @@ func (w GridWidget) RemoveChild(c Widget) {
 func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
-	Todo("!Don't add markup that is outside of the div<widget id>, else it will pile up due to ajax refreshes")
-	m.TgOpen(`div id=`).A(QUO, s.PrependId(w.Id())).TgContent()
+
+	effectiveId := s.PrependId(w.Id())
+	m.TgOpen(`div id=`).A(QUO, effectiveId).TgContent()
 	m.Comments(`GridWidget`, w.IdSummary())
 
 	anyPlotted := false
@@ -82,7 +83,9 @@ func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 		}
 
 		if w.LowListen != nil {
-			m.A(` onclick="jsButton('`, s.ClickPrefix(), w.Id(), `')"`)
+			m.A(` onclick="jsButton('`, effectiveId,
+				//s.ClickPrefix(), w.Id(),
+				`')"`)
 		}
 
 		m.TgContent()

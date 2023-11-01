@@ -325,40 +325,33 @@ func (s Session) auxHandleAjax() {
 	s.ajaxWidgetValue = "" // To emphasize that we are done with this field
 	pr("widgetValueExpr:", QUO, widgetValueExpr)
 
-	widgetIdExpr := s.ajaxWidgetId
-	pr("widgetIdExpr:", QUO, widgetIdExpr)
-	if widgetIdExpr == "" {
+	id := s.ajaxWidgetId
+	pr("widgetIdExpr:", QUO, id)
+	if id == "" {
 		if !didSomething {
 			s.SetRequestProblem("widget id was empty")
 		}
 		return
 	}
 
-	// We will assume that any periods in the widgetIdExpr serve to separate the widget id from additional context
-
-	id := widgetIdExpr
-	//id, remainder := ExtractFirstDotArg(widgetIdExpr)
-	//pr("after parsing id expression, id:", QUO, id, "remainder:", remainder)
-
-	Todo("!Is the old context still needed?")
-
-	colonArgs, indices := extractColonSeparatedArgs(id)
+	indices := extractColonSeparatedArgs(id)
 
 	var widget Widget
 	var args []string
 	{
-		for j := len(colonArgs); j >= 0; j-- {
-			var candidate string
-			args = colonArgs[j:]
-			if j == len(colonArgs) {
-				candidate = id
-			} else {
-				candidate = id[0 : indices[j]-1]
-			}
+		for j := len(indices) - 1; j >= 0; j-- {
+			candidate := id[0:indices[j]]
 			pr("....looking for widget with id:", QUO, candidate, "and args:", args)
 			widget = s.Opt(candidate)
 			if widget != nil {
 				pr("................FOUND!")
+				{
+					Todo("This should be a utility function")
+					for j < len(indices)-1 {
+						args = append(args, id[1+indices[j]:indices[j+1]])
+						j++
+					}
+				}
 				break
 			}
 		}
@@ -371,7 +364,7 @@ func (s Session) auxHandleAjax() {
 		return
 	}
 
-	pr(VERT_SP, "found widget with id:", QUO, widget.Id(), "and type:", TypeOf(widget), "args:", args, VERT_SP)
+	pr("found widget with id:", QUO, widget.Id(), "and type:", TypeOf(widget), "args:", args)
 
 	if !widget.Enabled() {
 		s.SetRequestProblem("widget is disabled", widget)
@@ -384,39 +377,34 @@ func (s Session) auxHandleAjax() {
 		return
 	}
 
-	pr(VERT_SP, "processing widget value, widget:", QUO, widget.Id(), "value:", QUO, widgetValueExpr, "args:", args, VERT_SP)
 	s.ProcessWidgetValue(widget, widgetValueExpr, args)
 }
 
-func extractColonSeparatedArgs(expr string) ([]string, []int) {
+// Return an array of the indices of colons within a string, plus the length of the string as the last element
+func extractColonSeparatedArgs(expr string) []int {
 	pr := PrIf("extractColonSeparatedArgs", false)
 	pr("expr:", QUO, expr)
-	var result []string
-	var indices []int
-	lastIndex := 0
+	var result []int
+	//var indices []int
+	//lastIndex := 0
 	cursor := 0
 	cmax := len(expr)
 	for cursor < cmax {
 		newCursor := cursor + 1
 		pr("cursor:", cursor, "remaining chars:", expr[cursor:])
 		if expr[cursor] == ':' {
-			result = append(result, expr[lastIndex:cursor])
-			indices = append(indices, lastIndex)
-			lastIndex = newCursor
+			result = append(result, cursor)
 		}
 		cursor = newCursor
 	}
-	result = append(result, expr[lastIndex:cursor])
-	indices = append(indices, lastIndex)
-
-	//result = append(result, colonArg{index: lastIndex, value: expr[lastIndex:]})
-	pr("returning:", result, indices)
-	return result, indices
+	result = append(result, cmax)
+	pr("returning:", result)
+	return result
 }
 
 func (s Session) ProcessWidgetValue(widget Widget, value string, args []string) {
 	pr := PrIf("Session.ProcessWidgetValue", false)
-	pr(VERT_SP, "widget", widget.Id(), "value", QUO, value, "args", args)
+	pr("widget", widget.Id(), "value", QUO, value, "args", args)
 	s.listenerContext = args
 	updatedValue, err := widget.LowListener()(s, widget, value, args)
 	s.listenerContext = nil

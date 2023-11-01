@@ -11,8 +11,8 @@ import (
 const (
 	GDistinctDataObjects = false
 	GList                = true
-	GListMultiItems      = false
-	GListPager           = false
+	GListMultiItems      = true
+	GListPager           = true
 	GAlert               = false
 	GUploadPic           = false
 	GVisibility          = false
