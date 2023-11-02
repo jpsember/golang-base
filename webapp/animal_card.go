@@ -8,7 +8,6 @@ import (
 
 type AnimalCardStruct struct {
 	BaseWidgetObj
-	itemPrefix     string
 	cardListener   ClickWidgetListener
 	buttonListener ClickWidgetListener
 	buttonLabel    string
@@ -24,9 +23,8 @@ const (
 
 type AnimalCard = *AnimalCardStruct
 
-func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener ClickWidgetListener, buttonLabel string, buttonListener ClickWidgetListener) AnimalCard {
+func NewAnimalCard(m WidgetManager, cardListener ClickWidgetListener, buttonLabel string, buttonListener ClickWidgetListener) AnimalCard {
 	Todo("!Not sure we will need card buttons")
-	Todo("The feed_item: prefix is duplicated within the card widget ids")
 	widgetId := m.ConsumeOptionalPendingId()
 
 	// If a button is requested, it must have a listener
@@ -34,7 +32,6 @@ func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener ClickWidgetL
 
 	w := AnimalCardStruct{
 		cardListener:   cardListener,
-		itemPrefix:     itemPrefix,
 		buttonLabel:    buttonLabel,
 		buttonListener: buttonListener,
 	}
@@ -49,7 +46,6 @@ func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener ClickWidgetL
 func (w AnimalCard) lowLevelListener(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
 	pr := PrIf("cardListenWrapper", false)
 	pr("calling listener for id", QUO, w.Id(), "value", QUO, value)
-	Todo("!Is the listener 'value' necessary?")
 	if w.cardListener != nil {
 		w.cardListener(sess, w, args)
 	}
@@ -65,8 +61,6 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 	pr("adding children to new card")
 
 	m.OpenContainer(w)
-
-	m.PushIdPrefix(w.itemPrefix)
 	{
 		m.Listener(w.cardListener)
 		m.Id(Animal_PhotoThumbnail).AddImage(w.imageURLProvider)
@@ -77,7 +71,6 @@ func (w AnimalCard) AddChildren(m WidgetManager) {
 	if w.buttonLabel != "" {
 		m.Align(AlignRight).Size(SizeSmall).Label(w.buttonLabel).Listener(w.ourButtonListener).AddBtn()
 	}
-	m.PopIdPrefix()
 	m.Close()
 
 	pr("done adding children")

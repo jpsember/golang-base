@@ -39,18 +39,16 @@ func (p FeedPage) generateWidgets(s Session) {
 	AddUserHeaderWidget(s)
 
 	{
-		const itemPrefix = "feed_item:"
-
 		// Construct the list item widget
 
 		cardListener := func(sess *SessionStruct, widget Widget, args WidgetArgs) {
 			p.attemptSelectAnimal(sess, p.animListWidget.CurrentElement())
 		}
-		cardWidget := NewAnimalCard(m, itemPrefix, cardListener, "", nil)
+		cardWidget := NewAnimalCard(m, cardListener, "", nil)
 
 		m.Add(cardWidget)
 
-		animalList := NewAnimalList(getAnimals(), cardWidget, itemPrefix)
+		animalList := NewAnimalList(getAnimals(), cardWidget)
 
 		p.animListWidget = m.AddList(animalList, cardWidget)
 	}

@@ -304,7 +304,7 @@ func (s Session) parseAjaxRequest() {
 }
 
 func (s Session) auxHandleAjax() {
-	pr := PrIf("auxHandleAjax", true)
+	pr := PrIf("auxHandleAjax", false)
 	pr("start handling")
 
 	didSomething := false
@@ -355,7 +355,7 @@ func (s Session) auxHandleAjax() {
 
 func (s Session) ProcessWidgetValue(widget Widget, value string, args WidgetArgs) {
 	Todo("!This function can be internal")
-	pr := PrIf("Session.ProcessWidgetValue", true)
+	pr := PrIf("Session.ProcessWidgetValue", false)
 	pr("widget", widget.Id(), "value", QUO, value, "args", args)
 
 	lowListener := widget.LowListener()

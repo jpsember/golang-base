@@ -47,12 +47,10 @@ func (p ManagerPage) generateWidgets(sess Session) {
 
 	// Construct a list, and a card to use as the list item widget
 
-	const itemPrefix = "manager_item:"
-
 	var cardWidget AnimalCard
 	{
 
-		w := NewAnimalCard(m, itemPrefix,
+		w := NewAnimalCard(m,
 			func(sess Session, widget Widget, args WidgetArgs) {
 				valid, animalId := args.ReadInt()
 				if valid {
@@ -64,7 +62,7 @@ func (p ManagerPage) generateWidgets(sess Session) {
 	}
 
 	managerId := SessionUser(sess).Id()
-	animalList := NewAnimalList(getManagerAnimals(managerId), cardWidget, "manager_item:")
+	animalList := NewAnimalList(getManagerAnimals(managerId), cardWidget)
 
 	Todo("!document how the list forwards clicks related to items on to the list listener")
 	Todo("Add a listener for the animal list")
@@ -92,7 +90,7 @@ func (p ManagerPage) newAnimalListener(sess Session, widget Widget, args WidgetA
 
 func getManagerAnimals(managerId int) []int {
 	Todo("?A compound index on managerId+animalId would help here, but probably not worth it for now")
-	result := []int{}
+	var result []int
 	{
 		iter := AnimalIterator(0)
 		for iter.HasNext() {
@@ -111,5 +109,3 @@ func getManagerAnimals(managerId int) []int {
 	}
 	return result
 }
-
-const action_prefix_animal_card = "animal_id_"

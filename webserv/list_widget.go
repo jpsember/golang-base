@@ -28,6 +28,8 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget 
 		WithPageControls: true,
 		currentElement:   -1,
 	}
+
+	Alert("Do we need a list item prefix?")
 	w.InitBase(id)
 	w.itemPrefix = id + ":"
 	w.SetLowListener(w.listListenWrapper)
@@ -107,7 +109,7 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 }
 
 func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
-	pr := PrIf("list_widget.LowLevel listener", true)
+	pr := PrIf("list_widget.LowLevel listener", false)
 	Todo("!Is the 'value' argument required?")
 	pr(VERT_SP, "value:", QUO, value, "args:", args, VERT_SP)
 

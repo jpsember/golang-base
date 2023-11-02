@@ -6,28 +6,23 @@ import (
 
 type ButtonWidgetObj struct {
 	BaseWidgetObj
-	Label    HtmlString
-	listener ClickWidgetListener
+	Label HtmlString
 }
 
 type ButtonWidget = *ButtonWidgetObj
 
 func NewButtonWidget(id string, listener ClickWidgetListener) ButtonWidget {
-	Todo("Why do we need a separate listener field, in addition to the LowListener?")
 	if listener == nil {
 		listener = doNothingButtonListener
 	}
-	b := &ButtonWidgetObj{
-		listener: listener,
-	}
+	b := &ButtonWidgetObj{}
 	b.InitBase(id)
-	b.SetLowListener(b.buttonListenWrapper)
+	b.SetLowListener(
+		func(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
+			listener(sess, widget, args)
+			return nil, nil
+		})
 	return b
-}
-
-func (b ButtonWidget) buttonListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
-	b.listener(sess, widget, args)
-	return nil, nil
 }
 
 func doNothingButtonListener(sess Session, widget Widget, args WidgetArgs) {

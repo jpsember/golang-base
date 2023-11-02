@@ -14,12 +14,11 @@ type AnimalListStruct struct {
 
 type AnimalList = *AnimalListStruct
 
-func NewAnimalList(animalIds []int, cardWidget AnimalCard, itemPrefix string) AnimalList {
+func NewAnimalList(animalIds []int, cardWidget AnimalCard) AnimalList {
 	CheckArg(cardWidget != nil)
 	CheckArg(animalIds != nil)
 	t := &AnimalListStruct{
 		cardWidget: cardWidget,
-		itemPrefix: itemPrefix,
 	}
 	b := &t.BasicListStruct
 	if Experiment {
@@ -36,8 +35,4 @@ func (a AnimalList) ItemStateMap(s Session, elementId int) JSMap {
 
 	json := anim.ToJson().AsJSMap()
 	return json
-}
-
-func (a AnimalList) ItemPrefix() string {
-	return a.itemPrefix
 }
