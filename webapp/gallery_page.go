@@ -10,27 +10,28 @@ import (
 
 const (
 	GDistinctDataObjects = false
-	GList                = true
-	GListMultiItems      = true
+	GList                = false
+	GListMultiItems      = false
 	GListPager           = false
 	GAlert               = false
 	GClickPic            = false
-	GUploadPic           = false
+	GUploadPic           = true
 	GVisibility          = false
 	GTextArea            = false
 	GColumns             = false
 	GUserHeader          = false
-	GCardList            = true
+	GCardList            = false
 )
 
 type GalleryPageStruct struct {
-	alertWidget AlertWidget
-	picEditor   DataEditor
-	ourState    JSMap
-	editorA     DataEditor
-	editorB     DataEditor
-	rand        JSRand
-	clickpic    int
+	alertWidget         AlertWidget
+	picEditor           DataEditor
+	ourState            JSMap
+	editorA             DataEditor
+	editorB             DataEditor
+	rand                JSRand
+	clickpic            int
+	uploadPictureWidget Widget
 }
 
 var GalleryPageTemplate = &GalleryPageStruct{}
@@ -222,7 +223,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			Alert("No animals available")
 		} else {
 			m.Open()
-			p.picEditor = NewDataEditor(anim)
+			p.picEditor = NewDataEditorWithPrefix(anim, "upload_")
 
 			m.Id("foo").Label("Photo").AddFileUpload(p.uploadListener)
 
@@ -243,8 +244,9 @@ func (p GalleryPage) generateWidgets(sess Session) {
 				return url
 			}
 
-			imgWidget := m.Id(Animal_PhotoThumbnail).AddImage(imgUrlProvider)
+			imgWidget := m.AddImage(imgUrlProvider)
 			imgWidget.SetSize(AnimalPicSizeNormal, 0.3)
+			p.uploadPictureWidget = imgWidget
 
 			Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
 
@@ -447,7 +449,7 @@ func (p GalleryPage) uploadListener(s Session, source FileUpload, value []byte) 
 		errOut = Error(problem)
 	} else {
 		p.picEditor.Put(Animal_PhotoThumbnail, imageId)
-		s.Get(Animal_PhotoThumbnail).Repaint()
+		p.uploadPictureWidget.Repaint()
 	}
 	return errOut
 }

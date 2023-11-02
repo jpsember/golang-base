@@ -412,7 +412,7 @@ func (m WidgetManager) AddFileUpload(listener FileUploadWidgetListener) FileUplo
 }
 
 func (m WidgetManager) AddImage(urlProvider ImageURLProvider) ImageWidget {
-	w := NewImageWidget(m.consumePendingId(), urlProvider, m.ConsumeOptionalPendingClickListener())
+	w := NewImageWidget(m.ConsumeOptionalPendingId(), urlProvider, m.ConsumeOptionalPendingClickListener())
 	m.Add(w)
 	return w
 }
