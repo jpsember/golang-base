@@ -201,6 +201,7 @@ func AttemptSignIn(sess Session, userId int) string {
 
 func DefaultPageForUser(abstractUser AbstractUser) Page {
 	if DevGallery {
+		Alert("DevGallery is in effect")
 		return GalleryPageTemplate
 	}
 	user := abstractUser.(User)

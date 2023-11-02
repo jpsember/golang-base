@@ -25,7 +25,6 @@ const (
 
 type GalleryPageStruct struct {
 	alertWidget AlertWidget
-	list        ListWidget
 	picEditor   DataEditor
 	ourState    JSMap
 	editorA     DataEditor
@@ -68,38 +67,42 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 	if GList {
 
-		Alert("The list item has no listener; how does the element id get propagated to the list's listener?")
-		listItemWidget := m.Open()
+		// Declarations
+		var listItemWidget Widget
+		var glist ListInterface
+		var listWidget ListWidget
 
-		glist := NewGalleryListImplementation()
+		{
+			listItemWidget = m.Open()
 
-		m.Col(8)
-		// We want all the list item widgets to get their state from the list itself;
-		// so we haven't pushed a state map yet
+			glist = NewGalleryListImplementation()
 
-		listItemTextListener := func(s Session, widget Widget, args WidgetArgs) {
-			elementId := p.list.CurrentElement()
-			mp := glist.ItemStateMap(s, elementId)
-			Pr("GList item button event, args:", args, "id:", widget.Id(), "element:", elementId, "state:", mp)
+			m.Col(8)
+			// We want all the list item widgets to get their state from the list itself;
+			// so we haven't pushed a state map yet
 
+			listItemTextListener := func(s Session, widget Widget, args WidgetArgs) {
+				elementId := listWidget.CurrentElement()
+				mp := glist.ItemStateMap(s, elementId)
+				Pr("GList item button event, args:", args, "id:", widget.Id(), "element:", elementId, "state:", mp)
+			}
+
+			listItemButtonListener := func(s Session, widget Widget, args WidgetArgs) {
+				elementId := listWidget.CurrentElement()
+				mp := glist.ItemStateMap(s, elementId)
+				Pr("GList item button event, args:", args, "id:", widget.Id(), "element:", elementId, "state:", mp)
+			}
+
+			m.Id("foo_text").Height(3).Listener(listItemTextListener).AddText()
+			m.Col(4)
+
+			Todo("!BasePrinter shouldn't align integers/floats to columns unless an ALIGN flag has been added?")
+
+			m.Id("foo_btn").Listener(listItemButtonListener).Label("Ok").AddBtn()
+			m.Close()
 		}
-
-		listItemButtonListener := func(s Session, widget Widget, args WidgetArgs) {
-			elementId := p.list.CurrentElement()
-			mp := glist.ItemStateMap(s, elementId)
-			Pr("GList item button event, args:", args, "id:", widget.Id(), "element:", elementId, "state:", mp)
-		}
-
-		m.Id("foo_text").Height(3).Listener(listItemTextListener).AddText()
-		m.Col(4)
-
-		Todo("!BasePrinter shouldn't align integers/floats to columns unless an ALIGN flag has been added?")
-
-		m.Id("foo_btn").Listener(listItemButtonListener).Label("Ok").AddBtn()
-		m.Close()
-
-		p.list = m.Id("pets").AddList(glist, listItemWidget)
-		p.list.WithPageControls = GListPager
+		listWidget = m.Id("pets").AddList(glist, listItemWidget)
+		listWidget.WithPageControls = GListPager
 		Todo("!Add support for empty list items, to pad out page to full size")
 	}
 

@@ -506,7 +506,6 @@ func (m WidgetManager) stackedStateProvider() JSMap {
 }
 
 func (m WidgetManager) PushIdPrefix(prefix string) {
-	Alert("Do we want to omit colons?")
 	itm := *m.stackedState()
 	itm.IdPrefix = prefix
 	m.pushState(itm, tag_prefix)

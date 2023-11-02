@@ -9,10 +9,10 @@ type ListWidgetStruct struct {
 	BaseWidgetObj
 	list                 ListInterface
 	itemWidget           Widget
+	itemPrefix           string // We want each item widget and its subwidgets to have a unique id
 	pagePrefix           string
 	WithPageControls     bool
 	cachedStateProviders map[int]JSMap
-	itemPrefix           string
 	currentElement       int
 }
 type ListWidget = *ListWidgetStruct
@@ -28,12 +28,10 @@ func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget 
 		WithPageControls: true,
 		currentElement:   -1,
 	}
-
-	Alert("Do we need a list item prefix?")
 	w.InitBase(id)
 	w.itemPrefix = id + ":"
-	w.SetLowListener(w.listListenWrapper)
 	w.pagePrefix = w.itemPrefix + "page:"
+	w.SetLowListener(w.lowLevelListener)
 	return &w
 }
 
@@ -48,7 +46,7 @@ func (w ListWidget) CurrentElement() int {
 func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	debug := false
 	pr := PrIf("ListWidget.RenderTo", debug)
-	pr("ListWidget.RenderTo; id", QUO, w.Id(), "itemPrefix:", QUO, w.itemPrefix)
+	pr("ListWidget.RenderTo; id", QUO, w.Id())
 
 	m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent()
 
@@ -68,20 +66,14 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 		pr("rendering page #:", w.list.CurrentPage(), "element ids:", elementIds)
 
 		// While rendering this list's items, we will set the state provider to one for each item.
-		pr("item prefix:", w.itemPrefix)
-
 		CheckState(len(s.stack) == 2, "Expected two items on state stack: default item, plus one for list renderer")
 
 		for _, id := range elementIds {
 
-			// We want each rendered widget to have a unique id, and also a way to tie the widget to a particular list
-			// item, so construct a suitable prefix
-
-			nestedWidgetsIdPrefix := w.itemPrefix + IntToString(id) + ":"
-			s.PushIdPrefix(nestedWidgetsIdPrefix)
+			// We want each rendered subwidget to have a unique id, and also a way to tie the widget to an element
+			s.PushIdPrefix(w.itemPrefix + IntToString(id) + ":")
 
 			sp := w.constructStateProvider(s, id)
-
 			pr(VERT_SP, "pushing state provider:", sp)
 			s.PushStateMap(sp)
 
@@ -108,9 +100,8 @@ func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
 	m.TgClose()
 }
 
-func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
-	pr := PrIf("list_widget.LowLevel listener", false)
-	Todo("!Is the 'value' argument required?")
+func (w ListWidget) lowLevelListener(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
+	pr := PrIf("list_widget.lowLevelListener", false)
 	pr(VERT_SP, "value:", QUO, value, "args:", args, VERT_SP)
 
 	pr("stack size:", len(sess.stack))
