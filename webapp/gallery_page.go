@@ -108,7 +108,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	// ------------------------------------------------------------------------------------
 
 	if GCardList {
-		const itemPrefix = "gcardlist:"
+		const unusedItemPrefix = ""
 		Todo("Why is the itemprefix necessary?")
 
 		// Declarations
@@ -121,11 +121,11 @@ func (p GalleryPage) generateWidgets(sess Session) {
 				animalId := listWidget.CurrentElement()
 				Pr("Card list, click on animal:", animalId, glist.ItemStateMap(sess, animalId).GetString(Animal_Name))
 			}
-			cardWidget := NewAnimalCard(m, itemPrefix, clickListener, "", nil)
+			cardWidget := NewAnimalCard(m, unusedItemPrefix, clickListener, "", nil)
 			listItemWidget = cardWidget
 			m.Add(cardWidget)
 			{
-				animList := NewAnimalList(getAnimals(), cardWidget, itemPrefix)
+				animList := NewAnimalList(getAnimals(), cardWidget, unusedItemPrefix)
 				animList.ElementsPerPage = 3
 				glist = animList
 			}
