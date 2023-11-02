@@ -44,7 +44,6 @@ func (p FeedPage) generateWidgets(s Session) {
 		// Construct the list item widget
 
 		cardListener := func(sess *SessionStruct, widget Widget, args WidgetArgs) {
-			Alert("Is this an element id, or an item index?")
 			p.attemptSelectAnimal(sess, p.animListWidget.CurrentElement())
 		}
 		cardWidget := NewAnimalCard(m, itemPrefix, cardListener, "", nil)

@@ -12,20 +12,22 @@ type ImageWidgetObj struct {
 	urlProvider     ImageURLProvider
 	fixedSize       IPoint // If not (0,0), size to display image as
 	escapedAltLabel string
-	clickListener   ButtonWidgetListener
+	clickListener   ClickWidgetListener
 }
 
 type ImageWidget = *ImageWidgetObj
 
-func NewImageWidget(id string, urlProvider ImageURLProvider, clickListener ButtonWidgetListener) ImageWidget {
+func NewImageWidget(id string, urlProvider ImageURLProvider, clickListener ClickWidgetListener) ImageWidget {
 	t := &ImageWidgetObj{
 		escapedAltLabel: Escaped("unknown image"),
 		urlProvider:     urlProvider,
 		clickListener:   clickListener,
 	}
 	if clickListener != nil {
-		Alert("?how do we add the listener?")
-		t.SetLowListener(t.imageListenWrapper)
+		t.SetLowListener(func(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
+			t.clickListener(sess, widget, args)
+			return nil, nil
+		})
 	}
 	t.InitBase(id)
 	return t
@@ -34,11 +36,6 @@ func NewImageWidget(id string, urlProvider ImageURLProvider, clickListener Butto
 // Set the size that the image will occupy.  This size will be scaled by the user's screen resolution.
 func (w ImageWidget) SetSize(originalSize IPoint, scaleFactor float64) {
 	w.fixedSize = originalSize.ScaledBy(scaleFactor)
-}
-
-func (w ImageWidget) imageListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
-	w.clickListener(sess, widget, args)
-	return nil, nil
 }
 
 func (w ImageWidget) RenderTo(s Session, m MarkupBuilder) {

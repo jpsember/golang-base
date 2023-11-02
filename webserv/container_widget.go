@@ -12,7 +12,7 @@ type GridWidgetStruct struct {
 
 type GridWidget = *GridWidgetStruct
 
-func NewContainerWidget(id string, clickListener ButtonWidgetListener) GridWidget {
+func NewContainerWidget(id string, clickListener ClickWidgetListener) GridWidget {
 	w := GridWidgetStruct{}
 	w.InitBase(id)
 	if clickListener != nil {

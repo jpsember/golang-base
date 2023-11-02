@@ -9,8 +9,8 @@ import (
 type AnimalCardStruct struct {
 	BaseWidgetObj
 	itemPrefix     string
-	cardListener   ButtonWidgetListener
-	buttonListener ButtonWidgetListener
+	cardListener   ClickWidgetListener
+	buttonListener ClickWidgetListener
 	buttonLabel    string
 	children       []Widget
 }
@@ -24,7 +24,7 @@ const (
 
 type AnimalCard = *AnimalCardStruct
 
-func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener ButtonWidgetListener, buttonLabel string, buttonListener ButtonWidgetListener) AnimalCard {
+func NewAnimalCard(m WidgetManager, itemPrefix string, cardListener ClickWidgetListener, buttonLabel string, buttonListener ClickWidgetListener) AnimalCard {
 	Todo("!Not sure we will need card buttons")
 	Todo("The feed_item: prefix is duplicated within the card widget ids")
 	widgetId := m.ConsumeOptionalPendingId()

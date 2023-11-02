@@ -45,6 +45,8 @@ const WidgetIdPage = "page"
 
 type LowLevelWidgetListener func(sess Session, widget Widget, value string, args WidgetArgs) (optNewWidgetValue any, err error)
 
+type ClickWidgetListener func(sess *SessionStruct, widget Widget, args WidgetArgs)
+
 type WidgetMap = map[string]Widget
 
 const MaxColumns = 12

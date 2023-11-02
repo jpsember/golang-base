@@ -12,7 +12,7 @@ type TextWidgetObj struct {
 
 type TextWidget = *TextWidgetObj
 
-func NewTextWidget(id string, size WidgetSize, fixedHeight int, clickListener ButtonWidgetListener) TextWidget {
+func NewTextWidget(id string, size WidgetSize, fixedHeight int, clickListener ClickWidgetListener) TextWidget {
 	t := &TextWidgetObj{
 		size:        size,
 		fixedHeight: fixedHeight,

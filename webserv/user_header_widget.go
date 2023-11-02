@@ -7,12 +7,12 @@ import (
 type UserHeaderWidgetStruct struct {
 	BaseWidgetObj
 	BgndImageMarkup string
-	listener        ButtonWidgetListener
+	listener        ClickWidgetListener
 }
 
 type UserHeaderWidget = *UserHeaderWidgetStruct
 
-func NewUserHeaderWidget(id string, listener ButtonWidgetListener) UserHeaderWidget {
+func NewUserHeaderWidget(id string, listener ClickWidgetListener) UserHeaderWidget {
 	t := &UserHeaderWidgetStruct{}
 	t.InitBase(id)
 	t.listener = listener

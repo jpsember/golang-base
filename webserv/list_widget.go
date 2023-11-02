@@ -132,8 +132,7 @@ func (w ListWidget) listListenWrapper(sess Session, widget Widget, value string,
 	if auxWidget != nil {
 		auxListener := auxWidget.LowListener()
 		if auxListener == nil {
-			// We ought to actually crash only in 'dev' mode, though...
-			BadState("No  listener for widget within list item", QUO, auxWidget.Id())
+			Alert("#50No low-level listener for widget:", QUO, auxWidget.Id(), "within list:", QUO, w.Id())
 			return nil, nil
 		}
 		w.currentElement = elementId

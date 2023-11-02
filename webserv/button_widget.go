@@ -4,17 +4,15 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
-type ButtonWidgetListener func(sess *SessionStruct, widget Widget, args WidgetArgs)
-
 type ButtonWidgetObj struct {
 	BaseWidgetObj
 	Label    HtmlString
-	listener ButtonWidgetListener
+	listener ClickWidgetListener
 }
 
 type ButtonWidget = *ButtonWidgetObj
 
-func NewButtonWidget(id string, listener ButtonWidgetListener) ButtonWidget {
+func NewButtonWidget(id string, listener ClickWidgetListener) ButtonWidget {
 	Todo("Why do we need a separate listener field, in addition to the LowListener?")
 	if listener == nil {
 		listener = doNothingButtonListener

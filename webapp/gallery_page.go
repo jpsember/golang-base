@@ -20,6 +20,7 @@ const (
 	GTextArea            = false
 	GColumns             = false
 	GUserHeader          = false
+	GCardList            = true
 )
 
 type GalleryPageStruct struct {
@@ -62,7 +63,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)
 
 	// ------------------------------------------------------------------------------------
-	// The list
+	// A list of items that have a static text field + button
 	// ------------------------------------------------------------------------------------
 
 	if GList {
@@ -100,6 +101,37 @@ func (p GalleryPage) generateWidgets(sess Session) {
 		p.list = m.Id("pets").AddList(glist, listItemWidget)
 		p.list.WithPageControls = GListPager
 		Todo("!Add support for empty list items, to pad out page to full size")
+	}
+
+	// ------------------------------------------------------------------------------------
+	// A list of animal cards
+	// ------------------------------------------------------------------------------------
+
+	if GCardList {
+		const itemPrefix = "gcardlist:"
+		Todo("Why is the itemprefix necessary?")
+
+		// Declarations
+		var listWidget ListWidget
+		var listItemWidget Widget
+		var glist ListInterface
+
+		{
+			clickListener := func(sess *SessionStruct, widget Widget, args WidgetArgs) {
+				animalId := listWidget.CurrentElement()
+				Pr("Card list, click on animal:", animalId, glist.ItemStateMap(sess, animalId).GetString(Animal_Name))
+			}
+			cardWidget := NewAnimalCard(m, itemPrefix, clickListener, "", nil)
+			listItemWidget = cardWidget
+			m.Add(cardWidget)
+			{
+				animList := NewAnimalList(getAnimals(), cardWidget, itemPrefix)
+				animList.ElementsPerPage = 3
+				glist = animList
+			}
+		}
+		listWidget = m.AddList(glist, listItemWidget)
+		listWidget.WithPageControls = false
 	}
 
 	// ------------------------------------------------------------------------------------

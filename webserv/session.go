@@ -350,12 +350,6 @@ func (s Session) auxHandleAjax() {
 		return
 	}
 
-	Todo("!maybe check the lowlistener inside the ProcessWidgetValue func instead?")
-	if widget.LowListener() == nil {
-		Alert("#50Widget has no low-level listener:", Info(widget))
-		return
-	}
-
 	s.ProcessWidgetValue(widget, widgetValueExpr, args)
 }
 
@@ -363,7 +357,14 @@ func (s Session) ProcessWidgetValue(widget Widget, value string, args WidgetArgs
 	Todo("!This function can be internal")
 	pr := PrIf("Session.ProcessWidgetValue", true)
 	pr("widget", widget.Id(), "value", QUO, value, "args", args)
-	updatedValue, err := widget.LowListener()(s, widget, value, args)
+
+	lowListener := widget.LowListener()
+	if lowListener == nil {
+		Alert("#50Widget has no low-level listener:", Info(widget))
+		return
+	}
+
+	updatedValue, err := lowListener(s, widget, value, args)
 	pr("LowListener returned updatedValue:", updatedValue, "err:", err)
 	s.UpdateValueAndProblem(widget, updatedValue, err)
 }

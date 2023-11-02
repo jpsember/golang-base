@@ -25,7 +25,7 @@ type WidgetManagerObj struct {
 	pendingHeight        int
 	pendingId            string
 	pendingLabel         string
-	pendingClickListener ButtonWidgetListener
+	pendingClickListener ClickWidgetListener
 	anonymousIdCounter   int
 }
 
@@ -71,7 +71,7 @@ func (m WidgetManager) Id(id string) WidgetManager {
 	return m
 }
 
-func (m WidgetManager) ConsumeOptionalPendingClickListener() ButtonWidgetListener {
+func (m WidgetManager) ConsumeOptionalPendingClickListener() ClickWidgetListener {
 	listener := m.pendingClickListener
 	m.pendingClickListener = nil
 	return listener
@@ -155,7 +155,7 @@ func verifyUsed(flag bool, name string) {
 	BadState("unused value:", name)
 }
 
-func (m WidgetManager) Listener(listener ButtonWidgetListener) WidgetManager {
+func (m WidgetManager) Listener(listener ClickWidgetListener) WidgetManager {
 	m.pendingClickListener = listener
 	return m
 }
@@ -314,8 +314,8 @@ func (m WidgetManager) AddInput(listener InputWidgetListener) InputWidget {
 	return m.auxAddInput(listener, false)
 }
 
-// The ButtonWidgetListener will receive message USER_HEADER_ACTION_xxxx.
-func (m WidgetManager) AddUserHeader(listener ButtonWidgetListener) UserHeaderWidget {
+// The ClickWidgetListener will receive message USER_HEADER_ACTION_xxxx.
+func (m WidgetManager) AddUserHeader(listener ClickWidgetListener) UserHeaderWidget {
 	m.PushStateMap(NewJSMap())
 	w := NewUserHeaderWidget(m.ConsumeOptionalPendingId(), listener)
 	w.BgndImageMarkup = `style=" height:50px; background-image:url('app_header.jpg'); background-repeat: no-repeat;"`
