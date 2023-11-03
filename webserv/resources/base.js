@@ -46,20 +46,36 @@ function var_info(x) {
     return typeof(x) + ': "'+String(x)+'"'
 }
 
-function where(skip) {
+function where(skip, count) {
     if (skip == undefined) {
         skip = 0
+    }
+    if (count == undefined) {
+        count = 1
     }
     skip += 2
     const err = new Error();
     const lines = err.stack.split("\n")
-    let x = lines[skip]
-    if (x == null) {
-        x = "<unknown location>"
-    } else {
-        x = x.replace(/^\s*at\s*/,"")
+    let y = ""
+    for (i = 0; i < count; i++) {
+        let x = lines[skip + i]
+        if (x == null) {
+            if (i == 0) {
+                x = "<unknown location>"
+            } else {
+                x = ""
+            }
+            break
+        } else {
+            x = x.replace(/^\s*at\s*/, "")
+        }
+        if (i == 0) {
+            y = x
+        } else {
+            y = y + "\n" + x
+        }
     }
-    return x
+    return y
 }
 
 const respKeyWidgetsToRefresh = 'w'
@@ -141,7 +157,7 @@ function jsVal(id) {
 
 // An onfocus event has occurred within an input field
 function jsFocus(id, active) {
-    db("jsFocus",id,"active:",active)
+    db("jsFocus",id,"active:",active,"from:",where(0,4))
     id_with_focus = null;
     if (active) {
         const x = document.getElementById(id);

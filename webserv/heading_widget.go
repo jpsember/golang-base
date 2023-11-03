@@ -18,7 +18,15 @@ func NewHeadingWidget(id string) HeadingWidget {
 }
 
 func (w HeadingWidget) RenderTo(s Session, m MarkupBuilder) {
-	textContent := s.WidgetStringValue(w)
+	Todo("This code is duplicated in text_widget RenderTo")
+	var textContent string
+	sc := w.StaticContent()
+	if sc != nil {
+		textContent = sc.(string)
+	} else {
+		textContent = s.WidgetStringValue(w)
+	}
+
 	tag := wsHeadingSize[w.Size()]
 	m.TgOpen(tag)
 	m.A(` id=`, QUO, s.PrependId(w.Id()))

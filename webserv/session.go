@@ -603,7 +603,7 @@ func (s Session) DeleteSessionData(key string) {
 // ------------------------------------------------------------------------------------
 
 func (s Session) SwitchToPage(template Page, args PageArgs) {
-	pr := PrIf("SwitchToPage", true)
+	pr := PrIf("SwitchToPage", false)
 	pr("page:", template.Name(), "from:", Caller())
 	s.pendingPage = &PendingPage{template: template, args: args}
 }
