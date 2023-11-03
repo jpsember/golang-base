@@ -9,18 +9,18 @@ import (
 )
 
 const (
-	GDistinctDataObjects = true
-	GList                = true
-	GListMultiItems      = true
-	GListPager           = true
-	GAlert               = true
-	GClickPic            = true
-	GUploadPic           = true
-	GVisibility          = true
-	GTextArea            = true
+	GDistinctDataObjects = false
+	GList                = false
+	GListMultiItems      = false
+	GListPager           = false
+	GAlert               = false
+	GClickPic            = false
+	GUploadPic           = false
+	GVisibility          = false
+	GTextArea            = false
 	GColumns             = true
-	GUserHeader          = true
-	GCardList            = true
+	GUserHeader          = false
+	GCardList            = false
 )
 
 type GalleryPageStruct struct {
@@ -296,7 +296,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	if GColumns {
 
 		buttonListener := func(s Session, widget Widget, args WidgetArgs) {
-			Pr("buttonListener, widget:", widget.Id(), "args:", args)
+			Pr("GColumns button listener, widget:", QUO, widget.Id(), "args:", args)
 			wid := widget.Id()
 			newVal := "Clicked: " + wid
 
