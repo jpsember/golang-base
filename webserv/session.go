@@ -698,6 +698,9 @@ func (s Session) SetWidgetValue(w Widget, value any) {
 	pr := PrIf("SetWidgetValue", false)
 	id, p := s.getKeyAndStateMap(w)
 	pr("state provider, state:", p)
+	if p == nil {
+		BadState("no state map found for widget", w.Id())
+	}
 	oldVal := p.OptUnsafe(id)
 	changed := value != oldVal
 	pr("old:", oldVal, "new:", value, "changed:", changed)

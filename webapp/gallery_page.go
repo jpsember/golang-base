@@ -9,18 +9,18 @@ import (
 )
 
 const (
-	GDistinctDataObjects = false
-	GList                = false
-	GListMultiItems      = false
-	GListPager           = false
-	GAlert               = false
-	GClickPic            = false
+	GDistinctDataObjects = true
+	GList                = true
+	GListMultiItems      = true
+	GListPager           = true
+	GAlert               = true
+	GClickPic            = true
 	GUploadPic           = true
-	GVisibility          = false
-	GTextArea            = false
-	GColumns             = false
-	GUserHeader          = false
-	GCardList            = false
+	GVisibility          = true
+	GTextArea            = true
+	GColumns             = true
+	GUserHeader          = true
+	GCardList            = true
 )
 
 type GalleryPageStruct struct {
@@ -61,6 +61,12 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	pr("generateWidgets")
 
 	m := GenerateHeader(sess, p)
+
+	if GUserHeader {
+		m.PushStateMap(p.ourState)
+		AddUserHeaderWidget(sess)
+		m.PopStateMap()
+	}
 
 	// ------------------------------------------------------------------------------------
 	// A list of items that have a static text field + button
@@ -212,10 +218,10 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	m.PushStateMap(p.ourState)
 
 	if GAlert {
-		Todo("Have alert use the 'Id()' method instead")
-		p.alertWidget = NewAlertWidget("sample_alert", AlertInfo)
+		// We could leave it anonymous, but for clarity give it an explicit id
+		m.Id("our_alert_widget")
+		p.alertWidget = m.AddAlert(AlertInfo)
 		p.alertWidget.SetVisible(false)
-		m.Add(p.alertWidget)
 	}
 
 	if GUploadPic {
@@ -312,7 +318,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			m.Id("x58").Label(`Disabled`).Listener(buttonListener).AddBtn().SetEnabled(false)
 
 			m.Col(2).AddSpace()
-			m.Col(3).Id("yz").Label(`Enabled`).Listener(buttonListener).AddBtn()
+			m.Col(3).Label("Enabled").Listener(buttonListener).AddBtn()
 
 			m.Col(3).AddSpace()
 			m.Col(4).AddSpace()
@@ -377,9 +383,7 @@ Multiple line feeds:
 		m.Close()
 
 	}
-	if GUserHeader {
-		AddUserHeaderWidget(sess)
-	}
+
 	sess.PopStateMap()
 }
 

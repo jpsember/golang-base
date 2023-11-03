@@ -402,6 +402,12 @@ func doNothingFileUploadListener(s Session, widget FileUpload, value []byte) err
 	return nil
 }
 
+func (m WidgetManager) AddAlert(alertClass AlertClass) AlertWidget {
+	w := NewAlertWidget(m.ConsumeOptionalPendingId(), alertClass)
+	m.Add(w)
+	return w
+}
+
 func (m WidgetManager) AddFileUpload(listener FileUploadWidgetListener) FileUpload {
 	if listener == nil {
 		listener = doNothingFileUploadListener
