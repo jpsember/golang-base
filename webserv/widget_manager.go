@@ -181,7 +181,7 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 		m.widgetMap[id] = widget
 	}
 
-	widget.setStateProvider(m.stackedStateProvider())
+	widget.setStateProvider(m.stackedStateMap())
 
 	state := m.stackedState()
 	parent := state.Parent
@@ -370,11 +370,13 @@ func (m WidgetManager) AddHeading() HeadingWidget {
 	if wasStatic {
 		w.SetStaticContent(staticContent)
 	}
+	Pr("AddHeading, id", id, "staticContent:", staticContent, "wasStatic:", wasStatic)
 	m.Add(w)
 	return w
 }
 
 func (m WidgetManager) AddText() TextWidget {
+	Todo("Do we want to bother supporting static content for text fields?  Seems like a special case, not worth the trouble")
 	staticContent, id, wasStatic := m.getStaticContentAndId()
 	w := NewTextWidget(id, m.consumePendingSize(), m.consumePendingHeight(), m.ConsumeOptionalPendingClickListener())
 	if wasStatic {
@@ -507,7 +509,7 @@ func (m WidgetManager) PopStateMap() {
 	m.popStack(tag_statemap)
 }
 
-func (m WidgetManager) stackedStateProvider() JSMap {
+func (m WidgetManager) stackedStateMap() JSMap {
 	return m.stackedState().StateMap
 }
 

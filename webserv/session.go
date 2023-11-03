@@ -304,7 +304,7 @@ func (s Session) parseAjaxRequest() {
 }
 
 func (s Session) auxHandleAjax() {
-	pr := PrIf("auxHandleAjax", false)
+	pr := PrIf("auxHandleAjax", true)
 	pr("start handling")
 
 	didSomething := false
@@ -338,7 +338,7 @@ func (s Session) auxHandleAjax() {
 
 	if widget == nil {
 		Pr("no widget with id", Quoted(id), "found to handle value", Quoted(widgetValueExpr))
-		Pr("state provider:", s.stackedStateProvider())
+		Pr("state provider:", s.stackedStateMap())
 		Pr("widget map:", INDENT, s.widgetMap)
 		return
 	}
@@ -603,7 +603,7 @@ func (s Session) DeleteSessionData(key string) {
 // ------------------------------------------------------------------------------------
 
 func (s Session) SwitchToPage(template Page, args PageArgs) {
-	pr := PrIf("SwitchToPage", false)
+	pr := PrIf("SwitchToPage", true)
 	pr("page:", template.Name(), "from:", Caller())
 	s.pendingPage = &PendingPage{template: template, args: args}
 }
@@ -668,7 +668,11 @@ func (s Session) getKeyAndStateMap(w Widget) (string, JSMap) {
 	p := w.StateProvider()
 	if p == nil {
 		pr("using stacked state provider")
-		p = s.stackedStateProvider()
+		p = s.stackedStateMap()
+		if p == nil {
+			Alert("#50No state map found for widget:", QUO, id, "callers:", CR, Callers(0, 5))
+			p = NewJSMap()
+		}
 	}
 
 	pr("returning key:", QUO, key, "and provider:", p)

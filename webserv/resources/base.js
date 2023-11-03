@@ -140,13 +140,15 @@ function jsVal(id) {
 }
 
 // An onfocus event has occurred within an input field
-function jsFocus(id) {
-    db("jsFocus",id)
+function jsFocus(id, active) {
+    db("jsFocus",id,"active:",active)
     id_with_focus = null;
-    const x = document.getElementById(id);
-    if (x != null) {
-        id_with_focus = {id:id, url:window.location.href};
-        db("updated id_with_focus to:",id_with_focus)
+    if (active) {
+        const x = document.getElementById(id);
+        if (x != null) {
+            id_with_focus = {id: id, url: window.location.href};
+            db("updated id_with_focus to:", id_with_focus)
+        }
     }
 }
 

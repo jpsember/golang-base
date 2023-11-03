@@ -98,7 +98,8 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 
 	m.A(`" onchange="jsVal('`, id, `')"`)
 	// Set this id as the element that has the focus.  Note we are using auxId, for the actual <input> element, not its containing widget <div>
-	m.A(` onfocus="jsFocus('`, auxId, `')"`)
+	m.A(` onfocus="jsFocus('`, auxId, `', true)"`)
+	m.A(` onfocusout="jsFocus('`, auxId, `', false)"`)
 	m.TgClose()
 
 	if hasProblem {

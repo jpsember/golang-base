@@ -40,9 +40,10 @@ var textSize = map[WidgetSize]string{
 func (w TextWidget) RenderTo(s Session, m MarkupBuilder) {
 	pr := PrIf("TextWidget.RenderTo", false)
 	var textContent string
-	if w.staticContent != nil {
-		textContent = w.staticContent.(string)
-		pr("staticContent:", w.staticContent)
+	sc := w.StaticContent()
+	if sc != nil {
+		textContent = sc.(string)
+		pr("staticContent:", sc)
 	} else {
 		pr("RenderTo, widget id:", w.Id(), "reading string value; state provider:", w.stateProvider)
 		textContent = s.WidgetStringValue(w)

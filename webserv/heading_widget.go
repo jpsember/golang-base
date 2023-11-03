@@ -4,7 +4,6 @@ import (
 	. "github.com/jpsember/golang-base/base"
 )
 
-// A Widget that displays editable text
 type HeadingWidgetStruct struct {
 	BaseWidgetObj
 }
@@ -12,6 +11,7 @@ type HeadingWidgetStruct struct {
 type HeadingWidget = *HeadingWidgetStruct
 
 func NewHeadingWidget(id string) HeadingWidget {
+	Todo("This and the text field widget should share a common subclass?")
 	w := HeadingWidgetStruct{}
 	w.InitBase(id)
 	return &w
