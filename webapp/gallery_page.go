@@ -31,7 +31,7 @@ type GalleryPageStruct struct {
 	editorB             DataEditor
 	rand                JSRand
 	clickpic            int
-	uploadPictureWidget Widget
+	uploadedImageWidget Widget
 }
 
 var GalleryPageTemplate = &GalleryPageStruct{}
@@ -212,6 +212,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	m.PushStateMap(p.ourState)
 
 	if GAlert {
+		Todo("Have alert use the 'Id()' method instead")
 		p.alertWidget = NewAlertWidget("sample_alert", AlertInfo)
 		p.alertWidget.SetVisible(false)
 		m.Add(p.alertWidget)
@@ -223,9 +224,10 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			Alert("No animals available")
 		} else {
 			m.Open()
+			// Give it a unique prefix, so it doesn't conflict with any others (in case we add some later)
 			p.picEditor = NewDataEditorWithPrefix(anim, "upload_")
 
-			m.Id("foo").Label("Photo").AddFileUpload(p.uploadListener)
+			m.Label("Photo").AddFileUpload(p.uploadListener)
 
 			// The image widget will have the same id as the animal field that is to store its photo blob id.
 			//
@@ -246,7 +248,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 
 			imgWidget := m.AddImage(imgUrlProvider)
 			imgWidget.SetSize(AnimalPicSizeNormal, 0.3)
-			p.uploadPictureWidget = imgWidget
+			p.uploadedImageWidget = imgWidget
 
 			Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
 
@@ -382,9 +384,7 @@ Multiple line feeds:
 }
 
 func (p GalleryPage) uploadListener(s Session, source FileUpload, value []byte) error {
-	pr := PrIf("Gallery.uploadListener", true)
-
-	//pr("who called this?", Callers(0, 8))
+	pr := PrIf("Gallery.uploadListener", false)
 	Todo("!fileUploadWidget argument not used")
 
 	Alert("For simplicity, maybe file upload widgets don't have values.  They just return byte arrays, and what are done with them is up to the client.")
@@ -449,7 +449,7 @@ func (p GalleryPage) uploadListener(s Session, source FileUpload, value []byte) 
 		errOut = Error(problem)
 	} else {
 		p.picEditor.Put(Animal_PhotoThumbnail, imageId)
-		p.uploadPictureWidget.Repaint()
+		p.uploadedImageWidget.Repaint()
 	}
 	return errOut
 }
@@ -457,8 +457,6 @@ func (p GalleryPage) uploadListener(s Session, source FileUpload, value []byte) 
 // ------------------------------------------------------------------------------------
 // List
 // ------------------------------------------------------------------------------------
-
-const galleryItemPrefix = "gallery_item:"
 
 type GalleryListImplementationStruct struct {
 	BasicListStruct
