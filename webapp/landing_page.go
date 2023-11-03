@@ -46,7 +46,6 @@ func (p LandingPage) Args() []string { return nil }
 func (p LandingPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)
 
-	Pr("generate widgets for landing page")
 	sess.PushStateMap(p.widgetState)
 
 	m.Label("gallery").Align(AlignRight).Size(SizeTiny).Listener(p.galleryListener).AddBtn()

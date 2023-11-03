@@ -347,7 +347,7 @@ func (m WidgetManager) AddList(list ListInterface, itemWidget Widget) ListWidget
 	return t
 }
 
-// Utility method to determine the label and id for text fields (text fields, headings).
+// Utility method to determine the label and id for a new text field (text fields, headings).
 // The label can either be expressed as a string (static content),
 // or an id (dynamic content, read from session state).  If static, there should *not* be
 // a pending id.
@@ -364,19 +364,17 @@ func (m WidgetManager) getStaticContentAndId() (string, string, bool) {
 func (m WidgetManager) AddHeading() HeadingWidget {
 	staticContent, id, wasStatic := m.getStaticContentAndId()
 	w := NewHeadingWidget(id)
-	w.SetSize(m.consumePendingSize())
-	Todo("!Setting WidgetSize seems to have no effect on headings")
-	w.SetAlign(m.consumePendingAlign())
 	if wasStatic {
 		w.SetStaticContent(staticContent)
 	}
-	Pr("AddHeading, id", id, "staticContent:", staticContent, "wasStatic:", wasStatic)
+	w.SetSize(m.consumePendingSize())
+	Todo("!Setting WidgetSize seems to have no effect on headings")
+	w.SetAlign(m.consumePendingAlign())
 	m.Add(w)
 	return w
 }
 
 func (m WidgetManager) AddText() TextWidget {
-	Todo("Do we want to bother supporting static content for text fields?  Seems like a special case, not worth the trouble")
 	staticContent, id, wasStatic := m.getStaticContentAndId()
 	w := NewTextWidget(id, m.consumePendingSize(), m.consumePendingHeight(), m.ConsumeOptionalPendingClickListener())
 	if wasStatic {

@@ -19,7 +19,7 @@ const (
 	GVisibility          = false
 	GTextArea            = false
 	GColumns             = true
-	GUserHeader          = false
+	GUserHeader          = true
 	GCardList            = false
 )
 
@@ -63,9 +63,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 	m := GenerateHeader(sess, p)
 
 	if GUserHeader {
-		m.PushStateMap(p.ourState)
 		AddUserHeaderWidget(sess)
-		m.PopStateMap()
 	}
 
 	// ------------------------------------------------------------------------------------
@@ -339,7 +337,7 @@ func (p GalleryPage) generateWidgets(sess Session) {
 			m.Open()
 
 			cbListener := func(s Session, widget CheckboxWidget, state bool) (bool, error) {
-				Pr("gallery, id", widget.Id(), "new state:", state)
+				Pr("Gallery checkbox, id", widget.Id(), "new state:", state)
 				return state, nil
 			}
 			m.Id("x59").Label(`Label for X59`).AddCheckbox(cbListener)

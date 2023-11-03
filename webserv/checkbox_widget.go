@@ -40,8 +40,6 @@ func checkboxListenWrapper(sess Session, widget Widget, value string, args Widge
 	pr := PrIf("checkboxListenWrapper", false)
 	highLevelListener := widget.(CheckboxWidget)
 	boolValue := false
-	Todo("!Add support for QUO in BasePrinter")
-	Todo("!Rename QUOTED -> QUO to avoid confusion with func")
 	pr("widget id:", widget.Id(), "value:", Quoted(value))
 	if b, err := strconv.ParseBool(value); err != nil {
 		Alert("trouble parsing bool from:", Quoted(value))

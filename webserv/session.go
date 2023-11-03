@@ -304,7 +304,7 @@ func (s Session) parseAjaxRequest() {
 }
 
 func (s Session) auxHandleAjax() {
-	pr := PrIf("auxHandleAjax", true)
+	pr := PrIf("auxHandleAjax", false)
 	pr("start handling")
 
 	didSomething := false
