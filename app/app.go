@@ -71,7 +71,7 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 
 	if a.hasMultipleOperations() {
 		sb.WriteString("Usage: [--<app arg>]* [<operation> <operation arg>*]*\n\n")
-		sb.WriteString("Operations:\n")
+		sb.WriteString("Operations:\n\n")
 	}
 	for _, key := range a.orderedCommands.Array() {
 		oper := a.operMap[key]
