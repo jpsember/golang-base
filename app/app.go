@@ -73,13 +73,25 @@ func (a *App) CmdLineArgs() *CmdLineArgs {
 		sb.WriteString("Usage: [--<app arg>]* [<operation> <operation arg>*]*\n\n")
 		sb.WriteString("Operations:\n")
 	}
+
 	for _, key := range a.orderedCommands.Array() {
 		oper := a.operMap[key]
-		bp := NewBasePrinter()
-		oper.GetHelp(bp)
-		sb.WriteString(bp.String())
-		if !a.hasMultipleOperations() {
-			sb.WriteString("\n\nUsage: " + a.Name())
+		summary, usage := oper.GetHelp()
+		if summary == "" {
+			summary = "(No summary provided!)"
+		}
+		if a.hasMultipleOperations() {
+			sb.WriteString(key + " " + usage)
+			sb.WriteString("\n")
+			sb.WriteString(Spaces(8) + summary)
+		} else {
+			if usage != "" {
+				sb.WriteString(usage)
+				sb.WriteString("\n")
+				sb.WriteString(Spaces(8) + summary)
+			} else {
+				sb.WriteString(summary)
+			}
 		}
 		sb.WriteString("\n")
 	}

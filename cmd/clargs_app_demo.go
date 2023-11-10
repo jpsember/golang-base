@@ -21,8 +21,9 @@ func (oper *JumpOper) Perform(app *App) {
 	Pr("goodbye")
 }
 
-func (oper *JumpOper) GetHelp(bp *BasePrinter) {
-	bp.Pr(oper.UserCommand(), ": An example of an app that uses conventional command line arguments only.")
+func (oper *JumpOper) GetHelp() (summary, usage string) {
+	summary = "An example of an app that uses conventional command line arguments only."
+	return
 }
 
 func (oper *JumpOper) ProcessArgs(c *CmdLineArgs) {
@@ -78,8 +79,10 @@ func (oper *FooOper) Perform(app *App) {
 	Pr("goodbye")
 }
 
-func (oper *FooOper) GetHelp(bp *BasePrinter) {
-	bp.Pr(oper.UserCommand(), ": This is help for FooOper.")
+func (oper *FooOper) GetHelp() (summary, usage string) {
+	summary = "This is help for FooOper."
+	usage = "blargh <directory> count <int>"
+	return
 }
 
 func (oper *FooOper) ProcessArgs(c *CmdLineArgs) {

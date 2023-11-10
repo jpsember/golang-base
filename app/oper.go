@@ -8,8 +8,8 @@ type Oper interface {
 	// Get the name of the operation, to select it on the command line from others;
 	// if there is only one operation, it can return ""
 	UserCommand() string
-	// Add help information for this operation
-	GetHelp(printer *BasePrinter)
+	// Get a summary of the operation, and a summary of the arguments
+	GetHelp() (summary, usage string)
 	// Run the operation
 	Perform(app *App)
 }
