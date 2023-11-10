@@ -1,0 +1,16 @@
+class {
+  // Unique id, assigned by us
+  int id;
+
+  string message_id; // id assigned by email provider
+  long received_time_ms;
+
+  string from_address;
+  string to_address;
+  string subject;
+  string body;
+  string cc_address;
+  bool html;
+
+  *Attachment attachments;
+}

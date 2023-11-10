@@ -3,19 +3,24 @@ package webapp
 import (
 	. "github.com/jpsember/golang-base/app"
 	. "github.com/jpsember/golang-base/base"
-	"github.com/jpsember/golang-base/jimg"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
+	"github.com/jpsember/golang-base/webserv/gen/webserv_data"
+	"time"
 )
 
 const AutoLogInName = "donor1"
 
+var DevAutoLogIn = false && Alert("!Performing auto log in with:", AutoLogInName)
 var DevDatabase = Alert("!Using development database")
+var DevGallery = true && Alert("!Showing gallery")
+var AllowTestInputs = DevDatabase && false && Alert("!Allowing test inputs (user name, password, etc)")
+var AutoActivateUser = DevDatabase && Alert("?Automatically activating user")
+
+var ProjStructure ProjectStructure
 
 type AnimalOperStruct struct {
-	appRoot      Path
 	autoLoggedIn bool
-	resources    Path
 }
 
 type AnimalOper = *AnimalOperStruct
@@ -32,19 +37,36 @@ func (oper AnimalOper) ProcessArgs(c *CmdLineArgs) {
 }
 
 func (oper AnimalOper) Perform(app *App) {
+	SharedBackgroundTaskManager().Start()
 	ClearAlertHistory(false)
-	ExitOnPanic()
+	{
+		f := NewPathM("project_structure.json")
+		if !f.Exists() {
+			BadState("Cannot find:", f)
+		}
+		ProjStructure = DefaultProjectStructure.Parse(JSMapFromFileM(f)).(ProjectStructure)
+	}
+	if ProjStructure.DevMachine() {
+		DebugUIFlag = true
+		ExitOnPanic()
+	}
 
-	oper.appRoot = AscendToDirectoryContainingFileM("", "go.mod").JoinM("webserv")
-	oper.resources = oper.appRoot.JoinM("resources")
+	if false && Alert("doing zoho experiment") {
+		PrepareZoho(nil)
+		oper.zohoExperiment()
+		return
+	}
+
 	oper.prepareDatabase()
-
-	DebugUIFlag = true
+	oper.prepareEmail()
 
 	s := NewJServer(oper)
 	s.SessionManager = BuildSessionMap()
-	s.BaseURL = "jeff.org"
-	s.KeyDir = oper.appRoot.JoinM("https_keys")
+	g := ProjStructure
+	s.BaseURL = g.BaseUrl()
+	s.KeyDir = g.KeyDir()
+	s.CertName = g.CertName()
+	s.KeyName = g.KeyName()
 	SharedWebCache = ConstructSharedWebCache()
 	s.BlobCache = SharedWebCache
 	s.StartServing()
@@ -56,41 +78,26 @@ func (oper AnimalOper) Perform(app *App) {
 
 func (oper AnimalOper) PageTemplates() []Page {
 	return []Page{
-		LandingPageTemplate, GalleryPageTemplate, NewSignUpPage(nil), FeedPageTemplate, ManagerPageTemplate,
+		LandingPageTemplate, ForgotPasswordPageTemplate, UserSettingsPageTemplate, ResetPasswordPageTemplate,
+		CheckMailPageTemplate, GalleryPageTemplate, SignUpPageTemplate, FeedPageTemplate, ManagerPageTemplate,
 		ViewAnimalPageTemplate, CreateAnimalPageTemplate, EditAnimalPageTemplate,
 	}
 }
 
 func (oper AnimalOper) Resources() Path {
-	return oper.resources
+	return ProjStructure.ResourceDir()
 }
+
+func (oper AnimalOper) DevMode() bool {
+	return ProjStructure.DevMachine()
+}
+
 func (oper AnimalOper) UserForSession(s Session) AbstractUser {
 	return OptSessionUser(s)
 }
 
 func (oper AnimalOper) DefaultPageForUser(abstractUser AbstractUser) Page {
-	if false && Alert("gallery") {
-		return GalleryPageTemplate
-	}
-	user := abstractUser.(User)
-	userId := 0
-	if user != nil {
-		userId = user.Id()
-	}
-	var result Page
-	if userId == 0 || !IsUserLoggedIn(user.Id()) {
-		result = LandingPageTemplate
-	} else {
-		switch user.UserClass() {
-		case UserClassDonor:
-			result = FeedPageTemplate
-		case UserClassManager:
-			result = ManagerPageTemplate
-		default:
-			NotSupported("page for", user.UserClass())
-		}
-	}
-	return result
+	return DefaultPageForUser(abstractUser)
 }
 
 // JServer callback to perform any optional additional initialization for a new session.
@@ -98,6 +105,9 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 
 	// Perform a once-only attempt to do an auto login
 	for {
+		if !DevAutoLogIn {
+			break
+		}
 		nm := AutoLogInName
 		if nm == "" {
 			break
@@ -124,31 +134,31 @@ func (oper AnimalOper) PrepareSession(sess Session) {
 // ------------------------------------------------------------------------------------
 
 func (oper AnimalOper) prepareDatabase() {
-	dataSourcePath := ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
+	dataSourcePath := ProjStructure.DbDatasourcePath() //ProjectDirM().JoinM("webapp/sqlite/animal_app_TMP_.db")
 
-	if false && DevDatabase && Alert("Deleting database:", dataSourcePath) {
+	if false && !ProjStructure.DevMachine() && DevDatabase && Alert("Deleting database:", dataSourcePath) {
 		DeleteDatabase(dataSourcePath)
 	}
 	CreateDatabase(dataSourcePath.String())
 
 	if b, _ := ReadBlob(1); b.Id() == 0 {
-
 		// Generate default images as blobs
 		animalPicPlaceholderPath := oper.Resources().JoinM("placeholder.jpg")
-		img := CheckOkWith(jimg.DecodeImage(animalPicPlaceholderPath.ReadBytesM()))
-		img = img.ScaleToSize(AnimalPicSizeNormal)
-		jpeg := CheckOkWith(img.ToJPEG())
-		Todo("?Later, keep the original image around for crop adjustments; but for now, scale and store immediately")
-		b := NewBlob()
-		b.SetData(jpeg)
-		AssignBlobName(b)
-		created, err := CreateBlob(b)
-		CheckOk(err)
-		CheckState(created.Id() == 1, "unexpected id for placeholder:", created.Id())
+		b := CreateBlobFromImageFile(animalPicPlaceholderPath)
+		//img := CheckOkWith(jimg.DecodeImage(animalPicPlaceholderPath.ReadBytesM()))
+		//img = img.ScaleToSize(AnimalPicSizeNormal)
+		//jpeg := CheckOkWith(img.ToJPEG())
+		//Todo("?Later, keep the original image around for crop adjustments; but for now, scale and store immediately")
+		//b := NewBlob()
+		//b.SetData(jpeg)
+		//AssignBlobName(b)
+		//created, err := CreateBlob(b)
+		//CheckOk(err)
+		CheckState(b.Id() == 1, "unexpected id for placeholder:", b.Id())
 	}
 
 	if DevDatabase {
-		PopulateDatabase()
+		PopulateDatabase(ProjStructure)
 	}
 }
 
@@ -206,4 +216,37 @@ func LogOut(s Session) bool {
 	}
 	s.PutSessionData(SessionKey_User, nil)
 	return true
+}
+
+func (oper AnimalOper) zohoExperiment() {
+	pr := PrIf("zohoExperiment", true)
+
+	if true {
+		pr(SharedZoho().AccountId())
+		pr(SharedZoho().ReadInbox())
+		return
+	}
+	m := webserv_data.NewEmail()
+	m.SetSubject("Sample email at " + time.Now().Format(time.DateTime))
+	m.SetBody("this is the body (or content)")
+	m.SetToAddress("jpsember@gmail.com")
+
+	img := ProjectDirM().JoinM("webserv/resources/picture.jpg")
+	img2 := ProjectDirM().JoinM("webserv/resources/placeholder.jpg")
+
+	m.SetAttachments([]webserv_data.Attachment{
+		webserv_data.NewAttachment().SetData(img.ReadBytesM()).SetName(img.Base()),
+		webserv_data.NewAttachment().SetData(img2.ReadBytesM()).SetName(img2.Base()),
+	})
+
+	pr("sending:", INDENT, EmailSummary(m))
+
+	err := SharedZoho().SendEmail(m)
+	CheckState(err == nil)
+}
+
+func (oper AnimalOper) prepareEmail() {
+	err := PrepareZoho(nil)
+	CheckOk(err, "failed to PrepareZoho")
+	SharedEmailManager().Start()
 }

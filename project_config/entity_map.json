@@ -1,0 +1,15 @@
+{      "entity_map" : { "linode" : {          "id" : "linode",
+                                         "os_type" : "ubuntu",
+                                     "project_dir" : "/home/jeff",
+                                       "user" : "jeff",
+                                      "static_url" : true,
+                                                "url" : "172.232.171.126",
+                                            "port" : 22
+                                   } },
+  "entity_template" : {          "id" : "",
+                            "os_type" : "unknown",
+                        "project_dir" : "",
+                         "static_url" : false,
+                               "user" : ""
+                      }
+}

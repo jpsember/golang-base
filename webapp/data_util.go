@@ -2,7 +2,9 @@ package webapp
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"github.com/jpsember/golang-base/jimg"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
+	"github.com/jpsember/golang-base/webserv"
 	"net/mail"
 	"strings"
 	"sync"
@@ -11,8 +13,6 @@ import (
 type BlobId string
 
 const blobIdLength = 10
-
-var AllowTestInputs = DevDatabase //Alert("!Allowing test inputs (user name, password, etc)")
 
 func (b BlobId) String() string {
 	return string(b)
@@ -30,7 +30,7 @@ type Currency = int
 const DollarsToCurrency = 100
 
 func CurrencyToString(amount Currency) string {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	pr("currency to string, amount:", amount)
 	j := IntToString(amount)
 	h := len(j)
@@ -64,6 +64,10 @@ var lock sync.Mutex
 
 type ValidateFlag int
 
+func (x ValidateFlag) String() string {
+	return BinaryN(int(x))
+}
+
 const (
 	VALIDATE_EMPTYOK       ValidateFlag = 1 << iota // A blank value is ok
 	VALIDATE_ONLY_NONEMPTY                          // Check only that the value isn't blank
@@ -89,8 +93,6 @@ var ErrorUserPasswordIllegalCharacters = Error("Password must not contain spaces
 var ErrorUserPasswordsDontMatch = Error("The two passwords don't match")
 var ErrorUserEmailLength = Error("Email address is too long")
 
-const USER_PASSWORD_MIN_LENGTH = 8
-const USER_PASSWORD_MAX_LENGTH = 20
 const USER_EMAIL_MAX_LENGTH = 40
 
 const ANIMAL_NAME_MAX_LENGTH = 16
@@ -105,6 +107,8 @@ var UserPasswordValidatorRegExp = Regexp(`^[^ ]+$`)
 var AnimalNameValidatorRegExp = Regexp(`^[a-zA-Z]+(?: [a-zA-Z]+)*$`)
 
 func ValidateAnimalName(name string, flag ValidateFlag) (string, error) {
+	pr := PrIf("ValidateAnimalName", false)
+	pr("name:", QUO, name, "flag:", flag)
 	name = strings.TrimSpace(name)
 	Todo("?Replace two or more spaces by a single space")
 	validatedName := name
@@ -121,11 +125,12 @@ func ValidateAnimalName(name string, flag ValidateFlag) (string, error) {
 	} else if !AnimalNameValidatorRegExp.MatchString(name) {
 		err = ErrorAnimalNameIllegalCharacters
 	}
-
+	pr("returning", QUO, validatedName, "error:", err)
 	return validatedName, err
 }
 
 func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
+	pr := PrIf("ValidateUserName", false)
 	userName = strings.TrimSpace(userName)
 	Todo("?Replace two or more spaces by a single space")
 	validatedName := userName
@@ -140,16 +145,16 @@ func ValidateUserName(userName string, flag ValidateFlag) (string, error) {
 	} else if !UserNameValidatorRegExp.MatchString(userName) {
 		err = ErrorUserNameIllegalCharacters
 	}
+	pr("userName:", QUO, userName, "flags:", flag, "result:", QUO, validatedName, "err:", err)
 	return validatedName, err
 }
 
 func ValidateUserPassword(password string, flag ValidateFlag) (string, error) {
-	pr := PrIf(false)
-	pr("ValidateUserPassword:", Quoted(password), flag)
+	pr := PrIf(">ValidateUserPassword", false)
+	pr("pwd:", QUO, password, flag)
 
 	text := password
 	text = strings.TrimSpace(text)
-	validatedName := text
 	var err error
 
 	x := len(text)
@@ -158,23 +163,25 @@ func ValidateUserPassword(password string, flag ValidateFlag) (string, error) {
 			err = ErrorEmptyUserPassword
 		}
 	} else if !flag.Has(VALIDATE_ONLY_NONEMPTY) {
-		if x < USER_PASSWORD_MIN_LENGTH || x > USER_PASSWORD_MAX_LENGTH {
+		if x < webserv.USER_PASSWORD_MIN_LENGTH || x > webserv.USER_PASSWORD_MAX_LENGTH {
 			err = ErrorUserPasswordLength
 		} else if !UserPasswordValidatorRegExp.MatchString(text) {
 			err = ErrorUserPasswordIllegalCharacters
 		}
 	}
 
-	pr("before replaceWithTestInput:", err, validatedName)
-	err, validatedName = replaceWithTestInput(err, validatedName, "a", "bigpassword123")
-	pr("after replaceWithTestInput:", err, validatedName)
-	return validatedName, err
+	pr("before replaceWithTestInput:", err, text)
+	err, text = replaceWithTestInput(err, text, "a", "bigpassword123")
+	pr("after replaceWithTestInput:", err, text)
+	return text, err
 }
 
 func ValidateEmailAddress(emailAddress string, flag ValidateFlag) (string, error) {
+	pr := PrIf(">ValidateEmailAddress", false)
+	pr("email:", QUO, emailAddress, flag)
+
 	text := emailAddress
 	text = strings.TrimSpace(text)
-	validatedEmail := text
 	var err error
 
 	x := len(text)
@@ -186,15 +193,15 @@ func ValidateEmailAddress(emailAddress string, flag ValidateFlag) (string, error
 		if x > USER_EMAIL_MAX_LENGTH {
 			err = ErrorUserEmailLength
 		} else {
-			_, err2 := mail.ParseAddress(text)
-			if err2 != nil {
+			_, err = mail.ParseAddress(text)
+			if err != nil {
 				err = ErrorUserEmailInvalid
 			}
 		}
 	}
-
-	err, validatedEmail = replaceWithTestInput(err, validatedEmail, "a", "joe_user@anycompany.xyx")
-	return validatedEmail, err
+	err, text = replaceWithTestInput(err, text, "a", "joe_user@anycompany.xyx")
+	pr("returning:", QUO, text, err)
+	return text, err
 }
 
 // If AllowTestInputs, and value is empty or equals shortcutForTest, return (nil, fullValueForTest).
@@ -202,7 +209,7 @@ func replaceWithTestInput(err error, value string, shortcutForTest string, fullV
 	if AllowTestInputs {
 		if value == shortcutForTest || value == "" {
 			value = fullValueForTest
-			Alert("?<2replaceWithTestInput; replacing: " + shortcutForTest + " with: " + value)
+			Alert("?<2replaceWithTestInput;    replacing: " + shortcutForTest + " with: " + value)
 			err = nil
 		}
 	}
@@ -223,3 +230,17 @@ func BlobSummary(blob Blob) JSMap {
 }
 
 var AnimalPicSizeNormal = IPointWith(600, 800)
+
+func CreateBlobFromImageFile(imageFile Path) Blob {
+	img := CheckOkWith(jimg.DecodeImage(imageFile.ReadBytesM()))
+	img = img.ScaleToSize(AnimalPicSizeNormal)
+	jpeg := CheckOkWith(img.ToJPEG())
+	Todo("?Later, keep the original image around for crop adjustments; but for now, scale and store immediately")
+	b := NewBlob()
+	b.SetData(jpeg)
+	AssignBlobName(b)
+	blob, err := CreateBlob(b)
+	CheckOk(err)
+	Pr("created blob", blob.Id(), "from image", imageFile)
+	return blob
+}

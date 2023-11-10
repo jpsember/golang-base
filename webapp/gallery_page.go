@@ -8,208 +8,388 @@ import (
 	"strings"
 )
 
-// ------------------------------------------------------------------------------------
-// Page implementation
-// ------------------------------------------------------------------------------------
+const (
+	GDistinctDataObjects = false
+	GList                = false
+	GListMultiItems      = false
+	GListPager           = false
+	GAlert               = false
+	GClickPic            = false
+	GUploadPic           = false
+	GVisibility          = false
+	GTextArea            = false
+	GColumns             = true
+	GUserHeader          = true
+	GCardList            = false
+)
 
 type GalleryPageStruct struct {
-	fooMap JSMap
-	list   ListWidget
+	alertWidget         AlertWidget
+	picEditor           DataEditor
+	ourState            JSMap
+	editorA             DataEditor
+	editorB             DataEditor
+	rand                JSRand
+	clickpic            int
+	uploadedImageWidget Widget
 }
 
-func NewGalleryPage(sess Session) Page {
-	t := &GalleryPageStruct{
-		fooMap: NewJSMap().Put("bar", "hello"),
-	}
-	if sess != nil {
-		t.generateWidgets(sess)
-	}
-	return t
-}
-
-const GalleryPageName = "gallery"
-
-var GalleryPageTemplate = NewGalleryPage(nil)
+var GalleryPageTemplate = &GalleryPageStruct{}
 
 func (p GalleryPage) ConstructPage(s Session, args PageArgs) Page {
-	if args.CheckDone() {
-		return NewGalleryPage(s)
+	if !args.CheckDone() {
+		return nil
 	}
-	return nil
+	x := &GalleryPageStruct{
+		rand:     NewJSRand().SetSeed(1234),
+		ourState: NewJSMap(),
+	}
+	x.generateWidgets(s)
+	return x
 }
 
 func (p GalleryPage) Name() string {
-	return GalleryPageName
+	return "gallery"
 }
 
-func (p GalleryPage) Args() []string { return EmptyStringSlice }
+func (p GalleryPage) Args() []string { return nil }
 
 // ------------------------------------------------------------------------------------
 
-const sampleImageId = "sample_image"
-
-var alertWidget AlertWidget
-var myRand = NewJSRand().SetSeed(1234)
-
-const gallery_card_prefix = "gallery_card."
-
 func (p GalleryPage) generateWidgets(sess Session) {
-
-	trim := false && Alert("removing most widgets")
+	pr := PrIf("GalleryPage.generateWidgets", false)
+	pr("generateWidgets")
 
 	m := GenerateHeader(sess, p)
 
-	if !trim {
+	if GUserHeader {
 		AddUserHeaderWidget(sess)
-		alertWidget = NewAlertWidget("sample_alert", AlertInfo)
-		alertWidget.SetVisible(false)
-		m.Add(alertWidget)
 	}
 
-	{
-		x := NewGalleryListImplementation()
+	// ------------------------------------------------------------------------------------
+	// A list of items that have a static text field + button
+	// ------------------------------------------------------------------------------------
 
-		listItemWidget := m.Open()
-		m.Id("foo_text").AddText()
-		m.Close()
-		m.Detach(listItemWidget)
+	if GList {
 
-		listProvider := func(sess Session, widget *ListWidgetStruct, itemId int) WidgetStateProvider {
-			json := NewJSMap()
-			json.Put("foo_text", ToString("Item #", itemId, x.names[itemId]))
-			return NewStateProvider("", json)
+		// Declarations
+		var listItemWidget Widget
+		var glist ListInterface
+		var listWidget ListWidget
+
+		{
+			listItemWidget = m.Open()
+
+			glist = NewGalleryListImplementation()
+
+			m.Col(8)
+			// We want all the list item widgets to get their state from the list itself;
+			// so we haven't pushed a state map yet
+
+			listItemTextListener := func(s Session, widget Widget, args WidgetArgs) {
+				elementId := listWidget.CurrentElement()
+				mp := glist.ItemStateMap(s, elementId)
+				Pr("GList item button event, args:", args, "id:", widget.Id(), "element:", elementId, "state:", mp)
+			}
+
+			listItemButtonListener := func(s Session, widget Widget, args WidgetArgs) {
+				elementId := listWidget.CurrentElement()
+				mp := glist.ItemStateMap(s, elementId)
+				Pr("GList item button event, args:", args, "id:", widget.Id(), "element:", elementId, "state:", mp)
+			}
+
+			m.Id("foo_text").Height(3).Listener(listItemTextListener).AddText()
+			m.Col(4)
+
+			Todo("!BasePrinter shouldn't align integers/floats to columns unless an ALIGN flag has been added?")
+
+			m.Id("foo_btn").Listener(listItemButtonListener).Label("Ok").AddBtn()
+			m.Close()
 		}
-
-		p.list = m.AddList(x, listItemWidget, listProvider)
-		if trim {
-			p.list.WithPageControls = false
-		}
+		listWidget = m.Id("pets").AddList(glist, listItemWidget)
+		listWidget.WithPageControls = GListPager
 		Todo("!Add support for empty list items, to pad out page to full size")
 	}
 
-	if trim {
-		return
+	// ------------------------------------------------------------------------------------
+	// A list of animal cards
+	// ------------------------------------------------------------------------------------
+
+	if GCardList {
+		// Declarations
+		var listWidget ListWidget
+		var listItemWidget Widget
+		var glist ListInterface
+
+		{
+			clickListener := func(sess *SessionStruct, widget Widget, args WidgetArgs) {
+				animalId := listWidget.CurrentElement()
+				Pr("Card list, click on animal:", animalId, glist.ItemStateMap(sess, animalId).GetString(Animal_Name))
+			}
+			cardWidget := NewAnimalCard(m, clickListener, "", nil)
+			listItemWidget = cardWidget
+			m.Add(cardWidget)
+			{
+				animList := NewAnimalList(getAnimals(), cardWidget)
+				animList.ElementsPerPage = 3
+				glist = animList
+			}
+		}
+		listWidget = m.AddList(glist, listItemWidget)
+		listWidget.WithPageControls = false
 	}
-	m.Open()
 
-	m.Id("fred").Label(`Fred`).AddButton(buttonListener)
+	// ------------------------------------------------------------------------------------
+	// Two widget sets displaying a couple of data objects, each set with a unique prefix
+	// ------------------------------------------------------------------------------------
 
-	{
-		m.Col(4)
+	if GDistinctDataObjects {
+		m.Open()
+		p.editorA = NewDataEditorWithPrefix(NewAnimal().SetName("Andy"), "a")
+		p.editorB = NewDataEditorWithPrefix(NewAnimal().SetName("Brian"), "b")
 
-		cardListener := func(sess Session, widget NewCard) { Pr("card listener, animal id:", widget.Animal().Id()) }
-		cardButtonListener := func(sess Session, widget NewCard) { Pr("card button listener, name:", widget.Animal().Name()) }
+		nameListener := func(sess Session, widget InputWidget, value string) (string, error) {
+			Pr("GDDistinctDataObjects listener, id:", QUO, widget.Id(), "new value:", QUO, value, "; current names:", INDENT, //
+				p.editorA.GetString("name"), CR, p.editorB.GetString("name"))
+			return value, nil
+		}
 
-		// Create a new card that will contain other widgets
-		m.Add(
-			NewNewCard("gallery_card", ReadAnimalIgnoreError(3), cardListener, "Hello", cardButtonListener))
+		sess.PushEditor(p.editorA)
+		m.Label("Name A").Id(Animal_Name).AddInput(nameListener)
+		sess.PopEditor()
 
-		m.Add(
-			NewNewCard("gallery_card2", ReadAnimalIgnoreError(4), nil, "Bop", cardButtonListener))
+		sess.PushEditor(p.editorB)
+		b := m.Label("Name B").Id(Animal_Name).AddInput(nameListener)
+		sess.PopEditor()
 
+		m.Listener(
+			func(s Session, w Widget, args WidgetArgs) {
+				s.SetWidgetValue(b, RandomText(p.rand, 3, false))
+				b.Repaint()
+			}).Label("Repaint B").AddBtn()
+		m.Close()
+	}
+
+	// ------------------------------------------------------------------------------------
+	// A clickable image; clicking on it changes the image
+	// ------------------------------------------------------------------------------------
+
+	if GClickPic {
 		m.Open()
 
-		m.PushStateProvider(NewStateProvider("", p.fooMap))
-		m.PushIdPrefix("")
-		{
-
-			m.Col(4)
-			m.Label("Some static text").AddText()
-			m.Id("bar").Label("Bar:").AddInput(p.fooListener)
+		var imgUrlProvider = func(s Session) string {
+			pr := PrIf("imgURLProvider", false)
+			// We are storing the image's blob id in the animal's photo_thumbnail field,
+			// so we can use the editor's embedded JSMap to access it.
+			imageId := p.clickpic
+			pr("provideURL, image id read from state:", imageId)
+			url := ""
+			if imageId != 0 {
+				url = SharedWebCache.GetBlobURL(imageId)
+				pr("read into cache, url:", url)
+			}
+			return url
 		}
-		m.PopIdPrefix()
-		m.PopStateProvider()
-		m.Close()
 
+		var imgWidget ImageWidget
+
+		m.Listener(func(s Session, w Widget, args WidgetArgs) {
+			for {
+				anim := ReadAnimalIgnoreError(p.rand.Intn(8) + 1)
+				if anim == nil || p.clickpic == anim.PhotoThumbnail() {
+					continue
+				}
+				p.clickpic = anim.PhotoThumbnail()
+				break
+			}
+			imgWidget.Repaint()
+		})
+
+		imgWidget = m.Id("clickpic").AddImage(imgUrlProvider)
+		imgWidget.SetSize(AnimalPicSizeNormal, 0.3)
+
+		m.Close()
 	}
 
-	m.Id("sample_upload").Label("Photo").AddFileUpload(p.uploadListener)
-	imgWidget := m.Id("sample_image").AddImage()
-	Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
-	Todo("!give widgets values (state) in this way wherever appropriate")
-	imgWidget.URLProvider = p.provideURL
-	m.Close()
+	// ------------------------------------------------------------------------------------
 
-	m.Col(4)
-	m.Label("uniform delta").AddText()
-	m.Col(8)
-	m.Id("x58").Label(`Disabled`).AddButton(buttonListener).SetEnabled(false)
+	m.PushStateMap(p.ourState)
 
-	m.Col(2).AddSpace()
-	m.Col(3).Id("yz").Label(`Enabled`).AddButton(buttonListener)
+	if GAlert {
+		// We could leave it anonymous, but for clarity give it an explicit id
+		m.Id("our_alert_widget")
+		p.alertWidget = m.AddAlert(AlertInfo)
+		p.alertWidget.SetVisible(false)
+	}
 
-	m.Col(3).AddSpace()
-	m.Col(4).AddSpace()
+	if GUploadPic {
+		anim := ReadAnimalIgnoreError(3)
+		if anim.Id() == 0 {
+			Alert("No animals available")
+		} else {
+			m.Open()
+			// Give it a unique prefix, so it doesn't conflict with any others (in case we add some later)
+			p.picEditor = NewDataEditorWithPrefix(anim, "upload_")
 
-	m.Col(6)
-	m.Label("Bird").Id("bird")
-	m.AddInput(birdListener)
+			m.Label("Photo").AddFileUpload(p.uploadListener)
 
-	m.Col(6)
-	m.Open()
-	m.Id("x59").Label(`Label for X59`).AddCheckbox(p.checkboxListener)
-	m.Id("x60").Label(`With fruit`).AddSwitch(p.checkboxListener)
-	m.Close()
+			// The image widget will have the same id as the animal field that is to store its photo blob id.
+			//
 
-	m.Col(4)
-	m.Id("launch").Label(`Launch`).AddButton(buttonListener)
+			var imgUrlProvider = func(s Session) string {
+				pr := PrIf("imgURLProvider", false)
+				// We are storing the image's blob id in the animal's photo_thumbnail field,
+				// so we can use the editor's embedded JSMap to access it.
+				imageId := p.picEditor.GetInt(Animal_PhotoThumbnail)
+				pr("provideURL, image id read from state:", imageId)
+				url := ""
+				if imageId != 0 {
+					url = SharedWebCache.GetBlobURL(imageId)
+					pr("read into cache, url:", url)
+				}
+				return url
+			}
 
-	m.Col(8)
-	m.Label(`Sample text; is 5 < 26? A line feed
+			imgWidget := m.AddImage(imgUrlProvider)
+			imgWidget.SetSize(AnimalPicSizeNormal, 0.3)
+			p.uploadedImageWidget = imgWidget
+
+			Todo("!image widgets should have a state that is some sort of string, eg a blob name, or str(blob id); separately a URLProvider which may take the state as an arg")
+
+			Todo("!give widgets values (state) in this way wherever appropriate")
+
+			m.Close()
+		}
+	}
+
+	if GVisibility {
+		m.Open()
+		{
+			m.Col(6)
+
+			x := m.Label("hello").AddText()
+			//x.SetTrace(true)
+			x.SetVisible(false)
+			m.Label("Toggle Visibility").Listener(func(s Session, w Widget, args WidgetArgs) {
+				newState := !x.Visible()
+				Pr("setting x visible:", newState)
+				x.SetVisible(newState)
+				x.Repaint()
+			}).AddBtn()
+		}
+		m.Close()
+	}
+
+	if GTextArea {
+		m.Open()
+		{
+			m.Label("In HTML and CSS, background color is denoted by " +
+				"the background-color property. To add or " +
+				"change background color in HTML,").Size(SizeSmall).Height(5).AddText()
+
+		}
+		m.Close()
+	}
+
+	if GColumns {
+
+		buttonListener := func(s Session, widget Widget, args WidgetArgs) {
+			Pr("GColumns button listener, widget:", QUO, widget.Id(), "args:", args)
+			wid := widget.Id()
+			newVal := "Clicked: " + wid
+
+			if GAlert {
+				w := p.alertWidget
+				// Increment the alert class, and update its message
+				w.Class = (w.Class + 1) % AlertTotal
+				w.SetVisible(true)
+				s.SetWidgetValue(w, newVal)
+			}
+		}
+
+		// Open a container for all these various columns so we restore the default when it closes
+		m.Open()
+		{
+			m.Col(4)
+			m.Label("uniform delta").AddText()
+			m.Col(8)
+			m.Id("x58").Label(`Disabled`).Listener(buttonListener).AddBtn().SetEnabled(false)
+
+			m.Col(2).AddSpace()
+			m.Col(3).Label("Enabled").Listener(buttonListener).AddBtn()
+
+			m.Col(3).AddSpace()
+			m.Col(4).AddSpace()
+
+			m.Col(6)
+			m.Label("Bird").Id("bird")
+			var birdListener = func(s Session, widget InputWidget, newVal string) (string, error) {
+				var err error
+				Todo("?can we have sessions produce listener functions with appropriate handling of sess any?")
+				if newVal == "parrot" {
+					err = Error("No parrots, please!")
+				}
+				return newVal, err
+			}
+			m.AddInput(birdListener)
+
+			m.Col(6)
+			m.Open()
+
+			cbListener := func(s Session, widget CheckboxWidget, state bool) (bool, error) {
+				Pr("Gallery checkbox, id", widget.Id(), "new state:", state)
+				return state, nil
+			}
+			m.Id("x59").Label(`Label for X59`).AddCheckbox(cbListener)
+			m.Id("x60").Label(`With fruit`).AddSwitch(cbListener)
+			m.Close()
+
+			m.Col(4)
+			m.Id("launch").Label(`Launch`).Listener(buttonListener).AddBtn()
+
+			m.Col(8)
+			m.Label(`Sample text; is 5 < 26? A line feed
 "Quoted string"
 Multiple line feeds:
 
 
    an indented final line`)
-	m.AddText()
+			m.AddText()
 
-	m.Col(4)
-	m.Label("Animal").Id("zebra").AddInput(zebraListener)
-}
+			m.Col(4)
+			sess.PushStateMap(p.ourState)
 
-func birdListener(s Session, widget InputWidget, newVal string) (string, error) {
-	var err error
-	Todo("?can we have sessions produce listener functions with appropriate handling of sess any?")
-	if newVal == "parrot" {
-		err = Error("No parrots, please!")
+			var zebraListener = func(s Session, widget InputWidget, newVal string) (string, error) {
+
+				if GAlert {
+					w := p.alertWidget
+					// Increment the alert class, and update its message
+					w.Class = (w.Class + 1) % AlertTotal
+					w.SetVisible(newVal != "")
+
+					s.SetWidgetValue(w,
+						strings.TrimSpace(newVal+" "+
+							RandomText(p.rand, 55, false)))
+					w.Repaint()
+				}
+				return newVal, nil
+			}
+
+			m.Label("Animal").Id("zebra").AddInput(zebraListener)
+			sess.PopStateMap()
+		}
+		m.Close()
+
 	}
-	return newVal, err
+
+	sess.PopStateMap()
 }
 
-func zebraListener(s Session, widget InputWidget, newVal string) (string, error) {
+func (p GalleryPage) uploadListener(s Session, source FileUpload, value []byte) error {
+	pr := PrIf("Gallery.uploadListener", false)
+	Todo("!fileUploadWidget argument not used")
 
-	// Increment the alert class, and update its message
-	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
-	alertWidget.SetVisible(newVal != "")
-
-	s.State.Put(alertWidget.BaseId,
-		strings.TrimSpace(newVal+" "+
-			RandomText(myRand, 55, false)))
-	s.Repaint(alertWidget)
-	return newVal, nil
-}
-
-func buttonListener(s Session, widget Widget) {
-	Pr("buttonListener, widget:", widget.Id())
-	wid := widget.Id()
-	newVal := "Clicked: " + wid
-
-	// Increment the alert class, and update its message
-	alertWidget.Class = (alertWidget.Class + 1) % AlertTotal
-	alertWidget.SetVisible(true)
-
-	s.State.Put(alertWidget.BaseId,
-		strings.TrimSpace(newVal))
-	s.Repaint(alertWidget)
-}
-
-func (p GalleryPage) checkboxListener(s Session, widget CheckboxWidget, state bool) (bool, error) {
-	Pr("gallery, id", widget.Id(), "new state:", state)
-	return state, nil
-}
-
-func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, value []byte) error {
-	pr := PrIf(false)
+	Alert("For simplicity, maybe file upload widgets don't have values.  They just return byte arrays, and what are done with them is up to the client.")
 
 	var jpeg []byte
 	var imageId int
@@ -270,46 +450,10 @@ func (p GalleryPage) uploadListener(s Session, fileUploadWidget FileUpload, valu
 		}
 		errOut = Error(problem)
 	} else {
-		// Store the id of the blob in the image widget
-		s.State.Put(sampleImageId, imageId)
-		s.RepaintIds(sampleImageId)
+		p.picEditor.Put(Animal_PhotoThumbnail, imageId)
+		p.uploadedImageWidget.Repaint()
 	}
 	return errOut
-}
-
-func (p GalleryPage) provideURL(s Session) string {
-	pr := PrIf(true)
-	url := ""
-	imageId := s.State.OptInt(sampleImageId, 0)
-
-	pr("provideURL, image id read from state:", imageId)
-
-	if imageId != 0 {
-		url = SharedWebCache.GetBlobURL(imageId)
-		pr("read into cache, url:", url)
-	}
-	return url
-}
-
-func (p GalleryPage) clickListener(sess Session, message string) bool {
-	Todo("This explicit handler probably not required")
-	//
-	//if p.list.HandleClick(sess, message) {
-	//	return true
-	//}
-
-	if arg, f := TrimIfPrefix(message, gallery_card_prefix); f {
-		Pr("card click, remaining arg:", arg)
-		return true
-
-	}
-	return false
-}
-
-func (p GalleryPage) fooListener(sess Session, widget InputWidget, value string) (string, error) {
-	Todo("Clarify prefix role in provider, widget ids, and resolve confusion about add/subtract prefix")
-	Pr("fooListener, id:", widget.Id(), "value:", value, CR, "current map:", INDENT, p.fooMap)
-	return value, nil
 }
 
 // ------------------------------------------------------------------------------------
@@ -329,15 +473,16 @@ func NewGalleryListImplementation() GalleryListImplementation {
 	t := &GalleryListImplementationStruct{}
 	t.ElementsPerPage = 3
 	j := NewJSRand().SetSeed(1965)
-	for i := 0; i < 50; i++ {
+	maxItems := Ternary(GListMultiItems, 50, 1)
+	for i := 0; i < maxItems; i++ {
 		t.names = append(t.names, RandomText(j, 12, false))
 		t.ElementIds = append(t.ElementIds, i)
 	}
 	return t
 }
 
-func (g GalleryListImplementation) listItemRenderer(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
-	m.OpenTag(`div class="col-sm-4"`)
-	m.Escape(ToString("#", elementId, g.names[elementId]))
-	m.CloseTag()
+func (g GalleryListImplementation) ItemStateMap(s Session, elementId int) JSMap {
+	json := NewJSMap()
+	json.Put("foo_text", ToString("Item #", elementId, g.names[elementId]))
+	return json
 }

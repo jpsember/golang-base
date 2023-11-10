@@ -25,3 +25,7 @@ webapp/sqlite
 playground/playground.html
 
 datagen
+
+.entity_map.json
+
+email

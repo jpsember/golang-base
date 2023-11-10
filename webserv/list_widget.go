@@ -2,84 +2,157 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
-	"strings"
+	"math"
 )
 
-// A Widget that displays editable text
 type ListWidgetStruct struct {
 	BaseWidgetObj
-	list              ListInterface
-	itemStateProvider ListItemStateProvider
-	itemWidget        Widget
-	pagePrefix        string
-	WithPageControls  bool
-	Listener          ListWidgetListener
+	list                 ListInterface
+	itemWidget           Widget
+	itemPrefix           string // We want each item widget and its subwidgets to have a unique id
+	pagePrefix           string
+	WithPageControls     bool
+	cachedStateProviders map[int]JSMap
+	currentElement       int
+}
+type ListWidget = *ListWidgetStruct
+
+// Construct a ListWidget.
+//
+// itemWidget : this is a widget that will be rendered for each displayed item
+func NewListWidget(id string, list ListInterface, itemWidget Widget) ListWidget {
+	CheckArg(itemWidget != nil, "No itemWidget given")
+	w := ListWidgetStruct{
+		list:             list,
+		itemWidget:       itemWidget,
+		WithPageControls: true,
+		currentElement:   -1,
+	}
+	w.InitBase(id)
+	w.itemPrefix = id + ":"
+	w.pagePrefix = w.itemPrefix + "page:"
+	w.SetLowListener(w.lowLevelListener)
+	return &w
 }
 
-type ListWidgetListener func(sess Session, widget *ListWidgetStruct, itemId int, args string)
+func (w ListWidget) CurrentElement() int {
+	x := w.currentElement
+	if x < 0 {
+		BadState("ListWidget has no current element")
+	}
+	return x
+}
 
-func listListenWrapper(sess Session, widget Widget, value string) (any, error) {
-	pr := PrIf(false)
-	pr("listListenWrapper, value:", value)
+func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
+	debug := false
+	pr := PrIf("ListWidget.RenderTo", debug)
+	pr("ListWidget.RenderTo; id", QUO, w.Id())
 
+	m.TgOpen(`div id=`).A(QUO, w.Id()).TgContent()
+
+	m.Comment("ListWidget")
+
+	// Discard any previously cached state providers, and
+	// cache those we are about to construct (so we don't ask client
+	// to construct them unnecessarily).
+	w.cachedStateProviders = make(map[int]JSMap)
+	if w.WithPageControls {
+		w.renderPagination(s, m)
+	}
+
+	m.TgOpen(`div class="row"`).TgContent()
+	{
+		elementIds := w.list.GetPageElements()
+		pr("rendering page #:", w.list.CurrentPage(), "element ids:", elementIds)
+
+		// While rendering this list's items, we will set the state provider to one for each item.
+		CheckState(len(s.stack) == 2, "Expected two items on state stack: default item, plus one for list renderer")
+
+		for _, id := range elementIds {
+
+			// We want each rendered subwidget to have a unique id, and also a way to tie the widget to an element
+			s.PushIdPrefix(w.itemPrefix + IntToString(id) + ":")
+
+			sp := w.constructStateProvider(s, id)
+			pr(VERT_SP, "pushing state provider:", sp)
+			s.PushStateMap(sp)
+
+			// If we push the state provider AFTER the id prefix, it doesn't work! Why?
+			// Note that we are not calling RenderWidget(), which would not draw anything since the
+			// list item widget has been marked as detached
+
+			if debug {
+				pr("stacked state:", INDENT, s.StateStackToJson())
+			}
+			w.itemWidget.RenderTo(s, m)
+
+			s.PopStateMap()
+
+			s.PopIdPrefix()
+		}
+	}
+	m.TgClose()
+
+	if w.WithPageControls {
+		w.renderPagination(s, m)
+	}
+
+	m.TgClose()
+}
+
+func (w ListWidget) lowLevelListener(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
+	pr := PrIf("list_widget.lowLevelListener", false)
+	pr(VERT_SP, "value:", QUO, value, "args:", args, VERT_SP)
+
+	pr("stack size:", len(sess.stack))
 	b := widget.(ListWidget)
 
 	// See if this is an event from the page controls
-	if b.handlePagerClick(sess, value) {
+	if b.handlePagerClick(sess, args) {
 		pr("...page controls handled it")
 		return nil, nil
 	}
 
-	// This is presumably something like <element id> '.' <remainder>
-	itemId := -1
-	c := strings.IndexByte(value, '.')
-	remainder := ""
-	if c > 0 {
-		remainder = value[c+1:]
-		val, err := ParseInt(value[0:c])
-		pr("remainder:", remainder, "value:", val, "err:", err)
-		if err != nil {
-			Alert("#50 trouble parsing int from:", value)
-		} else {
-			itemId = int(val)
+	valid, elementId := args.ReadIntWithinRange(0, math.MaxInt32)
+	if !valid {
+		return nil, Error("Failed to read element id from", args)
+	}
+	pr("list element id:", elementId)
+
+	// If there are additional arguments, see if there is a widget id prefix within them
+	auxWidget := args.FindWidgetIdAsPrefix(sess)
+
+	if auxWidget != nil {
+		auxListener := auxWidget.LowListener()
+		if auxListener == nil {
+			Alert("#50No low-level listener for widget:", QUO, auxWidget.Id(), "within list:", QUO, w.Id())
+			return nil, nil
 		}
-	}
-
-	if b.Listener == nil {
-		Alert("#50No ListListener registered; itemId:", itemId, "args:", remainder)
+		w.currentElement = elementId
+		auxListener(sess, auxWidget, "", args)
+		w.currentElement = -1
+		return nil, nil
 	} else {
-		b.Listener(sess, b, itemId, remainder)
+		pr("!!! no auxilliary widget to get listener")
+		return nil, nil
 	}
-	return "", nil
 }
 
-type ListItemStateProvider func(sess Session, widget *ListWidgetStruct, elementId int) WidgetStateProvider
-
-type ListWidget = *ListWidgetStruct
-
-// Construct a ListWidget.
-// itemWidget : this is a widget that will be rendered for each displayed item.  Widgets within this widget
-// that do not have explicit state providers will use the one provided by the list renderer.
-func NewListWidget(id string, list ListInterface, itemWidget Widget, itemStateProvider ListItemStateProvider) ListWidget {
-	Todo("!If no item widget has been supplied, construct a default one")
-	Todo("!Have option to wrap list items in a clickable div")
-	CheckArg(itemWidget != nil, "No itemWidget given")
-
-	w := ListWidgetStruct{
-		list:              list,
-		itemWidget:        itemWidget,
-		itemStateProvider: itemStateProvider,
-		WithPageControls:  true,
+func (w ListWidget) constructStateProvider(s Session, elementId int) JSMap {
+	pr := PrIf("list_widget.constructStateProvider", false)
+	cached := w.cachedStateProviders[elementId]
+	if cached == nil {
+		pv := w.list.ItemStateMap(s, elementId)
+		cached = pv
+		pr("constructed:", cached)
+		w.cachedStateProviders[elementId] = cached
 	}
-	w.InitBase(id)
-	w.LowListen = listListenWrapper
-	w.pagePrefix = id + ".page_"
-	return &w
+	return cached
 }
 
-func (w ListWidget) ItemWidget() Widget {
-	return w.itemWidget
-}
+// ------------------------------------------------------------------------------------
+// Pagination
+// ------------------------------------------------------------------------------------
 
 func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 	np := w.list.TotalPages()
@@ -92,11 +165,11 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 	windowStart := Clamp(w.list.CurrentPage()-windowSize/2, 0, np-windowSize)
 	windowStop := Clamp(windowStart+windowSize, 0, np-1)
 
-	m.OpenTag(`div class="row"`)
+	m.TgOpen(`div class="row"`).TgContent()
 	{
-		m.OpenTag(`nav aria-label="Page navigation"`)
+		m.TgOpen(`nav aria-label="Page navigation"`).TgContent()
 		{
-			m.OpenTag(`ul class="pagination d-flex justify-content-center"`)
+			m.TgOpen(`ul class="pagination d-flex justify-content-center"`).TgContent()
 			{
 				w.renderPagePiece(s, m, `&lt;&lt;`, 0, true)
 				w.renderPagePiece(s, m, `&lt;`, w.list.CurrentPage()-1, true)
@@ -107,15 +180,14 @@ func (w ListWidget) renderPagination(s Session, m MarkupBuilder) {
 				w.renderPagePiece(s, m, `&gt;`, w.list.CurrentPage()+1, true)
 				w.renderPagePiece(s, m, `&gt;&gt;`, np-1, true)
 			}
-			m.CloseTag()
+			m.TgClose()
 		}
-		m.CloseTag()
+		m.TgClose()
 	}
-	m.CloseTag()
+	m.TgClose()
 }
 
 func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, targetPage int, edges bool) {
-
 	m.A(`<li class="page-item"><a class="page-link`)
 	targetPage = Clamp(targetPage, 0, w.list.TotalPages()-1)
 	if w.list.CurrentPage() == targetPage {
@@ -125,90 +197,24 @@ func (w ListWidget) renderPagePiece(s Session, m MarkupBuilder, label string, ta
 			m.A(` active`)
 		}
 	} else {
-		m.A(`" onclick="jsButton('`, s.baseIdPrefix+w.pagePrefix, targetPage, `')`)
+		m.A(`" onclick="jsButton('`, w.pagePrefix, targetPage, `')`)
 	}
 	m.A(`">`, label, `</a></li>`, CR)
 }
 
-func (w ListWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf(false)
-	pr("ListWidget.RenderTo")
-	m.Comment("ListWidget")
-
-	m.OpenTag(`div id="`, w.BaseId, `"`)
-
-	if w.WithPageControls {
-		w.renderPagination(s, m)
-	}
-
-	{
-		m.OpenTag(`div class="row"`)
-		{
-			elementIds := w.list.GetPageElements()
-			pr("rendering page num:", w.list.CurrentPage(), "element ids:", elementIds)
-
-			// While rendering this list's items, we will replace any existing default state provider with
-			// the list's one.  Save the current default state provider here, for later restoration.
-			savedStateProvider := s.baseStateProvider
-			savedBaseIdPrefix := s.baseIdPrefix
-			for _, id := range elementIds {
-				m.Comment("----------------- rendering list item with id:", id)
-
-				// Get the client to return a state provider
-				s.baseStateProvider = w.itemStateProvider(s, w, id)
-
-				// When rendering list items, any ids should be mangled in such a way that
-				//  a) ids remain distinct, even if we are rendering the same widget for each row; and
-				//  b) when responding to click events and the like, we can figure out which list, and
-				//      element within the list, generated the event.
-				s.baseIdPrefix = w.Id() + "." + IntToString(id) + "." + savedBaseIdPrefix
-				w.itemWidget.RenderTo(s, m)
-			}
-			// Restore the default state provider to what it was before we rendered the items.
-			s.baseIdPrefix = savedBaseIdPrefix
-			s.baseStateProvider = savedStateProvider
-		}
-		m.CloseTag()
-	}
-
-	if w.WithPageControls {
-		w.renderPagination(s, m)
-	}
-
-	m.CloseTag()
-}
-
 // Process a possible pagniation control event.
-func (w ListWidget) handlePagerClick(sess Session, message string) bool {
-	pr := PrIf(false)
-	pr("handlePagerClick, message:", message, "pagePrefix:", w.pagePrefix)
-	if page_str, f := TrimIfPrefix(message, "page_"); f {
-		pr("page_str:", page_str)
-		for {
-			i, err := ParseInt(page_str)
-			if ReportIfError(err, "handling click:", message) {
-				break
-			}
-			targetPage := int(i)
-			if targetPage < 0 || targetPage >= w.list.TotalPages() {
-				Alert("#50illegal page requested;", message)
-				break
-			}
-
-			if targetPage == w.list.CurrentPage() {
-				break
-			}
-			w.list.SetCurrentPage(targetPage)
-			sess.Repaint(w)
-			break
+func (w ListWidget) handlePagerClick(sess Session, args WidgetArgs) bool {
+	pr := PrIf("handlePagerClick", false)
+	pr("handlePagerClick, args:", args)
+	var result bool
+	var pageNumber int
+	result = args.ReadIf("page")
+	if result {
+		result, pageNumber = args.ReadIntWithinRange(0, w.list.TotalPages())
+		if result && pageNumber != w.list.CurrentPage() {
+			w.list.SetCurrentPage(pageNumber)
+			w.Repaint()
 		}
-		return true
 	}
-	return false
-}
-
-func defaultRenderer(session Session, widget ListWidget, elementId int, m MarkupBuilder) {
-	m.OpenTag(`div class="col-sm-16" style="background-color:` + DebugColor(elementId) + `"`)
-	m.WriteString("default list render, Id:" + IntToString(elementId))
-	m.CloseTag()
+	return result
 }

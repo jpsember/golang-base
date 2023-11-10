@@ -6,20 +6,26 @@ import (
 	"strings"
 )
 
+var DebugWidgetRepaint = false && Alert("DebugWidgetRepaint is in effect")
+
 // This function must be threadsafe!
 func DetermineSession(manager SessionManager, w http.ResponseWriter, req *http.Request, createIfNone bool) Session {
 
+	pr := PrIf("DetermineSession", false)
 	const sessionCookieName = "session_cookie"
 
 	// Determine what session this is, by examining cookies
 	var session Session
 	cookies := req.Cookies()
+	pr("getting cookies for request:", req.URL)
 	for _, c := range cookies {
+		pr("cookie:", c.Name, "value:", c.Value)
 		if c.Name == sessionCookieName {
 			sessionId := c.Value
 			session = manager.FindSession(sessionId)
 		}
 		if session != nil {
+			pr("found session:", session.SessionId)
 			break
 		}
 	}
@@ -29,9 +35,11 @@ func DetermineSession(manager SessionManager, w http.ResponseWriter, req *http.R
 		session = manager.CreateSession()
 		cookie := &http.Cookie{
 			Name:   sessionCookieName,
-			Value:  session.Id,
+			Value:  session.SessionId,
 			MaxAge: 1200, // 20 minutes
+			Path:   `/`,
 		}
+		pr("No cookie found, so creating session:", session.SessionId)
 		http.SetCookie(w, cookie)
 	}
 	return session

@@ -32,13 +32,15 @@ func NewCheckboxWidget(switchFlag bool, id string, label HtmlString, listener Ch
 		listener:   listener,
 	}
 	w.InitBase(id)
-	w.LowListen = checkboxListenWrapper
+	w.SetLowListener(checkboxListenWrapper)
 	return &w
 }
 
-func checkboxListenWrapper(sess Session, widget Widget, value string) (any, error) {
+func checkboxListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
+	pr := PrIf("checkboxListenWrapper", false)
 	highLevelListener := widget.(CheckboxWidget)
 	boolValue := false
+	pr("widget id:", widget.Id(), "value:", Quoted(value))
 	if b, err := strconv.ParseBool(value); err != nil {
 		Alert("trouble parsing bool from:", Quoted(value))
 	} else {
@@ -48,10 +50,10 @@ func checkboxListenWrapper(sess Session, widget Widget, value string) (any, erro
 }
 
 func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
-	auxId := w.AuxId()
+	auxId := s.PrependId(w.AuxId())
 
-	m.Comment("CheckboxWidget")
-	m.OpenTag(`div id="`, w.BaseId, `"`)
+	id := s.PrependId(w.Id())
+	m.TgOpen(`div id="`).A(id, `"`).TgContent()
 	{
 		var cbClass string
 		var role string
@@ -63,20 +65,18 @@ func (w CheckboxWidget) RenderTo(s Session, m MarkupBuilder) {
 			role = ``
 		}
 
-		m.Comment("checkbox").OpenTag(`div class=`, cbClass)
+		m.Comment("checkbox").TgOpen(`div class=`).A(QUO, cbClass).TgContent()
 		{
-			m.VoidTag(
-				`input class="form-check-input" type="checkbox" id="`, auxId, `"`, role,
+			m.TgOpen(`input class="form-check-input" type="checkbox" id='`).A(auxId, `'`, role,
 				Ternary(s.WidgetBoolValue(w), ` checked`, ``),
-				` onclick='jsCheckboxClicked("`, s.baseIdPrefix+w.BaseId, `")'`)
-
+				` onclick="jsCheckboxClicked('`, s.PrependId(w.baseId), `')"`).TgClose()
 			{
-				m.Comment("Label").OpenTag(`label class="form-check-label" for="`, auxId, `"`).Escape(w.Label).CloseTag() //.A(`</label>`).Cr()
+				m.Comment("Label").TgOpen(`label class="form-check-label" for=`).A(QUO, auxId).TgContent().Escape(w.Label).TgClose()
 			}
 		}
-		m.CloseTag()
+		m.TgClose()
 	}
-	m.CloseTag()
+	m.TgClose()
 }
 
 func boolToHtmlString(value bool) string {
@@ -84,4 +84,12 @@ func boolToHtmlString(value bool) string {
 		return "true"
 	}
 	return "false"
+}
+
+func (w CheckboxWidget) ValueAsString(s Session) string {
+	return Ternary(s.WidgetBoolValue(w), `true`, `false`)
+}
+
+func (w CheckboxWidget) ValidationValue(s Session) (string, bool) {
+	return Ternary(s.WidgetBoolValue(w), `true`, `false`), true
 }

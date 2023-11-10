@@ -10,11 +10,18 @@ var DebugUIFlag = false
 // The interface that all widgets must support.  Widgets can embed the BaseWidget struct to
 // supply default implementations.
 type Widget interface {
+	fmt.Stringer
 	Id() string
 	LowListener() LowLevelWidgetListener
+	SetLowListener(listener LowLevelWidgetListener)
+	// Get value as a string, or return false if no validation required. This should be the same value that
+	// can be passed to the LowLevelWidgetListener.  This allows us to validate the widget by simulating
+	// what any listeners would have done with values received via AJAX calls.
+	ValidationValue(s *SessionStruct) (string, bool)
 	Enabled() bool
 	Visible() bool
-	// This should not be called directly; rather, RenderWidget() to handle invisible widgets properly
+	Detached() bool
+	// This should not be called directly; rather, RenderWidget() to handle invisible and detached widgets properly
 	RenderTo(s *SessionStruct, m MarkupBuilder)
 	Children() []Widget
 	AddChild(c Widget, manager WidgetManager)
@@ -22,16 +29,23 @@ type Widget interface {
 	AddChildren(manager WidgetManager) // Add any child widgets
 	SetColumns(columns int)            // Set the number of columns the widget occupies in its row
 	Columns() int                      // Get the number of columns the widget occupies in its row
-	StateProvider() WidgetStateProvider
-	SetStateProvider(p WidgetStateProvider)
+	StateProvider() JSMap
+	setStateProvider(p JSMap)
 	SetVisible(bool)
-	GetClickListener() ClickListener // get optional click listener this widget might have
-	fmt.Stringer
+	SetDetached(bool)
+	SetTrace(bool)
+	Repaint()
+	ClearRepaint()
+	IsRepaint() bool
+	Trace() bool
+	Log(args ...any) // Logs messages if tracing is set for this widget
 }
 
 const WidgetIdPage = "page"
 
-type LowLevelWidgetListener func(sess Session, widget Widget, value string) (optNewWidgetValue any, err error)
+type LowLevelWidgetListener func(sess Session, widget Widget, value string, args WidgetArgs) (optNewWidgetValue any, err error)
+
+type ClickWidgetListener func(sess *SessionStruct, widget Widget, args WidgetArgs)
 
 type WidgetMap = map[string]Widget
 
@@ -58,31 +72,20 @@ const (
 	AlignRight
 )
 
-func WidgetErrorCount(root Widget, state JSMap) int {
-	count := 0
-	return auxWidgetErrorCount(count, root, state)
-}
-
-func auxWidgetErrorCount(count int, w Widget, state JSMap) int {
-	problemId := WidgetIdWithProblem(w.Id())
-	if state.OptString(problemId, "") != "" {
-		count++
-	}
-	for _, child := range w.Children() {
-		count = auxWidgetErrorCount(count, child, state)
-	}
-	return count
-}
-
-func WidgetIdWithProblem(id string) string {
-	CheckArg(id != "")
-	return id + ".problem"
+func widgetProblemKey(widgetId string) string {
+	return widgetId + ".problem"
 }
 
 // Call w.RenderTo(...) iff the widget is visible, otherwise render an empty div with the widget's id.
 func RenderWidget(w Widget, s Session, m MarkupBuilder) {
+	if w.Detached() {
+		return
+	}
 	if !w.Visible() {
-		m.A(`<div id='`, w.Id(), `'></div>`).Cr()
+		w.Log("RenderWidget, not visible;")
+		i := m.Len()
+		m.TgOpen(`div id=`).A(QUO, s.PrependId(w.Id())).TgContent().TgClose()
+		w.Log("Markup:", INDENT, m.String()[i:])
 	} else {
 		w.RenderTo(s, m)
 	}

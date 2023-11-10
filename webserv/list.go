@@ -12,6 +12,7 @@ type ListInterface interface {
 	CurrentPage() int
 	TotalPages() int
 	SetCurrentPage(pageNumber int)
+	ItemStateMap(s Session, elementId int) JSMap // return a state map for an item
 }
 
 type ListItemRenderer func(session Session, widget ListWidget, elementId int, m MarkupBuilder)
@@ -24,11 +25,6 @@ type BasicListStruct struct {
 
 type BasicList = *BasicListStruct
 
-func NewBasicList() BasicList {
-	t := &BasicListStruct{}
-	return t
-}
-
 func (b BasicList) GetPageElements() []int {
 	k := b.ElementsPerPage
 	pgStart := b.CurrentPage() * k
@@ -38,7 +34,6 @@ func (b BasicList) GetPageElements() []int {
 
 func (b BasicList) CurrentPage() int {
 	return b.currentPage
-
 }
 
 func (b BasicList) SetCurrentPage(pageNumber int) {
@@ -58,4 +53,10 @@ func (b BasicList) TotalPages() int {
 		completePages++
 	}
 	return completePages
+}
+
+// A default state provider.
+func (b BasicList) ItemStateMap(s Session, elementId int) JSMap {
+	BadState("No ItemStateMap available")
+	return nil
 }

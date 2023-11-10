@@ -10,10 +10,71 @@ import (
 	"sync"
 )
 
-var dbPr = PrIf(false)
+var dbPr = PrIf("", false)
 
-var loggedInUsersSet = NewSet[int]()
-var loggedInUsersSetLock sync.RWMutex
+var ValidateWidgetMarkup = false && Alert("ValidateWidgetMarkup is true")
+
+type Session = *SessionStruct
+
+type PostRequestEvent func()
+
+type PendingPage struct {
+	template Page
+	args     PageArgs
+}
+
+type SessionStruct struct {
+	WidgetManagerObj
+	SessionId string
+
+	// For storing an application Oper, for example
+	appData map[string]any
+
+	// widget representing the entire page; nil if not constructed yet
+	PageWidget Widget
+	// lock for making request handling thread safe; we synchronize a particular session's requests
+	lock sync.RWMutex
+
+	BrowserInfo webserv_data.ClientInfo
+	debugPage   Page // Used only to get the current page's name for rendering in the user header
+
+	app any // ServerApp is stored here, will clean up later
+
+	// Current request variables
+	ResponseWriter         http.ResponseWriter
+	request                *http.Request
+	requestProblem         error  // If not nil, problem detected with current request
+	clientInfoString       string // If nonempty information sent from client about screen size, etc
+	ajaxWidgetId           string // Id of widget that ajax call is being sent to
+	ajaxWidgetValue        string // The string representation of the ajax widget's requested value (if there was one)
+	browserURLExpr         string // If not nil, client browser should push this onto the history
+	repaintWidgetMarkupMap JSMap  // Used only during repainting; the map of widget ids -> markup to be repainted by client
+	postRequestEvents      []PostRequestEvent
+	pendingPage            *PendingPage
+}
+
+func NewSession() Session {
+	s := SessionStruct{
+		//State:       NewJSMap(),
+		BrowserInfo: webserv_data.DefaultClientInfo,
+		appData:     make(map[string]any),
+	}
+	s.InitializeWidgetManager()
+	//s.setBaseStateProvider(NullStateProvider)
+	Todo("!Restore user session from filesystem/database")
+	Todo("?ClientInfo (browser info) not sent soon enough")
+	return &s
+}
+
+func DiscardAllSessions(sessionManager SessionManager) {
+	loggedInUsersSetLock.Lock()
+	defer loggedInUsersSetLock.Unlock()
+
+	Alert("Discarding all sessions")
+	sessionManager.DiscardAllSessions()
+	dbPr("DiscardAllSessions, cleared")
+	loggedInUsersSet.Clear()
+}
 
 func IsUserLoggedIn(userId int) bool {
 	loggedInUsersSetLock.Lock()
@@ -52,88 +113,38 @@ func LogUserOut(userId int) bool {
 	return wasLoggedIn
 }
 
-func DiscardAllSessions(sessionManager SessionManager) {
-	loggedInUsersSetLock.Lock()
-	defer loggedInUsersSetLock.Unlock()
-
-	Alert("Discarding all sessions")
-	sessionManager.DiscardAllSessions()
-	dbPr("DiscardAllSessions, cleared")
-	loggedInUsersSet.Clear()
-}
-
-type ClickListener func(sess *SessionStruct, id string) bool
-
-type Session = *SessionStruct
-
-type SessionStruct struct {
-	Id string
-
-	// For storing an application Oper, for example
-	appData map[string]any
-
-	// widget representing the entire page; nil if not constructed yet
-	PageWidget Widget
-	// lock for making request handling thread safe; we synchronize a particular session's requests
-	lock sync.RWMutex
-	// JSMap containing widget values, other user session state
-	State JSMap
-
-	BrowserInfo webserv_data.ClientInfo
-	DebugPage   Page
-
-	app      any  // ServerApp is stored here, will clean up later
-	prepared bool // True once application has been able to initialize the session
-
-	widgetManager     WidgetManager
-	baseStateProvider *WidgetStateProviderStruct
-	baseIdPrefix      string
-	// Current request variables
-	ResponseWriter         http.ResponseWriter
-	request                *http.Request
-	requestProblem         error  // If not nil, problem detected with current request
-	clientInfoString       string // If nonempty information sent from client about screen size, etc
-	ajaxWidgetId           string // Id of widget that ajax call is being sent to
-	ajaxWidgetValue        string // The string representation of the ajax widget's requested value (if there was one)
-	browserURLExpr         string // If not nil, client browser should push this onto the history
-	repaintSet             StringSet
-	repaintWidgetMarkupMap JSMap // Used only during repainting; the map of widget ids -> markup to be repainted by client
-}
-
-func NewSession() Session {
-	s := SessionStruct{
-		State:       NewJSMap(),
-		BrowserInfo: webserv_data.DefaultClientInfo,
-		appData:     make(map[string]any),
-	}
-	s.baseStateProvider = NewStateProvider("", s.State)
-	Todo("!Restore user session from filesystem/database")
-	Todo("?ClientInfo (browser info) not sent soon enough")
-	Todo("?The Session should have WidgetManager embedded within it, so we can call through to its methods")
-	return &s
-}
+var loggedInUsersSet = NewSet[int]()
+var loggedInUsersSetLock sync.RWMutex
 
 func (s Session) PrependId(id string) string {
-	return s.baseIdPrefix + id
+	var result string
+	pref := s.IdPrefix()
+	if pref == "" {
+		result = id
+	} else {
+		if strings.HasSuffix(id, pref) {
+			Alert("<1#50Id already has prefix:", id, pref, INDENT, Callers(1, 4))
+		}
+		result = pref + id
+	}
+	return ValidateHTMLId(result)
+}
+
+// ID and NAME tokens must begin with a letter ([A-Za-z]) and may be followed by any number of letters,
+//
+//	digits ([0-9]), hyphens ("-"), underscores ("_"), colons (":"), and periods (".").
+var validHTMLIdExpr = Regexp(`^[A-Za-z](?:[A-Za-z0-9\-_:.])*$`)
+
+func ValidateHTMLId(id string) string {
+	if !validHTMLIdExpr.MatchString(id) {
+		BadArg("Invalid id:", QUO, id)
+	}
+	return id
 }
 
 func (s Session) PrepareForHandlingRequest(w http.ResponseWriter, req *http.Request) {
 	s.ResponseWriter = w
 	s.request = req
-	s.repaintSet = NewStringSet()
-}
-
-// Get WidgetManager for this session, creating one if necessary
-func (s Session) WidgetManager() WidgetManager {
-	if s.widgetManager == nil {
-		s.widgetManager = NewWidgetManager(s)
-	}
-	return s.widgetManager
-}
-
-// Get widget map from the WidgetManager.
-func (s Session) widgetMap() WidgetMap {
-	return s.WidgetManager().widgetMap
 }
 
 func (s Session) ToJson() *JSMapStruct {
@@ -145,7 +156,7 @@ func (s Session) ToJson() *JSMapStruct {
 func ParseSession(source JSEntity) Session {
 	var s = source.(*JSMapStruct)
 	var n = NewSession()
-	n.Id = s.OptString("id", "")
+	n.SessionId = s.OptString("id", "")
 	return n
 }
 
@@ -155,7 +166,9 @@ func (s Session) HandleAjaxRequest() {
 	if false && Alert("dumping") {
 		Pr("Query:", INDENT, s.request.URL.Query())
 	}
-	s.processClientMessage()
+	s.auxHandleAjax()
+	Todo("!Do we possibly need to do this during a non-ajax interaction?")
+	s.ProcessPendingPage()
 	s.sendAjaxResponse()
 }
 
@@ -165,18 +178,20 @@ func (s Session) HandleUploadRequest(widgetId string) {
 	s.sendAjaxResponse()
 }
 
-func (s Session) processUpload(uploadWidgetId string) {
+func (s Session) processUpload(widgetId string) {
+	pr := PrIf("Session.processUpload", true)
+	pr("widget id:", widgetId)
 
-	var fileUploadWidget FileUpload
-
-	widget := s.WidgetManager().Opt(uploadWidgetId)
-	if widget == nil {
-		Alert("Can't find upload widget:", uploadWidgetId)
+	untypedWidget := s.Opt(widgetId)
+	if untypedWidget == nil {
+		Alert("Can't find upload widget:", widgetId)
 		return
 	}
+
 	var ok bool
-	if fileUploadWidget, ok = widget.(FileUpload); !ok {
-		Alert("Not an UploadWidget:", uploadWidgetId)
+	var widget FileUpload
+	if widget, ok = untypedWidget.(FileUpload); !ok {
+		Alert("Not an UploadWidget:", untypedWidget.Id())
 		return
 	}
 
@@ -190,6 +205,8 @@ func (s Session) processUpload(uploadWidgetId string) {
 		if req.Method != "POST" {
 			break
 		}
+
+		Todo("?How do we get the name of the file that was uploaded?")
 
 		// From https://freshman.tech/file-upload-golang/
 
@@ -207,7 +224,8 @@ func (s Session) processUpload(uploadWidgetId string) {
 		// of the file input on the frontend; not sure what that is about
 
 		problem = "trouble getting request FormFile"
-		file, _, err1 := req.FormFile(uploadWidgetId + ".input")
+		file, _, err1 := req.FormFile(widget.Id() + ".input")
+
 		if err1 != nil {
 			break
 		}
@@ -229,12 +247,11 @@ func (s Session) processUpload(uploadWidgetId string) {
 	}
 
 	// Always update the problem, in case we are clearing a previous error
-	s.SetWidgetProblem(uploadWidgetId, problem)
 	if problem == "" {
-		err := fileUploadWidget.listener(s, fileUploadWidget, result)
+		err := widget.listener(s, widget, result)
 		problem = StringFromOptError(err)
 	}
-	s.SetWidgetProblem(uploadWidgetId, problem)
+	s.SetProblem(widget, problem)
 }
 
 // Serve a request for a resource
@@ -284,20 +301,11 @@ func (s Session) parseAjaxRequest() {
 	if clientInfoArray != nil && len(clientInfoArray) == 1 {
 		s.clientInfoString = clientInfoArray[0]
 	}
-
 }
 
-func extractId(expr string) (string, string) {
-	dotPos := strings.IndexByte(expr, '.')
-	if dotPos >= 0 {
-		return expr[0:dotPos], expr[dotPos+1:]
-	}
-	return expr, ""
-}
-
-func (s Session) processClientMessage() {
-	pr := PrIf(false)
-	pr("processClientMessage")
+func (s Session) auxHandleAjax() {
+	pr := PrIf("auxHandleAjax", false)
+	pr("start handling")
 
 	didSomething := false
 
@@ -311,76 +319,69 @@ func (s Session) processClientMessage() {
 	// We can now assume that the request consists of a single widget id, and perhaps a single value
 	// for that widget
 
-	widgetIdExpr := s.ajaxWidgetId
-	pr("widgetIdExpr:", widgetIdExpr)
-	if widgetIdExpr == "" {
+	widgetValueExpr := s.ajaxWidgetValue
+	s.ajaxWidgetValue = "" // To emphasize that we are done with this field
+	pr("widgetValueExpr:", QUO, widgetValueExpr)
+
+	id := s.ajaxWidgetId
+	pr("widgetIdExpr:", QUO, id)
+	if id == "" {
 		if !didSomething {
 			s.SetRequestProblem("widget id was empty")
 		}
 		return
 	}
 
-	// See if the id expression has the form <widget id> '.' <remainder>
-	//
+	args := NewWidgetArgs(id)
 
-	id, remainder := extractId(widgetIdExpr)
-	pr("id:", id, "remainder:", remainder)
+	widget := args.FindWidgetIdAsPrefix(s)
 
-	// If there was no widget value, and there was a parsed widget id remainder, send that remainder as the value
-	if s.ajaxWidgetValue == "" && remainder != "" {
-		s.ajaxWidgetValue = remainder
-	}
-
-	// Give session handler an opportunity to process the click, before trying the widget id
-	if s.processClickEvent(widgetIdExpr) {
-		pr("...session click handler processed it")
-		return
-	}
-
-	widget := s.widgetManager.Opt(id)
 	if widget == nil {
+		Pr("no widget with id", Quoted(id), "found to handle value", Quoted(widgetValueExpr))
+		Pr("state provider:", s.stackedStateMap())
+		Pr("widget map:", INDENT, s.widgetMap)
 		return
 	}
-	pr("found widget with id:", id)
+
+	pr("found widget with id:", QUO, widget.Id(), "and type:", TypeOf(widget), "args:", args)
 
 	if !widget.Enabled() {
 		s.SetRequestProblem("widget is disabled", widget)
 		return
 	}
 
-	if widget.LowListener() == nil {
+	s.ProcessWidgetValue(widget, widgetValueExpr, args)
+}
+
+func (s Session) ProcessWidgetValue(widget Widget, value string, args WidgetArgs) {
+	Todo("!This function can be internal")
+	pr := PrIf("Session.ProcessWidgetValue", false)
+	pr("widget", widget.Id(), "value", QUO, value, "args", args)
+
+	lowListener := widget.LowListener()
+	if lowListener == nil {
 		Alert("#50Widget has no low-level listener:", Info(widget))
 		return
 	}
-	updatedValue, err := widget.LowListener()(s, widget, s.ajaxWidgetValue)
-	{
-		if err != nil {
-			Pr("got error from widget listener:", widget.Id(), INDENT, err)
-		} else if updatedValue != nil {
-			s.SetWidgetValue(widget, updatedValue)
-		}
-	}
-	// Always update the problem, in case we are clearing a previous error
-	s.SetWidgetProblem(widget.Id(), err)
+
+	updatedValue, err := lowListener(s, widget, value, args)
+	pr("LowListener returned updatedValue:", updatedValue, "err:", err)
+	s.UpdateValueAndProblem(widget, updatedValue, err)
 }
 
-func (s Session) processClickEvent(sourceId string) bool {
-	pr := PrIf(false)
-	pr("session, process click event:", sourceId)
-
-	// Examine widgets, for any having a click event handler
-	m := s.WidgetManager()
-	for key, widget := range m.widgetMap {
-		listener := widget.GetClickListener()
-		if listener != nil {
-			pr("...trying widget", key)
-			if listener(s, sourceId) {
-				pr("......handled")
-				return true
-			}
-		}
+func (s Session) UpdateValueAndProblem(widget Widget, optionalValue any, err error) {
+	pr := PrIf("UpdateValueAndProblem", false)
+	pr("UpdateValueAndProblem, id:", widget.Id(), "optionalValue:", QUO, optionalValue, "err:", err)
+	if optionalValue != nil {
+		s.SetWidgetValue(widget, optionalValue)
 	}
-	return false
+	// If the widget no longer exists, we may have changed pages...
+	if !s.exists(widget.Id()) {
+		pr("widget doesn't exist!")
+		return
+	}
+	// Always update the problem, in case we are clearing a previous error
+	s.SetProblem(widget, err)
 }
 
 func (s Session) processClientInfo(infoString string) {
@@ -395,26 +396,35 @@ func (s Session) processClientInfo(infoString string) {
 	}
 }
 
-// Mark a widget for repainting
-func (s Session) Repaint(w Widget) Session {
-	pr := PrIf(debRepaint)
-	pr("Repaint:", w)
-	if s.repaintSet.Add(w.Id()) {
-		pr("...adding to set")
-	}
-	return s
-}
-
 // Traverse a widget tree, rendering widgets that have been marked for repainting.
 func (s Session) processRepaintFlags(w Widget) {
 	// For each widget that has been marked for repainting, we send it and its markup
 	// to the client.  The children need not be descended to, as they will be repainted
 	// by their containers.
-	id := w.Id()
-	if s.repaintSet.Contains(id) {
+	if w.IsRepaint() {
 		m := NewMarkupBuilder()
 		RenderWidget(w, s, m)
-		s.repaintWidgetMarkupMap.Put(id, m.String())
+		content := m.String()
+
+		if ValidateWidgetMarkup {
+
+			// Ensure that the markup starts with a tag, and has "id" as its first property
+			{
+				pattern := Regexp(`^\s*<[a-z]+ id="`)
+				if !pattern.MatchString(content) {
+					BadArg("Widget markup has unexpected structure ('id' should be first property):", INDENT, content)
+				}
+			}
+
+			mp, err := SharedHTMLValidator().Validate(content)
+			if err != nil {
+				Pr(VERT_SP, "Markup failed validation:", INDENT, content)
+				Pr(mp)
+				BadState("failed validation")
+			}
+		}
+		s.repaintWidgetMarkupMap.Put(w.Id(), content)
+		w.ClearRepaint()
 	} else {
 		for _, c := range w.Children() {
 			s.processRepaintFlags(c)
@@ -432,7 +442,11 @@ func (s Session) sendAjaxResponse() {
 	if !s.Ok() {
 		return
 	}
-	pr := PrIf(debRepaint)
+	pr := PrIf("sendAjaxResponse", debRepaint)
+
+	for _, f := range s.postRequestEvents {
+		f()
+	}
 
 	jsmap := NewJSMap()
 	s.repaintWidgetMarkupMap = NewJSMap()
@@ -462,7 +476,7 @@ func (s Session) ReleaseLockAndDiscardRequest() {
 	s.ajaxWidgetValue = ""
 	s.clientInfoString = ""
 	s.browserURLExpr = ""
-	s.repaintSet = nil
+	s.postRequestEvents = nil
 	s.lock.Unlock()
 }
 
@@ -486,7 +500,24 @@ func (s Session) Ok() bool {
 	return s.requestProblem == nil
 }
 
-func (s Session) SetWidgetProblem(widgetId string, problem any) {
+// ------------------------------------------------------------------------------------
+// Widget problems
+// ------------------------------------------------------------------------------------
+
+var prProb = PrIf("Widget Problems", false)
+
+// Read widget problem.  Returns an empty string if it hasn't got one.
+func (s Session) WidgetProblem(w Widget) string {
+	pr := prProb
+	id, p := s.getKeyAndStateMap(w)
+	key := widgetProblemKey(id)
+	result := p.OptString(key, "")
+	pr("problem for", w.Id(), "is:", QUO, result)
+	return result
+}
+
+func (s Session) SetProblem(widget Widget, problem any) {
+	pr := prProb
 	var text string
 	if problem != nil {
 		switch t := problem.(type) {
@@ -498,22 +529,30 @@ func (s Session) SetWidgetProblem(widgetId string, problem any) {
 			BadArg("<1Unsupported type")
 		}
 	}
-	s.auxSetWidgetProblem(widgetId, text)
-}
+	id, p := s.getKeyAndStateMap(widget)
+	if p == nil {
+		if text != "" {
+			BadState("There is no state map to set the error for id", QUO, id, "error:", QUO, text)
+		}
+		return
+	}
 
-func (s Session) auxSetWidgetProblem(widgetId string, problemText string) {
-	key := WidgetIdWithProblem(widgetId)
-	state := s.State
+	key := widgetProblemKey(id)
+	state := p
 	existingProblem := state.OptString(key, "")
-	if existingProblem != problemText {
-		// Pr("SetWidgetProblem:", widget.Id(), "from:", existingProblem, "to:", problemText)
-		if problemText == "" {
+	if existingProblem != text {
+		pr("changing from:", QUO, existingProblem, "to:", QUO, text)
+		if text == "" {
 			state.Delete(key)
 		} else {
-			state.Put(key, problemText)
+			state.Put(key, text)
 		}
-		s.RepaintIds(widgetId)
+		widget.Repaint()
 	}
+}
+
+func (s Session) SetWidgetProblem(widgetId string, problem any) {
+	s.SetProblem(s.Get(widgetId), problem)
 }
 
 // Include javascript call within page to get client's display properties.
@@ -523,30 +562,6 @@ func (s Session) RequestClientInfo(sb MarkupBuilder) {
 	if true {
 		Alert("!Always making resolution call; might want to avoid infinite calls by only requesting if at least n seconds elapsed")
 		sb.A(`<script>jsGetDisplayProperties();</script>`).Cr()
-	}
-}
-
-func (s Session) DeleteStateErrors() {
-	m := s.State.MutableWrapped()
-	Todo("safe to delete key while iterating through them?")
-	for k, _ := range m {
-		if strings.HasSuffix(k, ".error") {
-			delete(m, k)
-		}
-	}
-}
-
-func (s Session) DeleteStateError(id string) {
-	m := s.State.MutableWrapped()
-	delete(m, id)
-}
-
-func (s Session) DeleteStateFieldsWithPrefix(prefix string) {
-	m := s.State.MutableWrapped()
-	for k, _ := range m {
-		if strings.HasPrefix(k, ".error") {
-			delete(m, k)
-		}
 	}
 }
 
@@ -583,28 +598,32 @@ func (s Session) DeleteSessionData(key string) {
 	delete(s.appData, key)
 }
 
-func (s Session) GetStaticOrDynamicLabel(widget Widget) (string, bool) {
-	return s.WidgetStringValue(widget), false
-}
-
 // ------------------------------------------------------------------------------------
 // Page url and arguments
 // ------------------------------------------------------------------------------------
 
-func (s Session) SwitchToPage(page Page) {
-	//Pr("SwitchToPage:", page.Name(), "from:", Caller())
-	s.Repaint(s.PageWidget)
-	s.browserURLExpr = s.ConstructPathFromPage(page)
-	s.DebugPage = page
+func (s Session) SwitchToPage(template Page, args PageArgs) {
+	pr := PrIf("SwitchToPage", false)
+	pr("page:", template.Name(), "from:", Caller())
+	s.pendingPage = &PendingPage{template: template, args: args}
 }
 
-func (s Session) NewBrowserPath() string {
-	return s.browserURLExpr
-}
+func (s Session) ProcessPendingPage() {
+	x := s.pendingPage
+	s.pendingPage = nil
+	if x == nil {
+		return
+	}
+	args := x.args
+	template := x.template
 
-func (s Session) ConstructPathFromPage(page Page) string {
-	result := "/" + page.Name() + "/" + strings.Join(page.Args(), "/")
-	return result
+	if args == nil {
+		args = NewPageArgs(nil)
+	}
+
+	s.rebuildAndDisplayNewPage(func(s Session) Page {
+		return template.ConstructPage(s, args)
+	})
 }
 
 // ------------------------------------------------------------------------------------
@@ -617,88 +636,146 @@ func SessionApp(s Session) ServerApp {
 // Accessing widget values
 // ------------------------------------------------------------------------------------
 
-type WidgetStateProviderStruct struct {
-	Prefix string // A prefix to remove from the id before constructing its map key
-	State  JSMap  // The map containing the state
-}
+func extractKeyFromWidgetId(id string) string {
+	var result string
+	CheckArg(id != "")
+	i := strings.LastIndexByte(id, ':')
+	if i >= 0 {
+		result = id[i+1:]
 
-type WidgetStateProvider = *WidgetStateProviderStruct
-
-func NewStateProvider(prefix string, state JSMap) WidgetStateProvider {
-	return &WidgetStateProviderStruct{Prefix: prefix, State: state}
-}
-
-// If state provider is nil, use default one
-func orBaseProvider(s Session, p WidgetStateProvider) WidgetStateProvider {
-	if p == nil {
-		// This is the state provider if no other one has been specified
-		p = s.baseStateProvider
+	} else {
+		result = id
 	}
-	return p
-}
-
-func compileId(prefix string, id string) string {
-	// If the id has the prefix, remove it; if it doesn't, add it
-	// ...we may want to make this subtractive only
-	if result, removed := TrimIfPrefix(id, prefix); removed {
-		return result
-	}
-	return prefix + id
+	return result
 }
 
 // ------------------------------------------------------------------------------------
 // Reading widget state values
 // ------------------------------------------------------------------------------------
 
-// Read widget value; assumed to be an int.
-func readStateIntValue(p WidgetStateProvider, id string) int {
-	return p.State.OptInt(compileId(p.Prefix, id), 0)
-}
+// Get the state map and key for a widget value
+func (s Session) getKeyAndStateMap(w Widget) (string, JSMap) {
+	pr := PrIf("getKeyAndStateMap", false)
 
-// Read widget value; assumed to be a bool.
-func readStateBoolValue(p WidgetStateProvider, id string) bool {
-	return p.State.OptBool(compileId(p.Prefix, id), false)
-}
+	// If widget's own state provider has no state, use the one on the stack
 
-// Read widget value; assumed to be a string.
-func readStateStringValue(p WidgetStateProvider, id string) string {
-	return p.State.OptString(compileId(p.Prefix, id), "")
-}
+	id := w.Id()
+	key := extractKeyFromWidgetId(id)
 
-// Read widget value; assumed to be an int.
-func (s Session) IntValue(id string) int {
-	return readStateIntValue(s.baseStateProvider, id)
-}
+	pr("id:", QUO, id, "key:", QUO, key)
 
-// Read widget value; assumed to be a boolean.
-func (s Session) BoolValue(id string) bool {
-	return readStateBoolValue(s.baseStateProvider, id)
-}
+	// Use the widget's state, if one is defined; otherwise, stacked state
+	p := w.StateProvider()
+	if p == nil {
+		pr("using stacked state provider")
+		p = s.stackedStateMap()
+		if p == nil {
+			Alert("#50No state map found for widget:", QUO, id, "callers:", CR, Callers(0, 5))
+			p = NewJSMap()
+		}
+	}
 
-// Read widget value; assumed to be a string.
-func (s Session) StringValue(id string) string {
-	return readStateStringValue(s.baseStateProvider, id)
-}
-
-// Read widget value; assumed to be an int.
-func (s Session) WidgetIntValue(w Widget) int {
-	p := orBaseProvider(s, w.StateProvider())
-	return readStateIntValue(p, w.Id())
-}
-
-// Read widget value; assumed to be a bool.
-func (s Session) WidgetBoolValue(w Widget) bool {
-	p := orBaseProvider(s, w.StateProvider())
-	return readStateBoolValue(p, w.Id())
+	pr("returning key:", QUO, key, "and provider:", p)
+	return key, p
 }
 
 // Read widget value; assumed to be a string.
 func (s Session) WidgetStringValue(w Widget) string {
-	p := orBaseProvider(s, w.StateProvider())
-	return readStateStringValue(p, w.Id())
+	id, p := s.getKeyAndStateMap(w)
+	key := id
+	return p.OptString(key, "")
+}
+
+// Read widget value; assumed to be an int.
+func (s Session) WidgetIntValue(w Widget) int {
+	id, p := s.getKeyAndStateMap(w)
+	return p.OptInt(id, 0)
+}
+
+// Read widget value; assumed to be a bool.
+func (s Session) WidgetBoolValue(w Widget) bool {
+	id, p := s.getKeyAndStateMap(w)
+	return p.OptBool(id, false)
 }
 
 func (s Session) SetWidgetValue(w Widget, value any) {
-	p := orBaseProvider(s, w.StateProvider())
-	p.State.Put(compileId(p.Prefix, w.Id()), value)
+	pr := PrIf("SetWidgetValue", false)
+	id, p := s.getKeyAndStateMap(w)
+	pr("state provider, state:", p)
+	if p == nil {
+		BadState("no state map found for widget", w.Id())
+	}
+	oldVal := p.OptUnsafe(id)
+	changed := value != oldVal
+	pr("old:", oldVal, "new:", value, "changed:", changed)
+	if changed {
+		p.Put(id, value)
+		pr("repainting", p)
+		w.Repaint()
+	}
+}
+
+// This merges a couple of separate functions, to reduce the complexity.
+func (s Session) rebuildAndDisplayNewPage(pageProvider func(Session) Page) {
+	// Dispose of any existing widgets
+	s.widgetMap = make(map[string]Widget)
+
+	// Build a new page widget
+	s.PageWidget = s.Id(WidgetIdPage).Open()
+	s.Close()
+
+	// Get the new page (it is now safe to construct, as the old widgets are gone)
+	page := pageProvider(s)
+	CheckState(page != nil, "no page was provided")
+	s.debugPage = page
+
+	// Display the new page
+	Todo("!Verify that this works for normal refreshes as well as ajax operations")
+	s.PageWidget.Repaint()
+
+	s.browserURLExpr = "/" + page.Name() + "/" + strings.Join(page.Args(), "/")
+}
+
+func (s Session) ValidateAndCountErrors(widget Widget) int {
+	s.Validate(widget)
+	return s.WidgetErrorCount(widget)
+}
+
+func (s Session) WidgetErrorCount(widget Widget) int {
+	Todo("?Use 's' instead of 'sess' everywhere")
+	count := 0
+	problemText := s.WidgetProblem(widget)
+	if problemText != "" {
+		count++
+	}
+	for _, child := range widget.Children() {
+		count += s.WidgetErrorCount(child)
+	}
+	return count
+}
+
+func (s Session) Validate(widget Widget) {
+	pr := PrIf("Session.Validate", false)
+	pr("id:", widget.Id())
+	if widget.LowListener() != nil {
+		valAsString, applicable := widget.ValidationValue(s)
+		if applicable {
+			pr("...calling low level listener with", QUO, valAsString)
+			updatedValue, err := widget.LowListener()(s, widget, valAsString, nil)
+			pr("updated value, err:", updatedValue, err)
+			if DebugWidgetRepaint {
+				Pr("Session.Validate, widget has changed value to:", QUO, valAsString)
+			}
+			s.UpdateValueAndProblem(widget, updatedValue, err)
+		}
+	}
+	for _, child := range widget.Children() {
+		s.Validate(child)
+	}
+}
+
+// Schedule an event to be executed after the current AJAX request handling has completed.  For example,
+// additional widget validations that are triggered by a current validation.
+func (s Session) AddPostRequestEvent(event PostRequestEvent) {
+	s.postRequestEvents = append(s.postRequestEvents, event)
 }

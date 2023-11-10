@@ -29,14 +29,18 @@ func NewInputWidget(id string, label HtmlString, listener InputWidgetListener, p
 		listener: listener,
 	}
 	w.InitBase(id)
-	w.LowListen = inputListenWrapper
+	w.SetLowListener(inputListenWrapper)
 	return &w
 }
 
-func inputListenWrapper(sess Session, widget Widget, value string) (any, error) {
+func inputListenWrapper(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
+	pr := PrIf("inputListenWrapper", false)
 	inp := widget.(InputWidget)
 	value = strings.TrimSpace(value)
+	pr("widget id:", widget.Id(), "value:", QUO, value)
 	result, err := inp.listener(sess, inp, value)
+	pr("after calling client listener, result:", QUO, result, "err:", err)
+	pr("callers:", Callers(0, 5))
 	return result, err
 }
 
@@ -48,6 +52,14 @@ func dummyInputWidgetListener(sess Session, widget InputWidget, value string) (s
 }
 
 func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
+
+	debug := false
+	pr := PrIf("input_widget.RenderTo", debug)
+	if debug {
+		pr(VERT_SP, "widget id:", w.Id())
+		pr("stacked state:", INDENT, s.StateStackToJson())
+	}
+
 	// While <input> are span tags, our widget should be considered a block element
 
 	// The outermost element must have id "foo", since we will be replacing that id's outerhtml
@@ -56,12 +68,12 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 	// The HTML input element has id "foo.aux"
 	// If there is a problem with the input, its text will have id "foo.problem"
 
-	m.A(`<div id="`, w.BaseId, `">`)
+	id := s.PrependId(w.Id())
 
-	m.DoIndent()
+	m.TgOpen(`div id=`).A(QUO, id).TgContent()
 
-	problemId := WidgetIdWithProblem(w.BaseId)
-	problemText := s.StringValue(problemId)
+	auxId := id + `.aux`
+	problemText := s.WidgetProblem(w)
 	if false && Alert("always problem") {
 		problemText = "sample problem information"
 	}
@@ -70,30 +82,38 @@ func (w InputWidget) RenderTo(s Session, m MarkupBuilder) {
 	labelHtml := w.Label
 	if labelHtml != nil {
 		m.Comment("Label")
-		m.OpenTag(`label class="form-label" style="font-size:70%"`)
+		m.TgOpen(`label class="form-label"`).Style(`font-size:70%`).TgContent()
 		m.Escape(labelHtml)
-		m.CloseTag()
+		m.TgClose()
 	}
 
 	m.Comment("Input")
-	m.A(`<input class="form-control`)
+	m.TgOpen(`input class="form-control`)
 	if hasProblem {
 		m.A(` border-danger border-3`) // Adding border-3 makes the text shift a bit on error, maybe not desirable
 	}
 
-	m.A(`" type="`, Ternary(w.Password, "password", "text"), `" id="`, w.BaseId, `.aux" value="`)
-	value := s.WidgetStringValue(w)
-	m.Escape(value)
-	m.A(`" onchange='jsVal("`, w.BaseId, `")'>`).Cr()
+	m.A(`" type=`, QUO, Ternary(w.Password, "password", "text"), ` id="`, auxId, `" value="`)
+	m.A(ESCAPED, s.WidgetStringValue(w))
+
+	m.A(`" onchange="jsVal('`, id, `')"`)
+	// Set this id as the element that has the focus.  Note we are using auxId, for the actual <input> element, not its containing widget <div>
+	m.A(` onfocus="jsFocus('`, auxId, `', true)"`)
+	m.A(` onfocusout="jsFocus('`, auxId, `', false)"`)
+	m.TgClose()
 
 	if hasProblem {
 		m.Comment("Problem")
-		m.A(`<div class="form-text text-danger" style="font-size:  70%">`)
-		m.Escape(problemText).A(`</div>`)
+		m.TgOpen(`div class="form-text text-danger"`).Style(`font-size:70%;`).TgContent().A(ESCAPED, problemText).TgClose()
 	}
 
-	m.DoOutdent()
+	m.TgClose()
+}
 
-	m.A(`</div>`)
-	m.Cr()
+func (w InputWidget) ValidationValue(s Session) (string, bool) {
+	return s.WidgetStringValue(w), true
+}
+
+func (w InputWidget) ValueAsString(s Session) string {
+	return s.WidgetStringValue(w)
 }

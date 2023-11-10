@@ -5,43 +5,40 @@ import (
 	"strings"
 )
 
-// A builder for constructing html markup
-
-type tagEntry struct {
-	openType tagOpenType
-	tag      string // e.g. div, p (no '<' or '>')
-	comment  string
-}
-
 type MarkupBuilderObj struct {
 	strings.Builder
-	indent          int
-	indented        bool
-	crRequest       int
-	omitComments    bool
-	tagStack        *Array[tagEntry]
-	pendingComments []any
-	nested          bool
+	indent           int
+	indented         bool
+	crRequest        int
+	omitComments     bool
+	tagStack         []*tagEntry
+	pendingComments  []any
+	nested           bool
+	currentStyleFlag bool
+	pendingStyleFlag bool
+	pendingQuotes    bool
+	pendingEscape    bool
+}
+
+type tagEntry struct {
+	tag        string // e.g. div, p (no '<' or '>')
+	comment    string
+	hasContent bool
 }
 
 type MarkupBuilder = *MarkupBuilderObj
 
-type tagOpenType int
-
-const (
-	tagTypeOpen tagOpenType = iota
-	tagTypeOpenClose
-	tagTypeVoid
-)
-
 func NewMarkupBuilder() MarkupBuilder {
 	v := MarkupBuilderObj{}
-	v.tagStack = NewArray[tagEntry]()
 	return &v
 }
 
 func (b MarkupBuilder) Bytes() []byte {
 	return []byte(b.String())
+}
+
+func (b MarkupBuilder) ContentSize() int {
+	return b.Len()
 }
 
 func (b MarkupBuilder) DoIndent() MarkupBuilder {
@@ -63,10 +60,6 @@ func (b MarkupBuilder) RenderInvisible(w Widget) MarkupBuilder {
 	return b
 }
 
-func (b MarkupBuilder) Quoted(text string) MarkupBuilder {
-	return b.A(Quoted(text))
-}
-
 func (b MarkupBuilder) Escape(arg any) MarkupBuilder {
 	if escaper, ok := arg.(Escaper); ok {
 		return b.A(escaper.Escaped())
@@ -78,14 +71,27 @@ func (b MarkupBuilder) Escape(arg any) MarkupBuilder {
 	return b
 }
 
+func (b MarkupBuilder) switchToMode(mode bool) {
+	if mode != b.currentStyleFlag {
+		if b.currentStyleFlag {
+			b.WriteString(`" `)
+		} else {
+			b.WriteString(` style:"`)
+		}
+		b.currentStyleFlag = mode
+	}
+}
+
 // Append markup, generating a linefeed if one is pending.  No escaping is performed.
 func (b MarkupBuilder) A(args ...any) MarkupBuilder {
-
-	CheckState(!b.nested)
+	if b.nested {
+		BadState("nested")
+	}
 	b.nested = true
 
-	for _, arg := range args {
+	b.updateStyleMode()
 
+	for _, arg := range args {
 		if b.crRequest != 0 {
 			if b.crRequest == 1 {
 				b.WriteString("\n")
@@ -98,12 +104,12 @@ func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 
 		switch v := arg.(type) {
 		case string:
-			b.WriteString(v)
+			b.appendStr(v)
 		case int: // We aren't sure if it's 32 or 64, so choose 64
-			b.WriteString(IntToString(v))
+			b.appendStr(IntToString(v))
 			break
 		case bool:
-			b.WriteString(boolToHtmlString(v))
+			b.appendStr(boolToHtmlString(v))
 		case PrintEffect:
 			b.processPrintEffect(v)
 		default:
@@ -114,6 +120,43 @@ func (b MarkupBuilder) A(args ...any) MarkupBuilder {
 	return b
 }
 
+func (b MarkupBuilder) appendStr(text string) {
+	if b.pendingQuotes {
+		b.WriteByte('"')
+		b.WriteString(text)
+		b.WriteByte('"')
+		b.pendingQuotes = false
+	} else if b.pendingEscape {
+		escaped := NewHtmlString(text).Escaped()
+		b.WriteString(escaped)
+		b.pendingEscape = false
+	} else {
+		b.WriteString(text)
+	}
+}
+
+func (b MarkupBuilder) StyleOff() MarkupBuilder {
+	b.pendingStyleFlag = false
+	return b
+}
+
+func (b MarkupBuilder) Style(args ...any) MarkupBuilder {
+	b.pendingStyleFlag = true
+	b.A(args...)
+	return b
+}
+
+func (b MarkupBuilder) updateStyleMode() {
+	if b.pendingStyleFlag != b.currentStyleFlag {
+		if b.pendingStyleFlag {
+			b.WriteString(` style="`)
+		} else {
+			b.WriteString(`"`)
+		}
+		b.currentStyleFlag = b.pendingStyleFlag
+	}
+
+}
 func (b MarkupBuilder) processPrintEffect(v PrintEffect) {
 	switch v {
 	case CR:
@@ -122,6 +165,10 @@ func (b MarkupBuilder) processPrintEffect(v PrintEffect) {
 		b.DoIndent()
 	case OUTDENT:
 		b.DoOutdent()
+	case QUO:
+		b.pendingQuotes = true
+	case ESCAPED:
+		b.pendingEscape = true
 	default:
 		BadArg("Unsupported PrintEffect:", v)
 	}
@@ -157,7 +204,7 @@ func (b MarkupBuilder) doIndent() {
 	b.indented = true
 }
 
-// Set pending comments for next OpenTag (or OpenCloseTag) call.
+// Set pending comments for next TgOpen (or TgClose) call.
 func (b MarkupBuilder) Comments(comments ...any) MarkupBuilder {
 	if b.pendingComments != nil {
 		Alert("#20<1Previous comments were not used:", b.pendingComments)
@@ -168,56 +215,25 @@ func (b MarkupBuilder) Comments(comments ...any) MarkupBuilder {
 	return b
 }
 
-// Open a tag, e.g.
-//
-//	<div class="card-body" style="max-height:8em;">
-//
-// tagExpression in the above case would be:  div class="card-body" style="max-height:8em;"
-func (b MarkupBuilder) OpenTag(args ...any) MarkupBuilder {
-	b.auxOpenTag(tagTypeOpen, args...)
-	return b
-}
-
-func (b MarkupBuilder) auxOpenTag(openType tagOpenType, args ...any) {
-	var tagExpression string
-	{
-		sb := strings.Builder{}
-
-		for _, arg := range args {
-			s := ""
-			switch v := arg.(type) {
-			case string:
-				s = v
-			case int: // We aren't sure if it's 32 or 64, so choose 64
-				s = IntToString(v)
-			case bool:
-				s = boolToHtmlString(v)
-			default:
-				Die("<1Unsupported argument type:", Info(arg))
-			}
-			sb.WriteString(s)
+func (b MarkupBuilder) TgOpen(name string) MarkupBuilder {
+	// If there is a space, the user has added some attributes, e.g. `div xxxx="yyyy"...`;
+	// treat this as if he did TgOpen(`div`).A(` xxxx....`)
+	i := strings.IndexByte(name, ' ')
+	tagName := name
+	remainder := ""
+	if i >= 0 {
+		if i == 0 {
+			BadArg("leading space in tag name:", Quoted(name))
 		}
-		tagExpression = sb.String()
-	}
-	Todo("!In debug mode, parse the tag expression to make sure quotes are balanced")
-
-	exprLen := len(tagExpression)
-	if tagExpression[0] == '<' || tagExpression[exprLen-1] == '>' {
-		BadArg("<1Tag expression contains <,> delimiters:", tagExpression)
-	}
-	i := strings.IndexByte(tagExpression, ' ')
-	if i < 0 {
-		i = exprLen
+		tagName = name[0:i]
+		remainder = name[i:]
 	}
 
-	CheckState(b.tagStack.Size() < 50, "tags are nested too deeply")
 	entry := tagEntry{
-		tag:      tagExpression[0:i],
-		openType: openType,
+		tag: tagName,
 	}
 	comments := b.pendingComments
 	b.pendingComments = nil
-
 	if comments != nil {
 		entry.comment = `<!-- ` + ToString(comments...) + " -->"
 	}
@@ -225,66 +241,58 @@ func (b MarkupBuilder) auxOpenTag(openType tagOpenType, args ...any) {
 		b.Br()
 		b.A(entry.comment).Cr()
 	}
+	b.A(`<`, tagName)
 
-	b.A("<", tagExpression, ">")
-	if openType == tagTypeOpen {
-		b.DoIndent()
+	if len(b.tagStack) >= 50 {
+		BadState("tags are nested too deeply")
 	}
-	if openType != tagTypeVoid {
-		b.tagStack.Add(entry)
+	b.tagStack = append(b.tagStack, &entry)
+
+	if remainder != "" {
+		b.A(remainder)
 	}
+	return b
 }
 
-func (b MarkupBuilder) tagStackInfo() string {
-	jl := NewJSList()
+func (b MarkupBuilder) TgContent() MarkupBuilder {
+	entry := Last(b.tagStack)
+	CheckState(!entry.hasContent)
+	entry.hasContent = true
+	b.StyleOff()
+	b.A(`>`)
+	b.DoIndent()
+	return b
+}
 
-	for _, ent := range b.tagStack.Array() {
-		jl.Add(NewJSList().Add(ent.tag).Add(ent.comment))
+func (b MarkupBuilder) TgClose() MarkupBuilder {
+	var entry *tagEntry
+	entry, b.tagStack = PopLast(b.tagStack)
+	if entry.hasContent {
+		b.DoOutdent()
+		b.A("</", entry.tag, ">")
+	} else {
+		b.WriteString(` />`)
 	}
-	return jl.String()
+	if entry.comment != "" {
+		b.A(`  `, entry.comment)
+	}
+	return b.Cr()
 }
 
 // Verify that the tag stack size *does not change* before and after some code.  Call this before the code,
 // and balance this call with a call to VerifyEnd(), supplying the stack size that VerifyBegin() returned.
 func (b MarkupBuilder) VerifyBegin() int {
-	return b.tagStack.Size()
+	return len(b.tagStack)
 }
 
 // Verify that the tag stack size *does not change* before and after some code.  Call this before the code,
 // and balance this call with a call to VerifyEnd(), supplying the stack size that VerifyBegin() returned.
 func (b MarkupBuilder) VerifyEnd(expectedStackSize int, widget Widget) {
-	s := b.tagStack.Size()
+	s := len(b.tagStack)
 	if s != expectedStackSize {
 		BadState("<1tag stack size", s, "!=", expectedStackSize, INDENT,
 			"after widget:", widget.Id(), Info(widget))
 	}
-}
-
-func (b MarkupBuilder) CloseTag() MarkupBuilder {
-	if b.tagStack.IsEmpty() {
-		Die("tag stack is empty:", INDENT, b.String())
-	}
-	entry := b.tagStack.Pop()
-	if entry.openType == tagTypeOpen {
-		b.DoOutdent()
-		b.A("</", entry.tag, ">")
-		if entry.comment != "" {
-			b.A(`  `, entry.comment)
-		}
-	} else {
-		b.A("</", entry.tag, ">")
-	}
-	return b.Br()
-}
-
-func (b MarkupBuilder) VoidTag(args ...any) MarkupBuilder {
-	b.auxOpenTag(tagTypeVoid, args...)
-	return b
-}
-
-func (b MarkupBuilder) OpenCloseTag(args ...any) MarkupBuilder {
-	b.auxOpenTag(tagTypeOpenClose, args...)
-	return b.CloseTag()
 }
 
 func (b MarkupBuilder) Cr() MarkupBuilder {

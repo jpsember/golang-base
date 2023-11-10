@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+var Experiment = false && Alert("experiment is in effect")
+
 var exitOnPanic = false
 
 func ExitOnPanic() {
@@ -36,6 +38,20 @@ func CallerLocation(skipCount int) string {
 
 func Caller() string {
 	return CallerLocation(2)
+}
+
+func Callers(skipStart, count int) string {
+	x := GenerateStackTrace(1 + skipStart).Elements
+	x = ClampedSlice(x, 0, 0+count)
+	if len(x) == 0 {
+		return "<no location available!>"
+	}
+	sb := strings.Builder{}
+	for _, y := range x {
+		sb.WriteString(y.StringBrief())
+		sb.WriteByte('\n')
+	}
+	return sb.String()
 }
 
 func Panic(message ...any) {
@@ -210,7 +226,8 @@ func auxAlert(skipCount int, key string, prompt string, additionalMessage ...any
 	//
 	if info.delayMs > 0 {
 		// Do this before locking, as it might attempt to use locks
-		FindProjectDirM()
+		FindProjectDirM() //<-- but rework this... we want it to fall back on using current directory if there is no project dir
+
 		debugLock.Lock()
 		flag := processAlertForMultipleSessions(info)
 		debugLock.Unlock()
@@ -409,24 +426,23 @@ func CopyOfBytes(array []byte) []byte {
 	return result
 }
 
-func ParseInt(str string) (int64, error) {
+func ParseInt(str string) (int, error) {
+	result, err := ParseInt64(str)
+	return int(result), err
+}
+
+func ParseIntM(str string) int {
+	return int(ParseInt64M(str))
+}
+
+func ParseInt64(str string) (int64, error) {
 	result, err := strconv.ParseInt(str, 10, 64)
 	return result, err
 }
 
-func ParseIntM(str string) int {
-	result, err := ParseInt(str)
-	return int(CheckOkWith(result, err, "Failed to parse int from:", str))
-}
-
-func ParseInt2(str string) (int, error) {
-	result, err := strconv.ParseInt(str, 10, 64)
-	return int(result), err
-}
-
-func ParseInt2M(str string) int {
-	result := ParseIntM(str)
-	return int(result)
+func ParseInt64M(str string) int64 {
+	result, err := ParseInt64(str)
+	return CheckOkWith(result, err, "Failed to parse int64 from:", str)
 }
 
 func IntToString(value int) string {
@@ -571,11 +587,15 @@ func processAlertForMultipleSessions(info alertInfo) bool {
 }
 
 func CurrentTimeMs() int64 {
-	return time.Now().Unix()
+	return time.Now().UnixMilli()
 }
 
 func SleepMs(ms int) {
-	time.Sleep(time.Millisecond * time.Duration(ms))
+	time.Sleep(MsToDuration(ms))
+}
+
+func MsToDuration(ms int) time.Duration {
+	return time.Duration(ms) * time.Millisecond
 }
 
 // Convert an array of a particular type to an array of any.
@@ -862,6 +882,37 @@ func ByteSlice(bytes []byte, start int, length int) []byte {
 	return ClampedSlice(bytes, start, start+length)
 }
 
+func BinaryN(value2 int) string {
+	value := uint64(value2)
+	var digits int
+	if value >= 0x100000000000000 {
+		digits = 64
+	} else if value >= 0x1000000 {
+		digits = 32
+	} else if value >= 0x10000 {
+		digits = 24
+	} else if value >= 0x100 {
+		digits = 16
+	} else {
+		digits = 8
+	}
+
+	sb := strings.Builder{}
+	for i := 0; i < digits; i++ {
+		var ch byte = '.'
+		if value&(1<<(digits-1-i)) != 0 {
+			ch = '1'
+		}
+		sb.WriteByte(ch)
+	}
+	sb.WriteString(" $")
+	ndig := (digits + 3) / 4
+	appendHex(&sb, uint64(value), ndig)
+	sb.WriteString(" #")
+	sb.WriteString(strconv.FormatUint(value, 10))
+	return sb.String()
+}
+
 func appendHex(sb *strings.Builder, value uint64, ndigits int) {
 	for ch := 0; ch < ndigits; ch++ {
 		shiftCount := (ndigits - 1 - ch) << 2
@@ -875,6 +926,12 @@ func appendHex(sb *strings.Builder, value uint64, ndigits int) {
 		}
 		sb.WriteByte(c)
 	}
+}
+
+func ToHex(value uint64, ndigits int) string {
+	s := strings.Builder{}
+	appendHex(&s, value, ndigits)
+	return s.String()
 }
 
 func HexDump(byteArray []byte) string {
@@ -998,8 +1055,6 @@ func ReportIfError(err error, msg ...any) bool {
 	return false
 }
 
-var EmptyStringSlice = []string{}
-
 func Last[T any](slice []T) T {
 	i := len(slice)
 	return slice[i-1]
@@ -1013,3 +1068,41 @@ func PopLast[T any](slice []T) (T, []T) {
 func DeleteSliceElements[T any](slice []T, delStart int, delCount int) []T {
 	return append(slice[:delStart], slice[delStart+delCount:]...)
 }
+
+func Truncated(arg any) string {
+	switch v := arg.(type) {
+	case nil:
+		return "<nil>"
+	case string:
+		return trunc(v)
+	case JSMap:
+		return trunc(PrintJSEntity(v, false))
+	case JSList:
+		return trunc(PrintJSEntity(v, false))
+	default:
+		return trunc(ToString(v))
+	}
+}
+
+func TruncateString(str string, addEllipsis bool, maxLength int) string {
+	x := len(str)
+	if x > maxLength {
+		if addEllipsis && maxLength > 3 {
+			str = str[0:maxLength-3] + "..."
+		} else {
+			str = str[0:maxLength]
+		}
+	}
+	return str
+}
+
+func trunc(x string) string {
+	return TruncateString(x, true, 75)
+}
+
+const (
+	JMs   = 1
+	JSec  = JMs * 1000
+	JMin  = JSec * 60
+	JHour = JMin * 60
+)

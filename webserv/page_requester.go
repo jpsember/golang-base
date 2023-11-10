@@ -51,7 +51,7 @@ func (r PageRequester) DefaultPagePage(user AbstractUser) Page {
 	return p
 }
 
-func (r PageRequester) Process(s Session, path string) Page {
+func (r PageRequester) Process(s Session, path string) {
 	//r.AlertVerbose()
 	pr := r.Log
 
@@ -80,13 +80,20 @@ func (r PageRequester) Process(s Session, path string) Page {
 
 	remainingArgs := NewPageArgs(p.RemainingArgs())
 	pr("remaining args:", remainingArgs)
-	page := templatePage.ConstructPage(s, remainingArgs)
-	if page == nil {
-		page = r.DefaultPagePage(user)
-		page = page.ConstructPage(s, NewPageArgs(nil))
-	}
-	CheckState(page != nil, "requested page is nil")
-	return page
+
+	s.rebuildAndDisplayNewPage(func(s2 Session) Page {
+		pr := PrIf("rebuildAndDisplayNewPage func", false)
+		pr("constructing page from template", templatePage.Name())
+		page := templatePage.ConstructPage(s, remainingArgs)
+		if page == nil {
+			pr("template returned nil")
+			page = r.DefaultPagePage(user)
+			pr("constructing default page:", page.Name())
+			page = page.ConstructPage(s, NewPageArgs(nil))
+			pr("after constructing page:", page)
+		}
+		return page
+	})
 }
 
 // PageRequester must be threadsafe (once all the pages have been registered).

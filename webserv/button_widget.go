@@ -6,35 +6,28 @@ import (
 
 type ButtonWidgetObj struct {
 	BaseWidgetObj
-	Label    HtmlString
-	listener ButtonWidgetListener
+	Label HtmlString
 }
 
 type ButtonWidget = *ButtonWidgetObj
 
-func NewButtonWidget(id string, listener ButtonWidgetListener) ButtonWidget {
+func NewButtonWidget(id string, listener ClickWidgetListener) ButtonWidget {
 	if listener == nil {
 		listener = doNothingButtonListener
 	}
-	b := &ButtonWidgetObj{
-		listener: listener,
-	}
+	b := &ButtonWidgetObj{}
 	b.InitBase(id)
-	b.LowListen = buttonListenWrapper
+	b.SetLowListener(
+		func(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
+			listener(sess, widget, args)
+			return nil, nil
+		})
 	return b
 }
 
-func buttonListenWrapper(sess Session, widget Widget, value string) (any, error) {
-	b := widget.(ButtonWidget)
-	b.listener(sess, widget)
-	return nil, nil
+func doNothingButtonListener(sess Session, widget Widget, args WidgetArgs) {
+	Alert("<1#50Button has no listener yet:", widget.Id(), "args:", args)
 }
-
-func doNothingButtonListener(sess Session, widget Widget) {
-	Alert("<1#50Button has no listener yet:", widget.Id())
-}
-
-type ButtonWidgetListener func(sess Session, widget Widget)
 
 func RenderButton(s Session, m MarkupBuilder, w_BaseId string, actionId string, enabled bool, w_Label any, w_size WidgetSize, w_align WidgetAlign, vertPadding int) {
 	vertPaddingExpr := `py-` + IntToString(vertPadding)
@@ -72,7 +65,9 @@ func RenderButton(s Session, m MarkupBuilder, w_BaseId string, actionId string, 
 		m.A(` disabled`)
 	}
 
-	m.A(` onclick='jsButton("`, s.baseIdPrefix+actionId, `")'`, `>`)
+	Todo("!Detect escaping of quotes (debug only)")
+	Todo("!Prefer single quotes over doubles, as they don't produce &quot; when escaping for html/javascript")
+	m.A(` onclick="jsButton('`, s.PrependId(actionId), `')"`, `>`)
 	m.Escape(w_Label)
 	m.A(`</button>`)
 	m.Cr()
@@ -83,7 +78,7 @@ func RenderButton(s Session, m MarkupBuilder, w_BaseId string, actionId string, 
 }
 
 func (w ButtonWidget) RenderTo(s Session, m MarkupBuilder) {
-	RenderButton(s, m, w.BaseId, w.BaseId, w.Enabled(), w.Label, w.size, w.align, 1)
+	RenderButton(s, m, w.Id(), w.Id(), w.Enabled(), w.Label, w.size, w.align, 1)
 }
 
 var btnTextSize = map[WidgetSize]string{

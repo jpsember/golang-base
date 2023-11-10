@@ -24,7 +24,7 @@ func NewRobotRequester(url string) *RobotRequester {
 }
 
 func (r *RobotRequester) Start() {
-	r.ticker = time.NewTicker(time.Duration(r.IntervalMS) * time.Millisecond)
+	r.ticker = time.NewTicker(MsToDuration(r.IntervalMS))
 	Todo("How do we stop this thing?")
 	quit := make(chan struct{})
 	go func() {

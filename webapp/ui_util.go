@@ -7,23 +7,27 @@ import (
 
 // This adds the webserv UserHeaderWidget, and adds our app's click listener to it.
 func AddUserHeaderWidget(s Session) {
-	m := s.WidgetManager()
-	hw := m.AddUserHeader()
-	hw.SetClickListener(ourProcessUserHeaderClick)
+	s.AddUserHeader(ourProcessUserHeaderClick)
 }
 
-func ourProcessUserHeaderClick(sess Session, message string) bool {
-	pr := PrIf(false)
-	pr("UserHeaderClick? Message:", message)
-	if _, f := TrimIfPrefix(message, HEADER_WIDGET_BUTTON_PREFIX); f {
-		user := OptSessionUser(sess)
-		if user.Id() > 0 {
-			LogOut(sess)
-			sess.SwitchToPage(NewLandingPage(sess))
-		} else {
-			sess.SwitchToPage(NewLandingPage(sess))
+func ourProcessUserHeaderClick(sess Session, widget Widget, args WidgetArgs) {
+	pr := PrIf("UserHeaderClick", false)
+	pr("args:", args)
+	user := OptSessionUser(sess)
+	valid, message := args.Read()
+	if valid {
+		switch message {
+		case USER_HEADER_ACTION_SIGN_OUT:
+			if user.Id() > 0 {
+				LogOut(sess)
+				sess.SwitchToPage(LandingPageTemplate, nil)
+			}
+			break
+		case USER_HEADER_ACTION_SIGN_IN:
+			if user.Id() == 0 {
+				sess.SwitchToPage(LandingPageTemplate, nil)
+			}
+			break
 		}
-		return true
 	}
-	return false
 }

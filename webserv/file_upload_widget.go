@@ -1,5 +1,9 @@
 package webserv
 
+import (
+	. "github.com/jpsember/golang-base/base"
+)
+
 type FileUploadWidgetListener func(sess Session, widget FileUpload, value []byte) error
 
 type FileUploadObj struct {
@@ -19,47 +23,49 @@ func NewFileUpload(id string, label HtmlString, listener FileUploadWidgetListene
 }
 
 func (w FileUpload) RenderTo(s Session, m MarkupBuilder) {
-	id := w.BaseId
-	inputId := id + ".input"
+	id := w.Id()
+	filenameId := id + ".input"
 	formId := id + ".form"
 	inputName := id + ".input"
 
-	m.Comment("file upload")
+	m.Comment("file upload widget")
 
 	// The outermost element must have the widget's id!  Or chaos happens during repainting.
 
-	m.OpenTag(`div id="`, id, `" class="mb-3"`)
+	m.TgOpen(`div id=`).A(QUO, id, ` class="mb-3"`).TgContent()
 	{
 
-		m.OpenTag(`form id="`, formId, `" enctype="multipart/form-data" method="post" `)
+		m.TgOpen(`form id=`).A(QUO, formId, ` enctype="multipart/form-data" method="post" `).TgContent()
 
 		// I suspect the multipart/form-data has nothing to do with file uploads, but is for forms in general
 
 		{
 			labelHtml := w.Label
 			if labelHtml != nil {
-				m.Comment("Label")
-				m.OpenTag(`label for="`, inputId, `" class="form-label" style="font-size:70%"`)
+				m.Comment("Label for the widget")
+				m.TgOpen(`label for=`).A(QUO, filenameId, ` class="form-label"`).Style(`font-size:70%`).TgContent()
 				m.Escape(labelHtml)
-				m.CloseTag()
+				m.TgClose()
 			}
 		}
 
-		m.VoidTag(`input class="form-control" type="file" name="`, inputName, `" id="`, inputId, `" onchange='jsUpload("`, w.Id(), `")'`)
+		m.Comment(`The input element that Bootstrap does some magic on`)
+		m.TgOpen(`input class='form-control' type='file' name=`)
+		m.A(QUO, inputName, ` id=`, QUO, filenameId, ` onchange="jsUpload('`, w.Id(), `')"`)
+		m.TgClose()
 
-		problemId := WidgetIdWithProblem(w.BaseId)
-		problemText := s.StringValue(problemId)
+		problemText := s.WidgetProblem(w)
 
 		hasProblem := problemText != ""
 
 		if hasProblem {
 			m.Comment("Problem")
-			m.A(`<div class="form-text text-danger" style="font-size:  70%">`)
-			m.Escape(problemText).A(`</div>`)
+			m.TgOpen(`div class="form-text text-danger"`).Style(`font-size:  70%`).TgContent()
+			m.A(ESCAPED, problemText).TgClose()
 		}
 
-		m.CloseTag()
+		m.TgClose()
 	}
 
-	m.CloseTag()
+	m.TgClose()
 }

@@ -15,23 +15,30 @@ func RandomAnimal(r JSRand, managers []User) AnimalBuilder {
 	a.SetCampaignTarget((r.Intn(10) + 2) * 50 * DollarsToCurrency)
 	a.SetCampaignBalance(r.Intn(a.CampaignTarget()))
 	a.SetManagerId(managers[r.Intn(len(managers))].Id())
-	{
-		// Copy one of our sample photos to use as this animal's photo
-		d := SharedDemoPhotos
-		nms := d.ScaledPhotoNames()
-		if len(nms) == 0 {
-			Alert("?No demo photos found; animal(s) won't have photos")
-		} else {
-			i := r.Intn(len(nms))
-			b := NewBlob()
-			pth := d.scaledPhotosDir().JoinM(nms[i])
-			b.SetData(pth.ReadBytesM())
-			AssignBlobName(b)
-			b2 := CheckOkWith(CreateBlob(b))
-			a.SetPhotoThumbnail(b2.Id())
-		}
+
+	if SamplePhotoBlobIdCount > 0 {
+		a.SetPhotoThumbnail(SamplePhotoBlobIdStart + r.Intn(SamplePhotoBlobIdCount))
 	}
-	Todo("Issue #59: add random photo")
+	Pr("random animal, photo:", a.PhotoThumbnail(), "sample count:", SamplePhotoBlobIdCount)
+	
+	//
+	//{
+	//	// Copy one of our sample photos to use as this animal's photo
+	//	d := SharedDemoPhotos
+	//	nms := d.ScaledPhotoNames()
+	//	if len(nms) == 0 {
+	//		Alert("?No demo photos found; animal(s) won't have photos")
+	//	} else {
+	//		i := r.Intn(len(nms))
+	//		b := NewBlob()
+	//		pth := d.scaledPhotosDir().JoinM(nms[i])
+	//		b.SetData(pth.ReadBytesM())
+	//		AssignBlobName(b)
+	//		b2 := CheckOkWith(CreateBlob(b))
+	//		a.SetPhotoThumbnail(b2.Id())
+	//	}
+	//}
+	//Todo("Issue #59: add random photo")
 	return a
 }
 

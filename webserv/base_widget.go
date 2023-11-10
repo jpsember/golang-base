@@ -6,25 +6,67 @@ import (
 
 // The simplest concrete Widget implementation
 type BaseWidgetObj struct {
-	BaseId string
-	Bounds Rect
+	baseId string
 
 	LowListen     LowLevelWidgetListener
-	hidden        bool
-	disabled      bool
 	staticContent any
-	idHashcode    int
 	size          WidgetSize
 	align         WidgetAlign
 	columns       int
-	stateProvider WidgetStateProvider
-	clickListener ClickListener
+	stateProvider JSMap
+	bitFlags      int
 }
+
+const (
+	wflagHidden = 1 << iota
+	wflagTrace
+	wflagDisabled
+	wflagDetached
+	wflagRepaint
+)
 
 type BaseWidget = *BaseWidgetObj
 
+func (w BaseWidget) isFlag(flag int) bool {
+	return (w.bitFlags & flag) != 0
+}
+
+func (w BaseWidget) ClearRepaint() {
+	w.setOrClearFlag(wflagRepaint, false)
+}
+
+func (w BaseWidget) Repaint() {
+	changed := w.setOrClearFlag(wflagRepaint, true)
+	if DebugWidgetRepaint && changed {
+		Pr("Repaint:", w.Id(), INDENT, Callers(1, 3))
+	}
+}
+func (w BaseWidget) IsRepaint() bool {
+	return w.isFlag(wflagRepaint)
+}
+
+func (w BaseWidget) Trace() bool { return w.isFlag(wflagTrace) }
+func (w BaseWidget) setOrClearFlag(flag int, set bool) bool {
+	oldVal := w.bitFlags
+	newVal := oldVal
+	if set {
+		newVal |= flag
+	} else {
+		newVal &= ^flag
+	}
+	w.bitFlags = newVal
+	return newVal != oldVal
+}
+
+func (w BaseWidget) SetTrace(flag bool) {
+	changed := w.setOrClearFlag(wflagTrace, flag)
+	if flag && changed {
+		Alert("#50<1Setting trace on widget:", w.Id())
+	}
+}
+
 func (w BaseWidget) InitBase(id string) {
-	w.BaseId = id
+	w.baseId = id
 }
 
 func NewBaseWidget(id string) BaseWidget {
@@ -37,12 +79,24 @@ func (w BaseWidget) LowListener() LowLevelWidgetListener {
 	return w.LowListen
 }
 
+func (w BaseWidget) SetLowListener(listener LowLevelWidgetListener) {
+	if w.LowListen != nil {
+		Alert("#50Widget already has a LowListener:", QUO, w.Id())
+		return
+	}
+	w.LowListen = listener
+}
+
 func (w BaseWidget) String() string {
-	return "<" + w.BaseId + ">"
+	return "<" + w.Id() + ">"
+}
+
+func (w BaseWidget) ValidationValue(s Session) (string, bool) {
+	return "", false
 }
 
 func (w BaseWidget) Id() string {
-	return w.BaseId
+	return w.baseId
 }
 
 func (w BaseWidget) SetSize(size WidgetSize) {
@@ -79,19 +133,28 @@ func (w BaseWidget) StaticContent() any {
 }
 
 func (w BaseWidget) Visible() bool {
-	return !w.hidden
+	return !w.isFlag(wflagHidden)
+}
+
+func (w BaseWidget) Detached() bool {
+	return w.isFlag(wflagDetached)
 }
 
 func (w BaseWidget) SetVisible(v bool) {
-	w.hidden = !v
+	Todo("?These flags don't cause widget to be plotted, which they ought to be (if their status is changing)")
+	w.setOrClearFlag(wflagHidden, !v)
+}
+
+func (w BaseWidget) SetDetached(v bool) {
+	w.setOrClearFlag(wflagDetached, v)
 }
 
 func (w BaseWidget) Enabled() bool {
-	return !w.disabled
+	return !w.isFlag(wflagDisabled)
 }
 
 func (w BaseWidget) SetEnabled(s bool) {
-	w.disabled = !s
+	w.setOrClearFlag(wflagDisabled, !s)
 }
 
 func (w BaseWidget) AddChild(c Widget, manager WidgetManager) {
@@ -109,35 +172,35 @@ func (w BaseWidget) SetColumns(columns int) {
 func (w BaseWidget) Columns() int { return w.columns }
 
 func (w BaseWidget) IdSummary() string {
-	if w.BaseId == "" {
+	if w.Id() == "" {
 		return `(no id)`
 	}
-	return `Id: ` + w.BaseId
+	return `Id: ` + w.Id()
 }
 
 func (w BaseWidget) RenderTo(s Session, m MarkupBuilder) {
-	m.A(`<div id='`, w.BaseId, `'></div>`)
+	m.A(`<div id='`, w.Id(), `'></div>`)
 }
 
 func (w BaseWidget) AuxId() string {
-	return w.BaseId + ".aux"
+	return w.Id() + ".aux"
 }
 
-func (w BaseWidget) SetStateProvider(p WidgetStateProvider) {
-	if p == nil {
-		Todo("!create a default provider")
+func (w BaseWidget) setStateProvider(p JSMap) {
+	if w.isFlag(wflagTrace) {
+		if p != nil {
+			w.Log("setStateProvider:", p, Caller())
+		}
 	}
 	w.stateProvider = p
 }
 
-func (w BaseWidget) StateProvider() WidgetStateProvider {
+func (w BaseWidget) Log(args ...any) {
+	if w.isFlag(wflagTrace) {
+		Pr("{"+w.Id()+"}: ", ToString(args...))
+	}
+}
+
+func (w BaseWidget) StateProvider() JSMap {
 	return w.stateProvider
-}
-
-func (w BaseWidget) GetClickListener() ClickListener {
-	return w.clickListener
-}
-
-func (w BaseWidget) SetClickListener(c ClickListener) {
-	w.clickListener = c
 }

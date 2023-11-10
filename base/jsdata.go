@@ -1,9 +1,7 @@
 package base
 
 import (
-	"math/rand"
 	"strings"
-	_ "strings"
 )
 
 func RandomText(j JSRand, maxLength int, withLinefeeds bool) string {
@@ -17,13 +15,14 @@ func RandomText(j JSRand, maxLength int, withLinefeeds bool) string {
 		}
 		sb.WriteString(RandomWord(j))
 	}
-	return strings.TrimSpace(sb.String())
+	text := TruncateString(sb.String(), false, maxLength)
+	return strings.TrimSpace(text)
 }
 
 func RandomWord(j JSRand) string {
 	sample := "orhxxidfusuytelrcfdlordburswfxzjfjllppdsywgswkvukrammvxvsjzqwplxcpkoekiznlgsgjfonlugreiqvtvpjgrqotzu"
-	wordSize := rand.Intn(8) + 2
-	c := rand.Intn(len(sample) - wordSize)
+	wordSize := j.Intn(8) + 2
+	c := j.Intn(len(sample) - wordSize)
 	return sample[c : c+wordSize]
 }
 
@@ -52,6 +51,7 @@ func ParseOrDefault(json JSEntity, defaultValue DataClass) (DataClass, error) {
 var DataClassParseError = Error("DataClass parse error")
 
 func attemptParse(json JSEntity, parser DataClass) DataClass {
+	Todo("?Should datagen empty lists just be nil?")
 	defer func() {
 		if r := recover(); r != nil {
 		}

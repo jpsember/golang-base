@@ -35,11 +35,16 @@ func NewAlertWidget(id string, alertClass AlertClass) AlertWidget {
 
 var classNames = []string{`success`, `info`, `warning`, `danger`}
 
+func (w AlertWidget) ValueAsString(s Session) string {
+  // I think this func might get us in trouble...
+	return s.WidgetStringValue(w)
+}
+
 func (w AlertWidget) RenderTo(s Session, m MarkupBuilder) {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	desc := `AlertWidget ` + w.IdSummary()
 	pr("rendering AlertWidget, desc:", desc, "class:", w.Class)
 	alertMsg := s.WidgetStringValue(w)
 	m.A(`<div class='alert alert-`, classNames[w.Class],
-		`' role='alert' id='`, w.BaseId, `'>`, html.EscapeString(alertMsg), `</div>`).Cr()
+		`' role='alert' id='`, w.Id(), `'>`, html.EscapeString(alertMsg), `</div>`).Cr()
 }

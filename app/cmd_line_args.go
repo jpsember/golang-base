@@ -124,7 +124,7 @@ func (c *CmdLineArgs) Help() {
 // Process the unpacked list of options and values, assigning values to the
 // options
 func (c *CmdLineArgs) readArgumentValues(args *Array[any]) {
-	pr := PrIf(c.Verbose())
+	pr := PrIf("", c.Verbose())
 	pr("processing unpacked list of options and values")
 
 	var cursor = 0
@@ -343,7 +343,7 @@ type Option struct {
 	Description string
 	Invocation  string
 	BoolValue   bool
-	IntValue    int64
+	IntValue    int
 	FloatValue  float64
 	StringValue string
 }

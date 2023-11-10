@@ -1,0 +1,12 @@
+class {
+    string client_id;
+    string client_secret;
+    string refresh_token;
+    string access_token;
+    long access_token_expiry_ms;
+    string account_id;
+    string from_address;
+    map string string folder_map;
+    int max_attachment_size = 15000000;
+    int max_attachment_total_size = 16000000;
+}

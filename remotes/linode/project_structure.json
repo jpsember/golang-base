@@ -1,0 +1,10 @@
+{
+  "resource_dir" : "resources",
+  "key_dir" : "/etc/letsencrypt/live/pawsforaid.org",
+  "db_datasource_path" : "sqlite/animal_app_TMP_.db",
+  "base_url" : "pawsforaid.org",
+  "cert_name" : "fullchain.pem",
+  "key_name" : "privkey.pem",
+  "raw_photos_dir" : "sample_photos",
+   "sample_photos_dir" : "sample_photos_scaled"
+}

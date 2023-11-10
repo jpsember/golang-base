@@ -6,66 +6,57 @@ import (
 )
 
 type mgrState struct {
-	Parent        Widget
-	StateProvider WidgetStateProvider
-	IdPrefix      string
-	DebugTag      string
-}
-
-type WidgetManagerObj struct {
-	BaseObject
-	widgetMap           WidgetMap
-	stack               []mgrState
-	pendingSize         WidgetSize
-	pendingAlign        WidgetAlign
-	pendingId           string
-	pendingLabel        string
-	anonymousIdCounter  int
+	Parent              Widget
+	StateMap            JSMap
+	IdPrefix            string // This is an optional prefix to be prepended to the id when adding widgets
+	DebugTag            string
 	pendingChildColumns int
 }
 
-func NewWidgetManager(session Session) WidgetManager {
-	w := WidgetManagerObj{
-		widgetMap: make(map[string]Widget),
-	}
-	w.initStateStack()
-	w.SetName("WidgetManager")
-	w.resetPendingColumns()
-	w.LogCols("Constructed")
-	return &w
+var mgrStateDefault = mgrState{
+	DebugTag: "<bottom of stack>",
+}
+
+type WidgetManagerObj struct {
+	widgetMap            WidgetMap
+	stack                []mgrState
+	pendingSize          WidgetSize
+	pendingAlign         WidgetAlign
+	pendingHeight        int
+	pendingId            string
+	pendingLabel         string
+	pendingClickListener ClickWidgetListener
+	anonymousIdCounter   int
+}
+
+func (m WidgetManager) InitializeWidgetManager() {
+	DebVerifyServerStarted()
+	m.widgetMap = make(map[string]Widget)
+	m.initStateStack()
+	m.resetPendingColumns()
 }
 
 func (m WidgetManager) initStateStack() {
-	m.stack = []mgrState{{}}
-}
-
-func (m WidgetManager) LogCols(message string) {
-	if !Alert("!remove this at some point") {
-		Pr("WidgetManager pending child columns:", m.pendingChildColumns)
-	}
+	// Add a sentinel value so the stack is never empty
+	m.stack = []mgrState{mgrStateDefault}
 }
 
 type WidgetManager = *WidgetManagerObj
 
-// Determine if a widget exists
-func (m WidgetManager) Exists(id string) bool {
-	return m.find(id) != nil
+func (m WidgetManager) Opt(id string) Widget {
+	return m.widgetMap[id]
+}
+
+func (m WidgetManager) exists(id string) bool {
+	return m.Opt(id) != nil
 }
 
 func (m WidgetManager) Get(id string) Widget {
-	w := m.find(id)
+	w := m.Opt(id)
 	if w == nil {
 		BadState("Can't find widget with id:", Quoted(id))
 	}
 	return w
-}
-
-func (m WidgetManager) Opt(id string) Widget {
-	return m.find(id)
-}
-
-func (m WidgetManager) find(id string) Widget {
-	return m.widgetMap[id]
 }
 
 // ------------------------------------------------------------------------------------
@@ -73,8 +64,17 @@ func (m WidgetManager) find(id string) Widget {
 // ------------------------------------------------------------------------------------
 
 func (m WidgetManager) Id(id string) WidgetManager {
-	m.pendingId = m.IdPrefix() + id
+	Todo("!this name conflicts with Session.SessionId")
+	v := m.IdPrefix() + id
+	AssertNoDots(v)
+	m.pendingId = v
 	return m
+}
+
+func (m WidgetManager) ConsumeOptionalPendingClickListener() ClickWidgetListener {
+	listener := m.pendingClickListener
+	m.pendingClickListener = nil
+	return listener
 }
 
 func (m WidgetManager) consumePendingId() string {
@@ -83,7 +83,8 @@ func (m WidgetManager) consumePendingId() string {
 	m.pendingId = ""
 	return id
 }
-func (m WidgetManager) consumeOptionalPendingId() string {
+
+func (m WidgetManager) ConsumeOptionalPendingId() string {
 	id := m.pendingId
 	if id != "" {
 		m.pendingId = ""
@@ -99,6 +100,12 @@ func (m WidgetManager) Size(size WidgetSize) WidgetManager {
 	return m
 }
 
+// Set height for next widget (for text, this is e.g. 5em).
+func (m WidgetManager) Height(ems int) WidgetManager {
+	m.pendingHeight = ems
+	return m
+}
+
 // Set horizontal alignment for next widget
 func (m WidgetManager) Align(align WidgetAlign) WidgetManager {
 	m.pendingAlign = align
@@ -107,8 +114,7 @@ func (m WidgetManager) Align(align WidgetAlign) WidgetManager {
 
 // Set number of Bootstrap columns the next widget will occupy within its container.
 func (m WidgetManager) Col(columns int) WidgetManager {
-	m.pendingChildColumns = columns
-	m.LogCols("Set col;")
+	m.stackedState().pendingChildColumns = columns
 	return m
 }
 
@@ -122,6 +128,12 @@ func (m WidgetManager) consumePendingLabel() string {
 	lbl := m.pendingLabel
 	m.pendingLabel = ""
 	return lbl
+}
+
+func (m WidgetManager) consumePendingHeight() int {
+	x := m.pendingHeight
+	m.pendingHeight = 0
+	return x
 }
 
 func (m WidgetManager) consumePendingSize() WidgetSize {
@@ -143,11 +155,18 @@ func verifyUsed(flag bool, name string) {
 	BadState("unused value:", name)
 }
 
+func (m WidgetManager) Listener(listener ClickWidgetListener) WidgetManager {
+	m.pendingClickListener = listener
+	return m
+}
+
 func (m WidgetManager) clearPendingComponentFields() {
 	// If some values were not used, issue warnings
 	verifyUsed(m.pendingLabel == "", "pendingLabel")
 	verifyUsed(m.pendingSize == SizeDefault, "pendingSize")
 	verifyUsed(m.pendingAlign == AlignDefault, "pendingAlign")
+	verifyUsed(m.pendingHeight == 0, "pendingHeight")
+	verifyUsed(m.pendingClickListener == nil, "pendingClickListener")
 }
 
 /**
@@ -156,17 +175,14 @@ func (m WidgetManager) clearPendingComponentFields() {
 func (m WidgetManager) Add(widget Widget) WidgetManager {
 	id := widget.Id()
 	if id != "" {
-		if m.Exists(id) {
-			BadState("<1Attempt to add widget with duplicate id:", id)
+		if m.exists(id) {
+			BadState("<1Attempt to add widget with duplicate id:", id, "widget ids:", m.IdSummary())
 		}
 		m.widgetMap[id] = widget
 	}
-	// Set its state provider, if it doesn't already have one
-	if widget.StateProvider() == nil {
-		widget.SetStateProvider(m.StateProvider())
-	}
 
-	m.Log("addWidget, id:", id, "panel stack size:", len(m.stack))
+	widget.setStateProvider(m.stackedStateMap())
+
 	state := m.stackedState()
 	parent := state.Parent
 	if parent != nil {
@@ -179,37 +195,14 @@ func (m WidgetManager) Add(widget Widget) WidgetManager {
 	return m
 }
 
+func (m WidgetManager) DebugStackedState() *mgrState { return m.stackedState() }
+
 func (m WidgetManager) stackedState() *mgrState {
 	return &m.stack[len(m.stack)-1]
 }
 
-// Detach a widget that has just been constructed from the WidgetManager and its container.
-func (m WidgetManager) Detach(widget Widget) Widget {
-	result := m.Opt(widget.Id())
-	if result == nil {
-		BadArg("Cannot detach widget; not in manager set:", widget.Id())
-	}
-	container := m.parentWidget()
-	container.RemoveChild(widget)
-
-	// Delete all widgets within the detached widget's tree from the widget map
-	idList := getWidgetsInTree(widget)
-	for _, id := range idList {
-		delete(m.widgetMap, id)
-	}
-	return result
-}
-
-func getWidgetsInTree(widget Widget) []string {
-	return auxGetWidgetsInTree(widget, nil)
-}
-
-func auxGetWidgetsInTree(widget Widget, list []string) []string {
-	list = append(list, widget.Id())
-	for _, c := range widget.Children() {
-		list = auxGetWidgetsInTree(c, list)
-	}
-	return list
+func (s *mgrState) String() string {
+	return NewJSMap().Put("IdPrefix", s.IdPrefix).Put("StateProvider", s.StateMap.String()).CompactString()
 }
 
 // Have subsequent WidgetManager operations operate on a particular container widget.
@@ -218,7 +211,7 @@ func (m WidgetManager) With(container Widget) WidgetManager {
 	cont := container.(GridWidget)
 	id := cont.Id()
 
-	CheckState(m.Exists(id))
+	CheckState(m.exists(id), "There is no widget with id:", id)
 
 	// Discard any existing child widgets
 	m.removeWidgets(cont.Children())
@@ -230,46 +223,53 @@ func (m WidgetManager) With(container Widget) WidgetManager {
 }
 
 func (m WidgetManager) resetPendingColumns() {
-	m.pendingChildColumns = MaxColumns
+	m.stackedState().pendingChildColumns = MaxColumns
 }
 
 // Add a child GridContainerWidget, and push onto stack as active container
 func (m WidgetManager) Open() Widget {
-	m.Log("open")
-	widget := NewContainerWidget(m.consumeOptionalPendingId())
+	widget := NewContainerWidget(m.ConsumeOptionalPendingId(), m.ConsumeOptionalPendingClickListener())
 	m.Add(widget)
 	return m.OpenContainer(widget)
 }
 
 // Push a container widget onto the stack as an active container
 func (m WidgetManager) OpenContainer(widget Widget) Widget {
-	m.Log("Adding container widget")
 	itm := *m.stackedState()
 	itm.Parent = widget
 	m.pushState(itm, tag_container)
-	m.Log("added container to stack")
 	return widget
-}
-
-func (m WidgetManager) pushState(state mgrState, tag string) {
-	state.DebugTag = tag
-	m.stack = append(m.stack, state)
 }
 
 const (
 	tag_container = "container"
 	tag_prefix    = "prefix"
-	tag_provider  = "provider"
+	tag_statemap  = "statemap"
+	tag_editor    = "editor"
 )
+
+var debStack = false && Alert("debug stack")
 
 // Pop the active container from the stack.
 func (m WidgetManager) Close() WidgetManager {
-	m.Log("Close")
 	m.popStack(tag_container)
 	return m
 }
 
+func (m WidgetManager) pushState(state mgrState, tag string) {
+	if debStack {
+		Pr(Callers(1, 4))
+		Pr("pushState:", tag, INDENT, m.dumpStateStack(len(m.stack)))
+	}
+	state.DebugTag = tag
+	m.stack = append(m.stack, state)
+}
+
 func (m WidgetManager) popStack(tag string) {
+	if debStack {
+		Pr(Callers(1, 4))
+		Pr("popStack:", tag, INDENT, m.dumpStateStack(len(m.stack)))
+	}
 	top := m.stackedState()
 	if top.DebugTag != tag {
 		BadState("attempt to pop state stack, tag is:", top.DebugTag, "but expected:", tag)
@@ -277,19 +277,22 @@ func (m WidgetManager) popStack(tag string) {
 	_, m.stack = PopLast(m.stack)
 }
 
-//// Verify that no unused 'pending' arguments exist, calls are balanced, etc
-//func (m WidgetManager) finish() WidgetManager {
-//	m.clearPendingComponentFields()
-//	if len(m.stack) != 1 {
-//		sb := strings.Builder{}
-//		for _, x := range m.stack {
-//			sb.WriteByte(' ')
-//			sb.WriteString(x.DebugTag)
-//		}
-//		BadState("state stack nonempty! Tags:", m.dumpStateStack(-1))
-//	}
-//	return m
-//}
+func (m WidgetManager) StateStackToJson() JSMap {
+	result := NewJSMap()
+	for _, x := range m.stack {
+		mp := NewJSMap()
+		if x.IdPrefix != "" {
+			mp.Put("id_prefix", x.IdPrefix)
+		}
+		mp.Put("debug_tag", x.DebugTag)
+		m2 := x.StateMap
+		if m2 != nil {
+			mp.Put("state_prov", m2)
+		}
+		result.PutNumbered(mp)
+	}
+	return result
+}
 
 func (m WidgetManager) dumpStateStack(cursor int) string {
 	sb := strings.Builder{}
@@ -311,15 +314,18 @@ func (m WidgetManager) AddInput(listener InputWidgetListener) InputWidget {
 	return m.auxAddInput(listener, false)
 }
 
-func (m WidgetManager) AddUserHeader() UserHeaderWidget {
-	w := NewUserHeaderWidget(m.consumeOptionalPendingId())
+// The ClickWidgetListener will receive message USER_HEADER_ACTION_xxxx.
+func (m WidgetManager) AddUserHeader(listener ClickWidgetListener) UserHeaderWidget {
+	m.PushStateMap(NewJSMap())
+	w := NewUserHeaderWidget(m.ConsumeOptionalPendingId(), listener)
 	w.BgndImageMarkup = `style=" height:50px; background-image:url('app_header.jpg'); background-repeat: no-repeat;"`
 	m.Add(w)
+	m.PopStateMap()
 	return w
 }
 
 func (m WidgetManager) auxAddInput(listener InputWidgetListener, password bool) InputWidget {
-	id := m.consumeOptionalPendingId()
+	id := m.ConsumeOptionalPendingId()
 	t := NewInputWidget(id, NewHtmlString(m.consumePendingLabel()), listener, password)
 	m.Add(t)
 	return t
@@ -329,80 +335,90 @@ func (m WidgetManager) AddPassword(listener InputWidgetListener) InputWidget {
 	return m.auxAddInput(listener, true)
 }
 
-func (m WidgetManager) AddList(list ListInterface, itemWidget Widget, provider ListItemStateProvider) ListWidget {
-	id := m.consumeOptionalPendingId()
-	t := NewListWidget(id, list, itemWidget, provider)
+func (m WidgetManager) AddList(list ListInterface, itemWidget Widget) ListWidget {
+	if !itemWidget.Visible() {
+		BadArg("widget is not visible (detaching will happen by us)")
+	}
+	itemWidget.SetDetached(true)
+	Alert("?The list item subwidgets are not being detached along with the item widget; but maybe we don't care")
+	id := m.ConsumeOptionalPendingId()
+	t := NewListWidget(id, list, itemWidget)
 	m.Add(t)
 	return t
 }
 
-// Utility method to determine the label and id for text fields (text fields, headings).
+// Utility method to determine the label and id for a new text field (text fields, headings).
 // The label can either be expressed as a string (static content),
 // or an id (dynamic content, read from session state).  If static, there should *not* be
 // a pending id.
-func (m WidgetManager) getStaticContentAndId() (string, string) {
+func (m WidgetManager) getStaticContentAndId() (string, string, bool) {
 	staticContent := m.consumePendingLabel()
 	hasStaticContent := staticContent != ""
 	if hasStaticContent {
 		CheckState(m.pendingId == "", "specify id OR static content")
 	}
-	id := m.consumeOptionalPendingId()
-	return staticContent, id
+	id := m.ConsumeOptionalPendingId()
+	return staticContent, id, hasStaticContent
 }
 
-func (m WidgetManager) AddHeading() WidgetManager {
-	staticContent, id := m.getStaticContentAndId()
+func (m WidgetManager) AddHeading() HeadingWidget {
+	staticContent, id, wasStatic := m.getStaticContentAndId()
 	w := NewHeadingWidget(id)
+	if wasStatic {
+		w.SetStaticContent(staticContent)
+	}
 	w.SetSize(m.consumePendingSize())
 	Todo("!Setting WidgetSize seems to have no effect on headings")
 	w.SetAlign(m.consumePendingAlign())
-	if staticContent != "" {
-		w.SetStaticContent(staticContent)
-	}
-	return m.Add(w)
+	m.Add(w)
+	return w
 }
 
-func (m WidgetManager) AddText() WidgetManager {
-	staticContent, id := m.getStaticContentAndId()
-	w := NewTextWidget(id, m.consumePendingSize())
-	w.SetStateProvider(m.StateProvider())
-	if staticContent != "" {
+func (m WidgetManager) AddText() TextWidget {
+	staticContent, id, wasStatic := m.getStaticContentAndId()
+	w := NewTextWidget(id, m.consumePendingSize(), m.consumePendingHeight(), m.ConsumeOptionalPendingClickListener())
+	if wasStatic {
 		w.SetStaticContent(staticContent)
 	}
-	m.Log("Adding text, id:", w.BaseId)
-	return m.Add(w)
+	m.Add(w)
+	return w
 }
 
-func (m WidgetManager) AddButton(listener ButtonWidgetListener) ButtonWidget {
-	w := NewButtonWidget(m.consumeOptionalPendingId(), listener)
+func (m WidgetManager) AddBtn() ButtonWidget {
+	w := NewButtonWidget(m.ConsumeOptionalPendingId(), m.ConsumeOptionalPendingClickListener())
 	w.SetSize(m.consumePendingSize())
 	w.SetAlign(m.consumePendingAlign())
-	m.Log("Adding button, id:", w.BaseId)
 	w.Label = NewHtmlString(m.consumePendingLabel())
 	m.Add(w)
 	return w
 }
 
 func (m WidgetManager) AddSpace() WidgetManager {
-	return m.Add(NewBaseWidget(m.consumeOptionalPendingId()))
+	return m.Add(NewBaseWidget(m.ConsumeOptionalPendingId()))
 }
 
-func doNothingFileUploadListener(sess Session, widget FileUpload, value []byte) error {
+func doNothingFileUploadListener(s Session, widget FileUpload, value []byte) error {
 	Pr("'do nothing' FileUploadListener called with bytes:", len(value))
 	return nil
+}
+
+func (m WidgetManager) AddAlert(alertClass AlertClass) AlertWidget {
+	w := NewAlertWidget(m.ConsumeOptionalPendingId(), alertClass)
+	m.Add(w)
+	return w
 }
 
 func (m WidgetManager) AddFileUpload(listener FileUploadWidgetListener) FileUpload {
 	if listener == nil {
 		listener = doNothingFileUploadListener
 	}
-	w := NewFileUpload(m.consumePendingId(), NewHtmlString(m.consumePendingLabel()), listener)
+	w := NewFileUpload(m.ConsumeOptionalPendingId(), NewHtmlString(m.consumePendingLabel()), listener)
 	m.Add(w)
 	return w
 }
 
-func (m WidgetManager) AddImage() ImageWidget {
-	w := NewImageWidget(m.consumePendingId())
+func (m WidgetManager) AddImage(urlProvider ImageURLProvider) ImageWidget {
+	w := NewImageWidget(m.ConsumeOptionalPendingId(), urlProvider, m.ConsumeOptionalPendingClickListener())
 	m.Add(w)
 	return w
 }
@@ -423,7 +439,7 @@ func (m WidgetManager) checkboxHelper(listener CheckboxWidgetListener, switchFla
 
 func (m WidgetManager) AllocateAnonymousId(debugInfo string) string {
 	m.anonymousIdCounter++
-	result := "z" + IntToString(m.anonymousIdCounter)
+	result := m.IdPrefix() + "z_" + IntToString(m.anonymousIdCounter)
 	if debugInfo != "" {
 		result += "_" + debugInfo + "_"
 	}
@@ -439,7 +455,7 @@ func (m WidgetManager) removeWidgets(widgets []Widget) {
 // Remove widget (if it exists), and the subtree of widgets it may contain.
 func (m WidgetManager) Remove(widget Widget) WidgetManager {
 	id := widget.Id()
-	if m.Exists(id) {
+	if m.exists(id) {
 		delete(m.widgetMap, id)
 		m.removeWidgets(widget.Children())
 	}
@@ -462,20 +478,6 @@ func SetWidgetDebugRendering() {
 	WidgetDebugRenderingFlag = true
 }
 
-// Mark widgets for repainting (if they exist).  Does nothing if there is no repaintSet.
-func (s Session) RepaintIds(ids ...string) WidgetManager {
-	m := s.WidgetManager()
-	for _, id := range ids {
-		w := m.Opt(id)
-		if w != nil {
-			s.Repaint(w)
-		} else {
-			Alert("#50<1Can't find widget to repaint with id:", id)
-		}
-	}
-	return m
-}
-
 func (m WidgetManager) PushContainer(container Widget) WidgetManager {
 	// Push a container widget onto the stack
 	itm := *m.stackedState()
@@ -484,18 +486,29 @@ func (m WidgetManager) PushContainer(container Widget) WidgetManager {
 	return m
 }
 
-func (m WidgetManager) PushStateProvider(p WidgetStateProvider) {
+func (m WidgetManager) PushStateMap(jsmap JSMap) {
 	itm := *m.stackedState()
-	itm.StateProvider = p
-	m.pushState(itm, tag_provider)
+	itm.StateMap = jsmap
+	m.pushState(itm, tag_statemap)
 }
 
-func (m WidgetManager) PopStateProvider() {
-	m.popStack(tag_provider)
+func (m WidgetManager) PushEditor(editor DataEditor) {
+	itm := *m.stackedState()
+	itm.IdPrefix = editor.Prefix
+	itm.StateMap = editor.JSMap
+	m.pushState(itm, tag_editor)
 }
 
-func (m WidgetManager) StateProvider() WidgetStateProvider {
-	return m.stackedState().StateProvider
+func (m WidgetManager) PopEditor() {
+	m.popStack(tag_editor)
+}
+
+func (m WidgetManager) PopStateMap() {
+	m.popStack(tag_statemap)
+}
+
+func (m WidgetManager) stackedStateMap() JSMap {
+	return m.stackedState().StateMap
 }
 
 func (m WidgetManager) PushIdPrefix(prefix string) {
@@ -524,4 +537,20 @@ func (m WidgetManager) EndConstruction(expectedStackSize int) {
 	if len(m.stack) != expectedStackSize {
 		BadState("expected state stack to be at", expectedStackSize, "but is at", len(m.stack), INDENT, m.dumpStateStack(expectedStackSize))
 	}
+}
+
+func (m WidgetManager) IdSummary() JSList {
+	js := NewJSList()
+	for k := range m.widgetMap {
+		js.Add(k)
+	}
+	return js
+}
+
+func (m WidgetManager) RebuildPageWidget() Widget {
+	m.widgetMap = make(map[string]Widget)
+	m.Id(WidgetIdPage)
+	widget := m.Open()
+	m.Close()
+	return widget
 }

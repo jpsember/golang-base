@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	. "github.com/jpsember/golang-base/base"
 	"io"
+	"strings"
 )
 
 type SessionManager interface {
@@ -15,10 +16,19 @@ type SessionManager interface {
 }
 
 func RandomSessionId() string {
+	debug := Alert("!using smaller session ids for development")
 	var idLength = 32
+	if debug {
+		idLength = 3
+	}
 	b := make([]byte, idLength)
 	CheckOkWith(io.ReadFull(rand.Reader, b))
-	return base64.URLEncoding.EncodeToString(b)
+	result := base64.URLEncoding.EncodeToString(b)
+	Todo("!what are legal characters in session id?  is base64 overkill?")
+	if debug {
+		result = strings.ToUpper(result)
+	}
+	return result
 }
 
 type inMemorySessionMap struct {
@@ -48,8 +58,8 @@ func (s *inMemorySessionMap) CreateSession() Session {
 
 	b := NewSession()
 	for {
-		b.Id = RandomSessionId()
-		_, ok := s.sessionMap.Provide(b.Id, b)
+		b.SessionId = RandomSessionId()
+		_, ok := s.sessionMap.Provide(b.SessionId, b)
 		// Stop looking for session ids if we've found one that isn't used
 		if !ok {
 			break

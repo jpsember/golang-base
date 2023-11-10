@@ -114,7 +114,7 @@ func (ji JImage) Type() JImageType {
 		case *image.YCbCr:
 			ty = TypeYCbCr
 		default:
-			Pr("Color model:", ji.image.ColorModel())
+			//Pr("Color model:", ji.image.ColorModel())
 			ty = TypeUnknown
 		}
 		ji.imageType = ty

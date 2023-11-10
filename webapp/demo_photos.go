@@ -8,20 +8,24 @@ import (
 type DemoPhotosStruct struct {
 	scaledPhotoNames []string
 	scaledPhotoDir   Path
+	rawPhotoDir      Path
+	prepared         bool
 }
 
 type DemoPhotos = *DemoPhotosStruct
 
-func newDemoPhotos() DemoPhotos {
-	t := &DemoPhotosStruct{}
+func NewDemoPhotos(rawPhotos Path, scaledPhotos Path) DemoPhotos {
+	t := &DemoPhotosStruct{
+		rawPhotoDir:    rawPhotos,
+		scaledPhotoDir: scaledPhotos,
+	}
 	return t
 }
 
-var SharedDemoPhotos DemoPhotos = newDemoPhotos()
-
 func (d DemoPhotos) ScaledPhotoNames() []string {
+	d.prepare()
 	if d.scaledPhotoNames == nil {
-		w := NewDirWalk(d.scaledPhotosDir()).IncludeExtensions("jpg")
+		w := NewDirWalk(d.ScaledPhotosDir()).IncludeExtensions("jpg")
 		var result []string
 		for _, x := range w.FilesRelative() {
 			result = append(result, x.AsNonEmptyString())
@@ -31,30 +35,39 @@ func (d DemoPhotos) ScaledPhotoNames() []string {
 	return d.scaledPhotoNames
 }
 
-func (d DemoPhotos) scaledPhotosDir() Path {
-	if d.scaledPhotoDir.Empty() {
-		dirTarget := FindProjectDirM().JoinM("sample_photos_scaled")
-		dirTarget.MkDirsM()
-		d.scaledPhotoDir = dirTarget
+func (d DemoPhotos) prepare() {
+	if !d.prepared {
+		d.prepared = true
+		d.readSamples()
 	}
+}
+
+func (d DemoPhotos) ScaledPhotosDir() Path {
+	d.prepare()
+	//if d.scaledPhotoDir.Empty() {
+	//	dirTarget := d.scaledPhotoDir
+	//	dirTarget.MkDirsM()
+	//	d.scaledPhotoDir = dirTarget
+	//}
 	return d.scaledPhotoDir
 }
 
 // Read all images (jpeg, png) in project_config/sample_photos, scale to our standard size,
 // and write to project_config/sample_photos_scaled.
-func (d DemoPhotos) ReadSamples() {
-	dir := FindProjectDirM().JoinM("sample_photos")
-	if !dir.Exists() {
-		Alert("!No such directory:", dir)
-		return
-	}
+func (d DemoPhotos) readSamples() {
+	dir := d.rawPhotoDir
+	CheckState(dir.IsDir(), "no such directory:", dir)
+	//if !dir.Exists() {
+	//	Alert("!No such directory:", dir)
+	//	return
+	//}
+	d.scaledPhotoDir.MkDirsM()
 
 	w := NewDirWalk(dir).IncludeExtensions("jpg", "jpeg", "png")
 
 	for _, f := range w.Files() {
-
 		nm := f.TrimExtension().Base()
-		targetFile := d.scaledPhotosDir().JoinM(nm + ".jpg")
+		targetFile := d.scaledPhotoDir.JoinM(nm + ".jpg")
 		if targetFile.Exists() {
 			continue
 		}

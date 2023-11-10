@@ -24,6 +24,8 @@ type JServerStruct struct {
 	FullWidth      bool
 	BaseURL        string // e.g. "jeff.org"
 	KeyDir         Path
+	CertName       string
+	KeyName        string
 	SessionManager SessionManager
 	BlobCache      BlobCache
 	resources      Path
@@ -36,16 +38,31 @@ type JServerStruct struct {
 
 type JServer = *JServerStruct
 
+var singletonJServer JServer
+
 func NewJServer(app ServerApp) JServer {
+	CheckState(singletonJServer == nil, "singleton server already constructed")
+
 	t := &JServerStruct{
 		App:           app,
 		pageRequester: NewPageRequester(app),
 		handlerMap:    make(map[string]PathHandler),
 	}
+	singletonJServer = t
 	t.resources = app.Resources().AssertNonEmpty()
 	t.registerPages()
-	t.headerMarkup = t.resources.JoinM("header.html").ReadStringM()
+
 	return t
+}
+
+func (j JServer) getHeaderMarkup() string {
+	if j.headerMarkup == "" {
+		CheckState(j.BaseURL != ``)
+		txt := j.resources.JoinM("header.html").ReadStringM()
+		txt = strings.Replace(txt, `jeff.org`, j.BaseURL, -1)
+		j.headerMarkup = txt
+	}
+	return j.headerMarkup
 }
 
 func (j JServer) registerPages() {
@@ -56,6 +73,12 @@ func (j JServer) registerPages() {
 }
 
 const BlobURLPrefix = "~/"
+
+func DebVerifyServerStarted() {
+	if singletonJServer == nil || !singletonJServer.started {
+		BadState("JServer has not been started yet")
+	}
+}
 
 func (j JServer) StartServing() {
 
@@ -70,8 +93,8 @@ func (j JServer) StartServing() {
 	var ourUrl = CheckNonEmpty(j.BaseURL, "BaseURL")
 
 	var keyDir = j.KeyDir //oper.appRoot.JoinM("https_keys")
-	var certPath = keyDir.JoinM(ourUrl + ".crt")
-	var keyPath = keyDir.JoinM(ourUrl + ".key")
+	var certPath = keyDir.JoinM(j.CertName)
+	var keyPath = keyDir.JoinM(j.KeyName)
 	Pr("URL:", INDENT, `https://`+ourUrl)
 
 	http.HandleFunc("/",
@@ -104,9 +127,10 @@ func (j JServer) handleBlobRequest(s Session, blobId string) {
 
 // A handler such as this must be thread safe!
 func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
-	pr := PrIf(false)
+	pr := PrIf("JServer.handle", false)
 	pr("JServer handler, request:", req.RequestURI)
 
+	Todo("?Maybe don't construct a session for *every* request")
 	// We don't know what the session is yet, so we don't have a lock on it...
 	sess := DetermineSession(j.SessionManager, w, req, true)
 	// It seems awkward to initialize this at session construction time, so set it here...
@@ -117,23 +141,18 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 	defer sess.ReleaseLockAndDiscardRequest()
 
 	sess.PrepareForHandlingRequest(w, req)
+	pr("session id:", sess.SessionId, "page widget:", sess.PageWidget)
 
-	if !sess.prepared {
-		sess.prepared = true
-		{
-			// Assign a widget heirarchy to the session
-			m := sess.WidgetManager()
-			m.Id(WidgetIdPage)
-			widget := m.Open()
-			sess.PageWidget = widget
-			m.Close()
-		}
+	// If session hasn't been prepared yet, do so.
+	if sess.PageWidget == nil {
+		pr("constructing page widget for session:", sess.SessionId)
+		// Open a container for the entire page
+		sess.PageWidget = sess.RebuildPageWidget()
 		j.App.PrepareSession(sess)
 	}
 
 	url, err := url.Parse(req.RequestURI)
 	if err == nil {
-
 		path := url.Path
 		if !strings.HasPrefix(path, "/") {
 			Alert("#50path didn't have expected prefix:", VERT_SP, Quoted(path), VERT_SP)
@@ -143,7 +162,6 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 		var text string
 		var flag bool
 
-		pr("JServer, url path:", path)
 		if path == "ajax" {
 			sess.HandleAjaxRequest()
 		} else if text, flag = TrimIfPrefix(path, `upload/`); flag {
@@ -187,8 +205,8 @@ func (j JServer) handle(w http.ResponseWriter, req *http.Request) {
 
 // Generate the boilerplate header and scripts markup
 func (j JServer) writeHeader(bp MarkupBuilder) {
-	bp.A(j.headerMarkup)
-	bp.OpenTag("body")
+	bp.A(j.getHeaderMarkup())
+	bp.TgOpen(`body`).TgContent()
 	containerClass := "container"
 	if j.FullWidth {
 		containerClass = "container-fluid"
@@ -196,7 +214,7 @@ func (j JServer) writeHeader(bp MarkupBuilder) {
 	if false && j.TopPadding != 0 {
 		containerClass += "  pt-" + IntToString(j.TopPadding)
 	}
-	bp.Comments("page container").OpenTag(`div class='` + containerClass + `'`)
+	bp.Comments("page container").TgOpen(`div class=`).A(QUO, containerClass).TgContent()
 }
 
 func (j JServer) sendFullPage(sess Session) {
@@ -211,10 +229,10 @@ func (j JServer) sendFullPage(sess Session) {
 
 // Generate the boilerplate footer markup, then write the page to the response
 func (j JServer) writeFooter(s Session, bp MarkupBuilder) {
-	bp.CloseTag() // page container
+	bp.TgClose() // page container
 
 	// Add a bit of javascript that will change the url to what we want
-	expr := s.NewBrowserPath()
+	expr := s.browserURLExpr
 	if expr != "" {
 		code := `
 <script type="text/javascript">
@@ -225,7 +243,7 @@ history.replaceState(null, null, url)
 		// ^^^I suspect we don't want to do pushState if we got here due to user pressing the back button.
 		bp.WriteString(code)
 	}
-	bp.CloseTag() // body
+	bp.TgClose() // body
 
 	bp.A(`</html>`).Cr()
 }
@@ -253,14 +271,9 @@ func (j JServer) processPageRequest(s Session, path string) bool {
 		}
 	}
 
-	page := j.pageRequester.Process(s, path)
-	if page != nil {
-		s.SwitchToPage(page)
-		j.sendFullPage(s)
-		return true
-	}
-
-	return false
+	j.pageRequester.Process(s, path)
+	j.sendFullPage(s)
+	return true
 }
 
 func (j JServer) AddResourceHandler(pathPrefix string, handler PathHandler) {

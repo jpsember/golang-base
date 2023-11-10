@@ -12,14 +12,20 @@ type GridWidgetStruct struct {
 
 type GridWidget = *GridWidgetStruct
 
-func NewContainerWidget(id string) GridWidget {
+func NewContainerWidget(id string, clickListener ClickWidgetListener) GridWidget {
 	w := GridWidgetStruct{}
 	w.InitBase(id)
+	if clickListener != nil {
+		w.SetLowListener(func(sess Session, widget Widget, value string, args WidgetArgs) (any, error) {
+			clickListener(sess, widget, args)
+			return nil, nil
+		})
+	}
 	return &w
 }
 
 func (w GridWidget) String() string {
-	return "<" + w.BaseId + " GridWidget>"
+	return "<" + w.Id() + " GridWidget>"
 }
 
 func (w GridWidget) Children() []Widget {
@@ -31,17 +37,18 @@ func (w GridWidget) ClearChildren() {
 }
 
 func (w GridWidget) AddChild(c Widget, manager WidgetManager) {
-	cols := manager.pendingChildColumns
+	cols := manager.stackedState().pendingChildColumns
 	if cols == 0 {
 		BadState("no pending columns for widget:", c.Id())
 	}
 	c.SetColumns(cols)
 	w.children = append(w.children, c)
-	pr := PrIf(false)
-	pr(VERT_SP, "GridWidget", w.BaseId, "adding child", c.Id(), "to container", w.BaseId, "columns:", w.Columns())
+	pr := PrIf("", false)
+	pr(VERT_SP, "GridWidget", w.Id(), "adding child", c.Id(), "to container", w.Id(), "columns:", w.Columns())
 }
 
 func (w GridWidget) RemoveChild(c Widget) {
+	Die("probably shouldn't be necessary")
 	for index, child := range w.children {
 		if child == c {
 			w.children = DeleteSliceElements(w.children, index, 1)
@@ -54,27 +61,41 @@ func (w GridWidget) RemoveChild(c Widget) {
 func (w GridWidget) RenderTo(s Session, m MarkupBuilder) {
 	// It is the job of the widget that *contains* us to set the columns that we
 	// are to occupy, not ours.
-	Todo("!Don't add markup that is outside of the div<widget id>, else it will pile up due to ajax refreshes")
-	m.OpenTag(`div id='` + w.BaseId + `'`)
+
+	effectiveId := s.PrependId(w.Id())
+	m.TgOpen(`div id=`).A(QUO, effectiveId).TgContent()
 	m.Comments(`GridWidget`, w.IdSummary())
-	if len(w.children) != 0 {
-		m.OpenTag(`div class='row'`)
-		for _, child := range w.children {
-			str := `div class="col-sm-` + IntToString(child.Columns()) + `"`
-			if WidgetDebugRenderingFlag {
-				str += ` style="background-color:` + DebugColorForString(child.Id()) + `;`
-				str += `border-style:double;`
-				str += `"`
-			}
-			m.Comments(`child`).OpenTag(str)
-			{
-				verify := m.VerifyBegin()
-				RenderWidget(child, s, m)
-				m.VerifyEnd(verify, child)
-			}
-			m.CloseTag()
+
+	anyPlotted := false
+	for _, child := range w.children {
+		if child.Detached() {
+			continue
 		}
-		m.CloseTag().Br()
+		if !anyPlotted {
+			anyPlotted = true
+			m.TgOpen(`div class='row'`).TgContent()
+		}
+
+		m.TgOpen(`div class="col-sm-`).A(child.Columns(), `"`)
+		if WidgetDebugRenderingFlag {
+			m.Style(`background-color:`, DebugColorForString(child.Id()), `;`)
+			m.Style(`border-style:double;`)
+		}
+
+		if w.LowListen != nil {
+			m.A(` onclick="jsButton('`, effectiveId, `')"`)
+		}
+
+		m.TgContent()
+		{
+			verify := m.VerifyBegin()
+			RenderWidget(child, s, m)
+			m.VerifyEnd(verify, child)
+		}
+		m.TgClose()
 	}
-	m.CloseTag() // GridWidget
+	if anyPlotted {
+		m.TgClose().Br()
+	}
+	m.TgClose()
 }

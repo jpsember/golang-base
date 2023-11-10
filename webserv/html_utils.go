@@ -2,6 +2,7 @@ package webserv
 
 import (
 	. "github.com/jpsember/golang-base/base"
+	"strings"
 )
 
 // Escaper interface performs html escaping on its argument
@@ -81,4 +82,61 @@ func InferContentTypeFromBlob(data []byte) string {
 		result = "application/octet-stream"
 	}
 	return result
+}
+
+const DOT_DELIMITER = '.'
+
+func AssertNoDots(expr string) string {
+	if FirstDot(expr) >= 0 {
+		BadArg("Expression must not have dots:", QUO, expr)
+	}
+	return expr
+}
+
+func FirstDot(expr string) int {
+	return strings.IndexByte(expr, DOT_DELIMITER)
+}
+
+// Join nonempty strings with '.' delimiter; if no nonempty strings, return "".
+func DotJoin(args ...string) string {
+	s := strings.Builder{}
+	for _, arg := range args {
+		if arg != "" {
+			if s.Len() != 0 {
+				s.WriteByte(DOT_DELIMITER)
+			}
+			s.WriteString(arg)
+		}
+	}
+	return s.String()
+}
+
+var MissingListenerArgError = Error("Missing listener argument")
+var BadListenerIntArgError = Error("Bad listener integer argument")
+
+// Extract the first argument from a list of arguments; return arg, and remaining args
+func ExtractFirstDotArg(args []string) (string, []string, error) {
+	pr := PrIf("ExtractFirstDotArg", false)
+	pr("ExtractFirstDotArg")
+	if len(args) == 0 {
+		return "", nil, MissingListenerArgError
+	}
+	return args[0], args[1:], nil
+}
+
+func ExtractIntFromListenerArgs(args []string, minValue int, maxValue int) (int, []string, error) {
+	arg, rem, err := ExtractFirstDotArg(args)
+	if err == nil {
+		intValue, err2 := ParseInt(arg)
+		err = err2
+		if err == nil {
+			if intValue < minValue || (maxValue > minValue && intValue >= maxValue) {
+				err = BadListenerIntArgError
+			}
+		}
+		if err == nil {
+			return intValue, rem, nil
+		}
+	}
+	return -1, nil, BadListenerIntArgError
 }

@@ -5,93 +5,49 @@ import (
 	"github.com/jpsember/golang-base/jimg"
 	. "github.com/jpsember/golang-base/webapp/gen/webapp_data"
 	. "github.com/jpsember/golang-base/webserv"
-	"strings"
 )
 
-const anim_state_prefix = "_create_animal_."
-
-// Use the field names that Animal produces as JSMaps
-const (
-	id_animal_name        = anim_state_prefix + "name"
-	id_animal_summary     = anim_state_prefix + "summary"
-	id_animal_details     = anim_state_prefix + "details"
-	id_animal_uploadpic   = anim_state_prefix + "photo"
-	id_animal_display_pic = anim_state_prefix + "photo_thumbnail"
-)
+var AllowEmptySummaries = DevDatabase && true && Alert("!Allowing empty summary, details fields")
 
 type AnimalDetailPageStruct struct {
 	animalId int
 	editing  bool
 	name     string
-	// This will have the fields of the animal we are editing, as a JSMap
-	anim2 JSMap
+
+	editor DataEditor
+	strict bool
+
+	uploadPicWidget Widget
+	imgWidget       Widget
 }
 
 type AnimalDetailPage = *AnimalDetailPageStruct
 
-var CreateAnimalPageTemplate = NewCreateAnimalPage(nil)
-var EditAnimalPageTemplate = NewEditAnimalPage(nil, 0)
-var ViewAnimalPageTemplate = NewViewAnimalPage(nil, 0)
-
-func NewCreateAnimalPage(sess Session) AnimalDetailPage {
-	t := &AnimalDetailPageStruct{
-		editing: true,
-		name:    "new",
-	}
-	t.generateWidgets(sess)
-	return t
-}
-
-func NewEditAnimalPage(sess Session, animalId int) AnimalDetailPage {
-	t := &AnimalDetailPageStruct{
-		animalId: animalId,
-		editing:  true,
-		name:     "edit",
-	}
-	// This might be the template
-	if animalId == 0 {
-		return t
-	}
-	t.prepareAnimal()
-	t.generateWidgets(sess)
-	return t
-}
-
-func NewViewAnimalPage(sess Session, animalId int) AnimalDetailPage {
-	t := &AnimalDetailPageStruct{
-		animalId: animalId,
-		editing:  false,
-		name:     "view",
-	}
-	// This might be the template
-	if animalId == 0 {
-		return t
-	}
-	t.prepareAnimal()
-	t.generateWidgets(sess)
-	return t
-}
-
-func (p AnimalDetailPage) prepareAnimal() {
-	anim, err := ReadAnimal(p.animalId)
-	if ReportIfError(err, "NewEditAnimalPage") {
-		BadState(err)
-	}
-	p.anim2 = anim.ToJson().AsJSMap()
-}
+var CreateAnimalPageTemplate = &AnimalDetailPageStruct{name: "new"}
+var EditAnimalPageTemplate = &AnimalDetailPageStruct{name: "edit"}
+var ViewAnimalPageTemplate = &AnimalDetailPageStruct{name: "view"}
 
 func (p AnimalDetailPage) ConstructPage(s Session, args PageArgs) Page {
-	switch p.name {
+	pr := PrIf("AnimDetailPage.ConstructPage", false)
+	pr("args:", args)
+
+	// Construct a copy of the template
+	t := *p
+	var result Page
+
+	switch t.name {
 	case "new":
 		if args.Done() {
-			return NewCreateAnimalPage(s)
+			t.editing = true
 		}
+		result = &t
+		break
 	case "view", "edit":
-		animalId := args.PositiveInt()
+		t.animalId = args.PositiveInt()
 		if args.Problem() {
 			break
 		}
-		anim := ReadAnimalIgnoreError(animalId)
+		anim := ReadAnimalIgnoreError(t.animalId)
 		if anim.Id() == 0 {
 			break
 		}
@@ -100,16 +56,25 @@ func (p AnimalDetailPage) ConstructPage(s Session, args PageArgs) Page {
 			if p.name == "edit" {
 				break
 			}
-			return NewViewAnimalPage(s, animalId)
+			t.editing = false
 		} else {
 			if anim.ManagerId() != user.Id() {
 				break
 			}
-			return NewEditAnimalPage(s, animalId)
+			t.editing = true
 		}
-		return p
+		t.prepareAnimal()
+		result = &t
+		break
 	}
-	return nil
+
+	if result != nil {
+		pr("constructed page:", result.Name())
+		pr("generating widgets")
+		t.generateWidgets(s)
+		pr("done generating")
+	}
+	return result
 }
 
 func (p AnimalDetailPage) Name() string {
@@ -120,8 +85,15 @@ func (p AnimalDetailPage) Args() []string {
 	if p.animalId != 0 {
 		return []string{IntToString(p.animalId)}
 	}
-	Alert("EmptyStringSlice should be removed")
-	return EmptyStringSlice
+	return nil
+}
+
+func (p AnimalDetailPage) prepareAnimal() {
+	anim, err := ReadAnimal(p.animalId)
+	if ReportIfError(err, "NewEditAnimalPage") {
+		BadState(err)
+	}
+	p.editor = NewDataEditor(anim)
 }
 
 func (p AnimalDetailPage) viewing() bool {
@@ -137,20 +109,18 @@ func (p AnimalDetailPage) readStateFromAnimal(sess Session) {
 			return
 		}
 	}
-	s := sess.State
-	s.Put(id_animal_name, a.Name())
-	s.Put(id_animal_summary, a.Summary())
-	s.Put(id_animal_details, a.Details())
-	s.Put(id_animal_display_pic, a.PhotoThumbnail())
+	p.editor = NewDataEditor(a)
+
+	if p.editing {
+		mgrId := SessionUser(sess).Id()
+		if p.animalId == 0 {
+			p.editor.PutInt(Animal_ManagerId, mgrId)
+		}
+		CheckState(p.editor.GetInt(Animal_ManagerId) == mgrId)
+	}
 }
 
 func (p AnimalDetailPage) generateWidgets(s Session) {
-	if s == nil {
-		return
-	}
-	// Until more are needed, the user header (assuming one is present) is the only listener, so forward it
-	//s.SetClickListener(ProcessUserHeaderClick)
-	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
 	GenerateHeader(s, p)
 	if p.viewing() {
 		AddUserHeaderWidget(s)
@@ -160,57 +130,58 @@ func (p AnimalDetailPage) generateWidgets(s Session) {
 
 	Todo("!Have ajax listener that can show advice without an actual error, e.g., if user left some fields blank")
 
-	s.WidgetManager().PushStateProvider(NewStateProvider(anim_state_prefix, p.anim2))
+	s.PushEditor(p.editor)
 	if p.editing {
 		p.generateForEditing(s)
 	} else {
 		p.generateForViewing(s)
 	}
-	s.WidgetManager().PopStateProvider()
+	s.PopEditor()
 }
 
-func (p AnimalDetailPage) generateForEditing(s Session) {
-	m := s.WidgetManager()
+func (p AnimalDetailPage) generateForEditing(m Session) {
 	m.Col(6).Open()
 	{
 		m.Col(12)
-		m.Label("Name").Id(id_animal_name).AddInput(AnimalNameListener)
 
-		m.Label("Summary").Id(id_animal_summary).AddInput(p.AnimalTextListener)
+		m.Label("Name").Id(Animal_Name).AddInput(p.animalNameListener)
+
+		m.Label("Summary").Id(Animal_Summary).AddInput(p.animalSummaryListener)
 		m.Size(SizeTiny).Label("A brief paragraph to appear in the 'card' view.").AddText()
-		m.Label("Details").Id(id_animal_details).AddInput(p.AnimalTextListener)
+
+		m.Label("Details").Id(Animal_Details).AddInput(p.animalDetailsListener)
 		m.Size(SizeTiny).Label("Additional paragraphs to appear on the 'details' view.").AddText()
 
 		m.Col(6)
 		if p.animalId != 0 {
-			m.Label("Done").AddButton(p.doneEditListener)
-			m.Label("Abort").AddButton(p.abortEditListener)
+			m.Label("Done").Listener(p.doneEditListener).AddBtn()
+			m.Label("Abort").Listener(p.abortEditListener).AddBtn()
 		} else {
-			m.Label("Create").AddButton(p.createAnimalButtonListener)
-			m.Label("Abort").AddButton(p.abortEditListener)
+			m.Label("Create").Listener(p.createAnimalButtonListener).AddBtn()
+			m.Label("Abort").Listener(p.abortEditListener).AddBtn()
 		}
 	}
 	m.Close()
 
 	m.Open()
-	m.Id(id_animal_uploadpic).Label("Photo").AddFileUpload(p.uploadPhotoListener)
-	imgWidget := m.Id(id_animal_display_pic).AddImage()
-	imgWidget.URLProvider = p.provideURL
+	p.uploadPicWidget =
+		m.Label("Photo").AddFileUpload(p.uploadPhotoListener)
 
+	imgWidget := m.Id(Animal_PhotoThumbnail).AddImage(p.provideURL)
 	// Scale the photos based on browser resolution
 	imgWidget.SetSize(AnimalPicSizeNormal, 0.6)
+	p.imgWidget = imgWidget
 
 	m.Close()
 }
 
-func (p AnimalDetailPage) generateForViewing(s Session) {
-	m := s.WidgetManager()
+func (p AnimalDetailPage) generateForViewing(m Session) {
 
 	m.Col(6).Open()
 	{
 		Todo("!Flesh this out some")
 		m.Col(12)
-		m.Id(id_animal_name).AddText()
+		m.Id("name").AddText()
 
 		//m.Label("Summary").Id(id_animal_summary).AddInput(p.AnimalTextListener)
 		//m.Size(SizeTiny).Label("A brief paragraph to appear in the 'card' view.").AddText()
@@ -218,43 +189,49 @@ func (p AnimalDetailPage) generateForViewing(s Session) {
 		//m.Size(SizeTiny).Label("Additional paragraphs to appear on the 'details' view.").AddText()
 		//
 		m.Col(6)
-		m.Label("Done").AddButton(p.doneViewListener)
+		m.Label("Done").Listener(p.doneViewListener).AddBtn()
 
 	}
 	m.Close()
 
 	m.Open()
-	imgWidget := m.Id(id_animal_display_pic).AddImage()
-	imgWidget.URLProvider = p.provideURL
+	Todo("extract common widget creation between manager/donor")
+	imgWidget := m.Id(Animal_PhotoThumbnail).AddImage(p.provideURL)
 
 	// Scale the photos based on browser resolution
 	imgWidget.SetSize(AnimalPicSizeNormal, 0.6)
 
+	p.imgWidget = imgWidget
+
 	m.Close()
 }
 
-func AnimalNameListener(s Session, widget InputWidget, value string) (string, error) {
-	return ValidateAnimalName(value, VALIDATE_EMPTYOK)
+func (p AnimalDetailPage) validateFlag() ValidateFlag {
+	return Ternary(p.strict, 0, VALIDATE_EMPTYOK)
 }
 
-func (p AnimalDetailPage) AnimalTextListener(sess Session, widget InputWidget, value string) (string, error) {
-	if widget.Id() == id_animal_summary {
-		return animalInfoListener(value, 20, 200, true)
-	} else {
-		return animalInfoListener(value, 200, 2000, true)
-	}
+func (p AnimalDetailPage) animalNameListener(s Session, widget InputWidget, value string) (string, error) {
+	return ValidateAnimalName(value, p.validateFlag())
 }
 
-func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget) {
-	pr := PrIf(true)
+func (p AnimalDetailPage) animalSummaryListener(sess Session, widget InputWidget, value string) (string, error) {
+	return animalInfoListener(value, 20, 200, p.validateFlag())
+}
+
+func (p AnimalDetailPage) animalDetailsListener(sess Session, widget InputWidget, value string) (string, error) {
+	return animalInfoListener(value, 200, 2000, p.validateFlag())
+}
+
+func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget, args WidgetArgs) {
+	pr := PrIf("Create listener", false)
 
 	if !p.validateAll(s) {
 		return
 	}
 
-	b := NewAnimal()
-	p.writeStateToAnimal(s, b)
+	b := p.editor.Read().(Animal)
 
+	p.DebugSanityCheck(s, b)
 	ub, err := CreateAnimal(b)
 	if ReportIfError(err, "CreateAnimal after editing") {
 		return
@@ -265,43 +242,33 @@ func (p AnimalDetailPage) createAnimalButtonListener(s Session, widget Widget) {
 }
 
 func (p AnimalDetailPage) validateAll(s Session) bool {
-	pr := PrIf(false)
+	pr := PrIf("validateAll", false)
 
-	{
-		text := s.StringValue(id_animal_name)
-		_, err := ValidateAnimalName(text, 0)
-		s.SetWidgetProblem(id_animal_name, err)
+	// The upload widget doesn't have a validation value, so its error (if it has one)
+	// will survive the ValidateAndCountErrorsCall that follows.
+	if s.WidgetIntValue(p.imgWidget) == 0 {
+		s.SetProblem(p.uploadPicWidget, "Please upload a photo")
 	}
 
-	preCreateValidateText(s, id_animal_summary, 20, 200, 0)
-	preCreateValidateText(s, id_animal_details, 200, 2000, 0)
-	{
-		picId := s.IntValue(id_animal_display_pic)
-		if picId == 0 {
-			s.SetWidgetProblem(id_animal_uploadpic, "Please upload a photo")
-		}
-	}
+	p.strict = true
+	errcount := s.ValidateAndCountErrors(s.PageWidget)
+	p.strict = false
 
-	errcount := WidgetErrorCount(s.PageWidget, s.State)
 	pr("error count:", errcount)
 	return errcount == 0
 }
 
-func (p AnimalDetailPage) doneEditListener(s Session, widget Widget) {
-	pr := PrIf(false)
+func (p AnimalDetailPage) doneEditListener(s Session, widget Widget, args WidgetArgs) {
+	pr := PrIf("", false)
 
 	if !p.validateAll(s) {
 		return
 	}
 
-	a, err := ReadActualAnimal(p.animalId)
-	if ReportIfError(err, "ReadAnimal after editing") {
-		return
-	}
-	b := a.ToBuilder()
-	p.writeStateToAnimal(s, b)
+	b := p.editor.Read().(Animal)
+	p.DebugSanityCheck(s, b)
 
-	err = UpdateAnimal(b)
+	err := UpdateAnimal(b)
 	if ReportIfError(err, "UpdateAnimal after editing") {
 		return
 	}
@@ -309,44 +276,34 @@ func (p AnimalDetailPage) doneEditListener(s Session, widget Widget) {
 	p.exit(s)
 }
 
-func (p AnimalDetailPage) doneViewListener(s Session, widget Widget) {
+func (p AnimalDetailPage) doneViewListener(s Session, widget Widget, args WidgetArgs) {
 	p.exit(s)
 }
 
-func (p AnimalDetailPage) abortEditListener(s Session, widget Widget) {
+func (p AnimalDetailPage) abortEditListener(s Session, widget Widget, args WidgetArgs) {
 	p.exit(s)
-}
-
-func (p AnimalDetailPage) writeStateToAnimal(s Session, b AnimalBuilder) {
-	b.SetName(strings.TrimSpace(s.StringValue(id_animal_name)))
-	b.SetSummary(strings.TrimSpace(s.StringValue(id_animal_summary)))
-	b.SetDetails(strings.TrimSpace(s.StringValue(id_animal_details)))
-	b.SetPhotoThumbnail(s.IntValue(id_animal_display_pic))
-	b.SetManagerId(SessionUser(s).Id())
 }
 
 func (p AnimalDetailPage) exit(s Session) {
-	s.DeleteStateFieldsWithPrefix(anim_state_prefix)
-	var page Page
 	if SessionUser(s).UserClass() == UserClassDonor {
-		page = NewFeedPage(s)
+		s.SwitchToPage(FeedPageTemplate, nil)
 	} else {
-		page = NewManagerPage(s)
+		s.SwitchToPage(ManagerPageTemplate, nil)
 	}
-	s.SwitchToPage(page)
 }
 
-func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (string, error) {
+func animalInfoListener(n string, minLength int, maxLength int, validateFlags ValidateFlag) (string, error) {
 	errStr := ""
 
-	if Alert("?Allowing zero characters in summary, details fields") {
+	if AllowEmptySummaries {
 		minLength = 0
 	}
+
 	for {
 		ln := len(n)
 
 		errStr = "Please add more info here."
-		if ln < minLength && !(ln == 0 && emptyOk) {
+		if ln < minLength && !(ln == 0 && validateFlags.Has(VALIDATE_EMPTYOK)) {
 			break
 		}
 
@@ -365,14 +322,8 @@ func animalInfoListener(n string, minLength int, maxLength int, emptyOk bool) (s
 	return n, err
 }
 
-func preCreateValidateText(s Session, widgetId string, minLength int, maxLength int, flags ValidateFlag) {
-	n := s.StringValue(widgetId)
-	n, err := animalInfoListener(n, minLength, maxLength, flags.Has(VALIDATE_EMPTYOK))
-	s.SetWidgetProblem(widgetId, err)
-}
-
 func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by []byte) error {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 
 	var jpeg []byte
 	var imageId int
@@ -433,28 +384,21 @@ func (p AnimalDetailPage) uploadPhotoListener(s Session, widget FileUpload, by [
 	// that version to the database).
 	//
 	if err == nil {
-		picId := id_animal_display_pic
 		// Discard the old blob whose id we are now replacing
-		DiscardBlob(s.IntValue(picId))
-
-		// Store the id of the blob in the image widget
-		s.State.Put(picId, imageId)
-
-		pr("repainting animal_display_pic")
-		s.RepaintIds(picId)
-
-		pr("state:", s.State)
+		DiscardBlob(p.editor.GetInt(Animal_PhotoThumbnail))
+		p.editor.PutInt(Animal_PhotoThumbnail, imageId)
+		pr("repainting Animal_PhotoThumbnail")
+		p.imgWidget.Repaint()
 	}
 	return err
 }
 
 func (p AnimalDetailPage) provideURL(s Session) string {
-	pr := PrIf(false)
+	pr := PrIf("", false)
 	url := ""
 
-	// We need to access the state directly, without a widget.
-	imageId := s.IntValue(id_animal_display_pic)
-
+	// We need to access the state directly, without a widget; we can get it from the animal embedded in the editor
+	imageId := p.editor.GetInt(Animal_PhotoThumbnail)
 	if imageId == 0 {
 		imageId = 1 // This is the default placeholder blob id
 	}
@@ -465,6 +409,36 @@ func (p AnimalDetailPage) provideURL(s Session) string {
 		pr("read into cache, url:", url)
 	}
 	return url
+}
+
+func (p AnimalDetailPage) DebugSanityCheck(s Session, a Animal) {
+	problem := ""
+	for {
+		problem = "wrong manager"
+		if a.ManagerId() != SessionUser(s).Id() {
+			break
+		}
+
+		problem = "bad photo"
+		if a.PhotoThumbnail() < 2 {
+			break
+		}
+
+		problem = "missing text"
+		if a.Name() == "" {
+			break
+		}
+		if !AllowEmptySummaries && (a.Summary() == "" || a.Details() == "") {
+			break
+		}
+
+		problem = ""
+		break
+	}
+
+	if problem != "" {
+		BadState("Problem with sanity check:", problem, INDENT, a)
+	}
 }
 
 func DiscardBlob(id int) {
