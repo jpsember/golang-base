@@ -1,6 +1,7 @@
 package jt
 
 import (
+	. "github.com/jpsember/golang-base/base"
 	"hash/fnv"
 	"math/rand"
 	"os/exec"
