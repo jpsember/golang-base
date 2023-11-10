@@ -1,9 +1,7 @@
 package base
 
 import (
-	"math/rand"
 	"strings"
-	_ "strings"
 )
 
 func RandomText(j JSRand, maxLength int, withLinefeeds bool) string {
@@ -23,8 +21,8 @@ func RandomText(j JSRand, maxLength int, withLinefeeds bool) string {
 
 func RandomWord(j JSRand) string {
 	sample := "orhxxidfusuytelrcfdlordburswfxzjfjllppdsywgswkvukrammvxvsjzqwplxcpkoekiznlgsgjfonlugreiqvtvpjgrqotzu"
-	wordSize := rand.Intn(8) + 2
-	c := rand.Intn(len(sample) - wordSize)
+	wordSize := j.Intn(8) + 2
+	c := j.Intn(len(sample) - wordSize)
 	return sample[c : c+wordSize]
 }
 
