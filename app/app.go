@@ -127,9 +127,6 @@ func (a *App) RegisterOper(oper Oper) {
 	key := oper.UserCommand()
 	_, ok := a.operMap[key]
 	CheckState(!ok, "duplicate oper key:", key)
-	if ok {
-
-	}
 	a.orderedCommands.Add(key)
 	a.operMap[key] = oper
 }

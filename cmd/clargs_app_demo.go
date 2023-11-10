@@ -22,7 +22,7 @@ func (oper *JumpOper) Perform(app *App) {
 }
 
 func (oper *JumpOper) GetHelp(bp *BasePrinter) {
-	bp.Pr("An example of an app that uses conventional command line arguments only.")
+	bp.Pr(oper.UserCommand(), ": An example of an app that uses conventional command line arguments only.")
 }
 
 func (oper *JumpOper) ProcessArgs(c *CmdLineArgs) {
@@ -49,9 +49,38 @@ func main() {
 	app.SetName("cmd_line_example")
 	app.Version = "2.1.3"
 	app.RegisterOper(oper)
+
+	if false {
+		oper2 := &FooOper{}
+		app.RegisterOper(oper2)
+	}
 	app.CmdLineArgs(). //
 				Add("debugging").Desc("perform extra tests"). //
 				Add("speed").SetInt().Add("jumping")          //
+
 	//app.AddTestArgs("--verbose --dryrun height compact compact zebra height compact")
+	app.AddTestArgs("--help")
 	app.Start()
+}
+
+type FooOper struct {
+	BaseObject
+}
+
+func (oper *FooOper) UserCommand() string {
+	return "moo"
+}
+
+func (oper *FooOper) Perform(app *App) {
+	oper.SetVerbose(true)
+	pr := oper.Log
+	pr("this is FooOper.perform")
+	Pr("goodbye")
+}
+
+func (oper *FooOper) GetHelp(bp *BasePrinter) {
+	bp.Pr(oper.UserCommand(), ": This is help for FooOper.")
+}
+
+func (oper *FooOper) ProcessArgs(c *CmdLineArgs) {
 }
